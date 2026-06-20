@@ -45,6 +45,13 @@
   .radios label, .checks label { display: flex; gap: 8px; align-items: center; font-size: 13px; }
   .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
   .exp { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #d29922; border: 1px solid #6b5320; border-radius: 3px; padding: 0 4px; margin: 0 2px; }
+  .speccard { border: 1px solid #2f6f57; background: #10211a; border-radius: 8px; padding: 12px 14px; margin: 12px 0 16px; }
+  .speccard .sc-h { font-weight: 600; color: var(--ink); margin-bottom: 10px; font-size: 14px; }
+  .speccard .sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .speccard .sc-i { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; }
+  .speccard .sc-v { display: block; font-size: 18px; font-weight: 700; color: #3fb950; }
+  .speccard .sc-l { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+  .speccard .sc-cap { margin-top: 11px; font-size: 12.5px; color: #c9d4de; line-height: 1.45; }
   /* right main */
   main { padding: 18px 22px; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -336,6 +343,9 @@
   The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then thrusting
   heliocentrically to build the escape velocity — then shuts off for the long coast. All burning happens
   within a few AU of the Sun, where solar power is strongest.</p>
+
+  <div id="burnspec" class="speccard"></div>
+
   <table class="chain">
     <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
     <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
@@ -563,6 +573,21 @@ function render(){
     `<div class="sline"><b>Arrival:</b> within 2600 AU of Alpha Centauri in <b>${fmt(r.arrivalYr)} yr</b> (inside the 100,000-yr goal), aimed ~${fmt(Math.abs(r.ic.tiltDeg),1)}° off the ecliptic.</div>`+
     `<div class="sline"><b>Profile:</b> launch to LEO, then fire an Isp-${fmt(r.isp)} s ion engine <b>continuously for ~${fmt(r.burnYr,1)} yr</b> at ~<b>${fmt(r.thrust*1e3)} mN</b>, drawing <b>${fmt(r.pwrW/1000,1)} kW</b> from a <b>${fmt(r.arrayArea,0)} m²</b> / <b>${fmt(r.arrayMass)} kg</b> silicon array — Earth-escape spiral ~${fmt(bp.tEarth,2)} yr, then heliocentric to escape — then coast ~${fmt(r.arrivalYr)} yr. Wet mass <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`+
     `<div class="sline"><b>Distance check:</b> Δv budget ≠ cruise speed. The ${fmt(r.dvDesign/1e3,0)} km/s from LEO becomes a <b>${fmt(r.ic.vinf/1e3,1)} km/s</b> heliocentric cruise (Oberth + Earth's 29.8 km/s orbital velocity), so the probe covers ${fmt(r.ic.vinf/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — exactly where AC is at arrival (it recedes from its ~3.1 ly closest approach to ~${fmt(acDistLy,1)} ly).</div>`;
+
+  // ----- "how much power & fuel & what array?" spec card (live) -----
+  const a0=(r.thrust/r.wet)/9.80665*1000, a1=(r.thrust/r.dry)/9.80665*1000;  // milli-g, start->end
+  const psVal=r.pwr==='solar'?`${fmt(r.arrayArea,0)} m² · ${fmt(r.arrayMass)} kg`:`${fmt(r.psMass)} kg`;
+  const psLab=r.pwr==='solar'?'silicon solar array @ 1 AU':`${r.psLabel} (experimental)`;
+  document.getElementById('burnspec').innerHTML=
+    `<div class="sc-h">To accelerate to terminal velocity v∞ ≈ ${fmt(r.ic.vinf/1e3,1)} km/s, the departure burn needs:</div>`+
+    `<div class="sc-grid">`+
+      `<div class="sc-i"><span class="sc-v">${fmt(r.pwrW/1000,1)} kW</span><span class="sc-l">electrical power (from the array)</span></div>`+
+      `<div class="sc-i"><span class="sc-v">${psVal}</span><span class="sc-l">${psLab}</span></div>`+
+      `<div class="sc-i"><span class="sc-v">${fmt(r.mp)} kg</span><span class="sc-l">${r.propName} propellant — ${fmt(100*r.mp/r.wet)}% of ${fmt(r.wet)} kg wet</span></div>`+
+      `<div class="sc-i"><span class="sc-v">${fmt(r.thrust*1e3)} mN</span><span class="sc-l">thrust — only ~${fmt(a0,2)}–${fmt(a1,2)} milli-g</span></div>`+
+      `<div class="sc-i"><span class="sc-v">~${fmt(r.burnYr,1)} yr</span><span class="sc-l">continuous firing ≈ one revolution around the Sun</span></div>`+
+    `</div>`+
+    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${fmt(r.arrivalYr)}-yr coast.</div>`;
   const kpis=[
     ['Required v∞', fmt(r.ic.vinf/1e3,2)+' km/s'],
     ['Departure Δv (design)', fmt(r.dvDesign/1e3,1)+' km/s'],
