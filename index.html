@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project Fermi — Alpha Centauri Mission Calculator</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<script src="web/physics.js"></script>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c232d; --ink: #e6edf3;
+    --muted: #9aa7b4; --accent: #4cc2ff; --good: #3fb950; --bad: #f85149;
+    --warn: #d29922; --line: #2a323d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  header h1 { margin: 0; font-size: 19px; letter-spacing: .2px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  /* left controls */
+  aside {
+    padding: 16px 18px; border-right: 1px solid var(--line);
+    height: calc(100vh - 70px); overflow-y: auto; position: sticky; top: 0;
+  }
+  .group { margin-bottom: 18px; }
+  .group h3 {
+    margin: 0 0 10px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--accent);
+  }
+  .ctrl { margin-bottom: 12px; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .ctrl label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  select { width: 100%; background: var(--panel2); color: var(--ink); border: 1px solid var(--line);
+           border-radius: 6px; padding: 6px; }
+  .radios, .checks { display: flex; flex-direction: column; gap: 6px; }
+  .radios label, .checks label { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  /* right main */
+  main { padding: 18px 22px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .kpi .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .k { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .badge { padding: 5px 11px; border-radius: 20px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line); }
+  .badge.ok { background: rgba(63,185,80,.15); color: var(--good); border-color: rgba(63,185,80,.4); }
+  .badge.no { background: rgba(248,81,73,.15); color: var(--bad); border-color: rgba(248,81,73,.4); }
+  .badge.mid { background: rgba(210,153,34,.15); color: var(--warn); border-color: rgba(210,153,34,.4); }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 1200px) { .charts { grid-template-columns: 1fr; } }
+  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; min-height: 300px; }
+  /* methodology */
+  .method { padding: 8px 22px 60px; max-width: 1100px; }
+  .method h2 { font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .method h4 { margin: 18px 0 4px; color: var(--accent); font-size: 14px; }
+  .method p, .method li { color: #c4cdd6; }
+  .method code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .method .src { color: var(--muted); font-size: 12.5px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Project Fermi — Alpha Centauri Ion-Propulsion Mission Calculator</h1>
+  <p>Reach 99% of the way to Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
+</header>
+
+<div class="layout">
+  <aside id="controls">
+    <div class="group">
+      <h3>Mission target</h3>
+      <div class="ctrl">
+        <label>Arrival time <b><span id="o_T">75,000</span> yr</b></label>
+        <input type="range" id="T" min="58000" max="100000" step="500" value="75000">
+        <div class="hint">v∞ minimises at the tangential intercept (~58k yr); Δv minimises near the ecliptic crossing (~79k yr).</div>
+      </div>
+      <div class="ctrl">
+        <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
+        <input type="range" id="pay" min="1" max="50" step="0.5" value="1">
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Departure</h3>
+      <div class="ctrl">
+        <label>LEO altitude <b><span id="o_alt">400</span> km</b></label>
+        <input type="range" id="alt" min="200" max="2000" step="50" value="400">
+      </div>
+      <div class="ctrl">
+        <label>Low-thrust penalty Δv <b><span id="o_pen">6.0</span> km/s</b></label>
+        <input type="range" id="pen" min="0" max="11.3" step="0.1" value="6">
+        <div class="hint">0 = impulsive (full Oberth, chemical-like). ~6 = optimised perigee-biased SEP (≈ a benchmarked 20 km/s). 11.3 = naïve continuous spiral (worst case).</div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Spacecraft &amp; propulsion</h3>
+      <div class="ctrl">
+        <label>Dry mass (bus+payload) <b><span id="o_dry">255</span> kg</b></label>
+        <input type="range" id="dry" min="80" max="600" step="5" value="255">
+      </div>
+      <div class="ctrl">
+        <label>Ion engine Isp <b><span id="o_isp">3000</span> s</b></label>
+        <input type="range" id="isp" min="1000" max="5000" step="100" value="3000">
+      </div>
+      <div class="ctrl">
+        <label>Thruster efficiency <b><span id="o_eta">0.60</span></b></label>
+        <input type="range" id="eta" min="0.4" max="0.8" step="0.01" value="0.6">
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Power source</h3>
+      <div class="radios">
+        <label><input type="radio" name="pwr" value="solar" checked> Solar array (free energy, 1/r²)</label>
+        <label><input type="radio" name="pwr" value="fuelcell"> Fuel cell (chemical, energy-limited)</label>
+        <label><input type="radio" name="pwr" value="nuclear"> Nuclear / RTG (energy-dense, heavy/kW)</label>
+      </div>
+      <div class="ctrl" style="margin-top:10px">
+        <label>Power at 1 AU <b><span id="o_pwr">5.0</span> kW</b></label>
+        <input type="range" id="pwrkw" min="1" max="20" step="0.5" value="5">
+      </div>
+      <div class="ctrl" id="solarOpts">
+        <label>Array specific power <b><span id="o_spec">150</span> W/kg</b></label>
+        <input type="range" id="spec" min="50" max="250" step="10" value="150">
+      </div>
+      <div class="ctrl" id="fcOpts" style="display:none">
+        <label>Fuel-cell reactant</label>
+        <select id="reactant">
+          <option value="8e6">H₂ / O₂  (~2.2 kWh/kg)</option>
+          <option value="1.6e6">Hydrazine monoprop (~0.44 kWh/kg)</option>
+        </select>
+        <div class="hint">Fuel-cell efficiency assumed 60%.</div>
+      </div>
+      <div class="ctrl" id="nucOpts" style="display:none">
+        <label>RTG specific power <b><span id="o_rtg">5</span> W/kg</b></label>
+        <input type="range" id="rtg" min="2" max="10" step="0.5" value="5">
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Trajectory architecture</h3>
+      <div class="radios">
+        <label><input type="radio" name="ga" value="direct" checked> Direct from LEO (no assist)</label>
+        <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist</label>
+        <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
+      </div>
+      <div class="ctrl" id="obOpts" style="display:none; margin-top:10px">
+        <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>sun</sub></b></label>
+        <input type="range" id="rp" min="3" max="30" step="1" value="6">
+        <div class="hint">Needs a heat shield (Parker Solar Probe reaches ~9 R<sub>sun</sub>).</div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="badges" id="badges"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="charts">
+      <div class="chart" id="chartDv"></div>
+      <div class="chart" id="chartMass"></div>
+      <div class="chart" id="chartPower"></div>
+      <div class="chart" id="chartTime"></div>
+    </div>
+  </main>
+</div>
+
+<section class="method">
+  <h2>How the numbers are computed</h2>
+  <p>This is a first-order ("Fermi") feasibility model. Every formula below is implemented in the
+  live calculator above and cross-checked against a validated Python engine (<code>acsim</code>).</p>
+
+  <h4>1 · Intercept geometry</h4>
+  <p>A probe that has escaped the Sun coasts in a near-straight line at its heliocentric excess
+  velocity <code>v∞</code>. To pass through where Alpha Centauri will be at arrival time <code>T</code>,
+  it needs heliocentric velocity <code>V_p(T) = A₀/T + V_ac</code> — an <em>aim</em> term (point at AC's
+  current position <code>A₀</code>, shrinking with time) plus a <em>lead</em> term (match AC's space
+  velocity <code>V_ac</code>). AC's 3-D ecliptic state is built from its catalogued position
+  (RA 14ʰ39ᵐ, Dec −60.8°, 4.344 ly), proper motion (3.69″/yr) and radial velocity (−22.4 km/s);
+  this reproduces the known closest approach (≈ 28,000 yr at 3.1 ly).</p>
+  <p>|V_p| is smallest at the <strong>tangential intercept</strong> (~58k yr, where the aim term cancels
+  AC's radial approach and only its ~23 km/s tangential motion remains). But AC sits 42° below the
+  ecliptic with +11 km/s of out-of-plane velocity, so the tangential aim is tilted ~10° out of plane —
+  and out-of-plane velocity cannot be borrowed from Earth. AC's track crosses the ecliptic at ~79k yr,
+  where departure is purely in-plane. The <strong>departure-Δv optimum sits between</strong> them, ~75k yr.</p>
+
+  <h4>2 · Departure energetics (LEO → v∞)</h4>
+  <p>To leave on a heliocentric hyperbola of excess <code>v∞</code>, the probe needs heliocentric speed
+  <code>v_dep = √(v∞² + v_esc,☉²)</code> at 1 AU (<code>v_esc,☉</code> = 42.1 km/s). Earth supplies 29.8 km/s
+  <em>in-plane only</em>; with best launch timing the excess relative to Earth is
+  <code>v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β)</code>, β = out-of-plane tilt. From LEO the impulsive
+  (Oberth) budget is <code>Δv = √(v∞,E² + v_esc,LEO²) − v_circ,LEO</code> ≈ <strong>14 km/s floor</strong>.
+  Low-thrust ion spreads thrust over many revolutions, losing the perigee Oberth benefit and paying a
+  spiral tax; a naïve continuous spiral (integrated numerically, RK4) costs ~25 km/s, while optimised
+  perigee-biased thrusting lands near <strong>20 km/s</strong> (a benchmarked industry figure). The
+  slider interpolates between these as an additive penalty.</p>
+
+  <h4>3 · Mass &amp; the rocket equation</h4>
+  <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
+  to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
+  power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For 20 km/s a ~500 kg vehicle is
+  ~40–50% xenon at Isp 3000–4000 s — comfortably feasible today.</p>
+
+  <h4>4 · The fuel-cell energy wall</h4>
+  <p>Because EP energy scales with <code>v_e</code>, the power source is decisive. Chemical reactants store
+  only ~MJ/kg, so a fuel cell needs <code>m_react = E/(η_fc·e_chem)</code> — tens of <em>tonnes</em> for this
+  burn, and worse at high Isp. The energy-optimal fuel-cell Isp is ~250 s (essentially a chemical rocket); if
+  the spent exhaust is itself used as propellant, <code>v_e ≤ √(2η·e_chem)</code> ≈ 2.4 km/s. A solar array
+  delivering the same power masses only tens of kg. <strong>Conclusion: deep-space EP power must be solar
+  (near the Sun) or nuclear/RTG — chemical fuel cells lose by ~3 orders of magnitude.</strong> Since the whole
+  burn happens within a few AU of the Sun, solar is the natural match.</p>
+
+  <h4>5 · Cruise time &amp; gravity assists</h4>
+  <p>Transit time is set by cruise <code>v∞</code> (the years-long burn is negligible against an 80,000-yr
+  coast): solving <code>|A₀ + V_ac·T| = v∞·T</code> gives arrival time. A <strong>Jupiter flyby</strong> can add
+  ~10–15 km/s if Jupiter lies along the AC aim direction (rarely the case on a fixed schedule). A
+  <strong>solar Oberth</strong> burn at a few solar radii is hugely leveraged —
+  <code>v∞ = √((v_peri+Δv)² − v_esc²)</code> — so ~1–2 km/s yields the full 24 km/s, but needs a heat shield and
+  a way to drop perihelion. Direct solar-electric remains the simplest route.</p>
+
+  <h4>Limitations</h4>
+  <ul>
+    <li>Alpha Centauri is propagated as straight-line motion (galactic curvature negligible over 10⁵ yr / 1% miss).</li>
+    <li>Patched-conic departure with best-case launch timing; no detailed finite-burn or steering losses beyond the additive low-thrust penalty.</li>
+    <li>Gravity-assist figures are geometric upper bounds, not phased trajectory solutions.</li>
+    <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
+  </ul>
+  <p class="src">Sources: Alpha Centauri astrometry (Hipparcos/Gaia system values); standard astrodynamics
+  (Tsiolkovsky, patched-conic, Oberth). Engine code: <code>acsim/</code> in this repo. No third-party site code was used.</p>
+</section>
+
+<script>
+// ----- physics from the shared module (web/physics.js), itself parity-checked
+//       against the Python engine in audits/audit_webjs.mjs -----
+const {YEAR, V_ESC_SUN, V_EARTH, SPIRAL_MAX, intercept, tangentialT,
+  eclipticCrossingT, vInfEarth, impulsiveDv, timeToAc, jupiterGain,
+  oberthBurnFor, expv, propMass, elecEnergy} = FERMI;
+
+// ----- read inputs -----
+function val(id){ return parseFloat(document.getElementById(id).value); }
+function radio(name){ return document.querySelector(`input[name=${name}]:checked`).value; }
+
+function compute(){
+  const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
+  const dry=val('dry'), isp=val('isp'), eta=val('eta');
+  const pwr=radio('pwr'), ga=radio('ga');
+  const ic=intercept(T);
+  // gravity assist reduces the onboard departure delta-v requirement
+  const dep=vInfEarth(ic.vinf, ic.tiltDeg);
+  const dvFloor=impulsiveDv(dep.vInfE, alt);
+  let dvDesign=dvFloor+pen, gaNote='';
+  if(ga==='jupiter'){ const g=jupiterGain(9000); dvDesign=Math.max(0,dvFloor+pen-g); gaNote=`−${(g/1e3).toFixed(0)} km/s from Jupiter`; }
+  if(ga==='oberth'){ const burn=oberthBurnFor(val('rp'), ic.vinf); dvDesign=burn+2000; gaNote=`Oberth burn ${(burn/1e3).toFixed(2)} km/s @ perihelion`; }
+  const dvNaive=dvFloor+SPIRAL_MAX;
+  // mass
+  const mp=propMass(dry,dvDesign,isp);
+  const wet=dry+mp;
+  const E=elecEnergy(mp,isp,eta);
+  const pwrW=val('pwrkw')*1000;
+  const thrust=2*eta*pwrW/expv(isp);
+  const burnYr=(mp*expv(isp)/thrust)/YEAR;
+  // power-system mass
+  let psMass, psLabel;
+  if(pwr==='solar'){ psMass=pwrW/val('spec'); psLabel='Solar array'; }
+  else if(pwr==='fuelcell'){ const ech=parseFloat(document.getElementById('reactant').value)*0.6; psMass=E/ech; psLabel='Fuel-cell reactant'; }
+  else { psMass=pwrW/val('rtg'); psLabel='RTG'; }
+  const arrivalYr=T/YEAR;
+  return {ic,dep,dvFloor,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,arrivalYr,isp,eta,pwrW,dry};
+}
+
+// ----- render KPIs + badges -----
+function fmt(n,d=0){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function render(){
+  const r=compute();
+  const kpis=[
+    ['Required v∞', fmt(r.ic.vinf/1e3,2)+' km/s'],
+    ['Departure Δv (design)', fmt(r.dvDesign/1e3,1)+' km/s'],
+    ['Δv floor (impulsive)', fmt(r.dvFloor/1e3,1)+' km/s'],
+    ['Arrival', fmt(r.arrivalYr)+' yr'],
+    ['Wet mass', fmt(r.wet)+' kg'],
+    ['Xenon fraction', fmt(100*r.mp/r.wet)+' %'],
+    [r.psLabel+' mass', fmt(r.psMass)+' kg'],
+    ['Burn duration', fmt(r.burnYr,1)+' yr'],
+    ['Thrust @power', fmt(r.thrust*1e3)+' mN'],
+    ['Burn energy', fmt(r.E/3.6e6)+' kWh'],
+  ];
+  document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="k">${k[0]}</div></div>`).join('');
+  // badges
+  const b=[];
+  const within=r.arrivalYr<=100000;
+  b.push([within?'ok':'no', within?'✓ Arrives ≤100k yr':'✗ Exceeds 100k yr']);
+  const pay=val('pay');
+  b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
+  const xf=r.mp/r.wet;
+  b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `Xenon fraction ${fmt(100*xf)}%`]);
+  if(r.pwr==='solar') b.push(['ok','✓ Solar: ~tens of kg, energy free near Sun']);
+  if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
+  if(r.pwr==='nuclear') b.push([r.psMass<200?'mid':'no', `△ RTG: ${fmt(r.psMass)} kg (heavy per kW)`]);
+  if(r.gaNote) b.push(['mid', r.gaNote]);
+  document.getElementById('badges').innerHTML=b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
+  drawCharts(r);
+}
+
+// ----- charts -----
+const LAYOUT=t=>({title:{text:t,font:{size:13,color:'#e6edf3'}},paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',
+  font:{color:'#9aa7b4',size:11},margin:{l:55,r:14,t:34,b:42},showlegend:true,
+  legend:{orientation:'h',y:-0.25,font:{size:10}},xaxis:{gridcolor:'#2a323d'},yaxis:{gridcolor:'#2a323d'}});
+const CFG={displayModeBar:false,responsive:true};
+
+function drawCharts(r){
+  // 1. Δv vs arrival time
+  const Ts=[], fl=[], de=[], na=[], vi=[];
+  for(let y=58000;y<=100000;y+=1000){ const T=y*YEAR; const ic=intercept(T);
+    const d=vInfEarth(ic.vinf,ic.tiltDeg); const f=impulsiveDv(d.vInfE,val('alt'))/1e3;
+    Ts.push(y); fl.push(f); de.push(f+val('pen')); na.push(f+SPIRAL_MAX); vi.push(ic.vinf/1e3); }
+  Plotly.react('chartDv',[
+    {x:Ts,y:fl,name:'Impulsive floor',line:{color:'#3fb950'}},
+    {x:Ts,y:de,name:'Design (low-thrust)',line:{color:'#4cc2ff'}},
+    {x:Ts,y:na,name:'Naïve spiral',line:{color:'#f85149',dash:'dot'}},
+    {x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...na)+2],name:'selected',line:{color:'#d29922',dash:'dash'},showlegend:false},
+  ],{...LAYOUT('Departure Δv from LEO vs arrival time'),xaxis:{title:'arrival (yr)',gridcolor:'#2a323d'},yaxis:{title:'Δv (km/s)',gridcolor:'#2a323d'}},CFG);
+
+  // 2. mass breakdown (stacked)
+  Plotly.react('chartMass',[
+    {x:['vehicle'],y:[r.dry],name:'Dry (bus+payload)',type:'bar',marker:{color:'#58a6ff'}},
+    {x:['vehicle'],y:[r.mp],name:'Xenon',type:'bar',marker:{color:'#4cc2ff'}},
+    {x:['vehicle'],y:[r.psMass],name:r.psLabel,type:'bar',marker:{color:r.pwr==='solar'?'#3fb950':'#f85149'}},
+  ],{...LAYOUT('Mass breakdown (kg) — current design'),barmode:'stack',yaxis:{title:'kg',gridcolor:'#2a323d'}},CFG);
+
+  // 3. power-system mass vs Isp (the energy wall)
+  const isps=[], solar=[], fc=[], nuc=[];
+  const ech=parseFloat(document.getElementById('reactant').value)*0.6;
+  for(let i=500;i<=50000;i*=1.15){ const mp=propMass(r.dry,r.dvDesign,i); const E=elecEnergy(mp,i,r.eta);
+    isps.push(i); solar.push(r.pwrW/val('spec')); fc.push(E/ech); nuc.push(r.pwrW/val('rtg')); }
+  Plotly.react('chartPower',[
+    {x:isps,y:fc,name:'Fuel-cell reactant',line:{color:'#f85149'}},
+    {x:isps,y:solar,name:'Solar array',line:{color:'#3fb950'}},
+    {x:isps,y:nuc,name:'RTG',line:{color:'#d29922'}},
+  ],{...LAYOUT('Power-system mass vs Isp — why solar wins'),xaxis:{title:'Isp (s)',type:'log',gridcolor:'#2a323d'},yaxis:{title:'kg',type:'log',gridcolor:'#2a323d'}},CFG);
+
+  // 4. time to AC vs cruise v∞
+  const vs=[], ts=[];
+  for(let v=19;v<=120;v+=1){ const t=timeToAc(v*1e3); if(t){ vs.push(v); ts.push(t/YEAR); } }
+  Plotly.react('chartTime',[
+    {x:vs,y:ts,name:'arrival',line:{color:'#4cc2ff'}},
+    {x:[r.ic.vinf/1e3],y:[r.arrivalYr],name:'current',mode:'markers',marker:{color:'#d29922',size:10}},
+  ],{...LAYOUT('Cruise time to AC vs heliocentric v∞'),xaxis:{title:'v∞ (km/s)',gridcolor:'#2a323d'},yaxis:{title:'arrival (yr)',gridcolor:'#2a323d'}},CFG);
+}
+
+// ----- wire up -----
+function syncLabels(){
+  document.getElementById('o_T').textContent=fmt(val('T'));
+  document.getElementById('o_pay').textContent=val('pay').toFixed(1);
+  document.getElementById('o_alt').textContent=val('alt');
+  document.getElementById('o_pen').textContent=val('pen').toFixed(1);
+  document.getElementById('o_dry').textContent=val('dry');
+  document.getElementById('o_isp').textContent=val('isp');
+  document.getElementById('o_eta').textContent=val('eta').toFixed(2);
+  document.getElementById('o_pwr').textContent=val('pwrkw').toFixed(1);
+  document.getElementById('o_spec').textContent=val('spec');
+  document.getElementById('o_rtg').textContent=val('rtg');
+  document.getElementById('o_rp').textContent=val('rp');
+}
+function toggleOpts(){
+  const p=radio('pwr');
+  document.getElementById('solarOpts').style.display=p==='solar'?'':'none';
+  document.getElementById('fcOpts').style.display=p==='fuelcell'?'':'none';
+  document.getElementById('nucOpts').style.display=p==='nuclear'?'':'none';
+  document.getElementById('obOpts').style.display=radio('ga')==='oberth'?'':'none';
+}
+document.querySelectorAll('input,select').forEach(el=>{
+  el.addEventListener('input',()=>{ syncLabels(); toggleOpts(); render(); });
+});
+syncLabels(); toggleOpts(); render();
+</script>
+</body>
+</html>
