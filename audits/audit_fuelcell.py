@@ -2,8 +2,8 @@
 
 Independent checks:
 * Reactant mass recomputed from first principles (energy / specific energy).
-* The energy-optimal fuel-cell Isp found by brute-force minimisation matches the
-  closed form v_e* = sqrt(2 eta e_chem).
+* The mass-optimal fuel-cell EP Isp found by golden-section search matches an
+  independent scipy minimisation.
 * The self-powered exhaust-velocity cap.
 * Order-of-magnitude: a fuel cell needs >=1000x the mass of a solar array.
 """
@@ -45,7 +45,7 @@ def run() -> None:
           rel_err(reactant_indep, fc["reactant_mass_kg"]) < 1e-9,
           f"{reactant_indep:,.0f} kg")
 
-    # 2. Energy-optimal Isp: brute-force vs closed form.
+    # 2. Mass-optimal Isp: engine golden-section search vs independent scipy.
     def total_consumables(isp):
         s = FuelCellArchitecture(dry_mass=dry, dv=dv, isp_s=isp).summary()
         return s["consumables_kg"]
