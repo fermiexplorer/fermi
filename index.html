@@ -84,6 +84,15 @@
   .method .refs { margin: 4px 0 12px; }
   .method .refs li { font-size: 12.5px; color: #aab6c0; margin-bottom: 5px; }
   .method .refs b { color: #c9d4de; }
+  .method .worked { background: #11202c; border: 1px solid #2c3a47; border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .method .worked .wt { font-weight: 600; color: var(--ink); margin: 0 0 6px; }
+  .method table.chain { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12.5px; }
+  .method table.chain th, .method table.chain td { border: 1px solid var(--line); padding: 5px 9px;
+    text-align: left; color: #c4cdd6; }
+  .method table.chain th { color: var(--accent); font-weight: 600; }
+  .method table.chain td.v, .method table.chain th.v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .method table.chain td.tot { color: var(--ink); font-weight: 600; }
   a { color: var(--accent); }
 </style>
 </head>
@@ -277,6 +286,28 @@
   low-thrust-penalty slider is the sensitivity control across that range. The ~20 km/s point is an engineering
   benchmark, not derived here — a full phased finite-burn optimisation is future work.</p>
 
+  <div class="worked">
+    <p class="wt">Worked example — the Δv budget is <em>not</em> the cruise speed</p>
+    <p>A natural objection: "14 km/s for 70,000 yr only covers 3.3 ly, but Alpha Centauri is ~5.5 ly away
+    by then — that doesn't add up." The resolution: <strong>14 km/s is the departure Δv from LEO (the
+    propellant budget), not the speed the probe flies at.</strong> That Δv is applied while already in
+    orbit and deep in two gravity wells, so it converts into a much higher heliocentric cruise speed:</p>
+    <table class="chain">
+      <tr><th>Step</th><th>How</th><th class="v">Speed</th></tr>
+      <tr><td>LEO circular speed (already orbiting)</td><td><code>√(μ⊕/r)</code></td><td class="v">7.7 km/s</td></tr>
+      <tr><td>after the 14 km/s burn at perigee</td><td><code>v_circ + Δv</code></td><td class="v">21.6 km/s</td></tr>
+      <tr><td>hyperbolic excess leaving Earth</td><td><code>√(v_peri² − v_esc,⊕²)</code></td><td class="v">18.6 km/s</td></tr>
+      <tr><td>+ Earth's orbital velocity (heliocentric, at 1 AU)</td><td><code>v_E + v∞,⊕</code></td><td class="v">48.4 km/s</td></tr>
+      <tr><td>− climb out of the Sun's well → <b>cruise speed v∞</b></td><td><code>√(v_dep² − v_esc,☉²)</code></td><td class="v tot">23.8 km/s</td></tr>
+    </table>
+    <p>So 14 km/s of onboard Δv buys a ~24 km/s heliocentric cruise — the gain comes from the 7.7 km/s you
+    already have in LEO, the Oberth effect at perigee, and Earth's 29.8 km/s orbital velocity around the Sun.
+    <strong>Distance check:</strong> 23.8 km/s × 70,000 yr = <b>5.5 ly</b>, which is exactly Alpha Centauri's
+    distance at arrival — it recedes from its ~3.1 ly closest approach (~28,000 yr from now) to ~5.5 ly at
+    70,000 yr (~6.0 ly at 75,000 yr). The probe is chasing a receding target, so its cruise speed must
+    exceed AC's distance ÷ travel time.</p>
+  </div>
+
   <h4>3 · Mass &amp; the rocket equation</h4>
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
@@ -352,7 +383,7 @@
 <script>
 // ----- physics from the shared module (web/physics.js), itself parity-checked
 //       against the Python engine in audits/audit_webjs.mjs -----
-const {YEAR, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, requiredVinfVec,
+const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, timeToAc,
   jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
@@ -537,11 +568,6 @@ function drawViz(){
     const turns=5.5,N=240,xs=[],ys=[],zs=[];
     for(let i=0;i<=N;i++){ const t=i/N,th=t*turns*2*Math.PI,rr=1+t*15; xs.push(rr*Math.cos(th)); ys.push(rr*Math.sin(th)); zs.push(0); }
     const th=f*turns*2*Math.PI, rr=1+f*15, pp=[rr*Math.cos(th),rr*Math.sin(th),0];
-    Plotly.react('chartOrbit3d',[
-      {type:'scatter3d',mode:'lines',x:xs,y:ys,z:zs,line:{color:'#30363d',width:2},name:'escape spiral'},
-      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#58a6ff',size:9},name:'Earth'},
-      {type:'scatter3d',mode:'markers',x:[pp[0]],y:[pp[1]],z:[0],marker:{color:'#d29922',size:6},name:'probe'},
-    ],LAY3D('Stage 1 · 3D — spiral out of Earth (schematic, Earth radii)','R⊕'),C3);
     Plotly.react('chartOrbit2d',[
       {x:xs,y:ys,mode:'lines',line:{color:'#4cc2ff',width:1.5},showlegend:false},
       {x:[0],y:[0],mode:'markers+text',marker:{color:'#58a6ff',size:16},text:['Earth'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
@@ -556,13 +582,6 @@ function drawViz(){
     const P0=[Math.cos(ang),Math.sin(ang),0];
     const lx=[],ly2=[],lz=[]; for(let i=0;i<=60;i++){ const t=i/60; lx.push(P0[0]+t*4*d[0]); ly2.push(P0[1]+t*4*d[1]); lz.push(P0[2]+t*4*d[2]); }
     const pp=[P0[0]+f*4*d[0],P0[1]+f*4*d[1],P0[2]+f*4*d[2]];
-    const L=5, plane={type:'mesh3d',x:[-L,L,L,-L],y:[-L,-L,L,L],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],opacity:0.10,color:'#4cc2ff',hoverinfo:'skip',showscale:false};
-    Plotly.react('chartOrbit3d',[plane,
-      {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
-      {type:'scatter3d',mode:'lines',x:lx,y:ly2,z:lz,line:{color:'#4cc2ff',width:3},name:'departure leg'},
-      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:7},name:'Sun'},
-      {type:'scatter3d',mode:'markers',x:[pp[0]],y:[pp[1]],z:[pp[2]],marker:{color:'#d29922',size:6},name:'probe'},
-    ],LAY3D('Stage 2 · 3D — escape the Sun from Earth’s orbit (AU)','AU'),C3);
     Plotly.react('chartOrbit2d',[
       {x:cx,y:cy,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
       {x:lx,y:ly2,mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
@@ -579,17 +598,6 @@ function drawViz(){
     const tE=T*1.18, acEnd=[(R0[0]+VAC[0]*tE)*s,(R0[1]+VAC[1]*tE)*s,(R0[2]+VAC[2]*tE)*s];
     const probe=[intc[0]*f,intc[1]*f,intc[2]*f], es=f*T;
     const acp=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
-    const L=Math.max(2,Math.hypot(intc[0],intc[1])*1.15);
-    const plane={type:'mesh3d',x:[-L,L,L,-L],y:[-L,-L,L,L],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],opacity:0.12,color:'#4cc2ff',hoverinfo:'skip',showscale:false};
-    Plotly.react('chartOrbit3d',[plane,
-      {type:'scatter3d',mode:'lines',x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],z:[acNow[2],acEnd[2]],line:{color:'#f0883e',width:3},name:'AC track'},
-      {type:'scatter3d',mode:'lines',x:[0,intc[0]],y:[0,intc[1]],z:[0,intc[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
-      {type:'scatter3d',mode:'lines',x:[acNow[0],acNow[0]],y:[acNow[1],acNow[1]],z:[acNow[2],0],line:{color:'#6e7681',width:2},name:'AC depth ⟂ ecliptic'},
-      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
-      {type:'scatter3d',mode:'markers',x:[intc[0]],y:[intc[1]],z:[intc[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
-      {type:'scatter3d',mode:'markers',x:[probe[0]],y:[probe[1]],z:[probe[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
-      {type:'scatter3d',mode:'markers',x:[acp[0]],y:[acp[1]],z:[acp[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
-    ],LAY3D('Stage 3 · 3D — cruise to Alpha Centauri (light-years)','ly'),C3);
     Plotly.react('chartOrbit2d',[
       {x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],mode:'lines',line:{color:'#f0883e',width:1,dash:'dot'},name:'AC track'},
       {x:[0,intc[0]],y:[0,intc[1]],mode:'lines',line:{color:'#4cc2ff',width:2},name:'probe cruise'},
@@ -601,7 +609,40 @@ function drawViz(){
     label=`${fmt(es/YEAR)} yr · Stage 3: interstellar cruise (${fmt(Math.hypot(probe[0],probe[1],probe[2]),2)} ly)`;
   }
   document.getElementById('tlabel').textContent=label;
+  drawZoom3d();    // 3D view: single Sun-centred scene with a smooth zoom-out camera
   drawTimeline();  // redraws the burn timeline incl. the moving "now" marker
+}
+
+// 3D view: one Sun-centred scene (AU) whose camera zooms out continuously with the
+// animation, so Play dollies smoothly from Earth's orbit out to the AC intercept
+// instead of hard-cutting between the three scales. The 2D panel keeps the per-stage
+// schematic detail. Rotation is preserved (uirevision); the cube size sets the zoom.
+function drawZoom3d(){
+  const s=1/AU, T=val('T')*YEAR;
+  const I=[(R0[0]+VAC[0]*T)*s, (R0[1]+VAC[1]*T)*s, (R0[2]+VAC[2]*T)*s];   // intercept (AU)
+  const Inorm=Math.hypot(I[0],I[1],I[2]);
+  const Rmin=2.2, Rmax=1.3*Inorm, R=Rmin*Math.pow(Rmax/Rmin, animU);   // log zoom-out
+  const tEx=T*1.18, acEnd=[(R0[0]+VAC[0]*tEx)*s,(R0[1]+VAC[1]*tEx)*s,(R0[2]+VAC[2]*tEx)*s];
+  const f=R/Rmax;                                  // probe rides just inside the zoom frame
+  const probe=[I[0]*f,I[1]*f,I[2]*f];
+  const es=f*T, acp=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
+  const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
+  const cx=[],cy=[],cz=[]; for(let i=0;i<=90;i++){const a=i/90*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0);}
+  const note = R<6 ? 'inner solar system' : (R<6000 ? 'leaving the Sun' : 'interstellar cruise');
+  const ax=t=>({range:[-R,R],title:t,color:'#9aa7b4',gridcolor:'#2a323d'});
+  Plotly.react('chartOrbit3d',[
+    {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
+    {type:'scatter3d',mode:'lines',x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],z:[acNow[2],acEnd[2]],line:{color:'#f0883e',width:2},name:'AC track'},
+    {type:'scatter3d',mode:'lines',x:[0,I[0]],y:[0,I[1]],z:[0,I[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
+    {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
+    {type:'scatter3d',mode:'markers',x:[I[0]],y:[I[1]],z:[I[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
+    {type:'scatter3d',mode:'markers',x:[probe[0]],y:[probe[1]],z:[probe[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
+    {type:'scatter3d',mode:'markers',x:[acp[0]],y:[acp[1]],z:[acp[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
+  ],{title:{text:`3D · live zoom-out — ${fmt(R, R<10?1:0)} AU view · ${note} (drag to rotate)`,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
+    margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
+    scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
+    {...CFG,scrollZoom:true});
 }
 
 // ----- burn timeline (continuous ion thrust, then coast) -----
