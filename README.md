@@ -1,4 +1,4 @@
-# Project Fermi — Alpha Centauri ion-propulsion mission feasibility
+# Fermi Explorer — Alpha Centauri ion-propulsion mission feasibility
 
 A first-order ("Fermi") simulation and interactive calculator for an interstellar
 precursor mission: get a small spacecraft **99% of the way to Alpha Centauri

@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-<title>Project Fermi — Alpha Centauri Mission Calculator</title>
+<title>Fermi Explorer — Alpha Centauri Mission Calculator</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <script src="web/physics.js"></script>
 <style>
@@ -110,11 +110,22 @@
   color: #f0c674; border-radius: 6px; padding: 9px 13px; font-size: 13px; line-height: 1.45; }
 .prelim b { color: #ffd479; }
 .repo { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+.runbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+#runsim { background: #238636; color: #fff; border: 0; border-radius: 6px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+#runsim:hover { background: #2ea043; }
+#runsim.stale { background: #9e6a00; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+.runhint { color: var(--muted); font-size: 12px; }
+.vizlegend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12px; color: var(--muted); margin: 6px 2px 2px; }
+.vizlegend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+.vizlegend .vdot { width: 10px; height: 10px; border-radius: 50%; }
+.vizlegend .vbar { width: 16px; height: 3px; border-radius: 2px; }
+.vizlegend .vlhint { flex-basis: 100%; color: #6e7681; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Project Fermi — Alpha Centauri Ion-Propulsion Mission Calculator</h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator</h1>
   <p>Reach 99% of the way to Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -123,11 +134,11 @@
 <div class="layout">
   <aside id="controls">
     <div class="group">
-      <h3>Mission target</h3>
+      <h3>Vehicle &amp; mission</h3>
       <div class="ctrl">
-        <label>Arrival time <b><span id="o_T">75,000</span> yr</b></label>
-        <input type="range" id="T" min="58000" max="100000" step="500" value="75000">
-        <div class="hint">v∞ minimises at the tangential intercept (~58k yr); departure Δv minimises at ~73k yr (75k is within ~10 m/s).</div>
+        <label>Propellant fraction <b><span id="o_pfrac">50</span> % of wet</b></label>
+        <input type="range" id="pfrac" min="10" max="75" step="0.5" value="50">
+        <div class="hint">The primary driver: fraction → mass ratio → Δv = v<sub>e</sub>·ln(1/(1−f)) → cruise v∞ → <b>arrival time (derived output)</b>. Higher fraction = more Δv = sooner arrival; too low and AC can't be intercepted.</div>
       </div>
       <div class="ctrl">
         <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
@@ -242,6 +253,7 @@
   </aside>
 
   <main>
+    <div class="runbar"><button id="runsim">▶ Run sim</button><span class="runhint">Set the vehicle on the left, then run to recompute arrival time &amp; trajectory.</span></div>
     <div class="summary" id="summary"></div>
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
@@ -260,12 +272,29 @@
         <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
         <label><input type="radio" name="viz" value="sun"> 2 · Solar escape</label>
         <label><input type="radio" name="viz" value="ac"> 3 · Interstellar cruise</label>
+        <span style="margin-left:auto">Chase tilt <b><span id="o_tilt">30</span>°</b></span>
+        <input type="range" id="tilt" min="0" max="85" step="1" value="30" style="width:130px">
+      </div>
+      <div class="vizlegend">
+        <span><i class="vdot" style="background:#f5d020"></i>Sun</span>
+        <span><i class="vdot" style="background:#58a6ff"></i>Earth / departure (1 AU)</span>
+        <span><i class="vdot" style="background:#4cc2ff"></i>probe (now)</span>
+        <span><i class="vbar" style="background:#3fb950"></i>flown path</span>
+        <span><i class="vdot" style="background:#f0883e"></i>Alpha Centauri</span>
+        <span><i class="vbar" style="background:#586273"></i>ecliptic plane (z = 0)</span>
+        <span class="vlhint">— drag the 3D views to rotate; use “Chase tilt” to raise/lower the left camera and watch AC’s track cross the ecliptic.</span>
       </div>
       <div class="dualrow">
         <div class="chart" id="follow2d"></div>
         <div class="chart" id="chartOrbit2d"></div>
       </div>
       <div class="chart" id="chartTimeline"></div>
+      <div class="vizlegend" style="margin-top:2px">
+        <span><i class="vbar" style="background:#3fb950"></i>Earth-escape spiral (engine ON)</span>
+        <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
+        <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
+        <span class="vlhint">Thrust is ~constant (≈ 2ηP/v<sub>e</sub>) for the whole burn, then zero during the coast — there is no variable-impulse phase, so no separate thrust-vs-time chart is needed. The axis is log-scaled so the ~1-yr burn is visible against the multi-10⁴-yr coast.</span>
+      </div>
     </div>
     <div class="charts">
       <div class="chart" id="chartDv"></div>
@@ -478,6 +507,29 @@
       <code>audit/</code>.</li>
   </ol>
 
+  <h4>Repository structure</h4>
+  <p>Everything is open-source (MIT) at
+  <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a>.
+  The Python engine is the source of truth; the web calculator is a parity-checked port of it. Key paths:</p>
+  <ul class="refs">
+    <li><a href="https://github.com/fermiexplorer/fermi/tree/main/fermi_sim" target="_blank" rel="noopener noreferrer"><code>fermi_sim/</code></a>
+      — Python engine (source of truth): <code>astro</code> (AC ephemeris), <code>intercept</code> (aim geometry),
+      <code>departure</code> (LEO→v∞ Δv), <code>spacecraft</code> (mass/power), <code>trajectory</code> (cruise + assists).</li>
+    <li><a href="https://github.com/fermiexplorer/fermi/blob/main/run_analysis.py" target="_blank" rel="noopener noreferrer"><code>run_analysis.py</code></a>
+      — the integrated analysis report (stdout).</li>
+    <li><a href="https://github.com/fermiexplorer/fermi/blob/main/index.html" target="_blank" rel="noopener noreferrer"><code>index.html</code></a>
+      + <a href="https://github.com/fermiexplorer/fermi/blob/main/web/physics.js" target="_blank" rel="noopener noreferrer"><code>web/physics.js</code></a>
+      — this interactive calculator and its shared physics (value-by-value parity-checked against Python).</li>
+    <li><a href="https://github.com/fermiexplorer/fermi/tree/main/audit" target="_blank" rel="noopener noreferrer"><code>audit/</code></a>
+      — independent verification:
+      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (41 Python checks + a Node JS↔Python parity check),
+      and parallel re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>.</li>
+    <li><a href="https://github.com/fermiexplorer/fermi/tree/main/docs" target="_blank" rel="noopener noreferrer"><code>docs/</code></a>
+      — <code>REPORT.md</code> (tender feasibility report), engineering <code>plans/</code>, and the adversarial audit prompts.</li>
+    <li><a href="https://github.com/fermiexplorer/fermi/tree/main/tests" target="_blank" rel="noopener noreferrer"><code>tests/</code></a>
+      — pytest smoke/regression tests.</li>
+  </ul>
+
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
@@ -509,9 +561,10 @@
       patched-conic method, <a href="https://en.wikipedia.org/wiki/Oberth_effect" target="_blank" rel="noopener noreferrer">Oberth effect</a>, vis-viva:
       <a href="https://celestrak.org/software/vallado-sw.php" target="_blank" rel="noopener noreferrer">Vallado, Fundamentals of Astrodynamics and Applications</a>; Curtis, Orbital Mechanics for Engineering Students.</li>
   </ul>
-  <p class="src">Engine code: <code>fermi_sim/</code> in this repo; the web math is parity-checked against it
-  (<code>audit/calcs/audit_webjs.mjs</code>). No third-party <em>physics</em> code is used; the page loads
-  the Plotly charting library from a CDN for rendering only.</p>
+  <p class="src">Engine code: <a href="https://github.com/fermiexplorer/fermi/tree/main/fermi_sim" target="_blank" rel="noopener noreferrer"><code>fermi_sim/</code></a>
+  in <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">this repo</a>; the web math is parity-checked against it
+  (<a href="https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs" target="_blank" rel="noopener noreferrer"><code>audit/calcs/audit_webjs.mjs</code></a>).
+  No third-party <em>physics</em> code is used; the page loads the Plotly charting library from a CDN for rendering only.</p>
 </section>
 
 <script>
@@ -525,67 +578,95 @@ const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, requiredVinfVec,
 function val(id){ return parseFloat(document.getElementById(id).value); }
 function radio(name){ return document.querySelector(`input[name=${name}]:checked`).value; }
 
+// INVERTED model: you set the vehicle (dry mass, propellant FRACTION, Isp, power). The
+// mass ratio fixes the Δv it can deliver; the SOONEST arrival that Δv can afford is read
+// off the very same departure-Δv-vs-arrival curve drawn in the chart. Arrival is an
+// OUTPUT; below the minimum Δv there is no intercept at all. (Arrival depends on the
+// fraction & Isp, not on absolute dry mass — dry mass just scales the whole vehicle.)
 function compute(){
-  const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
-  const dry=val('dry'), isp=val('isp'), eta=val('eta');
+  const alt=val('alt'), pen=val('pen')*1e3;
+  const dry=val('dry'), isp=val('isp'), eta=val('eta'), ve=expv(isp);
   const pwr=radio('pwr'), ga=radio('ga');
-  const ic=intercept(T);
-  // gravity assist reduces the onboard departure delta-v requirement
+  // INPUT: propellant fraction -> mass ratio -> deliverable Δv (Tsiolkovsky)
+  const f=val('pfrac')/100, MR=1/(1-f), wet=dry*MR, mp=wet-dry;
+  const dvDeliver=ve*Math.log(MR);
+  const gain = ga==='jupiter'?jupiterGain(9000):0;
+  // departure Δv REQUIRED to arrive at time Ts (forward model: geometry + Oberth/spiral/GA)
+  const needAt=(Ts)=>{ const ican=intercept(Ts);
+    const need = ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
+              : Math.max(0, impulsiveDv(vInfEarth(ican.vinf,ican.tiltDeg).vInfE, alt) + pen - gain);
+    return {need, ic:ican}; };
+  // scan arrivals: the SOONEST the vehicle can afford, and the cheapest (minimum Δv)
+  let arrSec=null, ic=null, vinfSun=0, dvMin=Infinity, tMinFuel=tangentialT(), gaNote='';
+  for(let y=20000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts);
+    if(n.need<dvMin){ dvMin=n.need; tMinFuel=Ts; }
+    if(arrSec===null && n.need<=dvDeliver){ arrSec=Ts; ic=n.ic; vinfSun=n.ic.vinf; } }
+  const feasible = arrSec!==null;
+  const Tsec = feasible?arrSec:tangentialT();
+  if(!feasible){ ic=intercept(Tsec); vinfSun=ic.vinf; }    // fallback aim for the trajectory view
+  const arrivalYr = feasible?Tsec/YEAR:Infinity;
+  if(ga==='jupiter') gaNote=`+${(gain/1e3).toFixed(0)} km/s from Jupiter`;
+  else if(ga==='oberth') gaNote=`Oberth burn @ ${val('rp')} R☉`;
   const dep=vInfEarth(ic.vinf, ic.tiltDeg);
   const dvFloor=impulsiveDv(dep.vInfE, alt);
-  let dvDesign=dvFloor+pen, gaNote='';
-  if(ga==='jupiter'){ const g=jupiterGain(9000); dvDesign=Math.max(0,dvFloor+pen-g); gaNote=`−${(g/1e3).toFixed(0)} km/s from Jupiter`; }
-  if(ga==='oberth'){ const burn=oberthBurnFor(val('rp'), ic.vinf); dvDesign=burn+2000; gaNote=`Oberth burn ${(burn/1e3).toFixed(2)} km/s @ perihelion`; }
   const dvNaive=dvFloor+SPIRAL_MAX;
-  // mass
-  const mp=propMass(dry,dvDesign,isp);
-  const wet=dry+mp;
+  // minimum wet mass to reach AC at all = cheapest-arrival Δv via the rocket equation
+  const minWet=dry*Math.exp(dvMin/ve), minFrac=1-Math.exp(-dvMin/ve);
+  // --- mass / power / subsystems ---
   const E=elecEnergy(mp,isp,eta);
   const pwrW=val('pwrkw')*1000;
-  const thrust=2*eta*pwrW/expv(isp);
-  const burnYr=(mp*expv(isp)/thrust)/YEAR;
-  // --- subsystem sizing: solar array (area+mass), engine+PPU, propellant tank ---
+  const thrust=2*eta*pwrW/ve;
+  const burnYr=mp>0?(mp*ve/thrust)/YEAR:0;
   const eff=val('cellEff')/100, areal=val('areal');
-  const arrayArea=solarArrayArea(pwrW, eff, 1);   // m^2 at 1 AU
+  const arrayArea=solarArrayArea(pwrW, eff, 1);
   const arrayMass=arrayArea*areal;
-  const arraySpecPower=pwrW/arrayMass;            // W/kg
-  const engineMass=val('enginekg')*pwrW/1000;     // thruster + PPU
-  const tankMass=(val('tankfrac')/100)*mp;        // propellant tank
-  // power-system mass by source
+  const arraySpecPower=pwrW/arrayMass;
+  const engineMass=val('enginekg')*pwrW/1000;
+  const tankMass=(val('tankfrac')/100)*mp;
   let psMass, psLabel;
   if(pwr==='solar'){ psMass=arrayMass; psLabel='Solar array'; }
   else if(pwr==='fuelcell'){ const ech=parseFloat(document.getElementById('reactant').value)*0.6; psMass=E/ech; psLabel='Fuel-cell reactant'; }
   else { psMass=pwrW/val('rtg'); psLabel='RTG'; }
-  // dry-resident subsystems (fuel-cell reactant is consumed, not dry mass)
   const dryPower=(pwr==='fuelcell')?0:psMass;
   const busPayload=dry-dryPower-engineMass-tankMass;
   const propName=document.getElementById('propsel').value.split('|')[0];
-  const arrivalYr=T/YEAR;
-  return {ic,dep,dvFloor,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
-    arrivalYr,isp,eta,pwrW,dry,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
+  return {ic,dep,dvFloor,dvDeliver,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
+    arrivalYr,feasible,vinfSun,Tsec,f,MR,minWet,minFrac,minFuelYr:tMinFuel/YEAR,dvMin,
+    isp,eta,pwrW,dry,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName};
 }
 
 // ----- render KPIs + badges -----
 function fmt(n,d=0){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+let SIM=null;                                   // last computed sim, used by the trajectory views
 function render(){
-  const r=compute();
-  // ----- headline mission-profile summary -----
+  const r=compute(); SIM=r;
+  setStale(false);
+  // ----- headline mission-profile summary (feasibility-led) -----
   const bp=burnPhases(r);
-  const Tsec=r.arrivalYr*YEAR;
-  const acDistLy=Math.hypot(R0[0]+VAC[0]*Tsec, R0[1]+VAC[1]*Tsec, R0[2]+VAC[2]*Tsec)/LY;
-  document.getElementById('summary').innerHTML=
-    `<div class="sline"><b>Minimum spacecraft Δv from LEO</b> ≈ <b>14 km/s</b> (impulsive floor) · <b>~20 km/s</b> realistic low-thrust ion. This design: <b>${fmt(r.dvDesign/1e3,1)} km/s</b>, reaching cruise speed v∞ ≈ <b>${fmt(r.ic.vinf/1e3,1)} km/s</b>.</div>`+
-    `<div class="sline"><b>Arrival:</b> within 2600 AU of Alpha Centauri in <b>${fmt(r.arrivalYr)} yr</b> (inside the 100,000-yr goal), aimed ~${fmt(Math.abs(r.ic.tiltDeg),1)}° off the ecliptic.</div>`+
-    `<div class="sline"><b>Profile:</b> launch to LEO, then fire an Isp-${fmt(r.isp)} s ion engine <b>continuously for ~${fmt(r.burnYr,1)} yr</b> at ~<b>${fmt(r.thrust*1e3)} mN</b>, drawing <b>${fmt(r.pwrW/1000,1)} kW</b> from a <b>${fmt(r.arrayArea,0)} m²</b> / <b>${fmt(r.arrayMass)} kg</b> silicon array — Earth-escape spiral ~${fmt(bp.tEarth,2)} yr, then heliocentric to escape — then coast ~${fmt(r.arrivalYr)} yr. Wet mass <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`+
-    `<div class="sline"><b>Distance check:</b> Δv budget ≠ cruise speed. The ${fmt(r.dvDesign/1e3,0)} km/s from LEO becomes a <b>${fmt(r.ic.vinf/1e3,1)} km/s</b> heliocentric cruise (Oberth + Earth's 29.8 km/s orbital velocity), so the probe covers ${fmt(r.ic.vinf/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — exactly where AC is at arrival (it recedes from its ~3.1 ly closest approach to ~${fmt(acDistLy,1)} ly).</div>`;
+  const acDistLy=r.feasible?Math.hypot(R0[0]+VAC[0]*r.Tsec, R0[1]+VAC[1]*r.Tsec, R0[2]+VAC[2]*r.Tsec)/LY:0;
+  let summ='';
+  if(r.feasible){
+    summ=
+      `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> This vehicle delivers <b>${fmt(r.dvDeliver/1e3,1)} km/s</b> of Δv from LEO (${fmt(100*r.f)}% propellant, Isp ${fmt(r.isp)} s), enough to intercept Alpha Centauri — soonest in <b>${fmt(r.arrivalYr)} yr</b> at cruise speed v∞ ≈ <b>${fmt(r.vinfSun/1e3,1)} km/s</b>, inside the 100,000-yr goal.</div>`+
+      `<div class="sline"><b>Arrival is geometry-limited, not vehicle-limited.</b> The cheapest (minimum-Δv) intercept is at ~<b>${fmt(r.minFuelYr)} yr</b> — set by AC's orbit, not the spacecraft. Extra Δv buys a <em>sooner</em> arrival (the ${fmt(r.arrivalYr)} yr above); too little and there is no intercept at all. Arrival depends on propellant <em>fraction</em> &amp; Isp via Δv = v<sub>e</sub>·ln(1/(1−f)), <em>not</em> on absolute dry mass (which just scales the whole vehicle).</div>`+
+      `<div class="sline"><b>Profile:</b> fire an Isp-${fmt(r.isp)} s ion engine continuously for ~${fmt(r.burnYr,1)} yr at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then heliocentric escape), then coast ~${fmt(r.arrivalYr)} yr. Wet <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`+
+      `<div class="sline"><b>Distance check:</b> ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — exactly where AC is at arrival (it recedes from ~3.1 ly closest approach to ~${fmt(acDistLy,1)} ly).</div>`+
+      `<div class="sline"><b>Minimum wet mass to reach AC</b> (this dry bus + Isp, in-plane): <b>${fmt(r.minWet)} kg</b> (≥${fmt(100*r.minFrac)}% propellant). Below that, v∞ drops under the 23.3 km/s floor and no intercept exists.</div>`;
+  } else {
+    summ=
+      `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE.</b> This vehicle's Δv (<b>${fmt(r.dvDeliver/1e3,1)} km/s</b>) yields cruise speed v∞ ≈ <b>${fmt(r.vinfSun/1e3,1)} km/s</b>, below the <b>23.3 km/s</b> floor needed to intercept Alpha Centauri — it never catches AC.</div>`+
+      `<div class="sline"><b>To fix:</b> raise the propellant fraction to ≥ <b>${fmt(100*r.minFrac)}%</b> (≥ <b>${fmt(r.minWet)} kg</b> wet for this ${fmt(r.dry)} kg dry bus), and/or raise Isp, and/or lower the low-thrust penalty.</div>`+
+      `<div class="sline"><b>Causality:</b> propellant fraction → mass ratio → Δv = v<sub>e</sub>·ln(1/(1−f)) → cruise v∞ → arrival. Arrival is an output, not a setting.</div>`;
+  }
+  document.getElementById('summary').innerHTML=summ;
 
   // ----- "how much power & fuel & what array?" spec card (live) -----
   const a0=(r.thrust/r.wet)/9.80665*1000, a1=(r.thrust/r.dry)/9.80665*1000;  // milli-g, start->end
   const psVal=r.pwr==='solar'?`${fmt(r.arrayArea,0)} m² · ${fmt(r.arrayMass)} kg`:`${fmt(r.psMass)} kg`;
   const psLab=r.pwr==='solar'?'silicon solar array @ 1 AU':`${r.psLabel} (experimental)`;
   document.getElementById('burnspec').innerHTML=
-    `<div class="sc-h">To accelerate to terminal velocity v∞ ≈ ${fmt(r.ic.vinf/1e3,1)} km/s, the departure burn needs:</div>`+
+    `<div class="sc-h">To reach cruise speed v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s${r.feasible?` (arrival ~${fmt(r.arrivalYr)} yr)`:` — below the 23.3 km/s floor: no intercept`}, the departure burn needs:</div>`+
     `<div class="sc-grid">`+
       `<div class="sc-i"><span class="sc-v">${fmt(r.pwrW/1000,1)} kW</span><span class="sc-l">electrical power (from the array)</span></div>`+
       `<div class="sc-i"><span class="sc-v">${psVal}</span><span class="sc-l">${psLab}</span></div>`+
@@ -593,12 +674,13 @@ function render(){
       `<div class="sc-i"><span class="sc-v">${fmt(r.thrust*1e3)} mN</span><span class="sc-l">thrust — only ~${fmt(a0,2)}–${fmt(a1,2)} milli-g</span></div>`+
       `<div class="sc-i"><span class="sc-v">~${fmt(r.burnYr,1)} yr</span><span class="sc-l">continuous firing ≈ one revolution around the Sun</span></div>`+
     `</div>`+
-    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${fmt(r.arrivalYr)}-yr coast.</div>`;
+    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   const kpis=[
-    ['Required v∞', fmt(r.ic.vinf/1e3,2)+' km/s'],
-    ['Departure Δv (design)', fmt(r.dvDesign/1e3,1)+' km/s'],
-    ['Δv floor (impulsive)', fmt(r.dvFloor/1e3,1)+' km/s'],
-    ['Arrival', fmt(r.arrivalYr)+' yr'],
+    ['Cruise v∞ (derived)', fmt(r.vinfSun/1e3,2)+' km/s'],
+    ['Departure Δv (delivered)', fmt(r.dvDeliver/1e3,1)+' km/s'],
+    ['Soonest arrival', r.feasible?fmt(r.arrivalYr)+' yr':'no intercept'],
+    ['Min-fuel arrival', fmt(r.minFuelYr)+' yr'],
+    ['Min wet to reach AC', fmt(r.minWet)+' kg'],
     ['Wet mass', fmt(r.wet)+' kg'],
     [r.propName+' propellant', fmt(r.mp)+' kg · '+fmt(100*r.mp/r.wet)+'%'],
   ];
@@ -615,8 +697,7 @@ function render(){
   document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="k">${k[0]}</div></div>`).join('');
   // badges
   const b=[];
-  const within=r.arrivalYr<=100000;
-  b.push([within?'ok':'no', within?'✓ Arrives ≤100k yr':'✗ Exceeds 100k yr']);
+  b.push([r.feasible?'ok':'no', r.feasible?`✓ Intercepts AC in ${fmt(r.arrivalYr)} yr`:'✗ No intercept — v∞ below the 23.3 km/s floor']);
   const pay=val('pay');
   b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
   const xf=r.mp/r.wet;
@@ -652,7 +733,7 @@ function drawCharts(r){
     {x:Ts,y:de,name:'Design Δv (low-thrust)',line:{color:'#4cc2ff'}},
     {x:Ts,y:na,name:'Naïve spiral Δv',line:{color:'#f85149',dash:'dot'}},
     {x:Ts,y:vi,name:'cruise v∞ (right axis)',line:{color:'#d29922'},yaxis:'y2'},
-    {x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...na)+2],name:'selected',line:{color:'#8b949e',dash:'dash'},showlegend:false},
+    ...(r.feasible?[{x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...na)+2],name:'derived arrival',line:{color:'#8b949e',dash:'dash'},showlegend:false}]:[]),
   ],{...LAYOUT('Δv (left) & cruise speed v∞ (right) vs arrival time'),margin:{l:55,r:52,t:34,b:42},
      xaxis:{title:'arrival (yr)',gridcolor:'#2a323d'},
      yaxis:{title:'Δv (km/s)',gridcolor:'#2a323d'},
@@ -671,7 +752,7 @@ function drawCharts(r){
   // 3. power-system mass vs Isp (the energy wall)
   const isps=[], solar=[], fc=[], nuc=[];
   const ech=parseFloat(document.getElementById('reactant').value)*0.6;
-  for(let i=500;i<=50000;i*=1.15){ const mp=propMass(r.dry,r.dvDesign,i); const E=elecEnergy(mp,i,r.eta);
+  for(let i=500;i<=50000;i*=1.15){ const mp=propMass(r.dry,r.dvDeliver,i); const E=elecEnergy(mp,i,r.eta);
     isps.push(i); solar.push(r.arrayMass); fc.push(E/ech); nuc.push(r.pwrW/val('rtg')); }
   Plotly.react('chartPower',[
     {x:isps,y:fc,name:'Fuel-cell reactant',line:{color:'#f85149'}},
@@ -684,7 +765,7 @@ function drawCharts(r){
   for(let v=19;v<=120;v+=1){ const t=timeToAc(v*1e3); if(t){ vs.push(v); ts.push(t/YEAR); } }
   Plotly.react('chartTime',[
     {x:vs,y:ts,name:'arrival',line:{color:'#4cc2ff'}},
-    {x:[r.ic.vinf/1e3],y:[r.arrivalYr],name:'current',mode:'markers',marker:{color:'#d29922',size:10}},
+    ...(r.feasible?[{x:[r.vinfSun/1e3],y:[r.arrivalYr],name:'this design',mode:'markers',marker:{color:'#d29922',size:10}}]:[]),
   ],{...LAYOUT('Cruise time to AC vs heliocentric v∞'),xaxis:{title:'v∞ (km/s)',gridcolor:'#2a323d'},yaxis:{title:'arrival (yr)',gridcolor:'#2a323d'}},CFG);
 }
 
@@ -700,7 +781,7 @@ function phaseOf(u){
   return {stage:'ac', f:Math.min(1,(u-2/3)*3)};
 }
 function stageStartU(s){ return s==='earth'?0 : s==='sun'?1/3 : 2/3; }
-function aimDir(){ const v=requiredVinfVec(val('T')*YEAR); const n=Math.hypot(v[0],v[1],v[2]); return [v[0]/n,v[1]/n,v[2]/n]; }
+function aimDir(){ const v=requiredVinfVec(SIM?SIM.Tsec:tangentialT()); const n=Math.hypot(v[0],v[1],v[2]); return [v[0]/n,v[1]/n,v[2]/n]; }
 
 function drawViz(){
   document.querySelectorAll('input[name=viz]').forEach(el=>{ el.checked=(el.value===phaseOf(animU).stage); });
@@ -730,7 +811,7 @@ function drawViz(){
 // Shared spacecraft state (AU) for the zoom + chase views, so the probe is
 // consistent across them. f = R/Rmax keeps the probe just inside the zoom frame.
 function craftState(){
-  const s=1/AU, T=val('T')*YEAR;
+  const s=1/AU, T=(SIM?SIM.Tsec:tangentialT());
   const I=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
   const Inorm=Math.hypot(I[0],I[1],I[2]);
   const RDEP=1;                                    // departure at Earth's orbit (1 AU from Sun)
@@ -830,7 +911,7 @@ function drawFollow3d(c,st){
   for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
     gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(0,0,null);
     gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(0,0,null); }
-  const C30=Math.cos(Math.PI/6),S30=Math.sin(Math.PI/6),D=2.1;
+  const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=2.1;
   let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
   const eye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
   const A=cols(flown), tag = st.onSpiral?'solar-escape spiral':'interstellar cruise';
@@ -838,6 +919,7 @@ function drawFollow3d(c,st){
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
     {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
+    {type:'scatter3d',mode:'markers',x:[flown[0][0]],y:[flown[0][1]],z:[flown[0][2]],marker:{color:'#58a6ff',size:4},name:'Earth'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#4cc2ff',size:6},name:'probe'},
   ],{title:{text:`Chase cam (3D) — behind the probe · flown path only (${fmt(2*H,H<10?2:0)} AU · ${tag})`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,margin:{l:0,r:0,t:34,b:0},
@@ -867,6 +949,7 @@ function drawFollow2d(c,st){
     {x:gx,y:gy,mode:'lines',line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',showlegend:false},
     {x:fx,y:fy,mode:'lines',line:{color:'#3fb950',width:2},showlegend:false},
     {x:[S[0]],y:[S[1]],mode:'markers',marker:{color:'#f5d020',size:9},showlegend:false},
+    {x:[F[0][0]],y:[F[0][1]],mode:'markers',marker:{color:'#58a6ff',size:7},showlegend:false},
     {x:[0],y:[0],mode:'markers',marker:{color:'#4cc2ff',size:9},showlegend:false},
   ],{title:{text:`Chase cam (2D) — probe frame, forward = up · flown path only (${st.onSpiral?'solar-escape spiral':'cruise'})`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},margin:{l:8,r:8,t:34,b:8},showlegend:false,
@@ -885,7 +968,9 @@ function drawZoom3d(c,st){
   const note = R<6 ? 'inner solar system' : (R<6000 ? 'leaving the Sun' : 'interstellar cruise');
   const ax=t=>({range:[-R,R],title:t,color:'#9aa7b4',gridcolor:'#2a323d'});
   Plotly.react('chartOrbit3d',[
+    {type:'mesh3d',x:[-R,R,R,-R],y:[-R,-R,R,R],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],color:'#586273',opacity:0.10,hoverinfo:'skip',flatshading:true,showscale:false,name:'ecliptic plane (z=0)'},
     {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
+    {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2,dash:'dot'},name:'AC track (crosses ecliptic)'},
     {type:'scatter3d',mode:'lines',x:F.x,y:F.y,z:F.z,line:{color:'#3fb950',width:3},name:'flown path'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
@@ -903,14 +988,14 @@ function drawZoom3d(c,st){
 // heliocentrically to build v_inf, then the engine shuts off and it coasts.
 function burnPhases(r){
   const vcirc=7.67; // km/s, LEO circular speed -> ~dv to spiral to Earth escape
-  const fEarth=Math.min(0.6, vcirc/(r.dvDesign/1e3));
+  const fEarth=Math.min(0.6, vcirc/(r.dvDeliver/1e3));
   return {tEarth:fEarth*r.burnYr, tBurn:r.burnYr, arrival:r.arrivalYr};
 }
 function elapsedYrFromU(u){
   const ph=phaseOf(u);
   if(ph.stage==='earth') return ph.f*1.2;
   if(ph.stage==='sun') return ph.f*6;
-  return ph.f*val('T');
+  return ph.f*(SIM&&SIM.feasible?SIM.arrivalYr:75000);
 }
 function drawTimeline(){
   const r=compute(), p=burnPhases(r), x0=0.01;
@@ -957,7 +1042,7 @@ function togglePlay(){
 
 // ----- wire up -----
 function syncLabels(){
-  document.getElementById('o_T').textContent=fmt(val('T'));
+  document.getElementById('o_pfrac').textContent=val('pfrac');
   document.getElementById('o_pay').textContent=val('pay').toFixed(1);
   document.getElementById('o_alt').textContent=val('alt');
   document.getElementById('o_pen').textContent=val('pen').toFixed(1);
@@ -971,6 +1056,7 @@ function syncLabels(){
   document.getElementById('o_tankfrac').textContent=val('tankfrac');
   document.getElementById('o_rtg').textContent=val('rtg');
   document.getElementById('o_rp').textContent=val('rp');
+  document.getElementById('o_tilt').textContent=val('tilt');
 }
 function setVal(id,v){ document.getElementById(id).value=v; }
 function applyEngineTech(){ const p=document.getElementById('enginetech').value.split('|');
@@ -986,14 +1072,21 @@ function toggleOpts(){
   document.getElementById('obOpts').style.display=radio('ga')==='oberth'?'':'none';
 }
 function stopPlay(){ if(animTimer){ clearInterval(animTimer); animTimer=null; document.getElementById('playbtn').textContent='▶ Play'; } }
+// Dragging sliders updates labels but DEFERS the recompute (arrival + trajectory are
+// only recomputed when you press "Run sim") — keeps dragging cheap and the causality clear.
+let staleFlag=false;
+function setStale(s){ staleFlag=s; const b=document.getElementById('runsim'); if(!b) return;
+  b.classList.toggle('stale', s); b.textContent = s ? '▶ Run sim — apply changes' : '▶ Run sim'; }
 const TECH_SELECTS={enginetech:applyEngineTech, soltech:applySolTech, propsel:applyProp};
+document.getElementById('tilt').addEventListener('input',()=>{ document.getElementById('o_tilt').textContent=val('tilt'); drawViz(); });
 document.querySelectorAll('input,select').forEach(el=>{
-  if(el.id==='tscrub' || el.name==='viz') return;  // handled separately
+  if(el.id==='tscrub' || el.id==='tilt' || el.name==='viz') return;  // handled separately (live view controls)
   el.addEventListener('input',()=>{
     if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
-    syncLabels(); toggleOpts(); render();
+    syncLabels(); toggleOpts(); setStale(true);     // recompute deferred to "Run sim"
   });
 });
+document.getElementById('runsim').addEventListener('click', ()=>{ stopPlay(); render(); });
 document.querySelectorAll('input[name=viz]').forEach(el=>{
   el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); document.getElementById('tscrub').value=animU*100; drawViz(); });
 });
