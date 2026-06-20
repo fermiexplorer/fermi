@@ -12,6 +12,7 @@ import audit_ephemeris
 import audit_fuelcell
 import audit_intercept
 import audit_propulsion
+import audit_solar
 
 
 def main() -> int:
@@ -21,6 +22,7 @@ def main() -> int:
         audit_departure,
         audit_propulsion,
         audit_fuelcell,
+        audit_solar,
     ):
         mod.run()
         print()

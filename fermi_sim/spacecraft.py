@@ -57,25 +57,68 @@ SPECIFIC_ENERGY = {
 }
 
 
+SOLAR_CONST_1AU = 1361.0  # W/m^2, solar irradiance at 1 AU
+
+
+def solar_array_area(power_w: float, cell_efficiency: float, distance_au: float = 1.0) -> float:
+    """Deployed array area (m^2) to generate ``power_w`` electrical at ``distance_au``.
+
+    Available electrical flux = (solar constant / r^2) * end-to-end efficiency.
+    """
+    flux = SOLAR_CONST_1AU / distance_au**2
+    return power_w / (flux * cell_efficiency)
+
+
 @dataclass
 class SolarArchitecture:
+    """Solar-electric vehicle with a sized array and a sized propulsion subsystem.
+
+    Defaults are *commercial, available-today* hardware (no exotic techniques):
+    ~20% monocrystalline SILICON cells (mass-produced, as on Starlink-class
+    satellites -- not GaAs), a conventional lightweight flat array at ~3 kg/m^2
+    (~90 W/kg at 1 AU BOL), a ~6 kg/kW off-the-shelf Hall-thruster + PPU, and an
+    ~8% xenon COPV tank fraction. Silicon trades efficiency for cost: the array is
+    larger and a bit heavier than a GaAs one, but cheap and proven. ``dry_mass`` is
+    the total dry (final) mass used in the rocket equation; ``summary`` decomposes
+    it so you can see whether the array + engine + tank fit inside it, leaving the
+    remainder for bus + payload + margin.
+    """
+
     dry_mass: float
     dv: float
     isp_s: float
     eta: float = 0.6
-    specific_power_w_per_kg: float = 150.0  # modern flexible arrays at 1 AU
     array_power_1au_w: float = 5000.0
+    cell_efficiency: float = 0.20          # commercial monocrystalline silicon, end-to-end
+    areal_density_kg_m2: float = 3.0       # lightweight flat silicon array (~90 W/kg)
+    engine_specific_mass_kg_kw: float = 6.0  # off-the-shelf Hall thruster + PPU
+    tank_fraction: float = 0.08            # xenon COPV tankage as fraction of propellant
+    distance_au: float = 1.0               # heliocentric distance the array is sized at
+
+    def array_area_m2(self) -> float:
+        return solar_array_area(self.array_power_1au_w, self.cell_efficiency, self.distance_au)
 
     def summary(self) -> dict:
         m_prop = propellant_mass(self.dry_mass, self.dv, self.isp_s)
         E = electrical_energy(m_prop, self.isp_s, self.eta)
-        array_mass = self.array_power_1au_w / self.specific_power_w_per_kg
+        area = self.array_area_m2()
+        array_mass = area * self.areal_density_kg_m2
+        specific_power = self.array_power_1au_w / array_mass
+        engine_mass = self.engine_specific_mass_kg_kw * self.array_power_1au_w / 1000.0
+        tank_mass = self.tank_fraction * m_prop
+        subsystems = array_mass + engine_mass + tank_mass
         thrust = thrust_from_power(self.array_power_1au_w, self.isp_s, self.eta)
         t_burn = thrust_phase_duration(m_prop, self.isp_s, self.array_power_1au_w, self.eta)
         return {
             "prop_mass_kg": m_prop,
             "energy_kWh": E / 3.6e6,
+            "array_area_m2": area,
             "array_mass_kg": array_mass,
+            "array_specific_power_w_per_kg": specific_power,
+            "engine_ppu_mass_kg": engine_mass,
+            "tank_mass_kg": tank_mass,
+            "subsystems_kg": subsystems,  # array + engine + tank
+            "bus_payload_remainder_kg": self.dry_mass - subsystems,
             "thrust_mN": thrust * 1e3,
             "burn_years": t_burn / c.YEAR,
             "wet_mass_kg": self.dry_mass + m_prop,

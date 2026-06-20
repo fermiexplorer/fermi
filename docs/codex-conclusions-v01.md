@@ -17,9 +17,13 @@ less than 100,000 years. The nominal vehicle remains roughly 500 kg wet, with a
    fuel-cell electric propulsion; ~245 s is the self-powered exhaust cap. The live
    calculator math was already correct.
 
-2. The exact direct-departure floor is nearer 72,800 years than 75,000 years.
-   A 75,000-year benchmark remains practically equivalent: the penalty is only
-   about 10-12 m/s, far below the precision of the first-order low-thrust model.
+2. The exact direct-departure Δv floor is ~13.88 km/s at ~72,800 years (not
+   75,000). The Δv-vs-arrival curve is extremely flat near the optimum, so a
+   round 75,000-year arrival is practically the same point: its budget is
+   13.886 km/s versus 13.875 km/s at 72,800 years — i.e. only ~10 m/s MORE than
+   the optimum (a ~0.07% increment), far below the first-order model's precision.
+   Units to avoid confusion: the total budget is ~13.9 km/s; the 75k-vs-optimum
+   penalty is ~10 m/s.
 
 3. The Alpha Centauri ephemeris, ecliptic rotation, and proper-motion conversion
    check out against Astropy. Closest approach is about 27,960 years from now at
@@ -79,3 +83,26 @@ less than 100,000 years. The nominal vehicle remains roughly 500 kg wet, with a
 
 External sanity checks used NASA/JPL material on solar electric propulsion and
 NASA's DART mission page for current flight context.
+
+## Follow-up (addressed after v01)
+
+- **Finding 1** (fuel-cell optimum wording): fixed — the web methodology now states
+  the separate-reactant optimum is ~1350 s and the self-powered cap is ~2.4 km/s.
+- **Finding 2 / reviewer note**: Point 2 reworded for clarity. Floor ~13.88 km/s at
+  ~72,800 yr; the round 75,000-yr arrival is only ~10 m/s (≈0.07%) above that. Units
+  made explicit (total budget in km/s vs the 75k-vs-optimum increment in m/s).
+- **Finding 7 / Residual 1** (SEP ~20 km/s): the calculator now states the budget is
+  bracketed by the ~14 km/s impulsive floor and the ~25 km/s spiral bound, with the
+  low-thrust-penalty slider as the sensitivity control; full phased finite-burn
+  optimisation is flagged as future work.
+- **Residual 2** (solar 150 W/kg): replaced with a physical, tunable sizing model —
+  area = P/(S₀·η/r²), mass = area·areal density; commercial-silicon defaults (~20%
+  cells, ~3 kg/m² → ~90 W/kg), plus solar/engine/propellant technology dropdowns, an
+  ion-engine+PPU (~6 kg/kW) and tank (~8%) model, a mass-closure check, and a new
+  independent audit (`audits/audit_solar.py`).
+
+## Verification (current)
+
+- `pytest`: 8/8 · `audits/run_audits.py`: 41/41 · `audits/audit_webjs.mjs`: 10/10
+- `audits/ui_playwright.py`: renders all charts in Chromium, exercises the dropdowns
+  and Play, no console errors.

@@ -2,3 +2,5 @@ numpy>=1.26
 scipy>=1.11
 astropy>=6.0
 pytest>=8.0
+# UI test only (audits/ui_playwright.py); also run: playwright install chromium
+playwright>=1.40

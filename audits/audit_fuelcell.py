@@ -65,11 +65,15 @@ def run() -> None:
           f"{ve_cap/c.KMS:.2f} km/s (Isp {ve_cap/c.G0:.0f} s)")
     check("self-powered cap is chemical-rocket class (<5 km/s)", ve_cap < 5e3)
 
-    # 4. Order-of-magnitude: fuel cell vs an equivalent 5 kW solar array (~33 kg).
-    solar_array_kg = 5000.0 / 150.0
+    # 4. Order-of-magnitude: fuel cell vs the engine's sized 5 kW silicon array.
+    from fermi_sim.spacecraft import SolarArchitecture
+
+    solar_array_kg = SolarArchitecture(
+        dry_mass=dry, dv=dv, isp_s=3000, array_power_1au_w=5000.0
+    ).summary()["array_mass_kg"]
     ratio = fc["reactant_mass_kg"] / solar_array_kg
-    check("fuel cell needs >=1000x the mass of a 5 kW solar array",
-          ratio > 1000, f"{ratio:,.0f}x heavier")
+    check("fuel cell needs >=100x the mass of a 5 kW silicon solar array",
+          ratio > 100, f"{ratio:,.0f}x heavier ({solar_array_kg:.0f} kg array)")
 
     # 5. High Isp makes the fuel cell *worse* (energy scales with v_e).
     r3k = FuelCellArchitecture(dry_mass=dry, dv=dv, isp_s=3000).summary()["reactant_mass_kg"]
