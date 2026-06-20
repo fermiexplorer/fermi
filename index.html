@@ -50,6 +50,11 @@
   .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
   .kpi .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .kpi .k { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .summary { background: linear-gradient(180deg,#15212e,#161b22); border: 1px solid #2c3a47;
+    border-left: 3px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; }
+  .summary .sline { font-size: 13.5px; line-height: 1.7; color: #c9d4de; }
+  .summary .sline + .sline { margin-top: 2px; }
+  .summary b { color: var(--ink); }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .badge { padding: 5px 11px; border-radius: 20px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line); }
   .badge.ok { background: rgba(63,185,80,.15); color: var(--good); border-color: rgba(63,185,80,.4); }
@@ -63,6 +68,7 @@
   .vizsel label { display: flex; gap: 6px; align-items: center; color: var(--ink); cursor: pointer; }
   #chartOrbit3d { min-height: 440px; }
   #chartOrbit2d { min-height: 340px; }
+  #chartTimeline { min-height: 170px; margin-top: 12px; }
   #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
   #animctl button:hover { border-color: var(--accent); }
@@ -115,8 +121,15 @@
     <div class="group">
       <h3>Spacecraft &amp; propulsion</h3>
       <div class="ctrl">
-        <label>Dry mass (bus+payload) <b><span id="o_dry">255</span> kg</b></label>
+        <label>Dry mass (bus+payload+subsystems) <b><span id="o_dry">255</span> kg</b></label>
         <input type="range" id="dry" min="80" max="600" step="5" value="255">
+      </div>
+      <div class="ctrl">
+        <label>Ion engine technology</label>
+        <select id="enginetech">
+          <option value="hall|2000|0.55|5">Hall thruster (Isp ~2000 s)</option>
+          <option value="gridded|3000|0.60|6" selected>Gridded ion (Isp ~3000 s)</option>
+        </select>
       </div>
       <div class="ctrl">
         <label>Ion engine Isp <b><span id="o_isp">3000</span> s</b></label>
@@ -125,6 +138,22 @@
       <div class="ctrl">
         <label>Thruster efficiency <b><span id="o_eta">0.60</span></b></label>
         <input type="range" id="eta" min="0.4" max="0.8" step="0.01" value="0.6">
+      </div>
+      <div class="ctrl">
+        <label>Engine + PPU mass <b><span id="o_enginekg">6.0</span> kg/kW</b></label>
+        <input type="range" id="enginekg" min="2" max="12" step="0.5" value="6">
+      </div>
+      <div class="ctrl">
+        <label>Propellant</label>
+        <select id="propsel">
+          <option value="Xenon|8">Xenon (dense, easy storage)</option>
+          <option value="Krypton|12">Krypton (cheaper, bulkier)</option>
+          <option value="Argon|16">Argon (cheapest, bulkiest)</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Propellant tank <b><span id="o_tankfrac">8</span> % of propellant</b></label>
+        <input type="range" id="tankfrac" min="3" max="20" step="1" value="8">
       </div>
     </div>
 
@@ -140,8 +169,17 @@
         <input type="range" id="pwrkw" min="1" max="20" step="0.5" value="5">
       </div>
       <div class="ctrl" id="solarOpts">
-        <label>Array specific power <b><span id="o_spec">150</span> W/kg</b></label>
-        <input type="range" id="spec" min="50" max="250" step="10" value="150">
+        <label>Solar cell technology</label>
+        <select id="soltech">
+          <option value="20|3.0" selected>Silicon (~20%, Starlink-class)</option>
+          <option value="30|2.8">GaAs triple-junction (~30%)</option>
+          <option value="13|1.5">Thin-film CIGS (~13%, light)</option>
+        </select>
+        <label style="margin-top:8px">Cell efficiency <b><span id="o_cellEff">20</span> %</b></label>
+        <input type="range" id="cellEff" min="10" max="34" step="1" value="20">
+        <label>Array areal density <b><span id="o_areal">3.0</span> kg/m²</b></label>
+        <input type="range" id="areal" min="1" max="6" step="0.1" value="3.0">
+        <div class="hint">Silicon ≈ 90 W/kg today; GaAs lighter &amp; smaller but pricier.</div>
       </div>
       <div class="ctrl" id="fcOpts" style="display:none">
         <label>Fuel-cell reactant</label>
@@ -173,6 +211,7 @@
   </aside>
 
   <main>
+    <div class="summary" id="summary"></div>
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
@@ -189,6 +228,7 @@
         <label><input type="radio" name="viz" value="ac"> 3 · To Alpha Centauri</label>
       </div>
       <div class="chart" id="chartOrbit2d"></div>
+      <div class="chart" id="chartTimeline"></div>
     </div>
     <div class="charts">
       <div class="chart" id="chartDv"></div>
@@ -269,7 +309,7 @@
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, timeToAc,
-  jupiterGain, oberthBurnFor, expv, propMass, elecEnergy} = FERMI;
+  jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -294,31 +334,56 @@ function compute(){
   const pwrW=val('pwrkw')*1000;
   const thrust=2*eta*pwrW/expv(isp);
   const burnYr=(mp*expv(isp)/thrust)/YEAR;
-  // power-system mass
+  // --- subsystem sizing: solar array (area+mass), engine+PPU, propellant tank ---
+  const eff=val('cellEff')/100, areal=val('areal');
+  const arrayArea=solarArrayArea(pwrW, eff, 1);   // m^2 at 1 AU
+  const arrayMass=arrayArea*areal;
+  const arraySpecPower=pwrW/arrayMass;            // W/kg
+  const engineMass=val('enginekg')*pwrW/1000;     // thruster + PPU
+  const tankMass=(val('tankfrac')/100)*mp;        // propellant tank
+  // power-system mass by source
   let psMass, psLabel;
-  if(pwr==='solar'){ psMass=pwrW/val('spec'); psLabel='Solar array'; }
+  if(pwr==='solar'){ psMass=arrayMass; psLabel='Solar array'; }
   else if(pwr==='fuelcell'){ const ech=parseFloat(document.getElementById('reactant').value)*0.6; psMass=E/ech; psLabel='Fuel-cell reactant'; }
   else { psMass=pwrW/val('rtg'); psLabel='RTG'; }
+  // dry-resident subsystems (fuel-cell reactant is consumed, not dry mass)
+  const dryPower=(pwr==='fuelcell')?0:psMass;
+  const busPayload=dry-dryPower-engineMass-tankMass;
+  const propName=document.getElementById('propsel').value.split('|')[0];
   const arrivalYr=T/YEAR;
-  return {ic,dep,dvFloor,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,arrivalYr,isp,eta,pwrW,dry};
+  return {ic,dep,dvFloor,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
+    arrivalYr,isp,eta,pwrW,dry,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
+    dryPower,busPayload,propName};
 }
 
 // ----- render KPIs + badges -----
 function fmt(n,d=0){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
 function render(){
   const r=compute();
+  // ----- headline mission-profile summary -----
+  const bp=burnPhases(r);
+  document.getElementById('summary').innerHTML=
+    `<div class="sline"><b>Minimum spacecraft Δv from LEO</b> ≈ <b>14 km/s</b> (impulsive floor) · <b>~20 km/s</b> realistic low-thrust ion. This design: <b>${fmt(r.dvDesign/1e3,1)} km/s</b>, reaching cruise speed v∞ ≈ <b>${fmt(r.ic.vinf/1e3,1)} km/s</b>.</div>`+
+    `<div class="sline"><b>Arrival:</b> within 2600 AU of Alpha Centauri in <b>${fmt(r.arrivalYr)} yr</b> (inside the 100,000-yr goal), aimed ~${fmt(Math.abs(r.ic.tiltDeg),1)}° off the ecliptic.</div>`+
+    `<div class="sline"><b>Profile:</b> launch to LEO, then fire an Isp-${fmt(r.isp)} s ion engine <b>continuously for ~${fmt(r.burnYr,1)} yr</b> at ~<b>${fmt(r.thrust*1e3)} mN</b>, drawing <b>${fmt(r.pwrW/1000,1)} kW</b> from a <b>${fmt(r.arrayArea,0)} m²</b> / <b>${fmt(r.arrayMass)} kg</b> silicon array — Earth-escape spiral ~${fmt(bp.tEarth,2)} yr, then heliocentric to escape — then coast ~${fmt(r.arrivalYr)} yr. Wet mass <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`;
   const kpis=[
     ['Required v∞', fmt(r.ic.vinf/1e3,2)+' km/s'],
     ['Departure Δv (design)', fmt(r.dvDesign/1e3,1)+' km/s'],
     ['Δv floor (impulsive)', fmt(r.dvFloor/1e3,1)+' km/s'],
     ['Arrival', fmt(r.arrivalYr)+' yr'],
     ['Wet mass', fmt(r.wet)+' kg'],
-    ['Xenon fraction', fmt(100*r.mp/r.wet)+' %'],
-    [r.psLabel+' mass', fmt(r.psMass)+' kg'],
-    ['Burn duration', fmt(r.burnYr,1)+' yr'],
-    ['Thrust @power', fmt(r.thrust*1e3)+' mN'],
-    ['Burn energy', fmt(r.E/3.6e6)+' kWh'],
+    [r.propName+' propellant', fmt(r.mp)+' kg · '+fmt(100*r.mp/r.wet)+'%'],
   ];
+  if(r.pwr==='solar'){
+    kpis.push(['Solar array', fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg']);
+    kpis.push(['Array specific power', fmt(r.arraySpecPower)+' W/kg']);
+  } else {
+    kpis.push([r.psLabel+' mass', fmt(r.psMass)+' kg']);
+  }
+  kpis.push(['Engine + PPU', fmt(r.engineMass)+' kg']);
+  kpis.push(['Propellant tank', fmt(r.tankMass)+' kg']);
+  kpis.push(['Bus + payload free', fmt(r.busPayload)+' kg']);
+  kpis.push(['Burn duration', fmt(r.burnYr,1)+' yr']);
   document.getElementById('kpis').innerHTML=kpis.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="k">${k[0]}</div></div>`).join('');
   // badges
   const b=[];
@@ -331,8 +396,12 @@ function render(){
   if(r.pwr==='solar') b.push(['ok','✓ Solar: ~tens of kg, energy free near Sun']);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
   if(r.pwr==='nuclear') b.push([r.psMass<200?'mid':'no', `△ RTG: ${fmt(r.psMass)} kg (heavy per kW)`]);
+  b.push([r.busPayload>0?'ok':'no', r.busPayload>0
+    ? `✓ Mass closes: ${fmt(r.busPayload)} kg for bus+payload`
+    : `✗ Over budget by ${fmt(-r.busPayload)} kg`]);
   if(r.gaNote) b.push(['mid', r.gaNote]);
   document.getElementById('badges').innerHTML=b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
+  drawTimeline();
   drawViz();
   drawCharts(r);
 }
@@ -356,18 +425,21 @@ function drawCharts(r){
     {x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...na)+2],name:'selected',line:{color:'#d29922',dash:'dash'},showlegend:false},
   ],{...LAYOUT('Departure Δv from LEO vs arrival time'),xaxis:{title:'arrival (yr)',gridcolor:'#2a323d'},yaxis:{title:'Δv (km/s)',gridcolor:'#2a323d'}},CFG);
 
-  // 2. mass breakdown (stacked)
-  Plotly.react('chartMass',[
-    {x:['vehicle'],y:[r.dry],name:'Dry (bus+payload)',type:'bar',marker:{color:'#58a6ff'}},
-    {x:['vehicle'],y:[r.mp],name:'Xenon',type:'bar',marker:{color:'#4cc2ff'}},
-    {x:['vehicle'],y:[r.psMass],name:r.psLabel,type:'bar',marker:{color:r.pwr==='solar'?'#3fb950':'#f85149'}},
-  ],{...LAYOUT('Mass breakdown (kg) — current design'),barmode:'stack',yaxis:{title:'kg',gridcolor:'#2a323d'}},CFG);
+  // 2. mass breakdown (stacked, by subsystem)
+  const comps=[['Bus + payload', Math.max(0,r.busPayload), '#58a6ff']];
+  if(r.pwr!=='fuelcell') comps.push([r.psLabel, r.dryPower, r.pwr==='solar'?'#3fb950':'#d29922']);
+  comps.push(['Engine + PPU', r.engineMass, '#8957e5']);
+  comps.push(['Propellant tank', r.tankMass, '#6e7681']);
+  comps.push([r.propName, r.mp, '#4cc2ff']);
+  if(r.pwr==='fuelcell') comps.push(['Fuel-cell reactant', r.psMass, '#f85149']);
+  Plotly.react('chartMass', comps.map(c=>({x:['vehicle'],y:[c[1]],name:c[0],type:'bar',marker:{color:c[2]}})),
+    {...LAYOUT('Mass breakdown (kg) — current design'),barmode:'stack',yaxis:{title:'kg',gridcolor:'#2a323d'}},CFG);
 
   // 3. power-system mass vs Isp (the energy wall)
   const isps=[], solar=[], fc=[], nuc=[];
   const ech=parseFloat(document.getElementById('reactant').value)*0.6;
   for(let i=500;i<=50000;i*=1.15){ const mp=propMass(r.dry,r.dvDesign,i); const E=elecEnergy(mp,i,r.eta);
-    isps.push(i); solar.push(r.pwrW/val('spec')); fc.push(E/ech); nuc.push(r.pwrW/val('rtg')); }
+    isps.push(i); solar.push(r.arrayMass); fc.push(E/ech); nuc.push(r.pwrW/val('rtg')); }
   Plotly.react('chartPower',[
     {x:isps,y:fc,name:'Fuel-cell reactant',line:{color:'#f85149'}},
     {x:isps,y:solar,name:'Solar array',line:{color:'#3fb950'}},
@@ -482,6 +554,44 @@ function drawViz(){
     label=`${fmt(es/YEAR)} yr · Stage 3: interstellar cruise (${fmt(Math.hypot(probe[0],probe[1],probe[2]),2)} ly)`;
   }
   document.getElementById('tlabel').textContent=label;
+  // move the "now" marker on the burn timeline (last trace) without a full redraw
+  try { Plotly.restyle('chartTimeline', {x: [[Math.max(0.01, elapsedYrFromU(animU))]]}, [4]); } catch(e){}
+}
+
+// ----- burn timeline (continuous ion thrust, then coast) -----
+// The ion engine fires continuously from LEO: first spiralling out of Earth
+// (until SOI escape, ~when cumulative dv ~ LEO circular speed), then thrusting
+// heliocentrically to build v_inf, then the engine shuts off and it coasts.
+function burnPhases(r){
+  const vcirc=7.67; // km/s, LEO circular speed -> ~dv to spiral to Earth escape
+  const fEarth=Math.min(0.6, vcirc/(r.dvDesign/1e3));
+  return {tEarth:fEarth*r.burnYr, tBurn:r.burnYr, arrival:r.arrivalYr};
+}
+function elapsedYrFromU(u){
+  const ph=phaseOf(u);
+  if(ph.stage==='earth') return ph.f*1.2;
+  if(ph.stage==='sun') return ph.f*6;
+  return ph.f*val('T');
+}
+function drawTimeline(){
+  const r=compute(), p=burnPhases(r), x0=0.01;
+  const segs=[
+    ['Earth-escape burn (spiral)', x0, Math.max(p.tEarth,x0*2), '#3fb950'],
+    ['Sun-escape burn (heliocentric)', Math.max(p.tEarth,x0*2), p.tBurn, '#4cc2ff'],
+    ['Coast to Alpha Centauri (engine off)', p.tBurn, p.arrival, '#6e7681'],
+  ];
+  const traces=segs.map(s=>({x:[s[1],s[2]],y:[0,0],mode:'lines',line:{color:s[3],width:20},name:s[0]}));
+  traces.push({x:[p.tEarth,p.tBurn],y:[0,0],mode:'markers+text',
+    text:[`SOI escape · ${fmt(p.tEarth,2)} yr`,`engine off · ${fmt(p.tBurn,1)} yr`],
+    textposition:'top center',marker:{color:'#e6edf3',size:7},textfont:{size:10,color:'#c4cdd6'},showlegend:false});
+  const now=Math.max(x0,elapsedYrFromU(animU));
+  traces.push({x:[now],y:[0],mode:'markers',marker:{color:'#d29922',size:14,symbol:'line-ns-open'},name:'animation now'});
+  Plotly.react('chartTimeline',traces,{
+    title:{text:'Burn timeline — continuous ion thrust, then coast (log years from launch)',font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},
+    margin:{l:10,r:14,t:34,b:30},showlegend:true,legend:{orientation:'h',y:-0.5,font:{size:10}},
+    xaxis:{type:'log',title:'years from launch',gridcolor:'#2a323d'},
+    yaxis:{visible:false,range:[-1,1.4]}},CFG);
 }
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
@@ -509,10 +619,19 @@ function syncLabels(){
   document.getElementById('o_isp').textContent=val('isp');
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
   document.getElementById('o_pwr').textContent=val('pwrkw').toFixed(1);
-  document.getElementById('o_spec').textContent=val('spec');
+  document.getElementById('o_cellEff').textContent=val('cellEff');
+  document.getElementById('o_areal').textContent=val('areal').toFixed(1);
+  document.getElementById('o_enginekg').textContent=val('enginekg').toFixed(1);
+  document.getElementById('o_tankfrac').textContent=val('tankfrac');
   document.getElementById('o_rtg').textContent=val('rtg');
   document.getElementById('o_rp').textContent=val('rp');
 }
+function setVal(id,v){ document.getElementById(id).value=v; }
+function applyEngineTech(){ const p=document.getElementById('enginetech').value.split('|');
+  setVal('isp',p[1]); setVal('eta',p[2]); setVal('enginekg',p[3]); }
+function applySolTech(){ const p=document.getElementById('soltech').value.split('|');
+  setVal('cellEff',p[0]); setVal('areal',p[1]); }
+function applyProp(){ const p=document.getElementById('propsel').value.split('|'); setVal('tankfrac',p[1]); }
 function toggleOpts(){
   const p=radio('pwr');
   document.getElementById('solarOpts').style.display=p==='solar'?'':'none';
@@ -521,9 +640,13 @@ function toggleOpts(){
   document.getElementById('obOpts').style.display=radio('ga')==='oberth'?'':'none';
 }
 function stopPlay(){ if(animTimer){ clearInterval(animTimer); animTimer=null; document.getElementById('playbtn').textContent='▶ Play'; } }
+const TECH_SELECTS={enginetech:applyEngineTech, soltech:applySolTech, propsel:applyProp};
 document.querySelectorAll('input,select').forEach(el=>{
   if(el.id==='tscrub' || el.name==='viz') return;  // handled separately
-  el.addEventListener('input',()=>{ syncLabels(); toggleOpts(); render(); });
+  el.addEventListener('input',()=>{
+    if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
+    syncLabels(); toggleOpts(); render();
+  });
 });
 document.querySelectorAll('input[name=viz]').forEach(el=>{
   el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); document.getElementById('tscrub').value=animU*100; drawViz(); });

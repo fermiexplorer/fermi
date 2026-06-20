@@ -50,5 +50,9 @@ check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_2
 const mp = F.propMass(255, 20e3, 3000);
 check("xenon mass for 20 km/s @Isp3000 (kg)", mp, 248.2, 2e-3);
 
+// Solar array sizing parity (silicon: 5 kW, 20% cells -> 18.37 m^2).
+check("solar array area @5kW,20% (m^2)", F.solarArrayArea(5000, 0.20, 1), 18.3688, 1e-3);
+check("solar array area scales as r^2 (2 AU)", F.solarArrayArea(5000, 0.20, 2), 73.475, 1e-3);
+
 console.log(`\n${"-".repeat(60)}\nWEB PARITY: ${pass}/${total} checks passed`);
 process.exit(pass === total ? 0 : 1);

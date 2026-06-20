@@ -109,16 +109,27 @@ def main() -> None:
     header("3. BASELINE: ION + SOLAR, 500 kg CLASS, 20 km/s")
     dv_design = 20_000.0
     for isp in [2000, 3000, 4000]:
-        for dry in [255.0]:
-            arch = SolarArchitecture(dry_mass=dry, dv=dv_design, isp_s=isp)
-            s = arch.summary()
-            print(
-                f"Isp {isp:>4}s: prop {s['prop_mass_kg']:5.0f} kg "
-                f"(frac {s['prop_mass_kg'] / s['wet_mass_kg']:.2f}), wet "
-                f"{s['wet_mass_kg']:5.0f} kg, array {s['array_mass_kg']:4.0f} kg @5kW, "
-                f"thrust {s['thrust_mN']:5.0f} mN, burn {s['burn_years']:.1f} yr, "
-                f"energy {s['energy_kWh']:,.0f} kWh"
-            )
+        arch = SolarArchitecture(dry_mass=255.0, dv=dv_design, isp_s=isp)
+        s = arch.summary()
+        print(
+            f"Isp {isp:>4}s: xenon {s['prop_mass_kg']:5.0f} kg "
+            f"(frac {s['prop_mass_kg'] / s['wet_mass_kg']:.2f}), wet "
+            f"{s['wet_mass_kg']:5.0f} kg, thrust {s['thrust_mN']:4.0f} mN, "
+            f"burn {s['burn_years']:.1f} yr, energy {s['energy_kWh']:,.0f} kWh"
+        )
+    print("\nCommercial silicon subsystem sizing @ 5 kW, 1 AU (20% Si cells, 3 kg/m^2,")
+    print("6 kg/kW thruster+PPU, 8% xenon tank -- Starlink-class, buy-today), Isp 3000 s:")
+    s = SolarArchitecture(dry_mass=255.0, dv=dv_design, isp_s=3000).summary()
+    print(
+        f"  solar array : {s['array_area_m2']:5.1f} m^2, {s['array_mass_kg']:4.0f} kg "
+        f"({s['array_specific_power_w_per_kg']:.0f} W/kg)"
+    )
+    print(f"  thruster+PPU: {s['engine_ppu_mass_kg']:4.0f} kg")
+    print(f"  xenon tank  : {s['tank_mass_kg']:4.0f} kg  (+ {s['prop_mass_kg']:.0f} kg xenon)")
+    print(
+        f"  -> array+engine+tank = {s['subsystems_kg']:.0f} kg of the {255:.0f} kg dry mass;"
+        f" {s['bus_payload_remainder_kg']:.0f} kg left for bus + payload + margin."
+    )
     print("\nPropellant fraction ~0.4-0.5 xenon is comfortably feasible today.")
 
     # ---------------------------------------------------------------
@@ -137,10 +148,12 @@ def main() -> None:
     isp_opt = fuelcell_optimum_isp("H2/O2", 0.6, 0.6, dv_design)
     ve_self = max_ve_self_powered("H2/O2", 0.6, 0.6)
     fc_opt = FuelCellArchitecture(dry_mass=dry, dv=dv_design, isp_s=isp_opt).summary()
+    array_kg = SolarArchitecture(dry_mass=dry, dv=dv_design, isp_s=3000).summary()["array_mass_kg"]
     print(
         f"\nMass-optimal fuel-cell Isp: {isp_opt:.0f} s "
         f"(v_e {exhaust_velocity(isp_opt) / KMS:.1f} km/s) -> still "
-        f"{fc_opt['consumables_kg']:,.0f} kg of consumables (vs ~33 kg of solar array)."
+        f"{fc_opt['consumables_kg']:,.0f} kg of consumables "
+        f"(vs ~{array_kg:.0f} kg of silicon solar array)."
     )
     print(
         f"If spent reactant IS the propellant, v_e is capped at "

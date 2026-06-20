@@ -57,10 +57,14 @@
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
 
+  // Solar array sizing: area = power / (solar flux * efficiency); flux ~ 1/r^2.
+  const SOLAR_CONST = 1361.0; // W/m^2 at 1 AU
+  const solarArrayArea = (powerW, eff, distAu = 1) => powerW / ((SOLAR_CONST / (distAu * distAu)) * eff);
+
   const API = {
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
-    requiredVinfVec, intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv,
-    timeToAc, jupiterGain, oberthBurnFor, expv, propMass, elecEnergy,
+    SOLAR_CONST, requiredVinfVec, intercept, tangentialT, eclipticCrossingT, vInfEarth,
+    impulsiveDv, timeToAc, jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;
