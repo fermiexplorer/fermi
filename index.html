@@ -340,7 +340,7 @@
     <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
     <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
     <tr><td>1 · Earth-escape spiral</td><td>Continuous ion thrust, <em>perigee-biased</em>, spiralling out of Earth to C₃≈0 (geocentric escape). This is where the low-thrust "spiral tax" is paid.</td><td class="v">~weeks–months</td></tr>
-    <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position</td><td class="v">~1 yr total burn</td></tr>
+    <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1 yr total burn</td></tr>
     <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~248 kg xenon spent</td><td class="v">—</td></tr>
     <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
     <tr><td>5 · Arrival</td><td>Pass within ≤ 2600 AU of AC (99% of the way); science/flyby</td><td class="v">—</td></tr>
@@ -351,6 +351,14 @@
   silicon array</strong> (20% cells, ~3 kg/m², Starlink-class) delivering the 5 kW at 1 AU. Δv from LEO is
   <strong>~20 km/s</strong> (perigee-biased SEP; ~14 km/s is the impulsive floor), for a wet mass of
   <strong>~500 kg</strong> (~248 kg xenon, ~49%).</p>
+  <p><strong>This is slow, gentle thrust — not a fast burn.</strong> The acceleration is only
+  ~0.04–0.08 milli-<em>g</em> (0.2 N on a ~500 kg craft), sustained for <strong>~1 year</strong> to reach
+  terminal velocity <code>v∞</code> ≈ 24 km/s — <em>not</em> a few months. Over that year the probe makes
+  many tight loops around <em>Earth</em> (the geocentric escape, weeks–months, &lt;0.01 AU) and then roughly
+  <em>one</em> loop around the <em>Sun</em>. It is precisely <em>because</em> the acceleration is so gentle and
+  spread over ~1 year that the power (~5 kW) and propellant (~250 kg xenon) stay modest; reaching v∞ in weeks
+  instead would demand megawatt-class power or a chemical stage with far more propellant — neither of which this
+  design needs, since there is no schedule pressure against the 75,000-yr coast.</p>
   <p><strong>Is the thrust "enough to leave at the right time of year rather than aimlessly spiralling out"?</strong>
   Electric propulsion is inherently low-thrust — thrust-to-weight here is ~4×10⁻⁵, so departure <em>is</em> a
   ~1-yr spiral, not an impulsive kick. But for a <em>direct</em> interstellar departure there is <strong>no tight
