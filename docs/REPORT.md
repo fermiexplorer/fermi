@@ -65,6 +65,17 @@ Aiming much past ~80 kyr (or much before ~65 kyr) raises Δv — AC's geometry m
 > 18.6 km/s excess vs Earth → +29.8 km/s Earth orbital → 48.4 km/s at 1 AU → minus the
 > 42.1 km/s solar escape → 23.8 km/s cruise.)
 
+> **Why isn't a longer flight slower, and why is 73k the minimum?** For a *stationary*
+> target, more travel time means less speed. But Alpha Centauri is **receding** (4.5 ly
+> at 58k yr → 8.4 ly at 100k yr), so the required cruise speed does **not** keep dropping:
+> v∞ bottoms at the **tangential intercept (~58k yr, 23.3 km/s — a hard floor; you cannot
+> intercept any slower)** and **rises** afterwards (23.8 at 75k, 25.1 at 100k). Separately,
+> the cheapest *departure Δv* is at **~73k yr**, not at the min-speed 58k: the 58k aim is
+> tilted ~10° out of the ecliptic and that plane-change can't be borrowed from Earth, so it
+> costs **14.65 km/s** despite the lower speed, versus **13.88 km/s** for the slightly-
+> faster but near-in-plane 73k arrival. So *min-speed (58k) ≠ min-Δv (73k)*, and neither is
+> "the longest time." (See the on-page Δv/v∞ chart, which plots both minima.)
+
 ## 2. Does it work with electric propulsion + solar? — Yes
 
 At Isp 3000 s, 20 km/s needs ~50% xenon (mass ratio ≈ 2.0); a 500 kg wet vehicle is
