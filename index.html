@@ -44,6 +44,7 @@
   .radios, .checks { display: flex; flex-direction: column; gap: 6px; }
   .radios label, .checks label { display: flex; gap: 8px; align-items: center; font-size: 13px; }
   .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .exp { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #d29922; border: 1px solid #6b5320; border-radius: 3px; padding: 0 4px; margin: 0 2px; }
   /* right main */
   main { padding: 18px 22px; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -177,9 +178,9 @@
     <div class="group">
       <h3>Power source</h3>
       <div class="radios">
-        <label><input type="radio" name="pwr" value="solar" checked> Solar array (free energy, 1/r²)</label>
-        <label><input type="radio" name="pwr" value="fuelcell"> Fuel cell (chemical, energy-limited)</label>
-        <label><input type="radio" name="pwr" value="nuclear"> Nuclear / RTG (energy-dense, heavy/kW)</label>
+        <label><input type="radio" name="pwr" value="solar" checked> Solar array (default — free energy, 1/r²)</label>
+        <label><input type="radio" name="pwr" value="fuelcell"> Fuel cell <span class="exp">experimental</span> (chemical, energy-limited)</label>
+        <label><input type="radio" name="pwr" value="nuclear"> Nuclear / RTG <span class="exp">experimental</span> (energy-dense, heavy/kW)</label>
       </div>
       <div class="ctrl" style="margin-top:10px">
         <label>Power at 1 AU <b><span id="o_pwr">5.0</span> kW</b></label>
@@ -243,9 +244,9 @@
       </div>
       <div class="vizsel">
         <span>Stage (both views):</span>
-        <label><input type="radio" name="viz" value="earth" checked> 1 · Earth escape</label>
-        <label><input type="radio" name="viz" value="sun"> 2 · Sun escape</label>
-        <label><input type="radio" name="viz" value="ac"> 3 · To Alpha Centauri</label>
+        <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
+        <label><input type="radio" name="viz" value="sun"> 2 · Solar escape</label>
+        <label><input type="radio" name="viz" value="ac"> 3 · Interstellar cruise</label>
       </div>
       <div class="dualrow">
         <div class="chart" id="follow2d"></div>
@@ -330,6 +331,46 @@
     exceed AC's distance ÷ travel time.</p>
   </div>
 
+  <h4>Concept of operations (CONOPS)</h4>
+  <p>Baseline architecture: <strong>direct solar-electric ion from LEO</strong>, Isp 3000 s, ~500 kg wet.
+  The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then thrusting
+  heliocentrically to build the escape velocity — then shuts off for the long coast. All burning happens
+  within a few AU of the Sun, where solar power is strongest.</p>
+  <table class="chain">
+    <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
+    <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
+    <tr><td>1 · Earth-escape spiral</td><td>Continuous ion thrust, <em>perigee-biased</em>, spiralling out of Earth to C₃≈0 (geocentric escape). This is where the low-thrust "spiral tax" is paid.</td><td class="v">~weeks–months</td></tr>
+    <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position</td><td class="v">~1 yr total burn</td></tr>
+    <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~248 kg xenon spent</td><td class="v">—</td></tr>
+    <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
+    <tr><td>5 · Arrival</td><td>Pass within ≤ 2600 AU of AC (99% of the way); science/flyby</td><td class="v">—</td></tr>
+  </table>
+  <p><strong>Propulsion &amp; power (baseline Isp 3000 s).</strong> Thruster input power <strong>~5 kW</strong>
+  (electrical); thrust <strong>~0.20 N (204 mN)</strong>; <strong>firing time ~1.1 yr continuous</strong>
+  (0.9 yr at Isp 2000 s rising to 1.4 yr at 4000 s). Power comes from a <strong>~18 m² / ~55 kg commercial
+  silicon array</strong> (20% cells, ~3 kg/m², Starlink-class) delivering the 5 kW at 1 AU. Δv from LEO is
+  <strong>~20 km/s</strong> (perigee-biased SEP; ~14 km/s is the impulsive floor), for a wet mass of
+  <strong>~500 kg</strong> (~248 kg xenon, ~49%).</p>
+  <p><strong>Is the thrust "enough to leave at the right time of year rather than aimlessly spiralling out"?</strong>
+  Electric propulsion is inherently low-thrust — thrust-to-weight here is ~4×10⁻⁵, so departure <em>is</em> a
+  ~1-yr spiral, not an impulsive kick. But for a <em>direct</em> interstellar departure there is <strong>no tight
+  launch window</strong> to miss: the aim is a fixed <em>inertial</em> direction (where AC will be in ~75,000 yr),
+  and AC's bearing drifts negligibly over a 1-yr spiral, so launch date is essentially free. The spiral is also
+  not "aimless" — thrust is steered (perigee-biased) to build <code>v∞</code> in the chosen escape direction; the
+  ~1 yr it adds is negligible against the ~75,000-yr coast. Launch <em>timing</em> only becomes a hard constraint
+  for the optional architectures below (a Jupiter flyby needs alignment; a solar Oberth needs a perihelion drop).</p>
+
+  <h4>Architecture comparison — direct vs solar Oberth vs gravity assist</h4>
+  <table class="chain">
+    <tr><th>Architecture</th><th class="v">Onboard Δv from LEO</th><th>Extra hardware / complexity</th><th>Launch-timing window</th><th>When to choose it</th></tr>
+    <tr><td><b>Direct solar-electric ion</b></td><td class="v">~20 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
+    <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield + a way to drop perihelion (retro burn or Venus/Jupiter assist)</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1–2 km/s burn at 4–20 R<sub>☉</sub> yields the full 24 km/s) — but heavier &amp; more complex.</td></tr>
+    <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
+  </table>
+  <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
+  hardware or a timing constraint. Direct SEP carries the most Δv but is the only option with no alignment
+  dependence — which is why it is the baseline.</p>
+
   <h4>3 · Mass &amp; the rocket equation</h4>
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
@@ -365,7 +406,7 @@
     <li>Patched-conic departure with best-case launch timing; no detailed finite-burn or steering losses beyond the additive low-thrust penalty.</li>
     <li>Gravity-assist figures are geometric upper bounds, not phased trajectory solutions.</li>
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
-    <li>The 3D view plots true ecliptic coordinates in light-years (drag to rotate, scroll to zoom); the play/scrubber uses <em>log-scaled</em> time so the ~1-yr departure is visible against the ~75,000-yr coast. The 2D "Earth escape" stage is schematic (not to scale); "Sun escape" and "To Alpha Centauri" are to-scale top-down projections onto the ecliptic.</li>
+    <li>All four trajectory panels draw the <em>same</em> path: one continuous low-thrust solar escape, numerically integrated (RK4, μ=4π², tangential thrust until v∞ is reached, then coast) and rotated so its escape asymptote points at the AC intercept — so the spiral opens <em>smoothly</em> into the cruise with no hard turns. The scrubber is <em>log-scaled</em> in distance (1 AU → AC), and every view renders only the <em>flown</em> path (never the future). The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape is correctly a sub-revolution arc.</li>
   </ul>
   <h4>Audits &amp; independent verification</h4>
   <p>Every headline number is cross-checked several independent ways — a value is only trusted when it
@@ -623,71 +664,28 @@ function stageStartU(s){ return s==='earth'?0 : s==='sun'?1/3 : 2/3; }
 function aimDir(){ const v=requiredVinfVec(val('T')*YEAR); const n=Math.hypot(v[0],v[1],v[2]); return [v[0]/n,v[1]/n,v[2]/n]; }
 
 function drawViz(){
-  const ph=phaseOf(animU), stage=ph.stage, f=ph.f;
-  document.querySelectorAll('input[name=viz]').forEach(el=>{ el.checked=(el.value===stage); });
-  const C3={...CFG,scrollZoom:true};
-  const eq={zeroline:false,showgrid:false,showticklabels:false};
-  const LAY3D=(title,unit)=>({title:{text:title,font:{size:13,color:'#e6edf3'}},
-    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,
-    legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},uirevision:'3d-'+stage,
-    scene:{aspectmode:'data',bgcolor:'#161b22',
-      xaxis:{title:'x ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'},
-      yaxis:{title:'y ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'},
-      zaxis:{title:'z ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'}}});
-  const LAY2D=(title,showleg)=>({...LAYOUT(title),showlegend:!!showleg,
-    xaxis:{...eq},yaxis:{...eq,scaleanchor:'x',scaleratio:1},
-    margin:{l:20,r:20,t:34,b:showleg?40:20},uirevision:'2d-'+stage});
-  let label='';
-
-  if(stage==='earth'){
-    const turns=5.5,N=240,xs=[],ys=[],zs=[];
-    for(let i=0;i<=N;i++){ const t=i/N,th=t*turns*2*Math.PI,rr=1+t*15; xs.push(rr*Math.cos(th)); ys.push(rr*Math.sin(th)); zs.push(0); }
-    const th=f*turns*2*Math.PI, rr=1+f*15, pp=[rr*Math.cos(th),rr*Math.sin(th),0];
-    Plotly.react('chartOrbit2d',[
-      {x:xs,y:ys,mode:'lines',line:{color:'#4cc2ff',width:1.5},showlegend:false},
-      {x:[0],y:[0],mode:'markers+text',marker:{color:'#58a6ff',size:16},text:['Earth'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[1],y:[0],mode:'markers+text',marker:{color:'#3fb950',size:8},text:['LEO'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[pp[0]],y:[pp[1]],mode:'markers',marker:{color:'#d29922',size:11},showlegend:false},
-    ],LAY2D('Stage 1 · 2D — Earth-escape spiral (schematic, not to scale)'),CFG);
-    label=`~${fmt(f*1.2,2)} yr · Stage 1: spiral out of Earth (low-thrust)`;
-
-  } else if(stage==='sun'){
-    const d=aimDir(), ang=Math.atan2(d[1],d[0]);
-    const cx=[],cy=[],cz=[]; for(let i=0;i<=120;i++){ const a=i/120*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0); }
-    const P0=[Math.cos(ang),Math.sin(ang),0];
-    const lx=[],ly2=[],lz=[]; for(let i=0;i<=60;i++){ const t=i/60; lx.push(P0[0]+t*4*d[0]); ly2.push(P0[1]+t*4*d[1]); lz.push(P0[2]+t*4*d[2]); }
-    const pp=[P0[0]+f*4*d[0],P0[1]+f*4*d[1],P0[2]+f*4*d[2]];
-    Plotly.react('chartOrbit2d',[
-      {x:cx,y:cy,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
-      {x:lx,y:ly2,mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
-      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:16},text:['Sun'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[P0[0]],y:[P0[1]],mode:'markers+text',marker:{color:'#3fb950',size:8},text:['depart (1 AU)'],textposition:'bottom right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[pp[0]],y:[pp[1]],mode:'markers',marker:{color:'#d29922',size:11},showlegend:false},
-    ],LAY2D('Stage 2 · 2D — Sun escape (top-down, AU)'),CFG);
-    label=`~${fmt(f*6,1)} yr · Stage 2: leaving the Sun (${fmt(Math.hypot(pp[0],pp[1],pp[2]),2)} AU)`;
-
-  } else {
-    const s=1/LY, T=val('T')*YEAR;
-    const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
-    const intc=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
-    const tE=T*1.18, acEnd=[(R0[0]+VAC[0]*tE)*s,(R0[1]+VAC[1]*tE)*s,(R0[2]+VAC[2]*tE)*s];
-    const probe=[intc[0]*f,intc[1]*f,intc[2]*f], es=f*T;
-    const acp=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
-    Plotly.react('chartOrbit2d',[
-      {x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],mode:'lines',line:{color:'#f0883e',width:1,dash:'dot'},name:'AC track'},
-      {x:[0,intc[0]],y:[0,intc[1]],mode:'lines',line:{color:'#4cc2ff',width:2},name:'probe cruise'},
-      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:12},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[acp[0]],y:[acp[1]],mode:'markers',marker:{color:'#f0883e',size:9},name:'AC (now)'},
-      {x:[probe[0]],y:[probe[1]],mode:'markers',marker:{color:'#4cc2ff',size:9},name:'probe (now)'},
-      {x:[intc[0]],y:[intc[1]],mode:'markers',marker:{color:'#d29922',size:11,symbol:'star'},name:'intercept'},
-    ],LAY2D('Stage 3 · 2D — cruise to AC (ecliptic top-down, ly)',true),CFG);
-    label=`${fmt(es/YEAR)} yr · Stage 3: interstellar cruise (${fmt(Math.hypot(probe[0],probe[1],probe[2]),2)} ly)`;
-  }
-  document.getElementById('tlabel').textContent=label;
-  drawZoom3d();    // 3D view: single Sun-centred scene with a smooth zoom-out camera
-  drawFollow3d();  // chase cam (3D): flies behind the probe
-  drawFollow2d();  // chase cam (2D): velocity-up, follows the probe
-  drawTimeline();  // redraws the burn timeline incl. the moving "now" marker
+  document.querySelectorAll('input[name=viz]').forEach(el=>{ el.checked=(el.value===phaseOf(animU).stage); });
+  const c=craftState(), st=trajState(c);
+  const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown);
+  // chartOrbit2d: Sun-centred ecliptic top-down of the SAME trajectory; flown path only.
+  const R2=Math.max(2.2, 1.15*c.dist), ex=[],ey=[];
+  for(let i=0;i<=90;i++){ const a=i/90*2*Math.PI; ex.push(Math.cos(a)); ey.push(Math.sin(a)); }
+  Plotly.react('chartOrbit2d',[
+    {x:ex,y:ey,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
+    {x:F.x,y:F.y,mode:'lines',line:{color:'#3fb950',width:2},showlegend:false},
+    {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:12},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
+    {x:[st.pos[0]],y:[st.pos[1]],mode:'markers',marker:{color:'#4cc2ff',size:9},showlegend:false},
+  ],{...LAYOUT('2D top-down — flown path (ecliptic, AU)'),showlegend:false,margin:{l:18,r:18,t:34,b:18},
+     xaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false},
+     yaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false,scaleanchor:'x',scaleratio:1}},CFG);
+  const dly=c.dist*AU/LY;
+  document.getElementById('tlabel').textContent=
+    `${fmt(c.es/YEAR)} yr · ${st.onSpiral?'spiral-out & solar escape':'interstellar cruise'} · `+
+    (c.dist<2000?`${fmt(c.dist,1)} AU`:`${fmt(dly,3)} ly`);
+  drawZoom3d(c,st);    // 3D overview: Sun-centred, smooth zoom-out
+  drawFollow3d(c,st);  // chase cam (3D): behind the probe
+  drawFollow2d(c,st);  // chase cam (2D): velocity-up
+  drawTimeline();      // burn timeline + moving "now" marker
 }
 
 // Shared spacecraft state (AU) for the zoom + chase views, so the probe is
@@ -696,130 +694,164 @@ function craftState(){
   const s=1/AU, T=val('T')*YEAR;
   const I=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
   const Inorm=Math.hypot(I[0],I[1],I[2]);
-  const DMIN=0.0006;                               // probe ~at LEO scale at launch (AU)
-  const dist=DMIN*Math.pow(Inorm/DMIN, animU);     // LOG-spaced distance travelled (AU): Earth -> AC
+  const RDEP=1;                                    // departure at Earth's orbit (1 AU from Sun)
+  const dist=RDEP*Math.pow(Inorm/RDEP, animU);     // LOG-spaced heliocentric distance: 1 AU -> AC
   const f=dist/Inorm, es=f*T;                      // journey fraction (0..1) and elapsed time
-  const p=[I[0]*f,I[1]*f,I[2]*f];
   const ac=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
   const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
   const tEx=T*1.18, acEnd=[(R0[0]+VAC[0]*tEx)*s,(R0[1]+VAC[1]*tEx)*s,(R0[2]+VAC[2]*tEx)*s];
   const vhat=[I[0]/Inorm,I[1]/Inorm,I[2]/Inorm];
-  return {I,Inorm,dist,f,es,p,ac,acNow,acEnd,vhat};
+  const rv=requiredVinfVec(T), vinfKmS=Math.hypot(rv[0],rv[1],rv[2])/1000;
+  return {I,Inorm,dist,f,es,ac,acNow,acEnd,vhat,vinfKmS};
 }
 
-// The probe follows its ACTUAL path: an Earth-escape spiral, then the heliocentric
-// cruise to the intercept. Position + instantaneous unit tangent T are returned so the
-// chase camera can lock behind the velocity (spiral & grid then rotate in view).
-const SP={r0:0.0006, rEsc:0.02, turns:5};   // spiral: LEO-ish -> escape, in AU
-function chasePath(){
-  const c=craftState();
-  const ang=Math.atan2(c.vhat[1],c.vhat[0]);
-  const E=[Math.cos(ang),Math.sin(ang),0];                 // Earth (1 AU, along aim dir)
-  const {r0,rEsc,turns}=SP, dlr=Math.log(rEsc/r0), d=c.dist;
-  let p,T,onSpiral;
-  if(d<rEsc){                                              // --- Earth-escape spiral ---
-    onSpiral=true;
-    const s=Math.log(d/r0)/dlr, th=s*turns*2*Math.PI;
-    p=[E[0]+d*Math.cos(th), E[1]+d*Math.sin(th), 0];
-    const tx=d*dlr*Math.cos(th)-d*turns*2*Math.PI*Math.sin(th);
-    const ty=d*dlr*Math.sin(th)+d*turns*2*Math.PI*Math.cos(th);
-    const tn=Math.hypot(tx,ty)||1; T=[tx/tn,ty/tn,0];
-  } else {                                                 // --- heliocentric cruise ---
-    onSpiral=false;
-    const d2=d-rEsc, spEnd=[E[0]+rEsc,E[1],0];
-    p=[spEnd[0]+c.vhat[0]*d2, spEnd[1]+c.vhat[1]*d2, spEnd[2]+c.vhat[2]*d2];
-    T=[c.vhat[0],c.vhat[1],c.vhat[2]];
+// ----- ONE accurate trajectory, shared by every view -----
+// We numerically integrate (RK4) a continuous low-thrust solar escape: starting from a
+// 1-AU circular orbit, a tangential thrust raises the orbit until the heliocentric
+// excess speed v_inf is reached, then the engine cuts and it coasts. The integrated
+// arc is rotated so its escape ASYMPTOTE points exactly at the AC intercept, so the
+// spiral opens SMOOTHLY into the straight cruise (no hard turn — the velocity is
+// continuous, as it physically must be). The many-revolution part of the real mission
+// is the *geocentric* Earth-escape spiral at <0.01 AU — far below the zoom of these
+// views, so at solar-system scale the true heliocentric escape is a sub-revolution arc.
+const TRAJ_ACC=1.6;                          // tangential accel (AU/yr^2), design-class SEP
+let _traj=null, _trajKey='';
+function buildTraj(vhat, vinfKmS){
+  const key=vhat.map(x=>x.toFixed(4)).join(',')+'|'+vinfKmS.toFixed(2);
+  if(_trajKey===key && _traj) return _traj;
+  const MU=4*Math.PI*Math.PI, AUyr=4.74057, vinf=vinfKmS/AUyr, Et=0.5*vinf*vinf;
+  const at=TRAJ_ACC, dt=0.001;
+  let r=[1,0], v=[0,Math.sqrt(MU)], burning=true, n=0;
+  const acc=(r,v,th)=>{ const rr=Math.hypot(r[0],r[1]), vv=Math.hypot(v[0],v[1])||1;
+    const g=-MU/(rr*rr*rr); return [g*r[0]+th*v[0]/vv, g*r[1]+th*v[1]/vv]; };
+  const X=[r[0]], Y=[r[1]];
+  while(n++<400000){
+    const rr=Math.hypot(r[0],r[1]);
+    if(burning && 0.5*(v[0]*v[0]+v[1]*v[1])-MU/rr>=Et) burning=false;
+    const th=burning?at:0;
+    const a1=acc(r,v,th);
+    const r2=[r[0]+0.5*dt*v[0],r[1]+0.5*dt*v[1]], v2=[v[0]+0.5*dt*a1[0],v[1]+0.5*dt*a1[1]], a2=acc(r2,v2,th);
+    const r3=[r[0]+0.5*dt*v2[0],r[1]+0.5*dt*v2[1]], v3=[v[0]+0.5*dt*a2[0],v[1]+0.5*dt*a2[1]], a3=acc(r3,v3,th);
+    const r4=[r[0]+dt*v3[0],r[1]+dt*v3[1]], v4=[v[0]+dt*a3[0],v[1]+dt*a3[1]], a4=acc(r4,v4,th);
+    r=[r[0]+dt/6*(v[0]+2*v2[0]+2*v3[0]+v4[0]), r[1]+dt/6*(v[1]+2*v2[1]+2*v3[1]+v4[1])];
+    v=[v[0]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), v[1]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])];
+    if(n%6===0){ X.push(r[0]); Y.push(r[1]); }
+    if(!burning && Math.hypot(r[0],r[1])>24){ X.push(r[0]); Y.push(r[1]); break; }
   }
-  return {c,E,p,T,onSpiral,d};
+  // asymptote = final velocity; rotate the 2D plane so it -> +x, then embed in 3D with
+  // +x -> v_hat and +y -> the in-ecliptic direction of the aim (so the escape plane is
+  // tilted but still spreads across the ecliptic — the spiral reads as a spiral top-down,
+  // not collapsed to a line).
+  const va=Math.hypot(v[0],v[1])||1, ca=v[0]/va, sa=v[1]/va;       // rotate by -atan2(vy,vx)
+  const u=vhat; const hn=Math.hypot(u[0],u[1]);                    // in-ecliptic dir PERP to aim's
+  let w=hn<1e-6?[1,0,0]:[-u[1]/hn, u[0]/hn, 0];                    // horizontal -> plane spreads in x-y
+  const du=w[0]*u[0]+w[1]*u[1]+w[2]*u[2]; w=[w[0]-du*u[0], w[1]-du*u[1], w[2]-du*u[2]];
+  let wn=Math.hypot(w[0],w[1],w[2]); if(wn<1e-6){ w=[1,0,0]; wn=1; } w=[w[0]/wn,w[1]/wn,w[2]/wn];
+  const map3=(x,y)=>{ const Xr=ca*x+sa*y, Yr=-sa*x+ca*y;
+    return [Xr*u[0]+Yr*w[0], Xr*u[1]+Yr*w[1], Xr*u[2]+Yr*w[2]]; };
+  const pts=[], rad=[];
+  for(let i=0;i<X.length;i++){ const p=map3(X[i],Y[i]); pts.push(p); rad.push(Math.hypot(p[0],p[1],p[2])); }
+  _trajKey=key; _traj={pts,rad,last:pts[pts.length-1],rLast:rad[rad.length-1]};
+  return _traj;
 }
-function spiralPts(E){
-  const {r0,rEsc,turns}=SP, dlr=Math.log(rEsc/r0), xs=[],ys=[],N=260;
-  for(let i=0;i<=N;i++){const s=i/N,dd=r0*Math.exp(s*dlr),th=s*turns*2*Math.PI; xs.push(E[0]+dd*Math.cos(th)); ys.push(E[1]+dd*Math.sin(th));}
-  return {xs,ys,spEnd:[E[0]+rEsc,E[1],0]};
+// Probe position + unit tangent at the current heliocentric distance, plus the PAST
+// polyline (escape arc traversed so far, then the cruise so far) — never the future.
+function trajState(c){
+  const tj=buildTraj(c.vhat, c.vinfKmS), d=Math.max(1,c.dist);
+  const lerp=(A,B,t)=>[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t];
+  const unit=v=>{ const n=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/n,v[1]/n,v[2]/n]; };
+  if(d>=tj.rLast){                                          // --- heliocentric cruise ---
+    const fr=(d-tj.rLast)/(c.Inorm-tj.rLast), pos=lerp(tj.last,c.I,fr);
+    const arc=tj.pts.slice();                               // full escape arc is in the past
+    return {pos, tan:unit([c.I[0]-tj.last[0],c.I[1]-tj.last[1],c.I[2]-tj.last[2]]),
+            onSpiral:false, arc, cruise:[tj.last,pos]};
+  }
+  let i=1; while(i<tj.rad.length && tj.rad[i]<d) i++;        // --- still on the escape arc ---
+  const i0=Math.max(0,i-1), r0=tj.rad[i0], r1=tj.rad[i]||r0+1e-9;
+  const fr=(r1>r0)?(d-r0)/(r1-r0):0, A=tj.pts[i0], B=tj.pts[i]||A, pos=lerp(A,B,fr);
+  return {pos, tan:unit([B[0]-A[0],B[1]-A[1],B[2]-A[2]]), onSpiral:true,
+          arc:tj.pts.slice(0,i0+1).concat([pos]), cruise:null};
 }
+function cols(a){ return {x:a.map(p=>p[0]), y:a.map(p=>p[1]), z:a.map(p=>p[2])}; }
 
-// Chase cam (3D): camera locked BEHIND the craft's velocity, 30° up. As the velocity
-// rotates through the spiral, the world (spiral + ecliptic grid) rotates in view.
-function drawFollow3d(){
-  const {c,E,p,T,onSpiral,d}=chasePath();
-  const sp=spiralPts(E);
-  const H=Math.max(0.03, 0.62*d);                          // cube half-width, grows with distance
-  const ax=k=>({range:[p[k]-H,p[k]+H],showticklabels:false,title:'',color:'#9aa7b4',gridcolor:'#1d242d'});
-  // local ecliptic grid (z=0) around the craft — rotates as the camera orbits
-  const gx=[],gy=[],gz=[],gn=8,gx0=p[0]-H,gx1=p[0]+H,gy0=p[1]-H,gy1=p[1]+H;
-  for(let i=0;i<=gn;i++){const xx=gx0+(gx1-gx0)*i/gn, yy=gy0+(gy1-gy0)*i/gn;
-    gx.push(xx,xx,null); gy.push(gy0,gy1,null); gz.push(0,0,null);
-    gx.push(gx0,gx1,null); gy.push(yy,yy,null); gz.push(0,0,null);}
-  const C30=Math.cos(Math.PI/6),S30=Math.sin(Math.PI/6),D=2.3;
-  const zdv=T[2]; let zp=[-zdv*T[0],-zdv*T[1],1-zdv*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
+// Chase cam (3D): camera behind the craft's velocity, 30° up, framing the WHOLE flown
+// path (Sun -> probe) so nothing is ever clipped. As the velocity turns along the
+// escape arc, the path + ecliptic grid rotate in view. Only the flown path is drawn.
+function drawFollow3d(c,st){
+  const p=st.pos, T=st.tan;
+  const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc;
+  const all=flown.concat([[0,0,0]]);                       // include the Sun in the frame
+  let mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
+  all.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<mn[k])mn[k]=q[k]; if(q[k]>mx[k])mx[k]=q[k]; }});
+  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
+  const H=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],0.5)*1.3;   // cube half-width
+  const ax=k=>({range:[ctr[k]-H,ctr[k]+H],showticklabels:false,title:'',color:'#9aa7b4',gridcolor:'#1d242d'});
+  // full ecliptic grid (z=0) spanning the frame
+  const gx=[],gy=[],gz=[],gn=10;
+  for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
+    gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(0,0,null);
+    gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(0,0,null); }
+  const C30=Math.cos(Math.PI/6),S30=Math.sin(Math.PI/6),D=2.1;
+  let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
   const eye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
-  const tag = onSpiral ? 'Earth-escape spiral' : (H<2000?'inner system':(H<60000?'leaving the Sun':'AC in view'));
+  const A=cols(flown), tag = st.onSpiral?'solar-escape spiral':'interstellar cruise';
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
-    {type:'scatter3d',mode:'lines',x:sp.xs,y:sp.ys,z:sp.xs.map(_=>0),line:{color:'#3fb950',width:2},name:'spiral'},
-    {type:'scatter3d',mode:'lines',x:[sp.spEnd[0],c.I[0]],y:[sp.spEnd[1],c.I[1]],z:[sp.spEnd[2],c.I[2]],line:{color:'#4cc2ff',width:2},name:'cruise'},
-    {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2},name:'AC track'},
+    {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
-    {type:'scatter3d',mode:'markers',x:[E[0]],y:[E[1]],z:[E[2]],marker:{color:'#58a6ff',size:5},name:'Earth'},
-    {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'AC'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#4cc2ff',size:6},name:'probe'},
-  ],{title:{text:`Chase cam (3D) — locked behind the probe (${fmt(H,H<10?2:0)} AU · ${tag})`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`Chase cam (3D) — behind the probe · flown path only (${fmt(2*H,H<10?2:0)} AU · ${tag})`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,margin:{l:0,r:0,t:34,b:0},
     scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
       camera:{eye:eye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}}}},{...CFG,scrollZoom:false});
 }
 
-// Chase cam (2D): everything is projected into the craft's instantaneous frame
-// (forward = up, craft at the bottom), so the spiral AND the ecliptic grid rotate.
-function drawFollow2d(){
-  const {c,E,p,T,onSpiral,d}=chasePath();
-  const fwd=[T[0],T[1]], rt=[T[1],-T[0]];
-  const proj=q=>[(q[0]-p[0])*rt[0]+(q[1]-p[1])*rt[1], (q[0]-p[0])*fwd[0]+(q[1]-p[1])*fwd[1]]; // craft-relative, forward=up
-  const sp=spiralPts(E), spx=[],spy=[];
-  for(let i=0;i<sp.xs.length;i++){const q=proj([sp.xs[i],sp.ys[i]]); spx.push(q[0]); spy.push(q[1]);}
-  const A=proj(sp.spEnd), B=proj([c.I[0],c.I[1]]);          // cruise line
-  const tA=proj([c.acNow[0],c.acNow[1]]), tB=proj([c.acEnd[0],c.acEnd[1]]);
-  const H=Math.max(0.03, 0.62*d);
-  const gx=[],gy=[],gn=8,gx0=p[0]-H,gx1=p[0]+H,gy0=p[1]-H,gy1=p[1]+H;   // ecliptic grid (projected -> rotates)
-  for(let i=0;i<=gn;i++){const xx=gx0+(gx1-gx0)*i/gn, yy=gy0+(gy1-gy0)*i/gn;
-    const a=proj([xx,gy0]),b=proj([xx,gy1]); gx.push(a[0],b[0],null); gy.push(a[1],b[1],null);
-    const e=proj([gx0,yy]),f2=proj([gx1,yy]); gx.push(e[0],f2[0],null); gy.push(e[1],f2[1],null);}
-  const Ss=proj([0,0]),Es=proj(E),Is=proj([c.I[0],c.I[1]]);
+// Chase cam (2D): the flown path is projected into the craft's instantaneous frame
+// (forward = up, probe at origin), so the path AND the ecliptic grid rotate as the
+// velocity turns. The frame holds the whole flown path; only the flown path is drawn.
+function drawFollow2d(c,st){
+  const p=st.pos, T=st.tan, fwd=[T[0],T[1]], rt=[T[1],-T[0]];
+  const proj=q=>[(q[0]-p[0])*rt[0]+(q[1]-p[1])*rt[1], (q[0]-p[0])*fwd[0]+(q[1]-p[1])*fwd[1]];
+  const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc;
+  const F=flown.map(proj), fx=F.map(q=>q[0]), fy=F.map(q=>q[1]), S=proj([0,0]);
+  // world-space ecliptic grid spanning the flown path (projected -> rotates with craft)
+  const wx=flown.map(q=>q[0]).concat([0]), wy=flown.map(q=>q[1]).concat([0]);
+  const gcx=(Math.min(...wx)+Math.max(...wx))/2, gcy=(Math.min(...wy)+Math.max(...wy))/2;
+  const gH=0.5*Math.max(Math.max(...wx)-Math.min(...wx),Math.max(...wy)-Math.min(...wy),0.5)*1.4, gn=10, gx=[],gy=[];
+  for(let i=0;i<=gn;i++){ const t=i/gn, X=gcx-gH+2*gH*t, Y=gcy-gH+2*gH*t;
+    const a=proj([X,gcy-gH]),b=proj([X,gcy+gH]); gx.push(a[0],b[0],null); gy.push(a[1],b[1],null);
+    const e=proj([gcx-gH,Y]),f2=proj([gcx+gH,Y]); gx.push(e[0],f2[0],null); gy.push(e[1],f2[1],null); }
+  const xs=fx.concat([S[0],0]), ys=fy.concat([S[1],0]);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const H=0.5*Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys),0.5)*1.3;
   Plotly.react('follow2d',[
     {x:gx,y:gy,mode:'lines',line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',showlegend:false},
-    {x:[tA[0],tB[0]],y:[tA[1],tB[1]],mode:'lines',line:{color:'#f0883e',width:1,dash:'dot'},showlegend:false},
-    {x:[A[0],B[0]],y:[A[1],B[1]],mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
-    {x:spx,y:spy,mode:'lines',line:{color:'#3fb950',width:1.5},showlegend:false},
-    {x:[Ss[0]],y:[Ss[1]],mode:'markers',marker:{color:'#f5d020',size:9},showlegend:false},
-    {x:[Es[0]],y:[Es[1]],mode:'markers',marker:{color:'#58a6ff',size:7},showlegend:false},
-    {x:[Is[0]],y:[Is[1]],mode:'markers',marker:{color:'#d29922',size:9,symbol:'star'},showlegend:false},
+    {x:fx,y:fy,mode:'lines',line:{color:'#3fb950',width:2},showlegend:false},
+    {x:[S[0]],y:[S[1]],mode:'markers',marker:{color:'#f5d020',size:9},showlegend:false},
     {x:[0],y:[0],mode:'markers',marker:{color:'#4cc2ff',size:9},showlegend:false},
-  ],{title:{text:`Chase cam (2D) — probe frame, forward = up (${fmt(H,H<10?2:0)} AU · ${onSpiral?'spiral':'cruise'})`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`Chase cam (2D) — probe frame, forward = up · flown path only (${st.onSpiral?'solar-escape spiral':'cruise'})`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},margin:{l:8,r:8,t:34,b:8},showlegend:false,
-    xaxis:{range:[-H,H],showticklabels:false,zeroline:false,gridcolor:'#1d242d'},
-    yaxis:{range:[-0.5*H,1.5*H],showticklabels:false,zeroline:false,gridcolor:'#1d242d',scaleanchor:'x',scaleratio:1}},CFG);
+    xaxis:{range:[cx-H,cx+H],showticklabels:false,zeroline:false,gridcolor:'#1d242d'},
+    yaxis:{range:[cy-H,cy+H],showticklabels:false,zeroline:false,gridcolor:'#1d242d',scaleanchor:'x',scaleratio:1}},CFG);
 }
 
 // 3D view: one Sun-centred scene (AU) whose camera zooms out continuously with the
 // animation, so Play dollies smoothly from Earth's orbit out to the AC intercept
 // instead of hard-cutting between the three scales. The 2D panel keeps the per-stage
 // schematic detail. Rotation is preserved (uirevision); the cube size sets the zoom.
-function drawZoom3d(){
-  const c=craftState();
-  const I=c.I, Inorm=c.Inorm, probe=c.p, acp=c.ac, acNow=c.acNow, acEnd=c.acEnd;
+function drawZoom3d(c,st){
+  const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown), p=st.pos;
   const R=Math.max(2.2, 1.3*c.dist);               // Sun-centred cube; grows with distance travelled
   const cx=[],cy=[],cz=[]; for(let i=0;i<=90;i++){const a=i/90*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0);}
   const note = R<6 ? 'inner solar system' : (R<6000 ? 'leaving the Sun' : 'interstellar cruise');
   const ax=t=>({range:[-R,R],title:t,color:'#9aa7b4',gridcolor:'#2a323d'});
   Plotly.react('chartOrbit3d',[
     {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
-    {type:'scatter3d',mode:'lines',x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],z:[acNow[2],acEnd[2]],line:{color:'#f0883e',width:2},name:'AC track'},
-    {type:'scatter3d',mode:'lines',x:[0,I[0]],y:[0,I[1]],z:[0,I[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
+    {type:'scatter3d',mode:'lines',x:F.x,y:F.y,z:F.z,line:{color:'#3fb950',width:3},name:'flown path'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
-    {type:'scatter3d',mode:'markers',x:[I[0]],y:[I[1]],z:[I[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
-    {type:'scatter3d',mode:'markers',x:[probe[0]],y:[probe[1]],z:[probe[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
-    {type:'scatter3d',mode:'markers',x:[acp[0]],y:[acp[1]],z:[acp[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
-  ],{title:{text:`3D · live zoom-out — ${fmt(R, R<10?1:0)} AU view · ${note} (drag to rotate)`,font:{size:13,color:'#e6edf3'}},
+    {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
+    {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
+  ],{title:{text:`3D · live zoom-out — ${fmt(R, R<10?1:0)} AU view · ${note} · flown path only (drag to rotate)`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
     scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
