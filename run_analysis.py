@@ -6,10 +6,15 @@ Run:  .venv/bin/python run_analysis.py
 from __future__ import annotations
 
 import numpy as np
+from scipy.optimize import minimize_scalar
 
 from fermi_sim import constants as c
 from fermi_sim.astro import alpha_centauri_state
-from fermi_sim.departure import departure_budget
+from fermi_sim.departure import (
+    departure_budget,
+    impulsive_dv_from_leo,
+    v_inf_earth_required,
+)
 from fermi_sim.intercept import (
     ecliptic_crossing_time,
     min_speed_arrival,
@@ -39,15 +44,23 @@ def header(title: str) -> None:
 
 
 def find_min_dv_arrival(state, regime: str, lo_yr=50_000, hi_yr=100_000):
-    """Brute-force the arrival time minimising departure delta-v in a regime."""
-    best = None
-    for t_yr in np.linspace(lo_yr, hi_yr, 120):
+    """Arrival time minimising departure delta-v in a regime."""
+
+    def objective(t_yr: float) -> float:
         sol = solve_intercept(state, t_yr * c.YEAR)
-        dep = departure_budget(sol.v_inf, sol.plane_angle_deg)
-        dv = dep.dv_impulsive if regime == "impulsive" else dep.dv_low_thrust
-        if best is None or dv < best[1]:
-            best = (t_yr, dv, sol, dep)
-    return best
+        v_inf_e, _ = v_inf_earth_required(sol.v_inf, sol.plane_angle_deg)
+        if regime == "impulsive":
+            return impulsive_dv_from_leo(v_inf_e, 400.0)
+        if regime == "lowthrust":
+            return v_inf_e
+        raise ValueError(f"unknown departure regime: {regime}")
+
+    res = minimize_scalar(objective, bounds=(lo_yr, hi_yr), method="bounded", options={"xatol": 1.0})
+    t_yr = float(res.x)
+    sol = solve_intercept(state, t_yr * c.YEAR)
+    dep = departure_budget(sol.v_inf, sol.plane_angle_deg)
+    dv = dep.dv_impulsive if regime == "impulsive" else dep.dv_low_thrust
+    return t_yr, dv, sol, dep
 
 
 def main() -> None:
@@ -181,8 +194,8 @@ def main() -> None:
         "* Direct LEO->AC with solar-electric ion is FEASIBLE: ~20 km/s low-thrust\n"
         "  budget, ~40-50% xenon, ~75-80k yr arrival, well inside 100k yr.\n"
         "* Minimum direct departure delta-v from LEO: ~14 km/s (impulsive floor),\n"
-        "  ~20 km/s realistic SEP, arriving ~75,000 yr, aimed ~1.5 deg off ecliptic\n"
-        "  near AC's ecliptic crossing -- matching your intuition.\n"
+        "  ~20 km/s realistic SEP, arriving near 73,000 yr (75,000 yr is nearly\n"
+        "  identical), aimed close to the ecliptic -- matching your intuition.\n"
         "* Solar beats fuel cells decisively (energy density). Hybrid adds no value;\n"
         "  fuel-cell exhaust as propellant does not help -- energy, not v_e, is the wall.\n"
         "* Gravity assists are optional: a solar Oberth could cut onboard delta-v to a\n"

@@ -12,9 +12,10 @@ gravity assist required. Is it feasible, and what is the minimum spacecraft Δv?
 ## Short answer
 
 **Yes, it is feasible** with today's technology: a ~500 kg solar-electric vehicle,
-~40–50% xenon, leaving LEO with a ~20 km/s low-thrust budget, arriving in ~75,000–
-80,000 years — comfortably inside the 100,000-year requirement. The concept as
-sketched (≈500 kg, mostly xenon, direct from LEO, ExoTerra-class thrusters) holds up.
+~40–50% xenon, leaving LEO with a ~20 km/s low-thrust budget, arriving in the
+~70,000–80,000 year window — comfortably inside the 100,000-year requirement.
+The concept as sketched (≈500 kg, mostly xenon, direct from LEO, flight-proven
+electric-thruster-class hardware) holds up.
 
 ## 1. Where to aim, and the minimum Δv
 
@@ -27,23 +28,24 @@ AC is now (shrinking with T) **plus** match AC's space velocity.
   +11 km/s of out-of-plane motion, so that aim is tilted ~10° out of plane — and
   out-of-plane velocity can't be borrowed from Earth.
 - AC's track **crosses the ecliptic at ~79,000 yr**, where departure is purely in-plane.
-- **The departure-Δv optimum sits between them, ≈75,000 yr**, tilted only ~1.5° off the
-  ecliptic. Your intuition was right: you trade a hair more cruise speed (23.8 vs 23.3
-  km/s) for a near-elimination of the plane-change penalty.
+- **The departure-Δv optimum sits between them, ≈73,000 yr**, tilted ~2.4° off the
+  ecliptic. A 75,000 yr benchmark is only ~10–12 m/s above the exact floor and is
+  tilted ~1.5° off the ecliptic. Your intuition was right: you trade a hair more
+  cruise speed (23.8 vs 23.3 km/s) for a near-elimination of the plane-change penalty.
 
 **Minimum spacecraft Δv from LEO (direct, no gravity assist):**
 
 | Regime | Δv from LEO | Arrival |
 |---|---|---|
-| Impulsive floor (full Oberth, chemical-like) | **~14 km/s** | ~75,000 yr |
-| Realistic low-thrust SEP (perigee-biased) | **~20 km/s** | ~75,000 yr |
-| Naïve continuous ion spiral (worst case) | ~25 km/s | ~75,000 yr |
+| Impulsive floor (full Oberth, chemical-like) | **~14 km/s** | ~73,000 yr |
+| Realistic low-thrust SEP (perigee-biased) | **~20 km/s** | ~73,000 yr |
+| Naïve continuous ion spiral (worst case) | ~25 km/s | ~73,000 yr |
 
 The ~14 km/s is a hard floor (an impulsive kick at LEO perigee captures the full
 Oberth benefit). Ion is low-thrust and loses most of that benefit, which is why the
 realistic figure is ~20 km/s. **The benchmarked 20 km/s is credible.** The profile:
-launch to a LEO of convenience, thrust to escape and build v∞ ≈ 24 km/s aimed ~1.5°
-off the ecliptic toward AC's ~75 kyr position, then coast ~75,000 years.
+launch to a LEO of convenience, thrust to escape and build v∞ ≈ 24 km/s aimed near
+AC's ~73–75 kyr position, then coast for roughly 70,000–80,000 years.
 
 Aiming much past ~80 kyr (or much before ~65 kyr) raises Δv — AC's geometry makes the
 ~70–80 kyr window the sweet spot, exactly as expected.
@@ -97,5 +99,6 @@ The mission only needs v∞ ≈ 24 km/s (Voyager-1 left at ~16.6). Options:
 ## Bottom line for the tender
 
 Direct **solar-electric ion from LEO** is the right architecture: ~500 kg, ~20 km/s,
-~40–50% xenon, ~75,000-year arrival aimed ~1.5° off the ecliptic. Fuel cells are a
-dead end (energy density). Gravity assists are optional Δv-savers, not necessities.
+~40–50% xenon, ~70,000–80,000-year arrival aimed close to the ecliptic. Fuel cells
+are a dead end (energy density). Gravity assists are optional Δv-savers, not
+necessities.

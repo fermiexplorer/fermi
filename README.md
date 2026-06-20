@@ -19,10 +19,10 @@ It answers:
 | Quantity | Value |
 |---|---|
 | Required heliocentric cruise speed v∞ | ~23–24 km/s |
-| Min departure Δv from LEO (impulsive floor) | ~14 km/s @ ~75,000 yr arrival |
+| Min departure Δv from LEO (impulsive floor) | ~14 km/s @ ~73,000 yr arrival |
 | Realistic low-thrust (SEP) departure Δv | ~20 km/s |
-| Optimal arrival time | ~75,000 yr (between tangential 58k & ecliptic crossing 79k) |
-| Departure aim | ~1.5° off the ecliptic, near AC's ecliptic crossing |
+| Best direct-departure window | ~70,000-80,000 yr (exact floor near 72,800 yr) |
+| Departure aim | ~2.4° off the ecliptic at exact floor; ~1.5° at the 75k benchmark |
 | Baseline vehicle | ~500 kg wet, ~40–50% xenon, ~33 kg solar array @5 kW |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
