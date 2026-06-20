@@ -27,8 +27,8 @@ def main() -> int:
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(URL, wait_until="networkidle")
 
-        charts = ["chartOrbit3d", "chartOrbit2d", "chartTimeline", "chartDv",
-                  "chartMass", "chartPower", "chartTime"]
+        charts = ["follow3d", "chartOrbit3d", "follow2d", "chartOrbit2d", "chartTimeline",
+                  "chartDv", "chartMass", "chartPower", "chartTime"]
         for cid in charts:
             page.wait_for_selector(f"#{cid} .plot-container", state="attached", timeout=15000)
         print(f"[ok] all {len(charts)} charts rendered")

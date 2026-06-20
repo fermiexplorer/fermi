@@ -1,0 +1,571 @@
+{
+  "dv_vs_arrival": {
+    "min_point": {
+      "t_yr": 73000,
+      "dv_impulsive_kms": 13.8753,
+      "vinf_kms": 23.7145,
+      "tilt_deg": -2.302
+    },
+    "flat_region_13_9_to_14_0_kms": [
+      {
+        "t_yr": 66500,
+        "dv_impulsive_kms": 13.9832,
+        "vinf_kms": 23.4417,
+        "tilt_deg": -5.22
+      },
+      {
+        "t_yr": 67000,
+        "dv_impulsive_kms": 13.9653,
+        "vinf_kms": 23.4597,
+        "tilt_deg": -4.973
+      },
+      {
+        "t_yr": 67500,
+        "dv_impulsive_kms": 13.9493,
+        "vinf_kms": 23.4783,
+        "tilt_deg": -4.731
+      },
+      {
+        "t_yr": 68000,
+        "dv_impulsive_kms": 13.9351,
+        "vinf_kms": 23.4975,
+        "tilt_deg": -4.492
+      },
+      {
+        "t_yr": 68500,
+        "dv_impulsive_kms": 13.9225,
+        "vinf_kms": 23.5173,
+        "tilt_deg": -4.257
+      },
+      {
+        "t_yr": 69000,
+        "dv_impulsive_kms": 13.9116,
+        "vinf_kms": 23.5375,
+        "tilt_deg": -4.026
+      },
+      {
+        "t_yr": 69500,
+        "dv_impulsive_kms": 13.9022,
+        "vinf_kms": 23.5582,
+        "tilt_deg": -3.798
+      },
+      {
+        "t_yr": 76500,
+        "dv_impulsive_kms": 13.9031,
+        "vinf_kms": 23.8849,
+        "tilt_deg": -0.96
+      },
+      {
+        "t_yr": 77000,
+        "dv_impulsive_kms": 13.9107,
+        "vinf_kms": 23.91,
+        "tilt_deg": -0.78
+      },
+      {
+        "t_yr": 77500,
+        "dv_impulsive_kms": 13.9189,
+        "vinf_kms": 23.9353,
+        "tilt_deg": -0.602
+      },
+      {
+        "t_yr": 78000,
+        "dv_impulsive_kms": 13.928,
+        "vinf_kms": 23.9607,
+        "tilt_deg": -0.427
+      },
+      {
+        "t_yr": 78500,
+        "dv_impulsive_kms": 13.9377,
+        "vinf_kms": 23.9862,
+        "tilt_deg": -0.255
+      },
+      {
+        "t_yr": 79000,
+        "dv_impulsive_kms": 13.9481,
+        "vinf_kms": 24.0119,
+        "tilt_deg": -0.085
+      },
+      {
+        "t_yr": 79500,
+        "dv_impulsive_kms": 13.9591,
+        "vinf_kms": 24.0376,
+        "tilt_deg": 0.083
+      },
+      {
+        "t_yr": 80000,
+        "dv_impulsive_kms": 13.9708,
+        "vinf_kms": 24.0635,
+        "tilt_deg": 0.248
+      },
+      {
+        "t_yr": 80500,
+        "dv_impulsive_kms": 13.983,
+        "vinf_kms": 24.0894,
+        "tilt_deg": 0.41
+      },
+      {
+        "t_yr": 81000,
+        "dv_impulsive_kms": 13.9957,
+        "vinf_kms": 24.1154,
+        "tilt_deg": 0.57
+      }
+    ]
+  },
+  "mass_trade_20kms_isp3000": [
+    {
+      "dry_kg": 150,
+      "prop_kg": 146.0,
+      "wet_kg": 296.0,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 175,
+      "prop_kg": 170.4,
+      "wet_kg": 345.4,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 200,
+      "prop_kg": 194.7,
+      "wet_kg": 394.7,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 225,
+      "prop_kg": 219.0,
+      "wet_kg": 444.0,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 250,
+      "prop_kg": 243.4,
+      "wet_kg": 493.4,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 275,
+      "prop_kg": 267.7,
+      "wet_kg": 542.7,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 300,
+      "prop_kg": 292.1,
+      "wet_kg": 592.1,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 325,
+      "prop_kg": 316.4,
+      "wet_kg": 641.4,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 350,
+      "prop_kg": 340.7,
+      "wet_kg": 690.7,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 375,
+      "prop_kg": 365.1,
+      "wet_kg": 740.1,
+      "prop_frac": 0.493
+    },
+    {
+      "dry_kg": 400,
+      "prop_kg": 389.4,
+      "wet_kg": 789.4,
+      "prop_frac": 0.493
+    }
+  ],
+  "deadline_100k_yr": {
+    "min_vinf_within_100k": {
+      "vinf_kms": 23.3,
+      "arrival_yr": 55313.0
+    },
+    "curve": [
+      {
+        "vinf_kms": 19.0,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.1,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.2,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.3,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.4,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.5,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.6,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.7,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.8,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 19.9,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.0,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.1,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.2,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.3,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.4,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.5,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.6,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.7,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.8,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 20.9,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.0,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.1,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.2,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.3,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.4,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.5,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.6,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.7,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.8,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 21.9,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.0,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.1,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.2,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.3,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.4,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.5,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.6,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.7,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.8,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 22.9,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 23.0,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 23.1,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 23.2,
+        "arrival_yr": null
+      },
+      {
+        "vinf_kms": 23.3,
+        "arrival_yr": 55313.0
+      },
+      {
+        "vinf_kms": 23.4,
+        "arrival_yr": 52417.0
+      },
+      {
+        "vinf_kms": 23.5,
+        "arrival_yr": 50740.0
+      },
+      {
+        "vinf_kms": 23.6,
+        "arrival_yr": 49476.0
+      },
+      {
+        "vinf_kms": 23.7,
+        "arrival_yr": 48441.0
+      },
+      {
+        "vinf_kms": 23.8,
+        "arrival_yr": 47554.0
+      },
+      {
+        "vinf_kms": 23.9,
+        "arrival_yr": 46773.0
+      },
+      {
+        "vinf_kms": 24.0,
+        "arrival_yr": 46072.0
+      },
+      {
+        "vinf_kms": 24.1,
+        "arrival_yr": 45434.0
+      },
+      {
+        "vinf_kms": 24.2,
+        "arrival_yr": 44849.0
+      },
+      {
+        "vinf_kms": 24.3,
+        "arrival_yr": 44306.0
+      },
+      {
+        "vinf_kms": 24.4,
+        "arrival_yr": 43799.0
+      },
+      {
+        "vinf_kms": 24.5,
+        "arrival_yr": 43324.0
+      },
+      {
+        "vinf_kms": 24.6,
+        "arrival_yr": 42876.0
+      },
+      {
+        "vinf_kms": 24.7,
+        "arrival_yr": 42452.0
+      },
+      {
+        "vinf_kms": 24.8,
+        "arrival_yr": 42049.0
+      },
+      {
+        "vinf_kms": 24.9,
+        "arrival_yr": 41666.0
+      },
+      {
+        "vinf_kms": 25.0,
+        "arrival_yr": 41299.0
+      },
+      {
+        "vinf_kms": 25.1,
+        "arrival_yr": 40948.0
+      },
+      {
+        "vinf_kms": 25.2,
+        "arrival_yr": 40611.0
+      },
+      {
+        "vinf_kms": 25.3,
+        "arrival_yr": 40287.0
+      },
+      {
+        "vinf_kms": 25.4,
+        "arrival_yr": 39976.0
+      },
+      {
+        "vinf_kms": 25.5,
+        "arrival_yr": 39675.0
+      },
+      {
+        "vinf_kms": 25.6,
+        "arrival_yr": 39384.0
+      },
+      {
+        "vinf_kms": 25.7,
+        "arrival_yr": 39103.0
+      },
+      {
+        "vinf_kms": 25.8,
+        "arrival_yr": 38830.0
+      },
+      {
+        "vinf_kms": 25.9,
+        "arrival_yr": 38566.0
+      },
+      {
+        "vinf_kms": 26.0,
+        "arrival_yr": 38310.0
+      }
+    ]
+  },
+  "solar_efficiency_sweep_5kw": [
+    {
+      "cell_efficiency": 0.12,
+      "array_area_m2": 30.61,
+      "array_mass_kg": 91.8
+    },
+    {
+      "cell_efficiency": 0.13,
+      "array_area_m2": 28.26,
+      "array_mass_kg": 84.8
+    },
+    {
+      "cell_efficiency": 0.14,
+      "array_area_m2": 26.24,
+      "array_mass_kg": 78.7
+    },
+    {
+      "cell_efficiency": 0.15,
+      "array_area_m2": 24.49,
+      "array_mass_kg": 73.5
+    },
+    {
+      "cell_efficiency": 0.16,
+      "array_area_m2": 22.96,
+      "array_mass_kg": 68.9
+    },
+    {
+      "cell_efficiency": 0.17,
+      "array_area_m2": 21.61,
+      "array_mass_kg": 64.8
+    },
+    {
+      "cell_efficiency": 0.18,
+      "array_area_m2": 20.41,
+      "array_mass_kg": 61.2
+    },
+    {
+      "cell_efficiency": 0.19,
+      "array_area_m2": 19.34,
+      "array_mass_kg": 58.0
+    },
+    {
+      "cell_efficiency": 0.2,
+      "array_area_m2": 18.37,
+      "array_mass_kg": 55.1
+    },
+    {
+      "cell_efficiency": 0.21,
+      "array_area_m2": 17.49,
+      "array_mass_kg": 52.5
+    },
+    {
+      "cell_efficiency": 0.22,
+      "array_area_m2": 16.7,
+      "array_mass_kg": 50.1
+    },
+    {
+      "cell_efficiency": 0.23,
+      "array_area_m2": 15.97,
+      "array_mass_kg": 47.9
+    },
+    {
+      "cell_efficiency": 0.24,
+      "array_area_m2": 15.31,
+      "array_mass_kg": 45.9
+    },
+    {
+      "cell_efficiency": 0.25,
+      "array_area_m2": 14.7,
+      "array_mass_kg": 44.1
+    },
+    {
+      "cell_efficiency": 0.26,
+      "array_area_m2": 14.13,
+      "array_mass_kg": 42.4
+    },
+    {
+      "cell_efficiency": 0.27,
+      "array_area_m2": 13.61,
+      "array_mass_kg": 40.8
+    },
+    {
+      "cell_efficiency": 0.28,
+      "array_area_m2": 13.12,
+      "array_mass_kg": 39.4
+    },
+    {
+      "cell_efficiency": 0.29,
+      "array_area_m2": 12.67,
+      "array_mass_kg": 38.0
+    },
+    {
+      "cell_efficiency": 0.3,
+      "array_area_m2": 12.25,
+      "array_mass_kg": 36.7
+    }
+  ]
+}

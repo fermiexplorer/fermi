@@ -69,6 +69,10 @@
   #chartOrbit3d { min-height: 440px; }
   #chartOrbit2d { min-height: 340px; }
   #chartTimeline { min-height: 200px; margin-top: 12px; }
+  .dualrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .dualrow { grid-template-columns: 1fr; } }
+  #follow3d { min-height: 440px; }
+  #follow2d { min-height: 340px; }
   #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
   #animctl button:hover { border-color: var(--accent); }
@@ -227,7 +231,10 @@
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
-      <div class="chart" id="chartOrbit3d"></div>
+      <div class="dualrow">
+        <div class="chart" id="follow3d"></div>
+        <div class="chart" id="chartOrbit3d"></div>
+      </div>
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
         <input type="range" id="tscrub" min="0" max="100" step="0.5" value="100">
@@ -239,7 +246,10 @@
         <label><input type="radio" name="viz" value="sun"> 2 · Sun escape</label>
         <label><input type="radio" name="viz" value="ac"> 3 · To Alpha Centauri</label>
       </div>
-      <div class="chart" id="chartOrbit2d"></div>
+      <div class="dualrow">
+        <div class="chart" id="follow2d"></div>
+        <div class="chart" id="chartOrbit2d"></div>
+      </div>
       <div class="chart" id="chartTimeline"></div>
     </div>
     <div class="charts">
@@ -610,7 +620,76 @@ function drawViz(){
   }
   document.getElementById('tlabel').textContent=label;
   drawZoom3d();    // 3D view: single Sun-centred scene with a smooth zoom-out camera
+  drawFollow3d();  // chase cam (3D): flies behind the probe
+  drawFollow2d();  // chase cam (2D): velocity-up, follows the probe
   drawTimeline();  // redraws the burn timeline incl. the moving "now" marker
+}
+
+// Shared spacecraft state (AU) for the zoom + chase views, so the probe is
+// consistent across them. f = R/Rmax keeps the probe just inside the zoom frame.
+function craftState(){
+  const s=1/AU, T=val('T')*YEAR;
+  const I=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
+  const Inorm=Math.hypot(I[0],I[1],I[2]);
+  const Rmin=2.2, Rmax=1.3*Inorm, R=Rmin*Math.pow(Rmax/Rmin, animU);
+  const f=R/Rmax, es=f*T;
+  const p=[I[0]*f,I[1]*f,I[2]*f];
+  const ac=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
+  const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
+  const tEx=T*1.18, acEnd=[(R0[0]+VAC[0]*tEx)*s,(R0[1]+VAC[1]*tEx)*s,(R0[2]+VAC[2]*tEx)*s];
+  const vhat=[I[0]/Inorm,I[1]/Inorm,I[2]/Inorm];
+  const spd=Math.min(1,(es/YEAR)/2);   // 0..1, ramps to full cruise speed over ~2 yr
+  return {I,Inorm,Rmax,f,es,p,ac,acNow,acEnd,vhat,spd};
+}
+
+// Chase cam (3D): the camera sits behind the probe along its velocity vector and
+// looks forward toward Alpha Centauri; it pulls back as speed rises. The full
+// trajectory (Sun -> intercept, AC track) is always drawn so you see where it's headed.
+function drawFollow3d(){
+  const c=craftState();
+  const pdist=Math.hypot(c.p[0],c.p[1],c.p[2]);
+  const Rg=3 + 1.6*pdist;                            // probe-centred cube; grows as it recedes (smooth)
+  const cx=[],cy=[],cz=[]; for(let i=0;i<=90;i++){const a=i/90*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0);}
+  const eyeDist=1.9;                                 // fixed offset; the zoom-out is via Rg
+  const ctr={x:0,y:0,z:0};                           // probe sits at the cube centre
+  const eye={x:-eyeDist*c.vhat[0], y:-eyeDist*c.vhat[1], z:-eyeDist*c.vhat[2] + 0.4*eyeDist};
+  const ax=k=>({range:[c.p[k]-Rg, c.p[k]+Rg],showticklabels:false,title:'',color:'#9aa7b4',gridcolor:'#1d242d'});
+  Plotly.react('follow3d',[
+    {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:1},name:'Earth orbit'},
+    {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2},name:'AC track'},
+    {type:'scatter3d',mode:'lines',x:[0,c.I[0]],y:[0,c.I[1]],z:[0,c.I[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
+    {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
+    {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
+    {type:'scatter3d',mode:'markers',x:[c.p[0]],y:[c.p[1]],z:[c.p[2]],marker:{color:'#4cc2ff',size:6},name:'probe'},
+    {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC'},
+  ],{title:{text:'Chase cam (3D) — behind the probe, looking toward AC',font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,margin:{l:0,r:0,t:34,b:0},
+    scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
+      camera:{eye:eye,center:ctr,up:{x:0,y:0,z:1}}}},{...CFG,scrollZoom:false});
+}
+
+// Chase cam (2D): rotate into the probe's frame (forward = velocity = up), centre on
+// the probe near the bottom, and zoom out with speed. Whole trajectory always drawn.
+function drawFollow2d(){
+  const c=craftState();
+  const fwd=[c.vhat[0],c.vhat[1]], rt=[c.vhat[1],-c.vhat[0]];   // in-plane forward / right
+  const proj=q=>[q[0]*rt[0]+q[1]*rt[1], q[0]*fwd[0]+q[1]*fwd[1]]; // -> [side, forward]
+  const line=(a,b)=>{const A=proj(a),B=proj(b);return {x:[A[0],B[0]],y:[A[1],B[1]]};};
+  const cruise=line([0,0],c.I), track=line(c.acNow,c.acEnd);
+  const Ps=proj(c.p), As=proj(c.ac), Is=proj(c.I), Ss=proj([0,0]);
+  const W=3 + 1.6*Math.hypot(c.p[0],c.p[1]);               // grows as the probe recedes (smooth)
+  const cs=Ps[0], cf=Ps[1];
+  Plotly.react('follow2d',[
+    {x:track.x,y:track.y,mode:'lines',line:{color:'#f0883e',width:1,dash:'dot'},showlegend:false},
+    {x:cruise.x,y:cruise.y,mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
+    {x:[Ss[0]],y:[Ss[1]],mode:'markers',marker:{color:'#f5d020',size:9},showlegend:false},
+    {x:[Is[0]],y:[Is[1]],mode:'markers',marker:{color:'#d29922',size:9,symbol:'star'},showlegend:false},
+    {x:[As[0]],y:[As[1]],mode:'markers',marker:{color:'#f0883e',size:8},showlegend:false},
+    {x:[Ps[0]],y:[Ps[1]],mode:'markers',marker:{color:'#4cc2ff',size:9},showlegend:false},
+  ],{title:{text:'Chase cam (2D) — probe frame (forward = up)',font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},margin:{l:8,r:8,t:34,b:8},showlegend:false,
+    xaxis:{range:[cs-W,cs+W],showticklabels:false,zeroline:false,gridcolor:'#1d242d'},
+    yaxis:{range:[cf-0.25*W,cf+1.75*W],showticklabels:false,zeroline:false,gridcolor:'#1d242d',scaleanchor:'x',scaleratio:1}},CFG);
 }
 
 // 3D view: one Sun-centred scene (AU) whose camera zooms out continuously with the
