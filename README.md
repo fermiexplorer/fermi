@@ -79,8 +79,9 @@ The physics is checked **independently** (different method, not self-comparison)
 - web JS vs Python **parity** (`audit/calcs/audit_webjs.mjs`).
 
 All 41 Python checks + 10 JS-parity checks pass (plus a Playwright UI render test
-and independent Codex & Grok re-implementations under `audit/`). See
-`docs/CODEX_AUDIT_PROMPTS.md` for adversarial review prompts.
+and independent Codex, Grok & Gemini re-implementations under `audit/`, which agree
+to ≤0.1% on every headline number). See `audit/AUDIT_PROMPTS.md` for adversarial
+review prompts.
 
 ## Scope / limitations
 

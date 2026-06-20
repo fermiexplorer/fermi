@@ -82,7 +82,9 @@ node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 - `run_analysis.py` — integrated analysis report (stdout).
 - `index.html` + `web/physics.js` — interactive calculator (sliders/charts/methodology).
 - `audit/calcs/` — independent verification suite (Python + a Node parity check).
-- `docs/` — `REPORT.md` (tender feasibility report), `CODEX_AUDIT_PROMPTS.md`.
+- `audit/codex|grok|gemini/` — third-party-model re-implementations + conclusions;
+  `audit/AUDIT_PROMPTS.md` — adversarial review prompts.
+- `docs/` — `REPORT.md` (tender feasibility report), `plans/`.
 - `tests/` — pytest smoke tests. `tmp/ro/` — throwaway check scripts.
 
 ## Key Conventions

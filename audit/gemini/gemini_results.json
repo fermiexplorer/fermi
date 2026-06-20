@@ -1,0 +1,12 @@
+{
+  "ac_pos_diff_m": 5.656854249492381,
+  "ac_vel_diff_ms": 2.6183087856452904e-06,
+  "v_inf_helio_gemini_kms": 23.810557487075155,
+  "v_inf_helio_fermi_kms": 23.81055748451608,
+  "v_inf_earth_gemini_kms": 18.628391644840836,
+  "v_inf_earth_fermi_kms": 18.62839164354937,
+  "impulsive_dv_gemini_kms": 13.885567213115701,
+  "impulsive_dv_fermi_kms": 13.885567211999748,
+  "spiral_dv_gemini_kms": 25.126907034806493,
+  "spiral_dv_fermi_kms": 25.127435368803795
+}
