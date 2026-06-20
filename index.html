@@ -134,11 +134,11 @@
 <div class="layout">
   <aside id="controls">
     <div class="group">
-      <h3>Vehicle &amp; mission</h3>
+      <h3>Mission / trajectory</h3>
       <div class="ctrl">
-        <label>Propellant fraction <b><span id="o_pfrac">50</span> % of wet</b></label>
-        <input type="range" id="pfrac" min="10" max="75" step="0.5" value="50">
-        <div class="hint">The primary driver: fraction → mass ratio → Δv = v<sub>e</sub>·ln(1/(1−f)) → cruise v∞ → <b>arrival time (derived output)</b>. Higher fraction = more Δv = sooner arrival; too low and AC can't be intercepted.</div>
+        <label>Arrival time (aim point) <b><span id="o_T">72,800</span> yr</b></label>
+        <input type="range" id="T" min="58000" max="100000" step="200" value="72800">
+        <div class="hint">Parametrises the trajectory — where along AC's track you aim. Sets the out-of-plane tilt → required Δv → <b>minimum propellant</b> (smallest spacecraft). Fuel minimises near <b>~73k yr</b> (near-in-plane). <a href="#" id="snapopt">↳ snap to fuel optimum</a></div>
       </div>
       <div class="ctrl">
         <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
@@ -325,6 +325,14 @@
   where departure is purely in-plane. The <strong>exact departure-Δv optimum sits between them, at
   ≈72.8k yr</strong> (13.875 km/s); the round <strong>75k yr</strong> used elsewhere is a near-equivalent
   benchmark, only ~10 m/s (0.07%) above that floor.</p>
+  <table class="chain">
+    <tr><th>Arrival (aim point)</th><th class="v">Out-of-plane tilt</th><th class="v">Impulsive Δv floor</th><th class="v">Cruise v∞</th><th>What it is</th></tr>
+    <tr><td>58,000 yr</td><td class="v">−10.1°</td><td class="v">14.65 km/s</td><td class="v">23.27 km/s</td><td>minimum cruise <em>speed</em> (tangential) — but most out-of-plane, so not cheapest</td></tr>
+    <tr><td><b>72,800 yr</b></td><td class="v"><b>−2.4°</b></td><td class="v tot"><b>13.88 km/s</b></td><td class="v">23.79 km/s</td><td><b>minimum Δv → minimum propellant → smallest spacecraft</b></td></tr>
+    <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.0 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
+    <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
+  </table>
+  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em>; the realistic low-thrust budget adds the ~6 km/s spiral penalty on top, ≈ 20 km/s total — which is what the calculator's "required Δv" shows.)</p>
   <p><strong>Why isn't a longer flight slower?</strong> For a <em>stationary</em> target, more time means
   less speed — but AC is <em>receding</em> (4.5 ly at 58k yr → 8.4 ly at 100k yr). So the required cruise
   speed <code>v∞</code> does <strong>not</strong> keep dropping with time: it bottoms out at the tangential
@@ -578,40 +586,33 @@ const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, requiredVinfVec,
 function val(id){ return parseFloat(document.getElementById(id).value); }
 function radio(name){ return document.querySelector(`input[name=${name}]:checked`).value; }
 
-// INVERTED model: you set the vehicle (dry mass, propellant FRACTION, Isp, power). The
-// mass ratio fixes the Δv it can deliver; the SOONEST arrival that Δv can afford is read
-// off the very same departure-Δv-vs-arrival curve drawn in the chart. Arrival is an
-// OUTPUT; below the minimum Δv there is no intercept at all. (Arrival depends on the
-// fraction & Isp, not on absolute dry mass — dry mass just scales the whole vehicle.)
+// MIN-FUEL model: the ARRIVAL-TIME slider parametrises the trajectory (where along AC's
+// track you aim). The intercept geometry sets the required departure Δv, and the MINIMUM
+// propellant to deliver it (Tsiolkovsky) is derived — the goal is the smallest spacecraft.
+// Fuel minimises near the in-plane optimum (~73k yr, ~2° off-ecliptic); aiming sooner /
+// more out-of-plane costs more Δv and more propellant.
 function compute(){
-  const alt=val('alt'), pen=val('pen')*1e3;
+  const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
   const dry=val('dry'), isp=val('isp'), eta=val('eta'), ve=expv(isp);
   const pwr=radio('pwr'), ga=radio('ga');
-  // INPUT: propellant fraction -> mass ratio -> deliverable Δv (Tsiolkovsky)
-  const f=val('pfrac')/100, MR=1/(1-f), wet=dry*MR, mp=wet-dry;
-  const dvDeliver=ve*Math.log(MR);
   const gain = ga==='jupiter'?jupiterGain(9000):0;
-  // departure Δv REQUIRED to arrive at time Ts (forward model: geometry + Oberth/spiral/GA)
+  // departure Δv required to arrive at time Ts = the minimum fuel for that arrival
   const needAt=(Ts)=>{ const ican=intercept(Ts);
-    const need = ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
-              : Math.max(0, impulsiveDv(vInfEarth(ican.vinf,ican.tiltDeg).vInfE, alt) + pen - gain);
-    return {need, ic:ican}; };
-  // scan arrivals: the SOONEST the vehicle can afford, and the cheapest (minimum Δv)
-  let arrSec=null, ic=null, vinfSun=0, dvMin=Infinity, tMinFuel=tangentialT(), gaNote='';
-  for(let y=20000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts);
-    if(n.need<dvMin){ dvMin=n.need; tMinFuel=Ts; }
-    if(arrSec===null && n.need<=dvDeliver){ arrSec=Ts; ic=n.ic; vinfSun=n.ic.vinf; } }
-  const feasible = arrSec!==null;
-  const Tsec = feasible?arrSec:tangentialT();
-  if(!feasible){ ic=intercept(Tsec); vinfSun=ic.vinf; }    // fallback aim for the trajectory view
-  const arrivalYr = feasible?Tsec/YEAR:Infinity;
+    return ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
+         : Math.max(0, impulsiveDv(vInfEarth(ican.vinf,ican.tiltDeg).vInfE, alt) + pen - gain); };
+  const ic=intercept(T), dvDesign=needAt(T);
+  // global fuel optimum: the arrival that minimises Δv (and thus propellant)
+  let Topt=tangentialT(), dvMin=Infinity;
+  for(let y=58000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts); if(n<dvMin){ dvMin=n; Topt=Ts; } }
+  // minimum propellant for the chosen arrival, and at the optimum (rocket equation)
+  const MR=Math.exp(dvDesign/ve), mp=dry*(MR-1), wet=dry+mp, f=1-1/MR;
+  const minWet=dry*Math.exp(dvMin/ve), minFrac=1-Math.exp(-dvMin/ve);
+  const dep=vInfEarth(ic.vinf, ic.tiltDeg);
+  const dvFloor=impulsiveDv(dep.vInfE, alt), dvNaive=dvFloor+SPIRAL_MAX;
+  let gaNote='';
   if(ga==='jupiter') gaNote=`+${(gain/1e3).toFixed(0)} km/s from Jupiter`;
   else if(ga==='oberth') gaNote=`Oberth burn @ ${val('rp')} R☉`;
-  const dep=vInfEarth(ic.vinf, ic.tiltDeg);
-  const dvFloor=impulsiveDv(dep.vInfE, alt);
-  const dvNaive=dvFloor+SPIRAL_MAX;
-  // minimum wet mass to reach AC at all = cheapest-arrival Δv via the rocket equation
-  const minWet=dry*Math.exp(dvMin/ve), minFrac=1-Math.exp(-dvMin/ve);
+  const arrivalYr=T/YEAR, Tsec=T, feasible=true, vinfSun=ic.vinf, dvDeliver=dvDesign;
   // --- mass / power / subsystems ---
   const E=elecEnergy(mp,isp,eta);
   const pwrW=val('pwrkw')*1000;
@@ -630,8 +631,8 @@ function compute(){
   const dryPower=(pwr==='fuelcell')?0:psMass;
   const busPayload=dry-dryPower-engineMass-tankMass;
   const propName=document.getElementById('propsel').value.split('|')[0];
-  return {ic,dep,dvFloor,dvDeliver,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
-    arrivalYr,feasible,vinfSun,Tsec,f,MR,minWet,minFrac,minFuelYr:tMinFuel/YEAR,dvMin,
+  return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
+    arrivalYr,feasible,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,eta,pwrW,dry,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName};
 }
@@ -645,20 +646,12 @@ function render(){
   // ----- headline mission-profile summary (feasibility-led) -----
   const bp=burnPhases(r);
   const acDistLy=r.feasible?Math.hypot(R0[0]+VAC[0]*r.Tsec, R0[1]+VAC[1]*r.Tsec, R0[2]+VAC[2]*r.Tsec)/LY:0;
-  let summ='';
-  if(r.feasible){
-    summ=
-      `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> This vehicle delivers <b>${fmt(r.dvDeliver/1e3,1)} km/s</b> of Δv from LEO (${fmt(100*r.f)}% propellant, Isp ${fmt(r.isp)} s), enough to intercept Alpha Centauri — soonest in <b>${fmt(r.arrivalYr)} yr</b> at cruise speed v∞ ≈ <b>${fmt(r.vinfSun/1e3,1)} km/s</b>, inside the 100,000-yr goal.</div>`+
-      `<div class="sline"><b>Arrival is geometry-limited, not vehicle-limited.</b> The cheapest (minimum-Δv) intercept is at ~<b>${fmt(r.minFuelYr)} yr</b> — set by AC's orbit, not the spacecraft. Extra Δv buys a <em>sooner</em> arrival (the ${fmt(r.arrivalYr)} yr above); too little and there is no intercept at all. Arrival depends on propellant <em>fraction</em> &amp; Isp via Δv = v<sub>e</sub>·ln(1/(1−f)), <em>not</em> on absolute dry mass (which just scales the whole vehicle).</div>`+
-      `<div class="sline"><b>Profile:</b> fire an Isp-${fmt(r.isp)} s ion engine continuously for ~${fmt(r.burnYr,1)} yr at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then heliocentric escape), then coast ~${fmt(r.arrivalYr)} yr. Wet <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`+
-      `<div class="sline"><b>Distance check:</b> ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — exactly where AC is at arrival (it recedes from ~3.1 ly closest approach to ~${fmt(acDistLy,1)} ly).</div>`+
-      `<div class="sline"><b>Minimum wet mass to reach AC</b> (this dry bus + Isp, in-plane): <b>${fmt(r.minWet)} kg</b> (≥${fmt(100*r.minFrac)}% propellant). Below that, v∞ drops under the 23.3 km/s floor and no intercept exists.</div>`;
-  } else {
-    summ=
-      `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE.</b> This vehicle's Δv (<b>${fmt(r.dvDeliver/1e3,1)} km/s</b>) yields cruise speed v∞ ≈ <b>${fmt(r.vinfSun/1e3,1)} km/s</b>, below the <b>23.3 km/s</b> floor needed to intercept Alpha Centauri — it never catches AC.</div>`+
-      `<div class="sline"><b>To fix:</b> raise the propellant fraction to ≥ <b>${fmt(100*r.minFrac)}%</b> (≥ <b>${fmt(r.minWet)} kg</b> wet for this ${fmt(r.dry)} kg dry bus), and/or raise Isp, and/or lower the low-thrust penalty.</div>`+
-      `<div class="sline"><b>Causality:</b> propellant fraction → mass ratio → Δv = v<sub>e</sub>·ln(1/(1−f)) → cruise v∞ → arrival. Arrival is an output, not a setting.</div>`;
-  }
+  const tilt=r.tiltDeg, offOpt=r.dvDesign-r.dvMin, atOpt=Math.abs(r.arrivalYr-r.minFuelYr)<600;
+  const summ=
+    `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s.</div>`+
+    `<div class="sline"><b style="color:#3fb950">Fuel optimum at ~${fmt(r.minFuelYr)} yr</b> — AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
+    `<div class="sline"><b>The trade (why ~73k yr):</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). The minimum-<em>Δv</em> point sits between, near the crossing — out-of-plane velocity can't be borrowed from Earth, it must be bought with propellant. Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
+    `<div class="sline"><b>Profile:</b> Isp-${fmt(r.isp)} s ion, ~${fmt(r.burnYr,1)} yr burn at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then heliocentric escape), then coast ~${fmt(r.arrivalYr)} yr. Distance check: ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — where AC is at arrival.</div>`;
   document.getElementById('summary').innerHTML=summ;
 
   // ----- "how much power & fuel & what array?" spec card (live) -----
@@ -676,13 +669,12 @@ function render(){
     `</div>`+
     `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   const kpis=[
-    ['Cruise v∞ (derived)', fmt(r.vinfSun/1e3,2)+' km/s'],
-    ['Departure Δv (delivered)', fmt(r.dvDeliver/1e3,1)+' km/s'],
-    ['Soonest arrival', r.feasible?fmt(r.arrivalYr)+' yr':'no intercept'],
-    ['Min-fuel arrival', fmt(r.minFuelYr)+' yr'],
-    ['Min wet to reach AC', fmt(r.minWet)+' kg'],
-    ['Wet mass', fmt(r.wet)+' kg'],
-    [r.propName+' propellant', fmt(r.mp)+' kg · '+fmt(100*r.mp/r.wet)+'%'],
+    ['Arrival (chosen)', fmt(r.arrivalYr)+' yr'],
+    ['Departure Δv (required)', fmt(r.dvDesign/1e3,1)+' km/s'],
+    ['Out-of-plane aim', fmt(Math.abs(r.tiltDeg),1)+'°'],
+    ['Cruise v∞', fmt(r.vinfSun/1e3,2)+' km/s'],
+    ['Wet mass', fmt(r.wet)+' kg · '+fmt(100*r.mp/r.wet)+'% '+r.propName],
+    ['Fuel optimum', fmt(r.minFuelYr)+' yr → '+fmt(r.minWet)+' kg'],
   ];
   if(r.pwr==='solar'){
     kpis.push(['Solar array', fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg']);
@@ -975,6 +967,7 @@ function drawZoom3d(c,st){
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
     {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
+    {type:'scatter3d',mode:'markers',x:[(R0[0]+VAC[0]*eclipticCrossingT())/AU],y:[(R0[1]+VAC[1]*eclipticCrossingT())/AU],z:[0],marker:{color:'#e6edf3',size:5,symbol:'diamond-open'},name:'AC ⨯ ecliptic (~79k yr)'},
   ],{title:{text:`3D · live zoom-out — ${fmt(R, R<10?1:0)} AU view · ${note} · flown path only (drag to rotate)`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
@@ -1042,7 +1035,7 @@ function togglePlay(){
 
 // ----- wire up -----
 function syncLabels(){
-  document.getElementById('o_pfrac').textContent=val('pfrac');
+  document.getElementById('o_T').textContent=fmt(val('T'));
   document.getElementById('o_pay').textContent=val('pay').toFixed(1);
   document.getElementById('o_alt').textContent=val('alt');
   document.getElementById('o_pen').textContent=val('pen').toFixed(1);
@@ -1079,8 +1072,12 @@ function setStale(s){ staleFlag=s; const b=document.getElementById('runsim'); if
   b.classList.toggle('stale', s); b.textContent = s ? '▶ Run sim — apply changes' : '▶ Run sim'; }
 const TECH_SELECTS={enginetech:applyEngineTech, soltech:applySolTech, propsel:applyProp};
 document.getElementById('tilt').addEventListener('input',()=>{ document.getElementById('o_tilt').textContent=val('tilt'); drawViz(); });
+// The arrival-time slider parametrises the trajectory -> recompute live (it changes Δv, fuel & aim).
+document.getElementById('T').addEventListener('input',()=>{ document.getElementById('o_T').textContent=fmt(val('T')); render(); });
+document.getElementById('snapopt').addEventListener('click',(e)=>{ e.preventDefault();
+  if(SIM){ const v=Math.round(SIM.minFuelYr/200)*200; document.getElementById('T').value=v; document.getElementById('o_T').textContent=fmt(v); render(); } });
 document.querySelectorAll('input,select').forEach(el=>{
-  if(el.id==='tscrub' || el.id==='tilt' || el.name==='viz') return;  // handled separately (live view controls)
+  if(el.id==='tscrub' || el.id==='tilt' || el.id==='T' || el.name==='viz') return;  // handled separately (live view controls)
   el.addEventListener('input',()=>{
     if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
     syncLabels(); toggleOpts(); setStale(true);     // recompute deferred to "Run sim"
