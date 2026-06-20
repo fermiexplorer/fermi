@@ -113,7 +113,7 @@
       <div class="ctrl">
         <label>Arrival time <b><span id="o_T">75,000</span> yr</b></label>
         <input type="range" id="T" min="58000" max="100000" step="500" value="75000">
-        <div class="hint">v∞ minimises at the tangential intercept (~58k yr); Δv minimises near the ecliptic crossing (~79k yr).</div>
+        <div class="hint">v∞ minimises at the tangential intercept (~58k yr); departure Δv minimises at ~73k yr (75k is within ~10 m/s).</div>
       </div>
       <div class="ctrl">
         <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
@@ -166,6 +166,7 @@
           <option value="Krypton|12">Krypton (cheaper, bulkier)</option>
           <option value="Argon|16">Argon (cheapest, bulkiest)</option>
         </select>
+        <div class="hint">Sets the storage/tank fraction and labels only — Isp and thrust are set above, not by this choice.</div>
       </div>
       <div class="ctrl">
         <label>Propellant tank <b><span id="o_tankfrac">8</span> % of propellant</b></label>
@@ -278,7 +279,9 @@
   AC's radial approach and only its ~23 km/s tangential motion remains). But AC sits 42° below the
   ecliptic with +11 km/s of out-of-plane velocity, so the tangential aim is tilted ~10° out of plane —
   and out-of-plane velocity cannot be borrowed from Earth. AC's track crosses the ecliptic at ~79k yr,
-  where departure is purely in-plane. The <strong>departure-Δv optimum sits between</strong> them, ~75k yr.</p>
+  where departure is purely in-plane. The <strong>exact departure-Δv optimum sits between them, at
+  ≈72.8k yr</strong> (13.875 km/s); the round <strong>75k yr</strong> used elsewhere is a near-equivalent
+  benchmark, only ~10 m/s (0.07%) above that floor.</p>
 
   <h4>2 · Departure energetics (LEO → v∞)</h4>
   <p>To leave on a heliocentric hyperbola of excess <code>v∞</code>, the probe needs heliocentric speed
@@ -355,6 +358,52 @@
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
     <li>The 3D view plots true ecliptic coordinates in light-years (drag to rotate, scroll to zoom); the play/scrubber uses <em>log-scaled</em> time so the ~1-yr departure is visible against the ~75,000-yr coast. The 2D "Earth escape" stage is schematic (not to scale); "Sun escape" and "To Alpha Centauri" are to-scale top-down projections onto the ecliptic.</li>
   </ul>
+  <h4>Audits &amp; independent verification</h4>
+  <p>Every headline number is cross-checked several independent ways — a value is only trusted when it
+  agrees across methods:</p>
+  <ul>
+    <li><b>Engine ↔ web parity.</b> The browser math (<code>web/physics.js</code>) is checked value-by-value
+      against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, 10 checks).</li>
+    <li><b>Independent suite (41 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+      <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
+      brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
+      rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
+      sizing from first principles.</li>
+    <li><b>UI render test.</b> Playwright loads the page in a real browser and exercises the controls
+      (<code>audit/calcs/ui_playwright.py</code>).</li>
+    <li><b>Third-party model re-implementations.</b> Parallel <b>Codex</b> and <b>Grok</b> audits
+      (<code>audit/codex/</code>, <code>audit/grok/</code>) rebuilt the physics from scratch — hand-built vs
+      astropy, scipy vs grid/golden-section, separate integrators — and agree on every headline quantity to
+      ≤0.1%.</li>
+  </ul>
+
+  <h4>Guide for an independent (human) auditor</h4>
+  <p>To check the calculations yourself — and to surface anything the model omits — work through the steps
+  below. Each headline number should be reproducible with a calculator or a few lines of code.</p>
+  <ol>
+    <li><b>Ephemeris.</b> From AC's catalogued RA/Dec, distance, proper motion and radial velocity, build its
+      3-D heliocentric velocity and confirm space speed ≈ 32.3 km/s and closest approach ≈ 28,000 yr at
+      ≈ 3.1 ly. (Its ~23.3 km/s tangential speed is the floor on cruise v∞.)</li>
+    <li><b>Intercept.</b> Test <code>V_p(T) = A₀/T + V_ac</code> by flying a straight line at <code>V_p</code>
+      for time T and checking it lands on AC's position at T. Confirm |V_p| minimises at the tangential
+      intercept (~58k yr) and the <em>departure-Δv</em> optimum is ~72.8k yr (13.875 km/s).</li>
+    <li><b>Departure energetics.</b> Reproduce the worked example: 14 km/s of LEO Δv → ~24 km/s heliocentric
+      cruise (Oberth + Earth's 29.8 km/s). Check that 23.8 km/s × 75,000 yr equals AC's distance at arrival
+      (~6.0 ly) — Δv budget ≠ cruise speed.</li>
+    <li><b>Mass &amp; power.</b> Rocket equation for the xenon fraction; <code>E = ½·m_p·v_e²/η</code> for
+      burn energy; solar area = P/(1361·η_cell) and mass = area × areal density. Confirm the dry-mass budget
+      closes (array + engine + tank + bus + payload).</li>
+    <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~50,000 kWh
+      burn — orders of magnitude over a solar array.</li>
+    <li><b>Probe for what's missing.</b> This is a first-order model; a rigorous audit should push on:
+      (a) a full <em>finite-burn / phased low-thrust</em> trajectory (the ~20 km/s SEP figure is a benchmark,
+      not solved here); (b) launch-window and calendar phasing (best-case timing is assumed);
+      (c) gravity-assist phasing (the Jupiter/Oberth numbers are geometric bounds); (d) navigation, comms and
+      component survival over ~75,000 yr; (e) thermal, radiation and propellant boil-off across the cruise;
+      (f) primary-source validation of the cell, thruster and tank assumptions. File findings against
+      <code>audit/</code>.</li>
+  </ol>
+
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
@@ -387,7 +436,8 @@
       <a href="https://celestrak.org/software/vallado-sw.php" target="_blank" rel="noopener noreferrer">Vallado, Fundamentals of Astrodynamics and Applications</a>; Curtis, Orbital Mechanics for Engineering Students.</li>
   </ul>
   <p class="src">Engine code: <code>fermi_sim/</code> in this repo; the web math is parity-checked against it
-  (<code>audits/audit_webjs.mjs</code>). No third-party site code was used.</p>
+  (<code>audit/calcs/audit_webjs.mjs</code>). No third-party <em>physics</em> code is used; the page loads
+  the Plotly charting library from a CDN for rendering only.</p>
 </section>
 
 <script>
@@ -481,7 +531,7 @@ function render(){
   const pay=val('pay');
   b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
   const xf=r.mp/r.wet;
-  b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `Xenon fraction ${fmt(100*xf)}%`]);
+  b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `${r.propName} fraction ${fmt(100*xf)}%`]);
   if(r.pwr==='solar') b.push(['ok','✓ Solar: ~tens of kg, energy free near Sun']);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
   if(r.pwr==='nuclear') b.push([r.psMass<200?'mid':'no', `△ RTG: ${fmt(r.psMass)} kg (heavy per kW)`]);

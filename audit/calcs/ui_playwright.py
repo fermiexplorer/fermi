@@ -12,7 +12,7 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 URL = "file://" + os.path.join(ROOT, "index.html")
 SHOT = os.path.join(ROOT, "tmp", "ro", "ui.png")  # tmp/ is gitignored
 

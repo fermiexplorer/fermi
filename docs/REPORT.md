@@ -68,7 +68,7 @@ Aiming much past ~80 kyr (or much before ~65 kyr) raises Δv — AC's geometry m
 ## 2. Does it work with electric propulsion + solar? — Yes
 
 At Isp 3000 s, 20 km/s needs ~50% xenon (mass ratio ≈ 2.0); a 500 kg wet vehicle is
-~250 kg xenon + ~250 kg dry. The burn draws ~5 kW from a ~33 kg solar array and lasts
+~250 kg xenon + ~250 kg dry. The burn draws ~5 kW from a ~55 kg silicon array (18 m²) and lasts
 ~1 year, all within a few AU of the Sun — where solar power is strongest and the burn
 is most effective. No exotic technology required.
 

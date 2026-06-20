@@ -23,7 +23,7 @@ It answers:
 | Realistic low-thrust (SEP) departure Δv | ~20 km/s |
 | Best direct-departure window | ~70,000-80,000 yr (exact floor near 72,800 yr) |
 | Departure aim | ~2.4° off the ecliptic at exact floor; ~1.5° at the 75k benchmark |
-| Baseline vehicle | ~500 kg wet, ~40–50% xenon, ~33 kg solar array @5 kW |
+| Baseline vehicle | ~500 kg wet, ~40–50% xenon, ~55 kg silicon array @5 kW |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn
@@ -41,7 +41,9 @@ fermi_sim/            Python engine (source of truth)
 run_analysis.py   prints the full integrated analysis
 index.html        interactive calculator (sliders / charts / methodology)
 web/physics.js    shared JS physics used by the page (parity-checked vs Python)
-audits/           independent verification suite (see below)
+audit/calcs/      independent verification suite (see below)
+audit/codex/      Codex independent audits (conclusions + scripts)
+audit/grok/       Grok independent audits (conclusions + scripts)
 docs/             tender report + Codex audit prompts
 ```
 
@@ -54,11 +56,11 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (32 checks: astropy ephemeris, conservation laws, optima)
-.venv/bin/python audits/run_audits.py
+# independent audits (41 checks: astropy ephemeris, conservation laws, optima)
+.venv/bin/python audit/calcs/run_audits.py
 
 # web<->python parity (Node)
-node audits/audit_webjs.mjs
+node audit/calcs/audit_webjs.mjs
 
 # the interactive calculator (needs internet for the Plotly CDN)
 python3 -m http.server 8000
@@ -74,10 +76,11 @@ The physics is checked **independently** (different method, not self-comparison)
 - departure Δv via **energy conservation**; spiral integrator convergence;
 - rocket equation by **numerical mass-flow integration**;
 - fuel-cell optimum Isp by **independent minimisation**;
-- web JS vs Python **parity** (`audits/audit_webjs.mjs`).
+- web JS vs Python **parity** (`audit/calcs/audit_webjs.mjs`).
 
-All 32 Python checks + 8 JS-parity checks pass. See `docs/CODEX_AUDIT_PROMPTS.md`
-for adversarial review prompts.
+All 41 Python checks + 10 JS-parity checks pass (plus a Playwright UI render test
+and independent Codex & Grok re-implementations under `audit/`). See
+`docs/CODEX_AUDIT_PROMPTS.md` for adversarial review prompts.
 
 ## Scope / limitations
 

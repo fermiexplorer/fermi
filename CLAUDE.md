@@ -32,12 +32,18 @@
 - **`fermi_sim/` is the source of truth.** The Python engine is authoritative; the web
   calculator (`web/physics.js`) is a port of it. Any physics change must be made in
   `fermi_sim/` first, then mirrored to `web/physics.js`, and the parity audit
-  (`node audits/audit_webjs.mjs`) must still pass.
-- **Audits must stay independent.** Checks in `audits/` verify the math by a
+  (`node audit/calcs/audit_webjs.mjs`) must still pass.
+- **Audits must stay independent.** Checks in `audit/calcs/` verify the math by a
   *different* method (astropy, conservation laws, brute-force optimisation, numerical
   integration) — never by calling the engine and comparing it to itself. Keep it that way.
-- **No identifying third-party names in shipped artifacts** (web page, public docs).
-  The mission is referred to only as "Fermi".
+- **No private mission-partner identity in shipped artifacts** (web page, public docs).
+  The mission is referred to only as "Fermi"; do not name the customer/bus partner or
+  any non-public benchmarking source. Public technology citations used as engineering
+  references (e.g. NASA missions, commercial cell/thruster vendors) ARE allowed and are
+  listed in the page's References section.
+- **`audit/` holds independent audits.** `audit/calcs/` is the project's own suite;
+  `audit/codex/` and `audit/grok/` hold parallel third-party-model re-implementations and
+  their conclusions. Keep all three independent of each other.
 - **Don't silently change embedded constants.** The Alpha Centauri state vector in
   `web/physics.js` is copied from `fermi_sim`; if `fermi_sim/astro.py` changes, re-dump and
   re-run the parity audit.
@@ -63,9 +69,9 @@ Node (any recent version) is used only for the web-parity audit.
 
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
-.venv/bin/python audits/run_audits.py # full independent audit suite (32 checks)
-node audits/audit_webjs.mjs           # web JS <-> Python parity
-.venv/bin/python audits/ui_playwright.py  # render the page in Chromium + screenshot
+.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (41 checks)
+node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
+.venv/bin/python audit/calcs/ui_playwright.py  # render the page in Chromium + screenshot
 .venv/bin/python run_analysis.py      # print the integrated analysis
 ```
 
@@ -75,7 +81,7 @@ node audits/audit_webjs.mjs           # web JS <-> Python parity
   `departure` (LEO→v∞ Δv), `spacecraft` (mass/power), `trajectory` (cruise + assists).
 - `run_analysis.py` — integrated analysis report (stdout).
 - `index.html` + `web/physics.js` — interactive calculator (sliders/charts/methodology).
-- `audits/` — independent verification suite (Python + a Node parity check).
+- `audit/calcs/` — independent verification suite (Python + a Node parity check).
 - `docs/` — `REPORT.md` (tender feasibility report), `CODEX_AUDIT_PROMPTS.md`.
 - `tests/` — pytest smoke tests. `tmp/ro/` — throwaway check scripts.
 

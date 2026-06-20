@@ -8,7 +8,7 @@ import path from "path";
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
-const F = require(path.join(here, "..", "web", "physics.js"));
+const F = require(path.join(here, "..", "..", "web", "physics.js"));
 
 // Reference values from the Python engine (run_analysis.py / dump_state.py).
 const REF = {
