@@ -81,6 +81,9 @@
   .method p, .method li { color: #c4cdd6; }
   .method code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
   .method .src { color: var(--muted); font-size: 12.5px; }
+  .method .refs { margin: 4px 0 12px; }
+  .method .refs li { font-size: 12.5px; color: #aab6c0; margin-bottom: 5px; }
+  .method .refs b { color: #c9d4de; }
   a { color: var(--accent); }
 </style>
 </head>
@@ -308,8 +311,33 @@
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
     <li>The 3D view plots true ecliptic coordinates in light-years (drag to rotate, scroll to zoom); the play/scrubber uses <em>log-scaled</em> time so the ~1-yr departure is visible against the ~75,000-yr coast. The 2D "Earth escape" stage is schematic (not to scale); "Sun escape" and "To Alpha Centauri" are to-scale top-down projections onto the ecliptic.</li>
   </ul>
-  <p class="src">Sources: Alpha Centauri astrometry (Hipparcos/Gaia system values); standard astrodynamics
-  (Tsiolkovsky, patched-conic, Oberth). Engine code: <code>fermi_sim/</code> in this repo. No third-party site code was used.</p>
+  <h4>References &amp; sources for quoted numbers</h4>
+  <ul class="refs">
+    <li><b>Alpha Centauri</b> — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s,
+      space velocity ~32 km/s: ESA <em>Hipparcos</em> Catalogue (1997) &amp; SIMBAD/RECONS. Closest
+      approach ~28,000 yr at ~3.1 ly is the standard derived encounter (e.g. García-Sánchez et al.,
+      <em>A&amp;A</em> 2001).</li>
+    <li><b>Solar constant</b> S₀ = 1361 W/m² at 1 AU: Kopp &amp; Lean, <em>Geophys. Res. Lett.</em> 38,
+      L01706 (2011).</li>
+    <li><b>Solar cells</b> — commercial space-grade triple-junction GaAs ~29–30% BOL (Spectrolab XTJ;
+      Azur Space 3G30 datasheets); monocrystalline <b>silicon</b> ~18–22%. <b>Starlink:</b> SpaceX has
+      <em>not</em> published Starlink's cell efficiency or array specific power, so the ~20% silicon and
+      ~90 W/kg figures here are <em>representative commercial values</em>, not a SpaceX specification.</li>
+    <li><b>Array specific power</b> ~100–150 W/kg for modern deployable arrays (and a higher roadmap):
+      NASA / Redwire <em>Roll-Out Solar Array</em> (ROSA), flight-demonstrated on the ISS (2017) and
+      ISS iROSA (2021–23).</li>
+    <li><b>Ion thrusters</b> — gridded ion Isp ~3100 s (NASA <em>NSTAR</em>, Deep Space 1 / Dawn) and
+      ~4100 s (NASA <em>NEXT</em>); Hall thrusters ~1500–2000 s; thruster + PPU specific mass a few kg/kW
+      (electric-propulsion system literature; ExoTerra Halo-class for this study).</li>
+    <li><b>Voyager 1</b> heliocentric escape speed ~16.6 km/s (~3.6 AU/yr): NASA/JPL Voyager.</li>
+    <li><b>Parker Solar Probe</b> perihelion ~9–10 solar radii (heat-shield context for the solar-Oberth
+      option): NASA Parker Solar Probe.</li>
+    <li><b>Astrodynamics</b> — Tsiolkovsky rocket equation, patched-conic method, Oberth effect, vis-viva:
+      Vallado, <em>Fundamentals of Astrodynamics and Applications</em>; Curtis, <em>Orbital Mechanics for
+      Engineering Students</em>.</li>
+  </ul>
+  <p class="src">Engine code: <code>fermi_sim/</code> in this repo; the web math is parity-checked against it
+  (<code>audits/audit_webjs.mjs</code>). No third-party site code was used.</p>
 </section>
 
 <script>
