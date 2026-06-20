@@ -68,7 +68,7 @@
   .vizsel label { display: flex; gap: 6px; align-items: center; color: var(--ink); cursor: pointer; }
   #chartOrbit3d { min-height: 440px; }
   #chartOrbit2d { min-height: 340px; }
-  #chartTimeline { min-height: 170px; margin-top: 12px; }
+  #chartTimeline { min-height: 200px; margin-top: 12px; }
   #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
   #animctl button:hover { border-color: var(--accent); }
@@ -313,28 +313,34 @@
   </ul>
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
-    <li><b>Alpha Centauri</b> — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s,
-      space velocity ~32 km/s: ESA <em>Hipparcos</em> Catalogue (1997) &amp; SIMBAD/RECONS. Closest
-      approach ~28,000 yr at ~3.1 ly is the standard derived encounter (e.g. García-Sánchez et al.,
-      <em>A&amp;A</em> 2001).</li>
-    <li><b>Solar constant</b> S₀ = 1361 W/m² at 1 AU: Kopp &amp; Lean, <em>Geophys. Res. Lett.</em> 38,
-      L01706 (2011).</li>
-    <li><b>Solar cells</b> — commercial space-grade triple-junction GaAs ~29–30% BOL (Spectrolab XTJ;
-      Azur Space 3G30 datasheets); monocrystalline <b>silicon</b> ~18–22%. <b>Starlink:</b> SpaceX has
-      <em>not</em> published Starlink's cell efficiency or array specific power, so the ~20% silicon and
-      ~90 W/kg figures here are <em>representative commercial values</em>, not a SpaceX specification.</li>
-    <li><b>Array specific power</b> ~100–150 W/kg for modern deployable arrays (and a higher roadmap):
-      NASA / Redwire <em>Roll-Out Solar Array</em> (ROSA), flight-demonstrated on the ISS (2017) and
-      ISS iROSA (2021–23).</li>
-    <li><b>Ion thrusters</b> — gridded ion Isp ~3100 s (NASA <em>NSTAR</em>, Deep Space 1 / Dawn) and
-      ~4100 s (NASA <em>NEXT</em>); Hall thrusters ~1500–2000 s; thruster + PPU specific mass a few kg/kW
-      (electric-propulsion system literature; ExoTerra Halo-class for this study).</li>
-    <li><b>Voyager 1</b> heliocentric escape speed ~16.6 km/s (~3.6 AU/yr): NASA/JPL Voyager.</li>
-    <li><b>Parker Solar Probe</b> perihelion ~9–10 solar radii (heat-shield context for the solar-Oberth
-      option): NASA Parker Solar Probe.</li>
-    <li><b>Astrodynamics</b> — Tsiolkovsky rocket equation, patched-conic method, Oberth effect, vis-viva:
-      Vallado, <em>Fundamentals of Astrodynamics and Applications</em>; Curtis, <em>Orbital Mechanics for
-      Engineering Students</em>.</li>
+    <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
+      — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s, space velocity ~32 km/s
+      (ESA Hipparcos / SIMBAD values). Closest approach ~28,000 yr at ~3.1 ly is the standard derived
+      encounter (<a href="https://doi.org/10.1051/0004-6361:20011330" target="_blank" rel="noopener noreferrer">García-Sánchez et al., A&amp;A 2001</a>).</li>
+    <li><b>Solar constant</b> S₀ = 1361 W/m² at 1 AU:
+      <a href="https://doi.org/10.1029/2010GL045777" target="_blank" rel="noopener noreferrer">Kopp &amp; Lean, Geophys. Res. Lett. 38, L01706 (2011)</a>.</li>
+    <li><b>Solar cells</b> — commercial space-grade
+      <a href="https://en.wikipedia.org/wiki/Multi-junction_solar_cell" target="_blank" rel="noopener noreferrer">triple-junction GaAs</a>
+      ~29–30% BOL, monocrystalline silicon ~18–22%
+      (<a href="https://www.nrel.gov/pv/cell-efficiency.html" target="_blank" rel="noopener noreferrer">NREL Best Research-Cell Efficiency chart</a>).
+      <b>Starlink:</b> SpaceX has <em>not</em> published Starlink's cell efficiency or array specific power,
+      so the ~20% silicon and ~90 W/kg figures here are <em>representative commercial values</em>, not a
+      SpaceX specification.</li>
+    <li><b>Array specific power</b> ~100–150 W/kg for modern deployable arrays (higher on the roadmap):
+      NASA / Redwire <a href="https://en.wikipedia.org/wiki/Roll_Out_Solar_Array" target="_blank" rel="noopener noreferrer">Roll-Out Solar Array (ROSA)</a>, flown on the ISS (2017) and as iROSA (2021–23).</li>
+    <li><b>Ion thrusters</b> — gridded ion Isp ~3100 s
+      (<a href="https://en.wikipedia.org/wiki/NSTAR" target="_blank" rel="noopener noreferrer">NASA NSTAR</a>, Deep Space 1 / Dawn) and ~4100 s
+      (<a href="https://en.wikipedia.org/wiki/NASA_Evolutionary_Xenon_Thruster" target="_blank" rel="noopener noreferrer">NASA NEXT</a>);
+      Hall thrusters ~1500–2000 s; thruster + PPU a few kg/kW
+      (<a href="https://www.exoterra.com/" target="_blank" rel="noopener noreferrer">ExoTerra</a> Halo-class for this study).</li>
+    <li><b><a href="https://en.wikipedia.org/wiki/Voyager_1" target="_blank" rel="noopener noreferrer">Voyager 1</a></b>
+      heliocentric escape speed ~16.6 km/s (~3.6 AU/yr): NASA/JPL.</li>
+    <li><b><a href="https://en.wikipedia.org/wiki/Parker_Solar_Probe" target="_blank" rel="noopener noreferrer">Parker Solar Probe</a></b>
+      perihelion ~9–10 solar radii (heat-shield context for the solar-Oberth option): NASA.</li>
+    <li><b>Astrodynamics</b> —
+      <a href="https://en.wikipedia.org/wiki/Tsiolkovsky_rocket_equation" target="_blank" rel="noopener noreferrer">Tsiolkovsky rocket equation</a>,
+      patched-conic method, <a href="https://en.wikipedia.org/wiki/Oberth_effect" target="_blank" rel="noopener noreferrer">Oberth effect</a>, vis-viva:
+      <a href="https://celestrak.org/software/vallado-sw.php" target="_blank" rel="noopener noreferrer">Vallado, Fundamentals of Astrodynamics and Applications</a>; Curtis, Orbital Mechanics for Engineering Students.</li>
   </ul>
   <p class="src">Engine code: <code>fermi_sim/</code> in this repo; the web math is parity-checked against it
   (<code>audits/audit_webjs.mjs</code>). No third-party site code was used.</p>
@@ -437,7 +443,6 @@ function render(){
     : `✗ Over budget by ${fmt(-r.busPayload)} kg`]);
   if(r.gaNote) b.push(['mid', r.gaNote]);
   document.getElementById('badges').innerHTML=b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
-  drawTimeline();
   drawViz();
   drawCharts(r);
 }
@@ -590,8 +595,7 @@ function drawViz(){
     label=`${fmt(es/YEAR)} yr · Stage 3: interstellar cruise (${fmt(Math.hypot(probe[0],probe[1],probe[2]),2)} ly)`;
   }
   document.getElementById('tlabel').textContent=label;
-  // move the "now" marker on the burn timeline (last trace) without a full redraw
-  try { Plotly.restyle('chartTimeline', {x: [[Math.max(0.01, elapsedYrFromU(animU))]]}, [4]); } catch(e){}
+  drawTimeline();  // redraws the burn timeline incl. the moving "now" marker
 }
 
 // ----- burn timeline (continuous ion thrust, then coast) -----
@@ -611,23 +615,30 @@ function elapsedYrFromU(u){
 }
 function drawTimeline(){
   const r=compute(), p=burnPhases(r), x0=0.01;
+  const tSun=Math.max(p.tEarth, x0*2);
+  // Label each PHASE at its log-midpoint (well separated on a log axis), so the
+  // two close transition times no longer collide.
   const segs=[
-    ['Earth-escape burn (spiral)', x0, Math.max(p.tEarth,x0*2), '#3fb950'],
-    ['Sun-escape burn (heliocentric)', Math.max(p.tEarth,x0*2), p.tBurn, '#4cc2ff'],
-    ['Coast to Alpha Centauri (engine off)', p.tBurn, p.arrival, '#6e7681'],
+    [x0,    tSun,      '#3fb950', `Earth escape · ${fmt(p.tEarth,2)} yr`],
+    [tSun,  p.tBurn,   '#4cc2ff', `Sun escape · ${fmt(Math.max(0,p.tBurn-p.tEarth),2)} yr`],
+    [p.tBurn, p.arrival,'#6e7681', `coast (engine off) · ${fmt(p.arrival)} yr`],
   ];
-  const traces=segs.map(s=>({x:[s[1],s[2]],y:[0,0],mode:'lines',line:{color:s[3],width:20},name:s[0]}));
-  traces.push({x:[p.tEarth,p.tBurn],y:[0,0],mode:'markers+text',
-    text:[`SOI escape · ${fmt(p.tEarth,2)} yr`,`engine off · ${fmt(p.tBurn,1)} yr`],
-    textposition:'top center',marker:{color:'#e6edf3',size:7},textfont:{size:10,color:'#c4cdd6'},showlegend:false});
-  const now=Math.max(x0,elapsedYrFromU(animU));
-  traces.push({x:[now],y:[0],mode:'markers',marker:{color:'#d29922',size:14,symbol:'line-ns-open'},name:'animation now'});
+  const traces=[];
+  segs.forEach(s=>{
+    traces.push({x:[s[0],s[1]],y:[0,0],mode:'lines',line:{color:s[2],width:26},text:s[3],hoverinfo:'text',showlegend:false});
+    traces.push({x:[Math.sqrt(s[0]*s[1])],y:[0.95],mode:'text',text:[s[3]],textfont:{size:10,color:'#c9d4de'},hoverinfo:'skip',showlegend:false});
+  });
+  const now=Math.max(x0, elapsedYrFromU(animU));
+  traces.push({x:[now,now],y:[-0.55,0.55],mode:'lines',line:{color:'#d29922',width:3},hoverinfo:'skip',showlegend:false});
+  traces.push({x:[now],y:[-0.85],mode:'text',text:['▲ now'],textfont:{size:9,color:'#d29922'},hoverinfo:'skip',showlegend:false});
   Plotly.react('chartTimeline',traces,{
-    title:{text:'Burn timeline — continuous ion thrust, then coast (log years from launch)',font:{size:13,color:'#e6edf3'}},
+    title:{text:'Burn timeline — continuous ion thrust, then coast',font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},
-    margin:{l:10,r:14,t:34,b:30},showlegend:true,legend:{orientation:'h',y:-0.5,font:{size:10}},
-    xaxis:{type:'log',title:'years from launch',gridcolor:'#2a323d'},
-    yaxis:{visible:false,range:[-1,1.4]}},CFG);
+    margin:{l:14,r:16,t:34,b:38},showlegend:false,
+    xaxis:{type:'log',gridcolor:'#2a323d',tickfont:{size:10},
+      title:{text:'years from launch',font:{size:10},standoff:8},
+      range:[Math.log10(0.006), Math.log10(p.arrival*1.5)]},
+    yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
 }
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
