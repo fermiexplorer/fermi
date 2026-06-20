@@ -106,12 +106,16 @@
   .method table.chain td.v, .method table.chain th.v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .method table.chain td.tot { color: var(--ink); font-weight: 600; }
   a { color: var(--accent); }
+.prelim { margin-top: 10px; background: #3a2a10; border: 1px solid #6b5320; border-left: 4px solid #d29922;
+  color: #f0c674; border-radius: 6px; padding: 9px 13px; font-size: 13px; line-height: 1.45; }
+.prelim b { color: #ffd479; }
 </style>
 </head>
 <body>
 <header>
   <h1>Project Fermi — Alpha Centauri Ion-Propulsion Mission Calculator</h1>
   <p>Reach 99% of the way to Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
+  <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
 </header>
 
 <div class="layout">

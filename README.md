@@ -5,6 +5,15 @@ precursor mission: get a small spacecraft **99% of the way to Alpha Centauri
 (≤ 2600 AU) within 100,000 years**, carrying a ≥1 kg payload, departing from LEO
 with ion propulsion.
 
+> ⚠️ **PRELIMINARY — first-order "Fermi estimate" only.** Every number here is an
+> order-of-magnitude sizing built on simplifying assumptions (straight-line target
+> motion, patched-conic departure, additive low-thrust penalty, geometric
+> gravity-assist bounds). It is intended for feasibility and architecture trades,
+> **not** design or flight decisions, and **requires independent engineering
+> validation** before being relied upon.
+
+**Live calculator:** <https://fermiexplorer.github.io/>
+
 It answers:
 
 - Is the concept (≈500 kg, ~20 km/s from LEO, solar-electric ion, direct from LEO)
@@ -39,12 +48,14 @@ fermi_sim/            Python engine (source of truth)
   spacecraft.py   rocket eq, power, solar vs fuel-cell mass models
   trajectory.py   cruise time, Jupiter assist, solar Oberth
 run_analysis.py   prints the full integrated analysis
-index.html        interactive calculator (sliders / charts / methodology)
+index.html        interactive calculator (sliders, live 3D/2D trajectory
+                  animation, CONOPS, methodology, references)
 web/physics.js    shared JS physics used by the page (parity-checked vs Python)
-audit/calcs/      independent verification suite (see below)
-audit/codex/      Codex independent audits (conclusions + scripts)
-audit/grok/       Grok independent audits (conclusions + scripts)
-docs/             tender report + Codex audit prompts
+audit/calcs/      independent verification suite (Python + Node parity)
+audit/codex/      Codex independent audit (conclusions + scripts)
+audit/grok/       Grok independent audit (conclusions + scripts)
+audit/gemini/     Gemini independent audit (astropy + scipy solve_ivp)
+docs/             REPORT.md (tender report), plans/, audit prompts
 ```
 
 ## Run it
@@ -89,3 +100,7 @@ First-order model: straight-line AC motion, patched-conic departure with best-ca
 launch timing, additive low-thrust penalty, geometric (not phased) gravity-assist
 bounds. Cost is treated as a soft constraint and is out of scope here. Intended for
 feasibility and architecture trades, not detailed trajectory design.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
