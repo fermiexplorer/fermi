@@ -6,13 +6,13 @@ plus a numeric counter-check, not a restatement. Run them in a fresh session so 
 reviewer doesn't inherit our assumptions.
 
 > Setup line to prepend to any prompt:
-> "This repo (`acsim/`, `web/physics.js`, `audits/`) models an ion-propulsion probe
+> "This repo (`fermi_sim/`, `web/physics.js`, `audits/`) models an ion-propulsion probe
 > to Alpha Centauri. Be adversarial: independently re-derive the physics, plug in
 > the catalogue numbers yourself, and flag any error, unit slip, or unstated
 > assumption. Don't trust the code's own comments."
 
 ## 1. Ephemeris & coordinate frame
-"In `acsim/astro.py` we convert Alpha Centauri's (RA, Dec, distance, proper motion,
+"In `fermi_sim/astro.py` we convert Alpha Centauri's (RA, Dec, distance, proper motion,
 radial velocity) into a heliocentric **ecliptic** Cartesian state, then propagate it
 linearly. Independently recompute the 3-D position and space velocity (use astropy
 or hand math), verify the obliquity rotation direction and the proper-motion→km/s
@@ -29,7 +29,7 @@ Re-derive both optima from scratch, confirm the two are different and why, and c
 the 2600 AU miss tolerance maps to a sensible spread of acceptable arrival times."
 
 ## 3. Departure energetics (patched-conic)
-"In `acsim/departure.py` we compute LEO→v∞ Δv via patched conics: heliocentric
+"In `fermi_sim/departure.py` we compute LEO→v∞ Δv via patched conics: heliocentric
 `v_dep = √(v∞² + v_esc,☉²)` at 1 AU, borrow Earth's 29.8 km/s **in-plane only**
 (`v∞,E² = v_dep² + v_E² − 2 v_dep v_E cos β`, β = out-of-plane tilt), then impulsive
 `Δv = √(v∞,E² + v_esc,LEO²) − v_circ,LEO`. Independently verify the energy balance,
@@ -47,7 +47,7 @@ the web tool (floor + slider) defensible, and is ~20 km/s realistic for optimise
 perigee-biased SEP? Cite SEP escape literature if you can."
 
 ## 5. Rocket equation, power & energy
-"Check `acsim/spacecraft.py`: `m_p = m_dry(e^(Δv/v_e) − 1)`, electrical energy
+"Check `fermi_sim/spacecraft.py`: `m_p = m_dry(e^(Δv/v_e) − 1)`, electrical energy
 `E = ½ m_p v_e²/η`, thrust `F = 2ηP/v_e`, burn time `m_p v_e/F`. Confirm units and that
 E scales **linearly with v_e** at fixed Δv (the basis of 'higher Isp costs energy').
 Sanity-check the baseline: 255 kg dry, 20 km/s, Isp 3000 s → ~248 kg xenon, ~50,000 kWh,
@@ -63,17 +63,17 @@ the ~1000× mass disadvantage vs a solar array. Does an RTG/reactor change the c
 for a burn done within a few AU of the Sun?"
 
 ## 7. Gravity assists
-"`acsim/trajectory.py` gives a Jupiter flyby max heliocentric gain (turn-angle bound)
+"`fermi_sim/trajectory.py` gives a Jupiter flyby max heliocentric gain (turn-angle bound)
 and a solar-Oberth v∞ (`√((v_peri+Δv)² − v_esc²)` at a few R_sun). These are geometric
 upper bounds, not phased solutions. Check the Jupiter turn-angle formula and the Oberth
 leverage (~1–2 km/s burn → 24 km/s v∞), and assess realism: heat-shield mass for a
 ~6 R_sun perihelion, and how to drop perihelion (retro burn vs planetary assist)."
 
 ## 8. Cross-implementation & units
-"`web/physics.js` (browser) must match `acsim/` (Python). Run `audits/run_audits.py`
+"`web/physics.js` (browser) must match `fermi_sim/` (Python). Run `audits/run_audits.py`
 and `node audits/audit_webjs.mjs`. Independently spot-check 3 values across both.
 Grep for unit bugs (km vs m, deg vs rad, Isp vs v_e, year length). Confirm the embedded
-AC state vector in `web/physics.js` equals what `acsim` produces."
+AC state vector in `web/physics.js` equals what `fermi_sim` produces."
 
 ## 9. Adversarial sweep (meta)
 "Find the single biggest error or most optimistic assumption in this model that would

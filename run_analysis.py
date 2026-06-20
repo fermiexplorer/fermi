@@ -7,15 +7,15 @@ from __future__ import annotations
 
 import numpy as np
 
-from acsim import constants as c
-from acsim.astro import alpha_centauri_state
-from acsim.departure import departure_budget
-from acsim.intercept import (
+from fermi_sim import constants as c
+from fermi_sim.astro import alpha_centauri_state
+from fermi_sim.departure import departure_budget
+from fermi_sim.intercept import (
     ecliptic_crossing_time,
     min_speed_arrival,
     solve_intercept,
 )
-from acsim.spacecraft import (
+from fermi_sim.spacecraft import (
     FuelCellArchitecture,
     SolarArchitecture,
     exhaust_velocity,
@@ -23,7 +23,7 @@ from acsim.spacecraft import (
     max_ve_self_powered,
     propellant_mass,
 )
-from acsim.trajectory import (
+from fermi_sim.trajectory import (
     jupiter_assist_max_gain,
     solar_oberth_burn_for_vinf,
     solar_oberth_vinf,

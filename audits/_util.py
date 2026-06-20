@@ -2,7 +2,7 @@
 
 Audits are *independent* cross-checks: they re-derive results with a different
 method (astropy, brute-force optimisation, conservation laws, numerical
-integration) and compare against the ``acsim`` engine and the values published
+integration) and compare against the ``fermi_sim`` engine and the values published
 in the web calculator. A circular check (call the engine, compare to itself) is
 explicitly avoided.
 """

@@ -13,8 +13,8 @@ import math
 
 from _util import check, rel_err, summary
 
-from acsim import constants as c
-from acsim.departure import (
+from fermi_sim import constants as c
+from fermi_sim.departure import (
     impulsive_dv_from_leo,
     leo_speeds,
     spiral_escape_dv,
@@ -68,8 +68,8 @@ def run() -> None:
 
     # 5. Sanity vs a known mission: Voyager-1 left the Sun at ~16.6 km/s; our
     #    minimum heliocentric v_inf (~23 km/s) is necessarily larger.
-    from acsim.astro import alpha_centauri_state
-    from acsim.intercept import min_speed_arrival
+    from fermi_sim.astro import alpha_centauri_state
+    from fermi_sim.intercept import min_speed_arrival
 
     vmin = min_speed_arrival(alpha_centauri_state()).v_inf / c.KMS
     check("min cruise v_inf exceeds Voyager-1 (16.6 km/s), as expected",

@@ -32,7 +32,7 @@ is negligible against the ~80,000-year coast.
 ## Layout
 
 ```
-acsim/            Python engine (source of truth)
+fermi_sim/            Python engine (source of truth)
   astro.py        Alpha Centauri ephemeris + ecliptic transform
   intercept.py    V_p = A0/T + V_ac geometry, arrival-time optimisation
   departure.py    LEO -> v_inf Δv (impulsive + numerical low-thrust spiral)

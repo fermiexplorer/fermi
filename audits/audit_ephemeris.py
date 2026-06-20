@@ -11,8 +11,8 @@ import numpy as np
 
 from _util import check, rel_err, summary
 
-from acsim import constants as c
-from acsim.astro import (
+from fermi_sim import constants as c
+from fermi_sim.astro import (
     AC_DEC_DEG,
     AC_DIST_LY,
     AC_PMDEC_MASYR,

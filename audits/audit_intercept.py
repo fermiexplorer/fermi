@@ -14,9 +14,9 @@ from scipy.optimize import minimize_scalar
 
 from _util import check, rel_err, summary
 
-from acsim import constants as c
-from acsim.astro import alpha_centauri_state
-from acsim.intercept import min_speed_arrival, required_v_inf, solve_intercept
+from fermi_sim import constants as c
+from fermi_sim.astro import alpha_centauri_state
+from fermi_sim.intercept import min_speed_arrival, required_v_inf, solve_intercept
 
 
 def run() -> None:
@@ -54,7 +54,7 @@ def run() -> None:
           f"{tan.v_inf/c.KMS:.3f} vs tangential {v_tan/c.KMS:.3f} km/s")
 
     # 4. At the ecliptic crossing the required v_inf is in-plane (tilt ~ 0).
-    from acsim.intercept import ecliptic_crossing_time
+    from fermi_sim.intercept import ecliptic_crossing_time
 
     sol = solve_intercept(st, ecliptic_crossing_time(st))
     check("v_inf is in-plane at the ecliptic crossing (|tilt|<0.5 deg)",

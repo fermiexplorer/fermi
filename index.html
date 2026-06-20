@@ -183,7 +183,7 @@
         <span id="tlabel"></span>
       </div>
       <div class="vizsel">
-        <span>2D stage:</span>
+        <span>Stage (both views):</span>
         <label><input type="radio" name="viz" value="earth" checked> 1 · Earth escape</label>
         <label><input type="radio" name="viz" value="sun"> 2 · Sun escape</label>
         <label><input type="radio" name="viz" value="ac"> 3 · To Alpha Centauri</label>
@@ -202,7 +202,7 @@
 <section class="method">
   <h2>How the numbers are computed</h2>
   <p>This is a first-order ("Fermi") feasibility model. Every formula below is implemented in the
-  live calculator above and cross-checked against a validated Python engine (<code>acsim</code>).</p>
+  live calculator above and cross-checked against a validated Python engine (<code>fermi_sim</code>).</p>
 
   <h4>1 · Intercept geometry</h4>
   <p>A probe that has escaped the Sun coasts in a near-straight line at its heliocentric excess
@@ -261,7 +261,7 @@
     <li>The 3D view plots true ecliptic coordinates in light-years (drag to rotate, scroll to zoom); the play/scrubber uses <em>log-scaled</em> time so the ~1-yr departure is visible against the ~75,000-yr coast. The 2D "Earth escape" stage is schematic (not to scale); "Sun escape" and "To Alpha Centauri" are to-scale top-down projections onto the ecliptic.</li>
   </ul>
   <p class="src">Sources: Alpha Centauri astrometry (Hipparcos/Gaia system values); standard astrodynamics
-  (Tsiolkovsky, patched-conic, Oberth). Engine code: <code>acsim/</code> in this repo. No third-party site code was used.</p>
+  (Tsiolkovsky, patched-conic, Oberth). Engine code: <code>fermi_sim/</code> in this repo. No third-party site code was used.</p>
 </section>
 
 <script>
@@ -333,8 +333,7 @@ function render(){
   if(r.pwr==='nuclear') b.push([r.psMass<200?'mid':'no', `△ RTG: ${fmt(r.psMass)} kg (heavy per kW)`]);
   if(r.gaNote) b.push(['mid', r.gaNote]);
   document.getElementById('badges').innerHTML=b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
-  drawOrbit3d();
-  drawOrbit2d(r);
+  drawViz();
   drawCharts(r);
 }
 
@@ -384,147 +383,119 @@ function drawCharts(r){
   ],{...LAYOUT('Cruise time to AC vs heliocentric v∞'),xaxis:{title:'v∞ (km/s)',gridcolor:'#2a323d'},yaxis:{title:'arrival (yr)',gridcolor:'#2a323d'}},CFG);
 }
 
-// ----- 2D staged trajectory view (selectable: Earth / Sun / AC) -----
-function drawOrbit2d(r){
-  const mode=radio('viz');
-  const eq={zeroline:false,showgrid:false,showticklabels:false};
-  let traces=[], title='', showleg=false;
+// ----- staged trajectory views (drive BOTH 3D and 2D; auto-advance on Play) -----
+// Scrubber u in [0,1] splits into three equal segments: Earth escape, Sun escape,
+// interstellar cruise. Each stage renders at its own scale, so the "camera" pulls
+// back (Earth radii -> AU -> light-years) as the journey progresses and motion is
+// always visible. uirevision changes per stage, so the view reframes on hand-off
+// while preserving your rotation within a stage.
+function phaseOf(u){
+  if(u<1/3) return {stage:'earth', f:Math.max(0,u)*3};
+  if(u<2/3) return {stage:'sun', f:(u-1/3)*3};
+  return {stage:'ac', f:Math.min(1,(u-2/3)*3)};
+}
+function stageStartU(s){ return s==='earth'?0 : s==='sun'?1/3 : 2/3; }
+function aimDir(){ const v=requiredVinfVec(val('T')*YEAR); const n=Math.hypot(v[0],v[1],v[2]); return [v[0]/n,v[1]/n,v[2]/n]; }
 
-  if(mode==='earth'){
-    // Schematic low-thrust escape: an expanding spiral from LEO outward.
-    const xs=[], ys=[], turns=5.5, N=600;
-    for(let i=0;i<=N;i++){ const f=i/N, th=f*turns*2*Math.PI, rr=1+f*15;
-      xs.push(rr*Math.cos(th)); ys.push(rr*Math.sin(th)); }
-    traces=[
+function drawViz(){
+  const ph=phaseOf(animU), stage=ph.stage, f=ph.f;
+  document.querySelectorAll('input[name=viz]').forEach(el=>{ el.checked=(el.value===stage); });
+  const C3={...CFG,scrollZoom:true};
+  const eq={zeroline:false,showgrid:false,showticklabels:false};
+  const LAY3D=(title,unit)=>({title:{text:title,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,
+    legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},uirevision:'3d-'+stage,
+    scene:{aspectmode:'data',bgcolor:'#161b22',
+      xaxis:{title:'x ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'},
+      yaxis:{title:'y ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'},
+      zaxis:{title:'z ('+unit+')',color:'#9aa7b4',gridcolor:'#2a323d'}}});
+  const LAY2D=(title,showleg)=>({...LAYOUT(title),showlegend:!!showleg,
+    xaxis:{...eq},yaxis:{...eq,scaleanchor:'x',scaleratio:1},
+    margin:{l:20,r:20,t:34,b:showleg?40:20},uirevision:'2d-'+stage});
+  let label='';
+
+  if(stage==='earth'){
+    const turns=5.5,N=240,xs=[],ys=[],zs=[];
+    for(let i=0;i<=N;i++){ const t=i/N,th=t*turns*2*Math.PI,rr=1+t*15; xs.push(rr*Math.cos(th)); ys.push(rr*Math.sin(th)); zs.push(0); }
+    const th=f*turns*2*Math.PI, rr=1+f*15, pp=[rr*Math.cos(th),rr*Math.sin(th),0];
+    Plotly.react('chartOrbit3d',[
+      {type:'scatter3d',mode:'lines',x:xs,y:ys,z:zs,line:{color:'#30363d',width:2},name:'escape spiral'},
+      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#58a6ff',size:9},name:'Earth'},
+      {type:'scatter3d',mode:'markers',x:[pp[0]],y:[pp[1]],z:[0],marker:{color:'#d29922',size:6},name:'probe'},
+    ],LAY3D('Stage 1 · 3D — spiral out of Earth (schematic, Earth radii)','R⊕'),C3);
+    Plotly.react('chartOrbit2d',[
       {x:xs,y:ys,mode:'lines',line:{color:'#4cc2ff',width:1.5},showlegend:false},
       {x:[0],y:[0],mode:'markers+text',marker:{color:'#58a6ff',size:16},text:['Earth'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[1],y:[0],mode:'markers+text',marker:{color:'#3fb950',size:8},text:['LEO start'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[xs[N]],y:[ys[N]],mode:'markers+text',marker:{color:'#d29922',size:9},text:['escape →'],textposition:'top center',textfont:{color:'#d29922'},showlegend:false},
-    ];
-    title="Stage 1 · Spiral out of Earth's gravity (low-thrust, schematic — not to scale)";
+      {x:[1],y:[0],mode:'markers+text',marker:{color:'#3fb950',size:8},text:['LEO'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
+      {x:[pp[0]],y:[pp[1]],mode:'markers',marker:{color:'#d29922',size:11},showlegend:false},
+    ],LAY2D('Stage 1 · 2D — Earth-escape spiral (schematic, not to scale)'),CFG);
+    label=`~${fmt(f*1.2,2)} yr · Stage 1: spiral out of Earth (low-thrust)`;
 
-  } else if(mode==='sun'){
-    // Heliocentric: Sun, Earth's 1 AU orbit, and the outbound leg in the AC aim direction.
-    const v=requiredVinfVec(val('T')*YEAR), ang=Math.atan2(v[1],v[0]);
-    const cx=[], cy=[]; for(let i=0;i<=120;i++){ const a=i/120*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); }
-    const px=[], py=[]; for(let i=0;i<=80;i++){ const rr=1+(i/80)*3.5; px.push(rr*Math.cos(ang)); py.push(rr*Math.sin(ang)); }
-    traces=[
+  } else if(stage==='sun'){
+    const d=aimDir(), ang=Math.atan2(d[1],d[0]);
+    const cx=[],cy=[],cz=[]; for(let i=0;i<=120;i++){ const a=i/120*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0); }
+    const P0=[Math.cos(ang),Math.sin(ang),0];
+    const lx=[],ly2=[],lz=[]; for(let i=0;i<=60;i++){ const t=i/60; lx.push(P0[0]+t*4*d[0]); ly2.push(P0[1]+t*4*d[1]); lz.push(P0[2]+t*4*d[2]); }
+    const pp=[P0[0]+f*4*d[0],P0[1]+f*4*d[1],P0[2]+f*4*d[2]];
+    const L=5, plane={type:'mesh3d',x:[-L,L,L,-L],y:[-L,-L,L,L],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],opacity:0.10,color:'#4cc2ff',hoverinfo:'skip',showscale:false};
+    Plotly.react('chartOrbit3d',[plane,
+      {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
+      {type:'scatter3d',mode:'lines',x:lx,y:ly2,z:lz,line:{color:'#4cc2ff',width:3},name:'departure leg'},
+      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:7},name:'Sun'},
+      {type:'scatter3d',mode:'markers',x:[pp[0]],y:[pp[1]],z:[pp[2]],marker:{color:'#d29922',size:6},name:'probe'},
+    ],LAY3D('Stage 2 · 3D — escape the Sun from Earth’s orbit (AU)','AU'),C3);
+    Plotly.react('chartOrbit2d',[
       {x:cx,y:cy,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
-      {x:px,y:py,mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
-      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:18},text:['Sun'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[Math.cos(ang)],y:[Math.sin(ang)],mode:'markers+text',marker:{color:'#3fb950',size:9},text:['depart (1 AU)'],textposition:'bottom right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[px[80]],y:[py[80]],mode:'markers+text',marker:{color:'#d29922',size:9},text:[`v∞ ${(r.ic.vinf/1e3).toFixed(1)} km/s → AC`],textposition:'top center',textfont:{color:'#d29922'},showlegend:false},
-    ];
-    title='Stage 2 · Escape the Sun from Earth’s orbit (top-down, AU)';
+      {x:lx,y:ly2,mode:'lines',line:{color:'#4cc2ff',width:2},showlegend:false},
+      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:16},text:['Sun'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
+      {x:[P0[0]],y:[P0[1]],mode:'markers+text',marker:{color:'#3fb950',size:8},text:['depart (1 AU)'],textposition:'bottom right',textfont:{color:'#9aa7b4'},showlegend:false},
+      {x:[pp[0]],y:[pp[1]],mode:'markers',marker:{color:'#d29922',size:11},showlegend:false},
+    ],LAY2D('Stage 2 · 2D — Sun escape (top-down, AU)'),CFG);
+    label=`~${fmt(f*6,1)} yr · Stage 2: leaving the Sun (${fmt(Math.hypot(pp[0],pp[1],pp[2]),2)} AU)`;
 
   } else {
-    // Full intercept: Sun, AC now, AC track, probe cruise, intercept point (ecliptic top-down, ly).
-    const T=val('T')*YEAR;
-    const acNow=[R0[0]/LY,R0[1]/LY];
-    const acArr=[(R0[0]+VAC[0]*T)/LY,(R0[1]+VAC[1]*T)/LY];
-    const tE=T*1.18, acEnd=[(R0[0]+VAC[0]*tE)/LY,(R0[1]+VAC[1]*tE)/LY];
-    traces=[
+    const s=1/LY, T=val('T')*YEAR;
+    const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
+    const intc=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
+    const tE=T*1.18, acEnd=[(R0[0]+VAC[0]*tE)*s,(R0[1]+VAC[1]*tE)*s,(R0[2]+VAC[2]*tE)*s];
+    const probe=[intc[0]*f,intc[1]*f,intc[2]*f], es=f*T;
+    const acp=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
+    const L=Math.max(2,Math.hypot(intc[0],intc[1])*1.15);
+    const plane={type:'mesh3d',x:[-L,L,L,-L],y:[-L,-L,L,L],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],opacity:0.12,color:'#4cc2ff',hoverinfo:'skip',showscale:false};
+    Plotly.react('chartOrbit3d',[plane,
+      {type:'scatter3d',mode:'lines',x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],z:[acNow[2],acEnd[2]],line:{color:'#f0883e',width:3},name:'AC track'},
+      {type:'scatter3d',mode:'lines',x:[0,intc[0]],y:[0,intc[1]],z:[0,intc[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
+      {type:'scatter3d',mode:'lines',x:[acNow[0],acNow[0]],y:[acNow[1],acNow[1]],z:[acNow[2],0],line:{color:'#6e7681',width:2},name:'AC depth ⟂ ecliptic'},
+      {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
+      {type:'scatter3d',mode:'markers',x:[intc[0]],y:[intc[1]],z:[intc[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
+      {type:'scatter3d',mode:'markers',x:[probe[0]],y:[probe[1]],z:[probe[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
+      {type:'scatter3d',mode:'markers',x:[acp[0]],y:[acp[1]],z:[acp[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
+    ],LAY3D('Stage 3 · 3D — cruise to Alpha Centauri (light-years)','ly'),C3);
+    Plotly.react('chartOrbit2d',[
       {x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],mode:'lines',line:{color:'#f0883e',width:1,dash:'dot'},name:'AC track'},
-      {x:[0,acArr[0]],y:[0,acArr[1]],mode:'lines',line:{color:'#4cc2ff',width:2},name:'probe cruise'},
-      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:13},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[acNow[0]],y:[acNow[1]],mode:'markers+text',marker:{color:'#f0883e',size:10},text:['AC now'],textposition:'bottom center',textfont:{color:'#9aa7b4'},showlegend:false},
-      {x:[acArr[0]],y:[acArr[1]],mode:'markers+text',marker:{color:'#d29922',size:13,symbol:'star'},text:[`intercept @ ${fmt(T/YEAR)} yr`],textposition:'top center',textfont:{color:'#d29922'},showlegend:false},
-    ];
-    title='Stage 3 · Cruise to Alpha Centauri (ecliptic top-down projection, ly)';
-    showleg=true;
+      {x:[0,intc[0]],y:[0,intc[1]],mode:'lines',line:{color:'#4cc2ff',width:2},name:'probe cruise'},
+      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:12},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
+      {x:[acp[0]],y:[acp[1]],mode:'markers',marker:{color:'#f0883e',size:9},name:'AC (now)'},
+      {x:[probe[0]],y:[probe[1]],mode:'markers',marker:{color:'#4cc2ff',size:9},name:'probe (now)'},
+      {x:[intc[0]],y:[intc[1]],mode:'markers',marker:{color:'#d29922',size:11,symbol:'star'},name:'intercept'},
+    ],LAY2D('Stage 3 · 2D — cruise to AC (ecliptic top-down, ly)',true),CFG);
+    label=`${fmt(es/YEAR)} yr · Stage 3: interstellar cruise (${fmt(Math.hypot(probe[0],probe[1],probe[2]),2)} ly)`;
   }
-
-  const lay={...LAYOUT(title),showlegend:showleg,
-    xaxis:{...eq},yaxis:{...eq,scaleanchor:'x',scaleratio:1},
-    margin:{l:20,r:20,t:34,b:showleg?40:20}};
-  Plotly.react('chartOrbit2d',traces,lay,CFG);
+  document.getElementById('tlabel').textContent=label;
 }
 
-// ----- 3D ecliptic view with log-time animation -----
-// The slider position u in [0,1] maps to elapsed time LOG-arithmically, so the
-// ~1-yr departure gets as much scrubber room as the ~75,000-yr coast.
-let animFrac=1, animTimer=null;
-const TMIN_YR=0.1;  // slider origin: ~5 weeks after departure
-const ORBIT3D_PROBE_IDX=6, ORBIT3D_AC_IDX=7;
-
-function acPath3(u){
-  const Tyr=val('T'), Tsec=Tyr*YEAR, s=1/LY;
-  const elapsedYr=TMIN_YR*Math.pow(Tyr/TMIN_YR, u);
-  const frac=elapsedYr/Tyr;
-  const ix=(R0[0]+VAC[0]*Tsec)*s, iy=(R0[1]+VAC[1]*Tsec)*s, iz=(R0[2]+VAC[2]*Tsec)*s;
-  const es=elapsedYr*YEAR;
-  return {
-    probe:[ix*frac, iy*frac, iz*frac],
-    acp:[(R0[0]+VAC[0]*es)*s, (R0[1]+VAC[1]*es)*s, (R0[2]+VAC[2]*es)*s],
-    intercept:[ix,iy,iz], elapsedYr, frac,
-  };
-}
-
-function stageLabel(p){
-  const distLy=Math.hypot(p.intercept[0],p.intercept[1],p.intercept[2])*p.frac;
-  const distAU=distLy*LY/1.495978707e11;
-  let where, stage;
-  if(distAU<5){ where=`${fmt(distAU,2)} AU`; stage='escaping the Sun'; }
-  else if(distAU<1e5){ where=`${fmt(distAU)} AU`; stage='leaving the solar system'; }
-  else { where=`${fmt(distLy,3)} ly`; stage='interstellar cruise'; }
-  return {where, stage};
-}
-
-function updateTLabel(){
-  const p=acPath3(animFrac), sl=stageLabel(p);
-  document.getElementById('tlabel').textContent=`${fmt(p.elapsedYr)} yr · ${sl.where} · ${sl.stage}`;
-}
-
-function drawOrbit3d(){
-  const s=1/LY;
-  const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
-  const p1=acPath3(1), acArr=p1.intercept;
-  const Tsec=val('T')*YEAR, tE=Tsec*1.18;
-  const acEnd=[(R0[0]+VAC[0]*tE)*s,(R0[1]+VAC[1]*tE)*s,(R0[2]+VAC[2]*tE)*s];
-  const cur=acPath3(animFrac);
-  const L=Math.max(2, Math.hypot(acArr[0],acArr[1])*1.15);
-  const plane={type:'mesh3d',x:[-L,L,L,-L],y:[-L,-L,L,L],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],
-    opacity:0.12,color:'#4cc2ff',hoverinfo:'skip',showscale:false};
-  const traces=[
-    plane,
-    {type:'scatter3d',mode:'lines',x:[acNow[0],acEnd[0]],y:[acNow[1],acEnd[1]],z:[acNow[2],acEnd[2]],line:{color:'#f0883e',width:3},name:'AC track'},
-    {type:'scatter3d',mode:'lines',x:[0,acArr[0]],y:[0,acArr[1]],z:[0,acArr[2]],line:{color:'#4cc2ff',width:3},name:'probe cruise'},
-    {type:'scatter3d',mode:'lines',x:[acNow[0],acNow[0]],y:[acNow[1],acNow[1]],z:[acNow[2],0],line:{color:'#6e7681',width:2},name:'AC depth below ecliptic'},
-    {type:'scatter3d',mode:'markers+text',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},text:['Sun'],textposition:'top center',textfont:{color:'#9aa7b4'},showlegend:false},
-    {type:'scatter3d',mode:'markers',x:[acArr[0]],y:[acArr[1]],z:[acArr[2]],marker:{color:'#d29922',size:4,symbol:'diamond'},name:'intercept'},
-    {type:'scatter3d',mode:'markers',x:[cur.probe[0]],y:[cur.probe[1]],z:[cur.probe[2]],marker:{color:'#4cc2ff',size:6},name:'probe (now)'},
-    {type:'scatter3d',mode:'markers',x:[cur.acp[0]],y:[cur.acp[1]],z:[cur.acp[2]],marker:{color:'#f0883e',size:6},name:'Alpha Centauri (now)'},
-  ];
-  Plotly.react('chartOrbit3d',traces,{
-    title:{text:'3D · Ecliptic plane, AC track & probe cruise (ly) — drag to rotate, scroll to zoom',font:{size:13,color:'#e6edf3'}},
-    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,
-    legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},uirevision:'orbit3d',
-    scene:{aspectmode:'data',bgcolor:'#161b22',
-      xaxis:{title:'x (ly)',color:'#9aa7b4',gridcolor:'#2a323d'},
-      yaxis:{title:'y (ly)',color:'#9aa7b4',gridcolor:'#2a323d'},
-      zaxis:{title:'z (ly, ⟂ ecliptic)',color:'#9aa7b4',gridcolor:'#2a323d'}},
-  },{...CFG,scrollZoom:true});
-  updateTLabel();
-}
-
-function updateAnim(){
-  const cur=acPath3(animFrac);
-  Plotly.restyle('chartOrbit3d',
-    {x:[[cur.probe[0]],[cur.acp[0]]], y:[[cur.probe[1]],[cur.acp[1]]], z:[[cur.probe[2]],[cur.acp[2]]]},
-    [ORBIT3D_PROBE_IDX, ORBIT3D_AC_IDX]);
-  updateTLabel();
-}
-
+// ----- animation: auto-advances through Earth -> Sun -> AC stages -----
+let animU=1, animTimer=null;
 function togglePlay(){
   const btn=document.getElementById('playbtn');
   if(animTimer){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; return; }
-  if(animFrac>=1) animFrac=0;
+  if(animU>=1) animU=0;
   btn.textContent='⏸ Pause';
   animTimer=setInterval(()=>{
-    animFrac=Math.min(1, animFrac+0.005);
-    document.getElementById('tscrub').value=animFrac*100;
-    updateAnim();
-    if(animFrac>=1){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
+    animU=Math.min(1, animU+0.004);
+    document.getElementById('tscrub').value=animU*100;
+    drawViz();
+    if(animU>=1){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
   },40);
 }
 
@@ -549,15 +520,15 @@ function toggleOpts(){
   document.getElementById('nucOpts').style.display=p==='nuclear'?'':'none';
   document.getElementById('obOpts').style.display=radio('ga')==='oberth'?'':'none';
 }
+function stopPlay(){ if(animTimer){ clearInterval(animTimer); animTimer=null; document.getElementById('playbtn').textContent='▶ Play'; } }
 document.querySelectorAll('input,select').forEach(el=>{
-  if(el.id==='tscrub') return;  // scrubber is handled separately (no full re-render)
+  if(el.id==='tscrub' || el.name==='viz') return;  // handled separately
   el.addEventListener('input',()=>{ syncLabels(); toggleOpts(); render(); });
 });
-document.getElementById('tscrub').addEventListener('input',()=>{
-  if(animTimer){ clearInterval(animTimer); animTimer=null; document.getElementById('playbtn').textContent='▶ Play'; }
-  animFrac=val('tscrub')/100;
-  updateAnim();
+document.querySelectorAll('input[name=viz]').forEach(el=>{
+  el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); document.getElementById('tscrub').value=animU*100; drawViz(); });
 });
+document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); });
 document.getElementById('playbtn').addEventListener('click', togglePlay);
 syncLabels(); toggleOpts(); render();
 </script>

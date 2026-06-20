@@ -1,5 +1,5 @@
 // Project Fermi -- shared mission physics (browser + Node).
-// Ported from the validated Python engine (acsim/). Loaded by index.html and
+// Ported from the validated Python engine (fermi_sim/). Loaded by index.html and
 // cross-checked against Python in audits/audit_webjs.mjs. No third-party code.
 (function (root) {
   "use strict";
@@ -9,7 +9,7 @@
   const MU_SUN = 1.32712440018e20, MU_EARTH = 3.986004418e14, R_EARTH = 6.371e6;
   const V_ESC_SUN = Math.sqrt(2 * MU_SUN / AU), V_EARTH = Math.sqrt(MU_SUN / AU);
   const R_SUN = 6.957e8, MU_JUP = 1.26687e17, R_JUP = 7.1492e7;
-  // Alpha Centauri ecliptic state (m, m/s) from the acsim engine.
+  // Alpha Centauri ecliptic state (m, m/s) from the fermi_sim engine.
   const R0 = [-1.5364679397919116e16, -2.6062563844058972e16, -2.7814865852216956e16];
   const VAC = [-9222.153827911658, 28889.554946491313, 11121.449350900906];
   const SPIRAL_MAX = 11.3; // naive continuous-spiral penalty (km/s), from numerical RK4

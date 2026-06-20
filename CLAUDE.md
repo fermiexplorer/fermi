@@ -29,9 +29,9 @@
 
 ## Critical Design Rules
 
-- **`acsim/` is the source of truth.** The Python engine is authoritative; the web
+- **`fermi_sim/` is the source of truth.** The Python engine is authoritative; the web
   calculator (`web/physics.js`) is a port of it. Any physics change must be made in
-  `acsim/` first, then mirrored to `web/physics.js`, and the parity audit
+  `fermi_sim/` first, then mirrored to `web/physics.js`, and the parity audit
   (`node audits/audit_webjs.mjs`) must still pass.
 - **Audits must stay independent.** Checks in `audits/` verify the math by a
   *different* method (astropy, conservation laws, brute-force optimisation, numerical
@@ -39,7 +39,7 @@
 - **No identifying third-party names in shipped artifacts** (web page, public docs).
   The mission is referred to only as "Fermi".
 - **Don't silently change embedded constants.** The Alpha Centauri state vector in
-  `web/physics.js` is copied from `acsim`; if `acsim/astro.py` changes, re-dump and
+  `web/physics.js` is copied from `fermi_sim`; if `fermi_sim/astro.py` changes, re-dump and
   re-run the parity audit.
 
 ## Project Overview
@@ -70,7 +70,7 @@ node audits/audit_webjs.mjs           # web JS <-> Python parity (8 checks)
 
 ## Project Structure
 
-- `acsim/` — Python engine: `astro` (AC ephemeris), `intercept` (aim geometry),
+- `fermi_sim/` — Python engine: `astro` (AC ephemeris), `intercept` (aim geometry),
   `departure` (LEO→v∞ Δv), `spacecraft` (mass/power), `trajectory` (cruise + assists).
 - `run_analysis.py` — integrated analysis report (stdout).
 - `index.html` + `web/physics.js` — interactive calculator (sliders/charts/methodology).

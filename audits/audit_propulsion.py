@@ -12,8 +12,8 @@ import math
 
 from _util import check, rel_err, summary
 
-from acsim import constants as c
-from acsim.spacecraft import (
+from fermi_sim import constants as c
+from fermi_sim.spacecraft import (
     electrical_energy,
     exhaust_velocity,
     propellant_mass,

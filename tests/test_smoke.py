@@ -1,4 +1,4 @@
-"""Smoke / regression tests for the acsim engine.
+"""Smoke / regression tests for the fermi_sim engine.
 
 Run:  .venv/bin/pytest    (or .venv/bin/python -m pytest)
 For the full independent cross-checks see audits/run_audits.py.
@@ -11,16 +11,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import numpy as np
 
-from acsim import constants as c
-from acsim.astro import alpha_centauri_state, closest_approach
-from acsim.departure import departure_budget
-from acsim.intercept import (
+from fermi_sim import constants as c
+from fermi_sim.astro import alpha_centauri_state, closest_approach
+from fermi_sim.departure import departure_budget
+from fermi_sim.intercept import (
     ecliptic_crossing_time,
     min_speed_arrival,
     solve_intercept,
 )
-from acsim.spacecraft import FuelCellArchitecture, SolarArchitecture, propellant_mass
-from acsim.trajectory import solar_oberth_vinf, time_to_ac
+from fermi_sim.spacecraft import FuelCellArchitecture, SolarArchitecture, propellant_mass
+from fermi_sim.trajectory import solar_oberth_vinf, time_to_ac
 
 
 def test_closest_approach():
