@@ -54,6 +54,17 @@ AC's ~73–75 kyr position, then coast for roughly 70,000–80,000 years.
 Aiming much past ~80 kyr (or much before ~65 kyr) raises Δv — AC's geometry makes the
 ~70–80 kyr window the sweet spot, exactly as expected.
 
+> **Δv budget vs cruise speed (a common point of confusion).** The ~14 km/s is the
+> *departure Δv from LEO*, **not** the cruise speed. Travelling 14 km/s for 70,000 yr
+> would only cover ~3.3 ly — but the probe doesn't cruise at 14 km/s. That 14 km/s of
+> LEO Δv becomes a **~24 km/s heliocentric cruise** by (a) the Oberth effect at LEO
+> perigee and (b) inheriting Earth's 29.8 km/s orbital velocity. The check closes:
+> Alpha Centauri recedes from its ~3.1 ly closest approach to **~5.5 ly at 70,000 yr**
+> (~6.0 ly at 75,000 yr), and 23.6 km/s × 70,000 yr = **5.5 ly** — exactly AC's distance
+> then. (Energy chain: 7.7 km/s LEO orbital + 14 km/s Δv → 21.6 km/s at perigee →
+> 18.6 km/s excess vs Earth → +29.8 km/s Earth orbital → 48.4 km/s at 1 AU → minus the
+> 42.1 km/s solar escape → 23.8 km/s cruise.)
+
 ## 2. Does it work with electric propulsion + solar? — Yes
 
 At Isp 3000 s, 20 km/s needs ~50% xenon (mass ratio ≈ 2.0); a 500 kg wet vehicle is

@@ -267,6 +267,9 @@
   <em>in-plane only</em>; with best launch timing the excess relative to Earth is
   <code>v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β)</code>, β = out-of-plane tilt. From LEO the impulsive
   (Oberth) budget is <code>Δv = √(v∞,E² + v_esc,LEO²) − v_circ,LEO</code> ≈ <strong>14 km/s floor</strong>.
+  <strong>This 14 km/s is the departure budget, not the cruise speed</strong> — leveraging the LEO
+  orbital speed, the perigee Oberth effect, and Earth's 29.8 km/s it produces a heliocentric cruise of
+  <code>v∞</code> ≈ 24 km/s (so 24 km/s × ~70,000 yr ≈ 5.5 ly, matching where AC is at arrival).
   Low-thrust ion spreads thrust over many revolutions, losing the perigee Oberth benefit and paying a
   spiral tax; a naïve continuous spiral (integrated numerically, RK4) costs ~25 km/s, while optimised
   perigee-biased thrusting lands near <strong>20 km/s</strong> (a benchmarked industry figure). The realistic
@@ -404,10 +407,13 @@ function render(){
   const r=compute();
   // ----- headline mission-profile summary -----
   const bp=burnPhases(r);
+  const Tsec=r.arrivalYr*YEAR;
+  const acDistLy=Math.hypot(R0[0]+VAC[0]*Tsec, R0[1]+VAC[1]*Tsec, R0[2]+VAC[2]*Tsec)/LY;
   document.getElementById('summary').innerHTML=
     `<div class="sline"><b>Minimum spacecraft Δv from LEO</b> ≈ <b>14 km/s</b> (impulsive floor) · <b>~20 km/s</b> realistic low-thrust ion. This design: <b>${fmt(r.dvDesign/1e3,1)} km/s</b>, reaching cruise speed v∞ ≈ <b>${fmt(r.ic.vinf/1e3,1)} km/s</b>.</div>`+
     `<div class="sline"><b>Arrival:</b> within 2600 AU of Alpha Centauri in <b>${fmt(r.arrivalYr)} yr</b> (inside the 100,000-yr goal), aimed ~${fmt(Math.abs(r.ic.tiltDeg),1)}° off the ecliptic.</div>`+
-    `<div class="sline"><b>Profile:</b> launch to LEO, then fire an Isp-${fmt(r.isp)} s ion engine <b>continuously for ~${fmt(r.burnYr,1)} yr</b> at ~<b>${fmt(r.thrust*1e3)} mN</b>, drawing <b>${fmt(r.pwrW/1000,1)} kW</b> from a <b>${fmt(r.arrayArea,0)} m²</b> / <b>${fmt(r.arrayMass)} kg</b> silicon array — Earth-escape spiral ~${fmt(bp.tEarth,2)} yr, then heliocentric to escape — then coast ~${fmt(r.arrivalYr)} yr. Wet mass <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`;
+    `<div class="sline"><b>Profile:</b> launch to LEO, then fire an Isp-${fmt(r.isp)} s ion engine <b>continuously for ~${fmt(r.burnYr,1)} yr</b> at ~<b>${fmt(r.thrust*1e3)} mN</b>, drawing <b>${fmt(r.pwrW/1000,1)} kW</b> from a <b>${fmt(r.arrayArea,0)} m²</b> / <b>${fmt(r.arrayMass)} kg</b> silicon array — Earth-escape spiral ~${fmt(bp.tEarth,2)} yr, then heliocentric to escape — then coast ~${fmt(r.arrivalYr)} yr. Wet mass <b>${fmt(r.wet)} kg</b> (<b>${fmt(100*r.mp/r.wet)}%</b> ${r.propName}).</div>`+
+    `<div class="sline"><b>Distance check:</b> Δv budget ≠ cruise speed. The ${fmt(r.dvDesign/1e3,0)} km/s from LEO becomes a <b>${fmt(r.ic.vinf/1e3,1)} km/s</b> heliocentric cruise (Oberth + Earth's 29.8 km/s orbital velocity), so the probe covers ${fmt(r.ic.vinf/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — exactly where AC is at arrival (it recedes from its ~3.1 ly closest approach to ~${fmt(acDistLy,1)} ly).</div>`;
   const kpis=[
     ['Required v∞', fmt(r.ic.vinf/1e3,2)+' km/s'],
     ['Departure Δv (design)', fmt(r.dvDesign/1e3,1)+' km/s'],
