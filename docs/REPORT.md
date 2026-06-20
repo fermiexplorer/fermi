@@ -28,10 +28,14 @@ AC is now (shrinking with T) **plus** match AC's space velocity.
   +11 km/s of out-of-plane motion, so that aim is tilted ~10° out of plane — and
   out-of-plane velocity can't be borrowed from Earth.
 - AC's track **crosses the ecliptic at ~79,000 yr**, where departure is purely in-plane.
-- **The departure-Δv optimum sits between them, ≈73,000 yr**, tilted ~2.4° off the
-  ecliptic. A 75,000 yr benchmark is only ~10–12 m/s above the exact floor and is
-  tilted ~1.5° off the ecliptic. Your intuition was right: you trade a hair more
-  cruise speed (23.8 vs 23.3 km/s) for a near-elimination of the plane-change penalty.
+- **The departure-Δv minimum is ≈13.88 km/s at ≈72,800 yr** (tilted ~2.4° off the
+  ecliptic). The Δv curve is extremely flat near this optimum, so the round-number
+  **75,000 yr** arrival is practically the same point: its Δv is **13.886 km/s**, just
+  **~10 m/s more** than the 72,800 yr optimum (13.875 km/s) — a 0.07% difference, far
+  below the model's precision. (Note the units: the *total* budget is ~13.9 **km/s**;
+  the 75k-vs-optimum *penalty* is ~10 **m/s**.) Your intuition was right: you trade a
+  hair more cruise speed (23.8 vs 23.3 km/s) for a near-elimination of the plane-change
+  penalty.
 
 **Minimum spacecraft Δv from LEO (direct, no gravity assist):**
 

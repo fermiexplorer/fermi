@@ -266,14 +266,22 @@
   (Oberth) budget is <code>Δv = √(v∞,E² + v_esc,LEO²) − v_circ,LEO</code> ≈ <strong>14 km/s floor</strong>.
   Low-thrust ion spreads thrust over many revolutions, losing the perigee Oberth benefit and paying a
   spiral tax; a naïve continuous spiral (integrated numerically, RK4) costs ~25 km/s, while optimised
-  perigee-biased thrusting lands near <strong>20 km/s</strong> (a benchmarked industry figure). The
-  slider interpolates between these as an additive penalty.</p>
+  perigee-biased thrusting lands near <strong>20 km/s</strong> (a benchmarked industry figure). The realistic
+  budget is therefore <em>bracketed</em> by the ~14 km/s impulsive floor and the ~25 km/s spiral bound; the
+  low-thrust-penalty slider is the sensitivity control across that range. The ~20 km/s point is an engineering
+  benchmark, not derived here — a full phased finite-burn optimisation is future work.</p>
 
   <h4>3 · Mass &amp; the rocket equation</h4>
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
   power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For 20 km/s a ~500 kg vehicle is
   ~40–50% xenon at Isp 3000–4000 s — comfortably feasible today.</p>
+  <p><strong>Subsystem sizing.</strong> The solar array is sized physically rather than by a fixed W/kg:
+  area <code>= P / (S₀·η_cell / r²)</code> with <code>S₀</code> = 1361 W/m², and mass <code>= area · areal density</code>.
+  Defaults are commercial, buy-today <em>silicon</em> (~20% cells, ~3 kg/m² → ~90 W/kg at 1 AU; Starlink-class,
+  not GaAs); the dropdown and sliders let you vary cell type, efficiency, and areal density. The ion engine + PPU
+  scales at ~6 kg/kW and the xenon tank at ~8% of propellant. The tool reports whether array + engine + tank fit
+  inside the dry mass, leaving the remainder for bus + payload.</p>
 
   <h4>4 · The fuel-cell energy wall</h4>
   <p>Because EP energy scales with <code>v_e</code>, the power source is decisive. Chemical reactants store
