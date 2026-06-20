@@ -209,8 +209,8 @@ See `CLAUDE-issue.md` for the detailed process and plan file template.
 Conventions for issue tracking:
 - **Title prefix**: `NN — Title` (zero-padded issue number, em dash). Example: `05 — Fix widget`
 - **Body plan link**: clickable markdown link, not backtick text.
-  Use `[NN-slug.md](https://github.com/adi-oltean/fermi/blob/main/docs/plans/NN-slug.md)`
-- **Matrix summary tables**: `#` column uses `[#N](https://github.com/adi-oltean/fermi/issues/N)` format
+  Use `[NN-slug.md](https://github.com/fermiexplorer/fermi/blob/main/docs/plans/NN-slug.md)`
+- **Matrix summary tables**: `#` column uses `[#N](https://github.com/fermiexplorer/fermi/issues/N)` format
 
 ### Resolving issues
 
