@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
 <title>Fermi Explorer — Alpha Centauri Mission Calculator</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <script src="web/physics.js"></script>
 <style>
@@ -136,7 +135,7 @@
 </head>
 <body>
 <header>
-  <h1><svg class="brand" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><circle cx="23" cy="41" r="11"/><ellipse cx="23" cy="41" rx="18" ry="6.5" transform="rotate(-30 23 41)"/><path d="M34 30 L58 7" stroke-dasharray="2.5 4.5"/></g><path d="M48 6 L49.8 10.2 L54 12 L49.8 13.8 L48 18 L46.2 13.8 L42 12 L46.2 10.2 Z" fill="currentColor"/><path d="M50 33 L52.4 38.6 L58 41 L52.4 43.4 L50 49 L47.6 43.4 L42 41 L47.6 38.6 Z" fill="currentColor"/></svg> Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 24</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 25</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -643,7 +642,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 24, SRC_COMMIT = 'HEAD';
+const BUILD = 25, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
