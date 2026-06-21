@@ -91,14 +91,19 @@
   .topviz { margin-bottom: 14px; }
   .vizsel { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 10px 0 8px; font-size: 13px; color: var(--muted); }
   .vizsel label { display: flex; gap: 6px; align-items: center; color: var(--ink); cursor: pointer; }
-  #chartOrbit3d { min-height: 520px; }
-  .prim { min-height: 520px; margin-bottom: 12px; }
+  #chartOrbit3d { min-height: 380px; }
+  .prim { min-height: 380px; }
+  /* Two 3D views side by side as compact rectangles; stack only when too narrow.
+     The column gap + the shorter height leave page area where the wheel scrolls
+     normally (over a plot the wheel is captured for zoom). */
+  .viz3drow { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 14px; }
+  @media (max-width: 860px) { .viz3drow { grid-template-columns: 1fr; } }
   #twod { margin-top: 4px; }
   #chartOrbit2d { min-height: 340px; }
   #chartTimeline { min-height: 200px; margin-top: 12px; }
   .dualrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 1100px) { .dualrow { grid-template-columns: 1fr; } }
-  #follow3d { min-height: 520px; }
+  #follow3d { min-height: 380px; }
   #follow2d { min-height: 340px; }
   #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
@@ -138,7 +143,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 31</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 32</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -274,8 +279,10 @@
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
-      <div class="chart prim" id="chartOrbit3d"></div>
-      <div class="chart prim" id="follow3d"></div>
+      <div class="viz3drow">
+        <div class="chart prim" id="chartOrbit3d"></div>
+        <div class="chart prim" id="follow3d"></div>
+      </div>
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
         <input type="range" id="tscrub" min="0" max="100" step="0.5" value="0">
@@ -646,7 +653,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 31, SRC_COMMIT = 'HEAD';
+const BUILD = 32, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
