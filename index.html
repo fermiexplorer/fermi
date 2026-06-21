@@ -143,7 +143,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 32</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 33</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -293,7 +293,9 @@
         <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
         <label><input type="radio" name="viz" value="sun"> 2 · Solar escape</label>
         <label><input type="radio" name="viz" value="ac"> 3 · Interstellar cruise</label>
-        <label style="margin-left:auto"><input type="checkbox" id="show2d"> Show 2D views</label>
+        <label style="margin-left:auto" title="Overview: start as a close-up at the probe (1 AU) and dolly out during Play, instead of the wide Sun→AC view"><input type="checkbox" id="zoomstart"> Overview: start zoomed in</label>
+        <label title="Chase cam: tight frame behind the probe; uncheck to pull the frame back so AC and its track (ahead of the probe) are in view"><input type="checkbox" id="chasezoom" checked> Chase: zoom in</label>
+        <label><input type="checkbox" id="show2d"> Show 2D views</label>
         <span>Chase tilt <b><span id="o_tilt">30</span>°</b></span>
         <input type="range" id="tilt" min="0" max="85" step="1" value="30" style="width:110px">
       </div>
@@ -653,7 +655,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 32, SRC_COMMIT = 'HEAD';
+const BUILD = 33, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1064,7 +1066,11 @@ function cols(a){ return {x:a.map(p=>p[0]), y:a.map(p=>p[1]), z:a.map(p=>p[2])};
 function drawFollow3d(c,st){
   const p=st.pos, T=st.tan;
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc;
-  const all=flown.concat([[0,0,0]]);                       // include the Sun in the frame
+  // Default (checked): tight cube around the flown path + Sun. Unchecked: pull the frame
+  // back to also enclose AC and the intercept, so the target ahead of the probe is in view.
+  const chaseIn = document.getElementById('chasezoom') ? document.getElementById('chasezoom').checked : true;
+  const all = chaseIn ? flown.concat([[0,0,0]])
+                      : flown.concat([[0,0,0], c.ac, c.acEnd, c.I]);
   let mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
   all.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<mn[k])mn[k]=q[k]; if(q[k]>mx[k])mx[k]=q[k]; }});
   const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
@@ -1083,10 +1089,13 @@ function drawFollow3d(c,st){
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
     {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
+    {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2,dash:'dot'},name:'AC track'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[flown[0][0]],y:[flown[0][1]],z:[flown[0][2]],marker:{color:'#58a6ff',size:4},name:'Earth'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#a371f7',size:6},name:'probe'},
-  ],{title:{text:`Chase cam (3D) — behind the probe (${fmt(2*H, H<10?2:0)} AU cube · ${tag}) · scroll to zoom`,font:{size:13,color:'#e6edf3'}},
+    {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'Alpha Centauri'},
+    {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
+  ],{title:{text:`Chase cam (3D) — behind the probe (${fmt(2*H, H<10?2:0)} AU cube · ${tag}) · ${chaseIn?'scroll to zoom':'pulled back to AC'}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},
     scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
       camera:{eye:eye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}}}},{...CFG,scrollZoom:false});
@@ -1128,7 +1137,14 @@ function drawFollow2d(c,st){
 // schematic detail. Rotation is preserved (uirevision); the cube size sets the zoom.
 function drawZoom3d(c,st){
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown), p=st.pos;
-  const R=Math.max(2.2, 1.3*c.dist)*zoom3dOv;      // Sun-centred cube, scaled by the user zoom
+  // Default: a wide Sun-centred cube that frames both the Sun and AC/intercept for the
+  // whole journey. Checking "start zoomed in" switches to the close-up that dollies out
+  // with the probe during Play (R grows with c.dist). Either base is then scaled by the
+  // user's scroll-zoom multiplier.
+  const wideR  = 1.15*Math.max(Math.hypot(c.ac[0],c.ac[1],c.ac[2]), Math.hypot(c.I[0],c.I[1],c.I[2]));
+  const closeR = Math.max(2.2, 1.3*c.dist);
+  const zoomIn = document.getElementById('zoomstart') && document.getElementById('zoomstart').checked;
+  const R=(zoomIn ? closeR : wideR)*zoom3dOv;
   const cx=[],cy=[],cz=[]; for(let i=0;i<=90;i++){const a=i/90*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0);}
   const note = R<6 ? 'inner solar system' : (R<6000 ? 'leaving the Sun' : 'interstellar cruise');
   const unit = R<2000 ? 'AU' : 'ly', uf = R<2000 ? 1 : AU/LY;   // axis unit re-scales by magnitude
@@ -1292,6 +1308,10 @@ document.getElementById('show2d').addEventListener('change',(e)=>{
   document.getElementById('twod').style.display = e.target.checked ? '' : 'none';
   if(e.target.checked) drawViz();
 });
+// Overview zoom mode: wide Sun→AC by default, close-up-and-dolly when checked
+document.getElementById('zoomstart').addEventListener('change',()=>{ zoom3dOv=1; drawViz(); });
+// Chase-cam zoom mode: tight chase by default, pull back to AC when unchecked
+document.getElementById('chasezoom').addEventListener('change',()=>{ zoom3dCh=1; drawViz(); });
 
 // ----- click-to-expand KPI calculation panels (with copy) -----
 document.getElementById('kpis').addEventListener('click',(e)=>{
