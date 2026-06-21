@@ -108,13 +108,15 @@
   .dualrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 1100px) { .dualrow { grid-template-columns: 1fr; } }
   #follow2d { min-height: 340px; }
-  /* Play button + the burn timeline, which doubles as the time scrubber (drag it to scrub). */
-  .burnrow { display: flex; gap: 12px; align-items: stretch; margin: 10px 0 2px; }
-  .burnrow #playbtn { align-self: center; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 13px; white-space: nowrap; }
-  .burnrow #playbtn:hover { border-color: var(--accent); }
-  .burnwrap { flex: 1; min-width: 0; }
-  #tlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; margin: 0 0 1px 2px; }
+  /* Top scrubber: Play + time slider, above all 3D graphs. The burn timeline (bottom) also scrubs. */
+  #animctl { display: flex; gap: 10px; align-items: center; margin: 4px 0 12px; }
+  #animctl #playbtn { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  #animctl #playbtn:hover { border-color: var(--accent); }
+  #tscrub { flex: 1; accent-color: var(--accent); }
+  #tlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 230px; text-align: right; }
   #chartTimeline { cursor: ew-resize; }
+  .vinfo { cursor: help; color: var(--muted); font-size: 10px; margin-left: 6px; border: 1px solid var(--line); border-radius: 50%; width: 15px; height: 15px; line-height: 13px; display: inline-flex; align-items: center; justify-content: center; }
+  .vinfo:hover { border-color: var(--accent); color: var(--ink); }
   /* methodology */
   .method { padding: 8px 22px 60px; max-width: 1100px; }
   .method h2 { font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
@@ -148,7 +150,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 38</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 39</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -284,57 +286,37 @@
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
+      <div id="animctl">
+        <button id="playbtn" type="button">▶ Play</button>
+        <input type="range" id="tscrub" min="0" max="100" step="0.25" value="0">
+        <span id="tlabel"></span>
+      </div>
       <div class="viz3drow">
         <div class="camcell">
-          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label></div>
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; scroll to zoom; the grid re-scales by decade.">?</span></div>
           <div class="chart prim" id="chartOrbit3d"></div>
         </div>
         <div class="camcell">
-          <div class="camctl"><label title="Probe-aligned chase orientation (1st-party); updates as the velocity turns."><input type="checkbox" id="lock_follow3d" checked> lock to cam view</label></div>
+          <div class="camctl"><label title="Probe-aligned chase orientation (1st-party); updates as the velocity turns."><input type="checkbox" id="lock_follow3d" checked> lock to cam view</label><span class="vinfo" title="Chase cam — the view from just behind the probe, looking along its velocity. The flown path and the ecliptic grid turn as the velocity turns. Use “Chase: zoom in” to pull back and see AC ahead.">?</span></div>
           <div class="chart prim" id="follow3d"></div>
         </div>
       </div>
-      <div class="vsec3d">
-        <div class="vsec-h">Vector build-up — how the speeds and the Δv add up (drag to rotate · Play to evolve)</div>
-        <div class="viz3drow">
-          <div class="camcell">
-            <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velSpeed"> lock to cam view</label></div>
-            <div class="chart prim" id="velSpeed"></div>
-          </div>
-          <div class="camcell">
-            <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velDv"> lock to cam view</label></div>
-            <div class="chart prim" id="velDv"></div>
-          </div>
+      <div class="viz3drow">
+        <div class="camcell">
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velSpeed"> lock to cam view</label><span class="vinfo" title="Speeds — where the craft is going. The velocity vectors add to V(t): Earth lends its 29.8 km/s in-plane, the bought excess v∞,E tilts out of plane by β. After the ~1-yr burn, gravity bleeds |V| from ≈ v_dep down to v∞ with the engine off. Z is exaggerated (read the axis ticks) so the small out-of-plane tilt is visible; hover a vector's tip for its values.">?</span></div>
+          <div class="chart prim" id="velSpeed"></div>
         </div>
-        <div class="vizlegend" style="margin-top:2px">
-          <span><i class="vdot" style="background:#58a6ff"></i>Earth velocity (borrowed, in-plane)</span>
-          <span><i class="vdot" style="background:#a371f7"></i>probe velocity V(t)</span>
-          <span><i class="vbar" style="background:#3fb950"></i>bought excess v∞,E = V − V_Earth</span>
-          <span><i class="vdot" style="background:#f0883e"></i>cruise v∞ (asymptote)</span>
-          <span><i class="vbar" style="background:#d29922"></i>cumulative engine Δv</span>
-          <span><i class="vbar" style="background:#4cc2ff"></i>thrust direction (engine ON)</span>
-          <span class="vlhint"><b>Left — speeds (where the craft is going):</b> the velocity vectors add to V(t). Earth lends its 29.8 km/s in-plane; the bought excess tilts out of plane by β; after the ~1-yr burn, gravity bleeds |V| from ≈ v<sub>dep</sub> down to v∞ with the engine off. <b>Right — Δv / thrust (where the engine points):</b> the thrust fires only during the burn and the cumulative Δv grows to the budget, then freezes for the whole coast. Z is exaggerated (see the axis ticks) so the small out-of-plane tilt is visible.</span>
+        <div class="camcell">
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velDv"> lock to cam view</label><span class="vinfo" title="Δv / thrust — where the engine points. The thrust fires only during the burn and the cumulative Δv grows to the budget, then freezes for the whole coast (gravity does the rest). Z is exaggerated; hover a vector's tip for its values.">?</span></div>
+          <div class="chart prim" id="velDv"></div>
         </div>
       </div>
       <div class="vizsel">
-        <span>Stage:</span>
-        <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
-        <label><input type="radio" name="viz" value="sun"> 2 · Solar escape</label>
-        <label><input type="radio" name="viz" value="ac"> 3 · Interstellar cruise</label>
-        <label style="margin-left:auto" title="Overview: start as a close-up at the probe (1 AU) and dolly out during Play, instead of the wide Sun→AC view"><input type="checkbox" id="zoomstart"> Overview: start zoomed in</label>
+        <label title="Overview: start as a close-up at the probe (1 AU) and dolly out during Play, instead of the wide Sun→AC view"><input type="checkbox" id="zoomstart"> Overview: start zoomed in</label>
         <label title="Chase cam: tight frame behind the probe; uncheck to pull the frame back so AC and its track (ahead of the probe) are in view"><input type="checkbox" id="chasezoom" checked> Chase: zoom in</label>
         <label><input type="checkbox" id="show2d"> Show 2D views</label>
-        <span>Chase tilt <b><span id="o_tilt">30</span>°</b></span>
+        <span style="margin-left:auto">Chase tilt <b><span id="o_tilt">30</span>°</b></span>
         <input type="range" id="tilt" min="0" max="85" step="1" value="30" style="width:110px">
-      </div>
-      <div class="vizlegend">
-        <span><i class="vdot" style="background:#f5d020"></i>Sun</span>
-        <span><i class="vdot" style="background:#58a6ff"></i>Earth / departure (1 AU)</span>
-        <span><i class="vdot" style="background:#a371f7"></i>probe (now)</span>
-        <span><i class="vbar" style="background:#3fb950"></i>flown path</span>
-        <span><i class="vdot" style="background:#f0883e"></i>Alpha Centauri</span>
-        <span><i class="vbar" style="background:#586273"></i>ecliptic plane (z = 0)</span>
-        <span class="vlhint">— <b>scroll to zoom</b> (the grid re-scales by decade; units in AU); drag to rotate; “Chase tilt” raises/lowers the chase camera.</span>
       </div>
       <div id="twod" style="display:none">
         <div class="dualrow">
@@ -342,19 +324,12 @@
           <div class="chart" id="chartOrbit2d"></div>
         </div>
       </div>
-      <div class="burnrow">
-        <button id="playbtn" type="button">▶ Play</button>
-        <div class="burnwrap">
-          <div id="tlabel"></div>
-          <div class="chart" id="chartTimeline"></div>
-        </div>
-      </div>
+      <div class="chart" id="chartTimeline"></div>
       <div class="vizlegend" style="margin-top:2px">
-        <span class="vlhint" style="margin-left:0"><b>Drag the burn timeline</b> (or use ◀ Play) to scrub the current time — it doubles as the scrubber.</span>
+        <span class="vlhint" style="margin-left:0"><b>Click or drag the burn timeline</b> to scrub time — it mirrors the slider on top.</span>
         <span><i class="vbar" style="background:#3fb950"></i>Earth-escape spiral (engine ON)</span>
         <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
-        <span class="vlhint">Thrust is ~constant (≈ 2ηP/v<sub>e</sub>) for the whole burn, then zero during the coast — there is no variable-impulse phase, so no separate thrust-vs-time chart is needed. The axis is log-scaled so the ~1-yr burn is visible against the multi-10⁴-yr coast.</span>
       </div>
     </div>
     <div class="charts">
@@ -690,7 +665,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 38, SRC_COMMIT = 'HEAD';
+const BUILD = 39, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -990,6 +965,7 @@ function drawViz(){
   document.getElementById('tlabel').textContent=
     `${fmt(c.es/YEAR)} yr · ${st.onSpiral?'spiral-out & solar escape':'interstellar cruise'} · `+
     (c.dist<2000?`${fmt(c.dist,1)} AU`:`${fmt(dly,3)} ly`);
+  { const ts=document.getElementById('tscrub'); if(ts && document.activeElement!==ts) ts.value=animU*100; }  // keep the top slider in sync
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
@@ -1247,15 +1223,19 @@ function dvVecAt(F,t){
   const dir=unitv(lerpv(F.einp,F.vhat,fb));                  // thrust swings from along-Earth to the aim
   return {vec:scv(dir,mag),dir,mag,m};
 }
-function bbox3(pts,zoom){
-  let mn=[1e30,1e30,1e30],mx=[-1e30,-1e30,-1e30];
-  pts.forEach(p=>{for(let k=0;k<3;k++){if(p[k]<mn[k])mn[k]=p[k];if(p[k]>mx[k])mx[k]=p[k];}});
-  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2], z=(zoom||1);
-  const Hxy=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],1)*1.35*z;
-  // Exaggerate the out-of-plane (z) axis: these vectors are nearly in-plane, so a TIGHT z-range
-  // lets the small tilt fill the box (the z tick labels carry the real, different scale). Floor
-  // it so a perfectly in-plane case (tilt ≈ 0) doesn't blow up to absurd magnification.
-  const Hz=Math.max(0.5*(mx[2]-mn[2])*1.3*z, Hxy/20);
+function bbox3(pts,zpts){
+  // x/y framing from pts; z framing from zpts (defaults to pts). Separating them lets the Δv
+  // view keep the far budget marker in the x/y frame while tight-fitting z to the CURRENT vector.
+  const zp=zpts||pts;
+  let mnx=1e30,mny=1e30,mxx=-1e30,mxy=-1e30;
+  pts.forEach(p=>{ if(p[0]<mnx)mnx=p[0]; if(p[0]>mxx)mxx=p[0]; if(p[1]<mny)mny=p[1]; if(p[1]>mxy)mxy=p[1]; });
+  let zmn=1e30,zmx=-1e30; zp.forEach(p=>{ if(p[2]<zmn)zmn=p[2]; if(p[2]>zmx)zmx=p[2]; });
+  const ctr=[(mnx+mxx)/2,(mny+mxy)/2,(zmn+zmx)/2];
+  const Hxy=0.5*Math.max(mxx-mnx,mxy-mny,1)*1.35;
+  // TIGHT-fit the out-of-plane (z) extent so the small tilt FILLS the box — high, per-frame
+  // exaggeration (the z tick labels carry the real, different scale). A tiny ABSOLUTE floor only
+  // guards the truly-in-plane case (tilt ≈ 0) from collapsing the axis to nothing.
+  const Hz=Math.max(0.5*(zmx-zmn)*1.2, 0.04);
   return {ctr,Hxy,Hz};
 }
 function vcs(v){ return `(${fmt(v[0],1)}, ${fmt(v[1],1)}, ${fmt(v[2],2)}) km/s`; }
@@ -1269,9 +1249,10 @@ function eclipticMesh(ctr,H){
           i:[0,0],j:[1,2],k:[2,3],color:'#586273',opacity:0.08,hoverinfo:'skip',flatshading:true,showscale:false,name:'ecliptic (z=0)'};
 }
 function vScene(ctr,Hxy,Hz,xl,yl,zl,cam){
-  const ax=(t,k)=>({range:k===2?[ctr[2]-Hz,ctr[2]+Hz]:[ctr[k]-Hxy,ctr[k]+Hxy],title:{text:t,font:{size:10}},color:'#9aa7b4',gridcolor:'#2a323d',tickfont:{size:9},zeroline:true,zerolinecolor:'#3a4452'});
+  const ax=(t,k,nt)=>({range:k===2?[ctr[2]-Hz,ctr[2]+Hz]:[ctr[k]-Hxy,ctr[k]+Hxy],nticks:nt,title:{text:t,font:{size:10}},color:'#9aa7b4',gridcolor:'#2a323d',tickfont:{size:9},zeroline:true,zerolinecolor:'#576373'});
+  // More ticks on Z (it is the exaggerated, fine axis) so its value is readable.
   return {aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:cam,
-          xaxis:ax(xl,0),yaxis:ax(yl,1),zaxis:ax(zl,2)};
+          xaxis:ax(xl,0,6),yaxis:ax(yl,1,6),zaxis:ax(zl,2,12)};
 }
 function drawVelSpeed(r,c){
   const F=velFrame(r), t=c.es/YEAR, O=[0,0,0];
@@ -1298,10 +1279,12 @@ function drawVelDv(r,c){
   const N=64, tx=[],ty=[],tz=[];
   for(let i=0;i<=N;i++){ const d=dvVecAt(F,t*i/N).vec; tx.push(d[0]);ty.push(d[1]);tz.push(d[2]); }
   const aMg=(F.thrust/Math.max(1,D.m))/9.80665*1000;
-  const {ctr,Hxy,Hz}=bbox3([O,full,D.vec]);       // axes auto-fit; Z exaggerated
+  const aL=burning?0.4*Math.max(0.3,D.mag):0, aTip=addv(D.vec,scv(D.dir,aL));
+  // x/y frames the whole budget direction; z tight-fits the CURRENT Δv so it rescales each frame
+  const {ctr,Hxy,Hz}=bbox3([O,full,D.vec], burning?[O,D.vec,aTip]:[O,full]);
   const traces=[eclipticMesh(ctr,Hxy)];
   vArrow(O,D.vec,'#d29922','cumulative engine Δv',6,`cumulative engine Δv (spent so far)<br>Δv = ${fmt(D.mag,1)} of ${fmt(F.dvTot,1)} km/s<br>${vcs(D.vec)}`).forEach(x=>traces.push(x));
-  if(burning){ const aTip=addv(D.vec,scv(D.dir,0.45*Hxy)); vArrow(D.vec,aTip,'#4cc2ff','thrust direction',5,`thrust direction (engine ON)<br>acceleration ${fmt(aMg,2)} milli-g<br>${fmt(F.thrust*1e3,0)} mN`).forEach(x=>traces.push(x)); }
+  if(burning){ vArrow(D.vec,aTip,'#4cc2ff','thrust direction',5,`thrust direction (engine ON)<br>acceleration ${fmt(aMg,2)} milli-g<br>${fmt(F.thrust*1e3,0)} mN`).forEach(x=>traces.push(x)); }
   traces.push({type:'scatter3d',mode:'lines',x:tx,y:ty,z:tz,line:{color:'#8b949e',width:2,dash:'dot'},name:'Δv-tip trail',hoverinfo:'skip'});
   traces.push({type:'scatter3d',mode:'markers',x:[full[0]],y:[full[1]],z:[full[2]],marker:{color:'#6e7681',size:4,symbol:'circle-open'},name:'Δv budget',hovertext:`total Δv budget = ${fmt(F.dvTot,1)} km/s`,hoverinfo:'text'});
   traces.push({type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:3},showlegend:false,hoverinfo:'skip'});
@@ -1450,15 +1433,13 @@ document.getElementById('T').addEventListener('input',()=>{ document.getElementB
 document.getElementById('snapopt').addEventListener('click',(e)=>{ e.preventDefault();
   if(SIM){ const v=Math.round(SIM.minFuelYr/200)*200; document.getElementById('T').value=v; document.getElementById('o_T').textContent=fmt(v); render(); stateToURL(); } });
 document.querySelectorAll('input,select').forEach(el=>{
-  if(el.id==='tilt' || el.id==='T' || el.name==='viz') return;  // handled separately (live view controls)
+  if(el.id==='tilt' || el.id==='T' || el.id==='tscrub' || el.name==='viz') return;  // handled separately (live view controls)
   el.addEventListener('input',()=>{
     if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
     syncLabels(); toggleOpts(); render(); stateToURL();   // everything recomputes live + updates the shareable URL
   });
 });
-document.querySelectorAll('input[name=viz]').forEach(el=>{
-  el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); drawViz(); });
-});
+document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); });
 document.getElementById('playbtn').addEventListener('click', togglePlay);
 // ----- the burn timeline IS the scrubber: drag along it to set the current time -----
 // Map a click x (years, log axis) back to the animation parameter u, the inverse of the
@@ -1492,7 +1473,7 @@ function wheelZoom(id, get, set){
     if(!onPlot) return;
     e.preventDefault();
     const f=e.deltaY>0?1.18:1/1.18;                      // scroll down = zoom out (bigger cube)
-    set(Math.min(1e6, Math.max(2e-4, get()*f))); drawViz();
+    set(Math.min(1e6, Math.max(1e-6, get()*f))); drawViz();   // wide enough range to zoom from AC down to <1 AU (Earth/Sun)
   }, {passive:false});
 }
 wheelZoom('chartOrbit3d', ()=>zoom3dOv, v=>zoom3dOv=v);
