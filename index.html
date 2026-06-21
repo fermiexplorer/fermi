@@ -135,7 +135,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 26</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 27</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -642,7 +642,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 26, SRC_COMMIT = 'HEAD';
+const BUILD = 27, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -769,28 +769,29 @@ function render(){
   // departure-Δv derivation (depends on architecture)
   let dvSteps;
   if(radio('ga')==='oberth'){
-    dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s\n`+
-      `Step 2 — solar-Oberth burn at perihelion ${fmt(val('rp'))} R☉ (powered close pass of the Sun):\n`+
+    dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
+      `Step 2 — solar-Oberth burn at perihelion ${fmt(val('rp'))} R☉ (powered close pass of the Sun; speeds vs Sun):\n`+
       `  Δv = oberthBurn(${fmt(val('rp'))} R☉, v∞=${fmt(vinfK,2)}) + 2.0 km/s margin = ${fmt(r.dvDesign/1e3,2)} km/s   (see methodology §5)`;
   } else {
-    dvSteps=`Step 1 — aim geometry from T:\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s, out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
-      `Step 2 — heliocentric departure speed at 1 AU:\n  v_dep = √(v∞² + v_esc,☉²) = √(${fmt(vinfK,2)}² + 42.12²) = ${fmt(vDepK,2)} km/s   [v_esc,☉ = 42.12 km/s]\n`+
-      `Step 3 — excess relative to Earth (Earth gives 29.78 km/s in-plane only):\n  v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β) = √(${fmt(vDepK,2)}² + 29.78² − 2·${fmt(vDepK,2)}·29.78·cos ${fmt(tiltA,2)}°) = ${fmt(vInfEK,2)} km/s\n`+
-      `Step 4 — impulsive Oberth Δv from LEO (alt ${altKm} km):\n  r = R⊕+alt = 6371+${altKm} = ${fmt(rLEO/1e3,0)} km;  v_circ = √(μ⊕/r) = ${fmt(vc,2)};  v_esc,LEO = √2·v_circ = ${fmt(veL,2)}\n  floor = √(v∞,E² + v_esc,LEO²) − v_circ = √(${fmt(vInfEK,2)}² + ${fmt(veL,2)}²) − ${fmt(vc,2)} = ${fmt(r.dvFloor/1e3,2)} km/s\n`+
-      `Step 5 — add the low-thrust spiral penalty${gainK?' and subtract the Jupiter assist':''}:\n  Δv = floor + penalty${gainK?` − ${fmt(gainK,1)} (Jupiter)`:''} = ${fmt(r.dvFloor/1e3,2)} + ${fmt(penK,1)}${gainK?` − ${fmt(gainK,1)}`:''} = ${fmt(r.dvDesign/1e3,2)} km/s`;
+    dvSteps=`Reference frames: v∞, v_dep, v_esc,☉ and v_E are HELIOCENTRIC (vs the Sun); v∞,E, v_circ and v_esc,LEO are vs EARTH; Δv is what the engine supplies.\n\n`+
+      `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
+      `Step 2 — heliocentric speed needed at 1 AU to leave on that hyperbola (vs Sun):\n  v_dep = √(v∞² + v_esc,☉²) = √(${fmt(vinfK,2)}² + 42.12²) = ${fmt(vDepK,2)} km/s   [v_esc,☉ = 42.12 = Sun's escape speed at 1 AU, vs Sun]\n`+
+      `Step 3 — excess relative to EARTH (Earth lends its v_E = 29.78 km/s orbital speed, in-plane only):\n  v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β) = √(${fmt(vDepK,2)}² + 29.78² − 2·${fmt(vDepK,2)}·29.78·cos ${fmt(tiltA,2)}°) = ${fmt(vInfEK,2)} km/s   [hyperbolic excess vs Earth]\n`+
+      `Step 4 — impulsive Oberth Δv from LEO (alt ${altKm} km; these speeds are vs Earth):\n  r = R⊕+alt = 6371+${altKm} = ${fmt(rLEO/1e3,0)} km;  v_circ = √(μ⊕/r) = ${fmt(vc,2)} (LEO orbital, vs Earth);  v_esc,LEO = √2·v_circ = ${fmt(veL,2)} (escape from LEO, vs Earth)\n  floor = √(v∞,E² + v_esc,LEO²) − v_circ = √(${fmt(vInfEK,2)}² + ${fmt(veL,2)}²) − ${fmt(vc,2)} = ${fmt(r.dvFloor/1e3,2)} km/s\n`+
+      `Step 5 — add the low-thrust spiral penalty${gainK?' and subtract the Jupiter assist':''}:\n  Δv = floor + penalty${gainK?` − ${fmt(gainK,1)} (Jupiter)`:''} = ${fmt(r.dvFloor/1e3,2)} + ${fmt(penK,1)}${gainK?` − ${fmt(gainK,1)}`:''} = ${fmt(r.dvDesign/1e3,2)} km/s   (Δv the propulsion provides)`;
   }
-  const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s (from arrival T, LEO alt &amp; penalty — see “Departure Δv”)`.replace('&amp;','&');
-  const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s;  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
+  const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s — the velocity change the engine provides from LEO (see “Departure Δv”)`;
+  const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft);  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
   const K=[];
   K.push({l:'Arrival (chosen)', v:fmt(r.arrivalYr)+' yr', i:inl('T'),
     d:'When the probe reaches Alpha Centauri — the point you aim at along AC’s moving track. This is your free choice (a slider) and it drives the whole mission: aim earlier, later, or more out of plane and the required velocity, the Δv, and hence the propellant and spacecraft size all change.',
     c:`Arrival time T = ${fmt(r.arrivalYr)} yr   (slider input).\nEverything below is derived from this aim point.`});
   K.push({l:'Cruise v∞', v:fmt(vinfK,2)+' km/s', i:inl('T'),
     d:'The probe’s heliocentric coast speed after it escapes the Sun — the speed it must hold to cover AC’s distance in the chosen time. It is the magnitude of the required intercept velocity V_p, set purely by geometry (where AC is and how fast it moves), not by the spacecraft. The years-long burn is negligible against the coast, so this speed effectively sets the travel time.',
-    c:`AC now (ephemeris, fixed): distance |A₀| = ${fmt(acLy,3)} ly, space velocity |V_ac| = ${fmt(vacK,2)} km/s\nRequired intercept velocity:  V_p = A₀ / T + V_ac\n  in-plane part      = ${fmt(inK,2)} km/s\n  out-of-plane part  = ${fmt(vzK,2)} km/s\nv∞ = |V_p| = √(in-plane² + out-of-plane²) = √(${fmt(inK,2)}² + ${fmt(vzK,2)}²) = ${fmt(vinfK,2)} km/s`});
+    c:`Every speed here is HELIOCENTRIC — measured relative to the Sun.\nAC now (ephemeris): distance |A₀| = ${fmt(acLy,3)} ly, space velocity |V_ac| = ${fmt(vacK,2)} km/s (AC vs the Sun)\nRequired intercept velocity:  V_p = A₀ / T + V_ac   (the velocity, vs the Sun, that lands the probe on AC at time T)\n  in-plane part (within Earth's orbital / ecliptic plane) = ${fmt(inK,2)} km/s\n  out-of-plane part (perpendicular to that plane)         = ${fmt(vzK,2)} km/s\nv∞ = |V_p| = √(in-plane² + out-of-plane²) = √(${fmt(inK,2)}² + ${fmt(vzK,2)}²) = ${fmt(vinfK,2)} km/s   (probe coast speed vs the Sun)`});
   K.push({l:'Out-of-plane aim', v:fmt(tiltA,1)+'°', i:inl('T'),
     d:'How far the required departure direction tilts out of Earth’s orbital (ecliptic) plane. It matters because Earth’s 29.8 km/s orbital velocity can only be borrowed in-plane — any out-of-plane component must be bought with propellant. It is ~0° where AC crosses the ecliptic (~79k yr) and ~10° at the 58k-yr aim, which is why the cheapest departure is near the crossing.',
-    c:`From V_p = A₀/T + V_ac (see Cruise v∞):\n  in-plane part = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\ntilt = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°`});
+    c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\ntilt = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','pen','ga'),
     d:'The total velocity change the propulsion must supply from LEO to place the probe on the correct interstellar trajectory. It is the impulsive (Oberth) minimum set by the geometry plus the low-thrust “spiral tax”. This is the number that sizes the propellant, so minimising it is the whole design objective.',
     c:dvSteps});
@@ -826,7 +827,7 @@ function render(){
     c:`m_p = dry total · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (see propellant)\ntank = tank fraction · m_p = ${fmt(tkf)}% · ${fmt(r.mp)} kg = ${fmt(r.tankMass)} kg`});
   K.push({l:'Burn duration', v:fmt(r.burnYr,1)+' yr', i:inl('pwr','eta','isp','dry','pay'),
     d:'How long the ion engine fires continuously to build the Δv — gentle thrust (a few hundredths of a g) sustained for months to a couple of years, after which it coasts. Set by the propellant, the exhaust velocity and the thrust.',
-    c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s\nthrust F = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN\nm_p = ${fmt(r.mp)} kg  (see propellant)\nburn t = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
+    c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft)\nthrust F = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN\nm_p = ${fmt(r.mp)} kg  (see propellant)\nburn t = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
   K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'),
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
     c:`Payload = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
