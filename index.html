@@ -150,7 +150,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 40</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 41</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -665,7 +665,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 40, SRC_COMMIT = 'HEAD';
+const BUILD = 41, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1104,7 +1104,10 @@ function drawFollow3d(c,st){
   // (world) group — user-rotatable and synced via uirevision.
   const camLock=lockedToCam('follow3d');
   const sceneCam = camLock ? {eye:autoEye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}} : groupCam('follow3d');
-  if(camLock){ camCam=cloneCam(sceneCam); pushCamTo(SYNC_IDS.filter(x=>x!=='follow3d'&&lockedToCam(x)),camCam); }
+  // The chase defines the cam orientation; push it to cam-locked peers only when it actually
+  // changes (as the velocity turns), so a manual cam-group rotation isn't overwritten every frame.
+  if(camLock && !camClose(sceneCam,camCam)){ camCam=cloneCam(sceneCam);
+    pushCamTo(SYNC_IDS.filter(x=>x!=='follow3d'&&lockedToCam(x)),camCam); }
   const A=cols(flown), tag = st.onSpiral?'solar-escape spiral':'interstellar cruise';
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
@@ -1372,8 +1375,9 @@ function liveCam(id){ const gd=document.getElementById(id), sc=gd&&gd._fullLayou
   return (sc&&sc.getCamera)?sc.getCamera():(gd&&gd._fullLayout&&gd._fullLayout.scene?gd._fullLayout.scene.camera:null); }
 function syncPeers(srcId){
   const cam=liveCam(srcId); if(!cam||!cam.eye) return;
-  camFixed=cloneCam(cam);
-  pushCamTo(SYNC_IDS.filter(x=>x!==srcId && !lockedToCam(x)), cam);
+  const g=lockedToCam(srcId);                       // true = cam group, false = fixed group
+  if(g) camCam=cloneCam(cam); else camFixed=cloneCam(cam);
+  pushCamTo(SYNC_IDS.filter(x=>x!==srcId && lockedToCam(x)===g), cam);  // only the SAME group follows
 }
 function camTick(){
   if(!camDragId){ camRAF=0; return; }
@@ -1381,7 +1385,7 @@ function camTick(){
   if(cam && cam.eye && (!camLastPushed || !camClose(cam,camLastPushed))){ camLastPushed=cloneCam(cam); syncPeers(camDragId); }
   camRAF=requestAnimationFrame(camTick);
 }
-function startCamDrag(id){ if(lockedToCam(id)) return; camDragId=id; camLastPushed=null; if(!camRAF) camRAF=requestAnimationFrame(camTick); }
+function startCamDrag(id){ camDragId=id; camLastPushed=null; if(!camRAF) camRAF=requestAnimationFrame(camTick); }  // both groups are draggable+synced
 function endCamDrag(){ if(camDragId){ syncPeers(camDragId); camDragId=null; } camLastPushed=null; }
 function setupCamSync(){
   if(camListenersAttached) return; camListenersAttached=true;
