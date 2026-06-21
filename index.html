@@ -91,12 +91,14 @@
   .topviz { margin-bottom: 14px; }
   .vizsel { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 10px 0 8px; font-size: 13px; color: var(--muted); }
   .vizsel label { display: flex; gap: 6px; align-items: center; color: var(--ink); cursor: pointer; }
-  #chartOrbit3d { min-height: 440px; }
+  #chartOrbit3d { min-height: 520px; }
+  .prim { min-height: 520px; margin-bottom: 12px; }
+  #twod { margin-top: 4px; }
   #chartOrbit2d { min-height: 340px; }
   #chartTimeline { min-height: 200px; margin-top: 12px; }
   .dualrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 1100px) { .dualrow { grid-template-columns: 1fr; } }
-  #follow3d { min-height: 440px; }
+  #follow3d { min-height: 520px; }
   #follow2d { min-height: 340px; }
   #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
@@ -136,7 +138,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 28</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 29</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -272,22 +274,21 @@
     <div class="badges" id="badges"></div>
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
-      <div class="dualrow">
-        <div class="chart" id="follow3d"></div>
-        <div class="chart" id="chartOrbit3d"></div>
-      </div>
+      <div class="chart prim" id="chartOrbit3d"></div>
+      <div class="chart prim" id="follow3d"></div>
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
         <input type="range" id="tscrub" min="0" max="100" step="0.5" value="0">
         <span id="tlabel"></span>
       </div>
       <div class="vizsel">
-        <span>Stage (both views):</span>
+        <span>Stage:</span>
         <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
         <label><input type="radio" name="viz" value="sun"> 2 · Solar escape</label>
         <label><input type="radio" name="viz" value="ac"> 3 · Interstellar cruise</label>
-        <span style="margin-left:auto">Chase tilt <b><span id="o_tilt">30</span>°</b></span>
-        <input type="range" id="tilt" min="0" max="85" step="1" value="30" style="width:130px">
+        <label style="margin-left:auto"><input type="checkbox" id="show2d"> Show 2D views</label>
+        <span>Chase tilt <b><span id="o_tilt">30</span>°</b></span>
+        <input type="range" id="tilt" min="0" max="85" step="1" value="30" style="width:110px">
       </div>
       <div class="vizlegend">
         <span><i class="vdot" style="background:#f5d020"></i>Sun</span>
@@ -296,11 +297,13 @@
         <span><i class="vbar" style="background:#3fb950"></i>flown path</span>
         <span><i class="vdot" style="background:#f0883e"></i>Alpha Centauri</span>
         <span><i class="vbar" style="background:#586273"></i>ecliptic plane (z = 0)</span>
-        <span class="vlhint">— drag the 3D views to rotate; use “Chase tilt” to raise/lower the left camera and watch AC’s track cross the ecliptic.</span>
+        <span class="vlhint">— <b>scroll to zoom</b> (the grid re-scales by decade; units in AU); drag to rotate; “Chase tilt” raises/lowers the chase camera.</span>
       </div>
-      <div class="dualrow">
-        <div class="chart" id="follow2d"></div>
-        <div class="chart" id="chartOrbit2d"></div>
+      <div id="twod" style="display:none">
+        <div class="dualrow">
+          <div class="chart" id="follow2d"></div>
+          <div class="chart" id="chartOrbit2d"></div>
+        </div>
       </div>
       <div class="chart" id="chartTimeline"></div>
       <div class="vizlegend" style="margin-top:2px">
@@ -643,7 +646,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 28, SRC_COMMIT = 'HEAD';
+const BUILD = 29, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -668,7 +671,7 @@ function compute(){
   const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
   const dry=val('dry'), pay=val('pay'), dryEff=dry+pay;   // total dry = bus/subsystems + payload
   const psV=document.getElementById('propsel').value.split('|');
-  const propName=psV[0], ionM=parseFloat(psV[2]||131.29), kIsp=Math.sqrt(131.29/ionM);
+  const propName=psV[0]||'Xenon', ionM=parseFloat(psV[2])||131.29, kIsp=Math.sqrt(131.29/ionM);
   const ispBase=val('isp'), isp=ispBase*kIsp, eta=val('eta'), ve=expv(isp);   // lighter ion → higher Isp at fixed voltage
   const acDistM=Math.hypot(R0[0],R0[1],R0[2]), vRelAc=acDistM/T;              // probe speed vs AC at arrival = |A₀|/T
   const pwr=radio('pwr'), ga=radio('ga');
@@ -939,25 +942,27 @@ function drawViz(){
   document.querySelectorAll('input[name=viz]').forEach(el=>{ el.checked=(el.value===phaseOf(animU).stage); });
   const c=craftState(), st=trajState(c);
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown);
-  // chartOrbit2d: Sun-centred ecliptic top-down of the SAME trajectory; flown path only.
-  const R2=Math.max(2.2, 1.15*c.dist), ex=[],ey=[];
-  for(let i=0;i<=90;i++){ const a=i/90*2*Math.PI; ex.push(Math.cos(a)); ey.push(Math.sin(a)); }
-  Plotly.react('chartOrbit2d',[
-    {x:ex,y:ey,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
-    {x:F.x,y:F.y,mode:'lines',line:{color:'#3fb950',width:2},showlegend:false},
-    {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:12},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
-    {x:[st.pos[0]],y:[st.pos[1]],mode:'markers',marker:{color:'#a371f7',size:9},showlegend:false},
-  ],{...LAYOUT('2D top-down — flown path (ecliptic, AU)'),showlegend:false,margin:{l:18,r:18,t:34,b:18},
-     xaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false},
-     yaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false,scaleanchor:'x',scaleratio:1}},CFG);
   const dly=c.dist*AU/LY;
   document.getElementById('tlabel').textContent=
     `${fmt(c.es/YEAR)} yr · ${st.onSpiral?'spiral-out & solar escape':'interstellar cruise'} · `+
     (c.dist<2000?`${fmt(c.dist,1)} AU`:`${fmt(dly,3)} ly`);
-  drawZoom3d(c,st);    // 3D overview: Sun-centred, smooth zoom-out
-  drawFollow3d(c,st);  // chase cam (3D): behind the probe
-  drawFollow2d(c,st);  // chase cam (2D): velocity-up
+  drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
+  drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
+  // 2D views are off by default (checkbox) — only draw them when visible
+  if(document.getElementById('show2d').checked){
+    const R2=Math.max(2.2, 1.15*c.dist), ex=[],ey=[];
+    for(let i=0;i<=90;i++){ const a=i/90*2*Math.PI; ex.push(Math.cos(a)); ey.push(Math.sin(a)); }
+    Plotly.react('chartOrbit2d',[
+      {x:ex,y:ey,mode:'lines',line:{color:'#30363d',width:1},showlegend:false},
+      {x:F.x,y:F.y,mode:'lines',line:{color:'#3fb950',width:2},showlegend:false},
+      {x:[0],y:[0],mode:'markers+text',marker:{color:'#f5d020',size:12},text:['Sun'],textposition:'top right',textfont:{color:'#9aa7b4'},showlegend:false},
+      {x:[st.pos[0]],y:[st.pos[1]],mode:'markers',marker:{color:'#a371f7',size:9},showlegend:false},
+    ],{...LAYOUT('2D top-down — flown path (ecliptic, AU)'),showlegend:false,margin:{l:18,r:18,t:34,b:18},
+       xaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false},
+       yaxis:{range:[-R2,R2],zeroline:false,showgrid:true,gridcolor:'#1d242d',showticklabels:false,scaleanchor:'x',scaleratio:1}},CFG);
+    drawFollow2d(c,st);
+  }
 }
 
 // Shared spacecraft state (AU) for the zoom + chase views, so the probe is
@@ -1056,8 +1061,9 @@ function drawFollow3d(c,st){
   let mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
   all.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<mn[k])mn[k]=q[k]; if(q[k]>mx[k])mx[k]=q[k]; }});
   const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
-  const H=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],0.5)*1.3;   // cube half-width
-  const ax=k=>({range:[ctr[k]-H,ctr[k]+H],showticklabels:false,title:'',color:'#9aa7b4',gridcolor:'#1d242d'});
+  const H=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],0.5)*1.3*zoom3dCh;   // cube half-width × user zoom
+  const ttl=['x (AU)','y (AU)','z (AU)'];
+  const ax=k=>({range:[ctr[k]-H,ctr[k]+H],showticklabels:true,tickformat:H<100?'':'.2g',tickfont:{size:9},title:{text:ttl[k],font:{size:10}},color:'#9aa7b4',gridcolor:'#1d242d'});
   // full ecliptic grid (z=0) spanning the frame
   const gx=[],gy=[],gz=[],gn=10;
   for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
@@ -1073,8 +1079,8 @@ function drawFollow3d(c,st){
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[flown[0][0]],y:[flown[0][1]],z:[flown[0][2]],marker:{color:'#58a6ff',size:4},name:'Earth'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#a371f7',size:6},name:'probe'},
-  ],{title:{text:`Chase cam (3D) — behind the probe · flown path only (${fmt(2*H,H<10?2:0)} AU · ${tag})`,font:{size:13,color:'#e6edf3'}},
-    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,margin:{l:0,r:0,t:34,b:0},
+  ],{title:{text:`Chase cam (3D) — behind the probe (${fmt(2*H, H<10?2:0)} AU cube · ${tag}) · scroll to zoom`,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},
     scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
       camera:{eye:eye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}}}},{...CFG,scrollZoom:false});
 }
@@ -1115,10 +1121,12 @@ function drawFollow2d(c,st){
 // schematic detail. Rotation is preserved (uirevision); the cube size sets the zoom.
 function drawZoom3d(c,st){
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown), p=st.pos;
-  const R=Math.max(2.2, 1.3*c.dist);               // Sun-centred cube; grows with distance travelled
+  const R=Math.max(2.2, 1.3*c.dist)*zoom3dOv;      // Sun-centred cube, scaled by the user zoom
   const cx=[],cy=[],cz=[]; for(let i=0;i<=90;i++){const a=i/90*2*Math.PI; cx.push(Math.cos(a)); cy.push(Math.sin(a)); cz.push(0);}
   const note = R<6 ? 'inner solar system' : (R<6000 ? 'leaving the Sun' : 'interstellar cruise');
-  const ax=t=>({range:[-R,R],title:t,color:'#9aa7b4',gridcolor:'#2a323d'});
+  const unit = R<2000 ? 'AU' : 'ly', uf = R<2000 ? 1 : AU/LY;   // axis unit re-scales by magnitude
+  const ax=t=>({range:[-R,R],title:t,color:'#9aa7b4',gridcolor:'#2a323d',tickformat:R<2000?'':'.2g',
+    tickvals:undefined});
   Plotly.react('chartOrbit3d',[
     {type:'mesh3d',x:[-R,R,R,-R],y:[-R,-R,R,R],z:[0,0,0,0],i:[0,0],j:[1,2],k:[2,3],color:'#586273',opacity:0.10,hoverinfo:'skip',flatshading:true,showscale:false,name:'ecliptic plane (z=0)'},
     {type:'scatter3d',mode:'lines',x:cx,y:cy,z:cz,line:{color:'#30363d',width:2},name:'Earth orbit (1 AU)'},
@@ -1127,12 +1135,14 @@ function drawZoom3d(c,st){
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:4},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#a371f7',size:6},name:'probe (now)'},
     {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
+    {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
     {type:'scatter3d',mode:'markers',x:[(R0[0]+VAC[0]*eclipticCrossingT())/AU],y:[(R0[1]+VAC[1]*eclipticCrossingT())/AU],z:[0],marker:{color:'#e6edf3',size:5,symbol:'diamond-open'},name:'AC ⨯ ecliptic (~79k yr)'},
-  ],{title:{text:`3D · live zoom-out — ${fmt(R, R<10?1:0)} AU view · ${note} · flown path only (drag to rotate)`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · scroll to zoom, drag to rotate`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
-    scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
-    {...CFG,scrollZoom:true});
+    scene:{aspectmode:'cube',bgcolor:'#161b22',camera:{eye:{x:1.5,y:1.05,z:0.5},center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}},
+      xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
+    {...CFG,scrollZoom:false});
 }
 
 // ----- burn timeline (continuous ion thrust, then coast) -----
@@ -1180,6 +1190,7 @@ function drawTimeline(){
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
 let animU=0, animTimer=null;
+let zoom3dOv=1, zoom3dCh=1;   // user scroll-zoom multipliers for the overview / chase cubes
 function togglePlay(){
   const btn=document.getElementById('playbtn');
   if(animTimer){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; return; }
@@ -1243,6 +1254,21 @@ document.querySelectorAll('input[name=viz]').forEach(el=>{
 });
 document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); });
 document.getElementById('playbtn').addEventListener('click', togglePlay);
+// Scroll to zoom the 3D cubes: the data-extent (R/H) grows/shrinks while the camera stays,
+// so the cube keeps its screen size and Plotly re-scales the grid + AU/ly tick labels by decade.
+function wheelZoom(id, get, set){
+  const el=document.getElementById(id);
+  el.addEventListener('wheel',(e)=>{ e.preventDefault();
+    const f=e.deltaY>0?1.18:1/1.18;                      // scroll down = zoom out (bigger cube)
+    set(Math.min(1e6, Math.max(2e-4, get()*f))); drawViz(); }, {passive:false});
+}
+wheelZoom('chartOrbit3d', ()=>zoom3dOv, v=>zoom3dOv=v);
+wheelZoom('follow3d',    ()=>zoom3dCh, v=>zoom3dCh=v);
+// 2D views are hidden by default; the checkbox reveals (and then draws) them
+document.getElementById('show2d').addEventListener('change',(e)=>{
+  document.getElementById('twod').style.display = e.target.checked ? '' : 'none';
+  if(e.target.checked) drawViz();
+});
 
 // ----- click-to-expand KPI calculation panels (with copy) -----
 document.getElementById('kpis').addEventListener('click',(e)=>{
@@ -1270,7 +1296,8 @@ function stateToURL(){
 }
 function urlToState(){
   const p=new URLSearchParams(location.search); if(![...p.keys()].length) return;
-  URL_SELECTS.forEach(k=>{ if(p.has(k)){ const el=document.getElementById(k); if(el) el.value=p.get(k); } });
+  URL_SELECTS.forEach(k=>{ if(p.has(k)){ const el=document.getElementById(k);   // ignore stale values with no matching option
+    if(el && [...el.options].some(o=>o.value===p.get(k))) el.value=p.get(k); } });
   URL_KEYS.forEach(k=>{ if(p.has(k)){ const el=document.getElementById(k); if(el) el.value=p.get(k); } });
   URL_RADIOS.forEach(n=>{ if(p.has(n)){ const el=document.querySelector(`input[name=${n}][value="${p.get(n)}"]`); if(el) el.checked=true; } });
 }
