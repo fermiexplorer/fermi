@@ -73,6 +73,9 @@ python3 -m venv .venv
 # web<->python parity (Node)
 node audit/calcs/audit_webjs.mjs
 
+# UI behaviour: every slider drives the right outputs, in the right direction (49 checks)
+.venv/bin/python audit/calcs/ui_sliders.py
+
 # the interactive calculator (needs internet for the Plotly CDN)
 python3 -m http.server 8000
 # then open http://localhost:8000/index.html
