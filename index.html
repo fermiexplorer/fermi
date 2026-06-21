@@ -138,7 +138,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 29</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 30</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -646,7 +646,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 29, SRC_COMMIT = 'HEAD';
+const BUILD = 30, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1258,9 +1258,15 @@ document.getElementById('playbtn').addEventListener('click', togglePlay);
 // so the cube keeps its screen size and Plotly re-scales the grid + AU/ly tick labels by decade.
 function wheelZoom(id, get, set){
   const el=document.getElementById(id);
-  el.addEventListener('wheel',(e)=>{ e.preventDefault();
+  el.addEventListener('wheel',(e)=>{
+    // only hijack the wheel over the actual 3D drawing (the WebGL canvas); over the title,
+    // legend, margins — or anywhere else on the page — let the wheel scroll the page normally.
+    const onPlot = e.target && (e.target.tagName==='CANVAS' || (e.target.closest && e.target.closest('.gl-container')));
+    if(!onPlot) return;
+    e.preventDefault();
     const f=e.deltaY>0?1.18:1/1.18;                      // scroll down = zoom out (bigger cube)
-    set(Math.min(1e6, Math.max(2e-4, get()*f))); drawViz(); }, {passive:false});
+    set(Math.min(1e6, Math.max(2e-4, get()*f))); drawViz();
+  }, {passive:false});
 }
 wheelZoom('chartOrbit3d', ()=>zoom3dOv, v=>zoom3dOv=v);
 wheelZoom('follow3d',    ()=>zoom3dCh, v=>zoom3dCh=v);
