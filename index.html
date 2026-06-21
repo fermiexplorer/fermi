@@ -97,6 +97,8 @@
      page area where the wheel scrolls normally (over a plot it is captured for zoom). */
   .viz3drow { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 14px; }
   @media (max-width: 860px) { .viz3drow { grid-template-columns: 1fr; } }
+  .vsec3d { margin-top: 18px; }
+  .vsec-h { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
   #twod { margin-top: 4px; }
   #chartOrbit2d { min-height: 340px; }
   #chartTimeline { min-height: 200px; margin-top: 12px; }
@@ -141,7 +143,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 34</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 35</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -318,6 +320,22 @@
         <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
         <span class="vlhint">Thrust is ~constant (≈ 2ηP/v<sub>e</sub>) for the whole burn, then zero during the coast — there is no variable-impulse phase, so no separate thrust-vs-time chart is needed. The axis is log-scaled so the ~1-yr burn is visible against the multi-10⁴-yr coast.</span>
+      </div>
+      <div class="vsec3d">
+        <div class="vsec-h">Vector build-up over time — how the speeds and the Δv add up (drag to rotate · Play to evolve)</div>
+        <div class="viz3drow">
+          <div class="chart prim" id="velSpeed"></div>
+          <div class="chart prim" id="velDv"></div>
+        </div>
+        <div class="vizlegend" style="margin-top:2px">
+          <span><i class="vdot" style="background:#58a6ff"></i>Earth velocity (borrowed, in-plane)</span>
+          <span><i class="vdot" style="background:#a371f7"></i>probe velocity V(t)</span>
+          <span><i class="vbar" style="background:#3fb950"></i>bought excess v∞,E = V − V_Earth</span>
+          <span><i class="vdot" style="background:#f0883e"></i>cruise v∞ (asymptote)</span>
+          <span><i class="vbar" style="background:#d29922"></i>cumulative engine Δv</span>
+          <span><i class="vbar" style="background:#4cc2ff"></i>thrust direction (engine ON)</span>
+          <span class="vlhint"><b>Left — speeds (where the craft is going):</b> the velocity vectors add to V(t). Earth lends its 29.8 km/s in-plane; the bought excess tilts out of plane by β; after the ~1-yr burn, gravity bleeds |V| from ≈ v<sub>dep</sub> down to v∞ with the engine off. <b>Right — Δv / thrust (where the engine points):</b> the thrust fires only during the burn and the cumulative Δv grows to the budget, then freezes for the whole coast.</span>
+        </div>
       </div>
     </div>
     <div class="charts">
@@ -653,7 +671,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 34, SRC_COMMIT = 'HEAD';
+const BUILD = 35, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -956,6 +974,8 @@ function drawViz(){
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
+  if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); }   // velocity / Δv vector build-up
+
   // 2D views are off by default (checkbox) — only draw them when visible
   if(document.getElementById('show2d').checked){
     const R2=Math.max(2.2, 1.15*c.dist), ex=[],ey=[];
@@ -1166,6 +1186,95 @@ function drawZoom3d(c,st){
     {...CFG,scrollZoom:false});
 }
 
+// ===== velocity-space & Δv-space vector build-up (two 3D views, km/s) =====
+// Speeds view: the velocity vectors add to V(t) — Earth's velocity (borrowed, in-plane)
+// plus the bought excess v∞,E — and V(t) points where the craft is going. After the burn,
+// gravity bleeds |V| from ≈v_dep down to v∞ with the engine off. Δv view: the engine thrust
+// (where it points) and the cumulative Δv it has spent — nonzero only during the burn, then
+// frozen for the whole coast. Both are driven by the single Play scrubber (via c.es).
+const AUYR=4.74057;                              // 1 AU/yr expressed in km/s
+const scv=(v,s)=>[v[0]*s,v[1]*s,v[2]*s];
+const addv=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const lerpv=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+const unitv=v=>{const n=Math.hypot(v[0],v[1],v[2])||1;return [v[0]/n,v[1]/n,v[2]/n];};
+function velFrame(r){
+  const rv=requiredVinfVec(r.Tsec), n=Math.hypot(rv[0],rv[1],rv[2])||1;
+  const vhat=[rv[0]/n,rv[1]/n,rv[2]/n];          // aim direction (where the craft goes)
+  const ip=Math.hypot(rv[0],rv[1])||1, einp=[rv[0]/ip,rv[1]/ip,0];  // in-ecliptic part of the aim
+  const g0=9.80665;
+  return {vhat,einp,vEarth:V_EARTH/1000,vDep:r.dep.vDep/1000,vinf:r.vinfSun/1000,
+          vescSun:V_ESC_SUN/1000,tBurn:r.burnYr,wet:r.wet,mp:r.mp,ve:r.isp*g0,thrust:r.thrust,dvTot:r.dvDesign/1000};
+}
+// heliocentric velocity vector (km/s) at elapsed time t (yr)
+function velVecAt(F,t){
+  const vE=scv(F.einp,F.vEarth), vD=scv(F.vhat,F.vDep);
+  if(t<F.tBurn){ const fb=F.tBurn>0?Math.max(0,t)/F.tBurn:1; return lerpv(vE,vD,fb); }
+  const rAU=Math.max(1, 1+F.vinf/AUYR*(t-F.tBurn));         // coast from ≈1 AU at v_dep
+  return scv(F.vhat, Math.sqrt(F.vinf*F.vinf + F.vescSun*F.vescSun/rAU));
+}
+// cumulative engine Δv (km/s) at elapsed time t (yr): grows during burn, then frozen
+function dvVecAt(F,t){
+  const te=Math.min(Math.max(0,t),F.tBurn), fb=F.tBurn>0?te/F.tBurn:1;
+  const m=F.wet-F.mp*fb, mag=F.ve*Math.log(F.wet/Math.max(1,m))/1000;
+  const dir=unitv(lerpv(F.einp,F.vhat,fb));                  // thrust swings from along-Earth to the aim
+  return {vec:scv(dir,mag),dir,mag,m};
+}
+function bbox3(pts,zoom){
+  let mn=[1e30,1e30,1e30],mx=[-1e30,-1e30,-1e30];
+  pts.forEach(p=>{for(let k=0;k<3;k++){if(p[k]<mn[k])mn[k]=p[k];if(p[k]>mx[k])mx[k]=p[k];}});
+  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
+  const H=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],1)*1.35*(zoom||1);
+  return {ctr,H};
+}
+function vArrow(tail,tip,color,name,width){
+  return [{type:'scatter3d',mode:'lines',x:[tail[0],tip[0]],y:[tail[1],tip[1]],z:[tail[2],tip[2]],line:{color,width:width||5},name,hoverinfo:'name'},
+          {type:'scatter3d',mode:'markers',x:[tip[0]],y:[tip[1]],z:[tip[2]],marker:{color,size:4,symbol:'diamond'},showlegend:false,hoverinfo:'skip'}];
+}
+function eclipticMesh(ctr,H){
+  return {type:'mesh3d',x:[ctr[0]-H,ctr[0]+H,ctr[0]+H,ctr[0]-H],y:[ctr[1]-H,ctr[1]-H,ctr[1]+H,ctr[1]+H],z:[0,0,0,0],
+          i:[0,0],j:[1,2],k:[2,3],color:'#586273',opacity:0.08,hoverinfo:'skip',flatshading:true,showscale:false,name:'ecliptic (z=0)'};
+}
+function vScene(ctr,H,xl,yl,zl){
+  const ax=(t,k)=>({range:[ctr[k]-H,ctr[k]+H],title:{text:t,font:{size:10}},color:'#9aa7b4',gridcolor:'#2a323d',tickfont:{size:9},zeroline:true,zerolinecolor:'#3a4452'});
+  return {aspectmode:'cube',bgcolor:'#161b22',camera:{eye:{x:1.25,y:0.9,z:0.5},center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}},
+          xaxis:ax(xl,0),yaxis:ax(yl,1),zaxis:ax(zl,2)};
+}
+function drawVelSpeed(r,c){
+  const F=velFrame(r), t=c.es/YEAR, O=[0,0,0];
+  const vE=scv(F.einp,F.vEarth), V=velVecAt(F,t), vinfTip=scv(F.vhat,F.vinf);
+  const N=64, tx=[],ty=[],tz=[];
+  for(let i=0;i<=N;i++){ const v=velVecAt(F,t*i/N); tx.push(v[0]);ty.push(v[1]);tz.push(v[2]); }
+  const {ctr,H}=bbox3([O,vE,V,vinfTip],zoom3dVS);
+  const traces=[eclipticMesh(ctr,H)];
+  vArrow(O,vE,'#58a6ff','Earth velocity (borrowed)').forEach(x=>traces.push(x));
+  vArrow(vE,V,'#3fb950','bought excess v∞,E').forEach(x=>traces.push(x));
+  vArrow(O,V,'#a371f7','probe velocity V(t)',6).forEach(x=>traces.push(x));
+  traces.push({type:'scatter3d',mode:'lines',x:tx,y:ty,z:tz,line:{color:'#8b949e',width:2,dash:'dot'},name:'V-tip trail',hoverinfo:'skip'});
+  traces.push({type:'scatter3d',mode:'markers',x:[vinfTip[0]],y:[vinfTip[1]],z:[vinfTip[2]],marker:{color:'#f0883e',size:5},name:'cruise v∞'});
+  traces.push({type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:3},showlegend:false,hoverinfo:'skip'});
+  const mag=Math.hypot(V[0],V[1],V[2]), phase=t<F.tBurn?'burn (engine ON)':'coast (engine OFF — gravity slows it)';
+  Plotly.react('velSpeed',traces,{title:{text:`Speeds — where the craft is going · |V| = ${fmt(mag,1)} km/s · ${phase}`,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velSpeed',scene:vScene(ctr,H,'Vx (km/s)','Vy (km/s)','Vz — out of ecliptic')},{...CFG,scrollZoom:false});
+}
+function drawVelDv(r,c){
+  const F=velFrame(r), t=c.es/YEAR, O=[0,0,0], D=dvVecAt(F,t), full=scv(F.vhat,F.dvTot);
+  const burning=t<F.tBurn;
+  const N=64, tx=[],ty=[],tz=[];
+  for(let i=0;i<=N;i++){ const d=dvVecAt(F,t*i/N).vec; tx.push(d[0]);ty.push(d[1]);tz.push(d[2]); }
+  const {ctr,H}=bbox3([O,full,D.vec],zoom3dDV);
+  const traces=[eclipticMesh(ctr,H)];
+  vArrow(O,D.vec,'#d29922','cumulative engine Δv',6).forEach(x=>traces.push(x));
+  if(burning){ const aTip=addv(D.vec,scv(D.dir,0.5*H)); vArrow(D.vec,aTip,'#4cc2ff','thrust direction').forEach(x=>traces.push(x)); }
+  traces.push({type:'scatter3d',mode:'lines',x:tx,y:ty,z:tz,line:{color:'#8b949e',width:2,dash:'dot'},name:'Δv-tip trail',hoverinfo:'skip'});
+  traces.push({type:'scatter3d',mode:'markers',x:[full[0]],y:[full[1]],z:[full[2]],marker:{color:'#6e7681',size:4,symbol:'circle-open'},name:'Δv budget'});
+  traces.push({type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:3},showlegend:false,hoverinfo:'skip'});
+  const aMg=(F.thrust/Math.max(1,D.m))/9.80665*1000;
+  Plotly.react('velDv',traces,{title:{text:`Δv / thrust — where the engine points · Δv = ${fmt(D.mag,1)} / ${fmt(F.dvTot,1)} km/s · ${burning?`thrust ${fmt(aMg,2)} milli-g`:'engine OFF'}`,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velDv',scene:vScene(ctr,H,'Δvx (km/s)','Δvy (km/s)','Δvz — out of ecliptic')},{...CFG,scrollZoom:false});
+}
+
 // ----- burn timeline (continuous ion thrust, then coast) -----
 // The ion engine fires continuously from LEO: first spiralling out of Earth
 // (until SOI escape, ~when cumulative dv ~ LEO circular speed), then thrusting
@@ -1212,6 +1321,7 @@ function drawTimeline(){
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
 let animU=0, animTimer=null;
 let zoom3dOv=1, zoom3dCh=1;   // user scroll-zoom multipliers for the overview / chase cubes
+let zoom3dVS=1, zoom3dDV=1;   // …and for the velocity-space / Δv-space vector views
 let dragging3d=false;         // true while the user is dragging a 3D figure (pause redraws so the drag is smooth)
 function togglePlay(){
   const btn=document.getElementById('playbtn');
@@ -1293,8 +1403,10 @@ function wheelZoom(id, get, set){
 }
 wheelZoom('chartOrbit3d', ()=>zoom3dOv, v=>zoom3dOv=v);
 wheelZoom('follow3d',    ()=>zoom3dCh, v=>zoom3dCh=v);
+wheelZoom('velSpeed',    ()=>zoom3dVS, v=>zoom3dVS=v);
+wheelZoom('velDv',       ()=>zoom3dDV, v=>zoom3dDV=v);
 // Pause the animation's redraws while the user drags a 3D figure, so rotation stays smooth.
-['chartOrbit3d','follow3d'].forEach(id=>{
+['chartOrbit3d','follow3d','velSpeed','velDv'].forEach(id=>{
   document.getElementById(id).addEventListener('pointerdown',(e)=>{
     if(e.target && (e.target.tagName==='CANVAS' || (e.target.closest && e.target.closest('.gl-container')))) dragging3d=true;
   });
