@@ -108,11 +108,13 @@
   .dualrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 1100px) { .dualrow { grid-template-columns: 1fr; } }
   #follow2d { min-height: 340px; }
-  #animctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
-  #animctl button { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
-  #animctl button:hover { border-color: var(--accent); }
-  #tscrub { flex: 1; accent-color: var(--accent); }
-  #tlabel { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 240px; text-align: right; font-size: 12.5px; }
+  /* Play button + the burn timeline, which doubles as the time scrubber (drag it to scrub). */
+  .burnrow { display: flex; gap: 12px; align-items: stretch; margin: 10px 0 2px; }
+  .burnrow #playbtn { align-self: center; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .burnrow #playbtn:hover { border-color: var(--accent); }
+  .burnwrap { flex: 1; min-width: 0; }
+  #tlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; margin: 0 0 1px 2px; }
+  #chartTimeline { cursor: ew-resize; }
   /* methodology */
   .method { padding: 8px 22px 60px; max-width: 1100px; }
   .method h2 { font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
@@ -146,7 +148,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 36</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 37</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -292,11 +294,6 @@
           <div class="chart prim" id="follow3d"></div>
         </div>
       </div>
-      <div id="animctl">
-        <button id="playbtn" type="button">▶ Play</button>
-        <input type="range" id="tscrub" min="0" max="100" step="0.5" value="0">
-        <span id="tlabel"></span>
-      </div>
       <div class="vizsel">
         <span>Stage:</span>
         <label><input type="radio" name="viz" value="earth" checked> 1 · Spiral-out (1 AU)</label>
@@ -323,8 +320,15 @@
           <div class="chart" id="chartOrbit2d"></div>
         </div>
       </div>
-      <div class="chart" id="chartTimeline"></div>
+      <div class="burnrow">
+        <button id="playbtn" type="button">▶ Play</button>
+        <div class="burnwrap">
+          <div id="tlabel"></div>
+          <div class="chart" id="chartTimeline"></div>
+        </div>
+      </div>
       <div class="vizlegend" style="margin-top:2px">
+        <span class="vlhint" style="margin-left:0"><b>Drag the burn timeline</b> (or use ◀ Play) to scrub the current time — it doubles as the scrubber.</span>
         <span><i class="vbar" style="background:#3fb950"></i>Earth-escape spiral (engine ON)</span>
         <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
@@ -686,7 +690,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 36, SRC_COMMIT = 'HEAD';
+const BUILD = 37, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1334,8 +1338,8 @@ function drawTimeline(){
   Plotly.react('chartTimeline',traces,{
     title:{text:'Burn timeline — continuous ion thrust, then coast',font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},
-    margin:{l:14,r:16,t:34,b:38},showlegend:false,
-    xaxis:{type:'log',gridcolor:'#2a323d',tickfont:{size:10},
+    margin:{l:14,r:16,t:34,b:38},showlegend:false,dragmode:false,
+    xaxis:{type:'log',gridcolor:'#2a323d',tickfont:{size:10},fixedrange:true,
       title:{text:'years from launch',font:{size:10},standoff:8},
       range:[Math.log10(0.006), Math.log10(p.arrival*1.5)]},
     yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
@@ -1392,8 +1396,7 @@ function togglePlay(){
   animTimer=setInterval(()=>{
     if(dragging3d) return;                 // don't redraw mid-drag — keeps rotation smooth while playing
     animU=Math.min(1, animU+0.004);
-    document.getElementById('tscrub').value=animU*100;
-    drawViz();
+    drawViz();                             // the burn timeline's "now" marker advances with animU
     if(animU>=1){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
   },40);
 }
@@ -1437,17 +1440,37 @@ document.getElementById('T').addEventListener('input',()=>{ document.getElementB
 document.getElementById('snapopt').addEventListener('click',(e)=>{ e.preventDefault();
   if(SIM){ const v=Math.round(SIM.minFuelYr/200)*200; document.getElementById('T').value=v; document.getElementById('o_T').textContent=fmt(v); render(); stateToURL(); } });
 document.querySelectorAll('input,select').forEach(el=>{
-  if(el.id==='tscrub' || el.id==='tilt' || el.id==='T' || el.name==='viz') return;  // handled separately (live view controls)
+  if(el.id==='tilt' || el.id==='T' || el.name==='viz') return;  // handled separately (live view controls)
   el.addEventListener('input',()=>{
     if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
     syncLabels(); toggleOpts(); render(); stateToURL();   // everything recomputes live + updates the shareable URL
   });
 });
 document.querySelectorAll('input[name=viz]').forEach(el=>{
-  el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); document.getElementById('tscrub').value=animU*100; drawViz(); });
+  el.addEventListener('input',()=>{ stopPlay(); animU=stageStartU(el.value); drawViz(); });
 });
-document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); });
 document.getElementById('playbtn').addEventListener('click', togglePlay);
+// ----- the burn timeline IS the scrubber: drag along it to set the current time -----
+// Map a click x (years, log axis) back to the animation parameter u, the inverse of the
+// craftState() u→elapsed-time mapping (elapsed = Inorm^(u−1)·T).
+function timeToU(tYr){ if(!SIM) return 0; const In=craftState().Inorm;
+  return Math.max(0, Math.min(1, 1 + Math.log((tYr*YEAR)/SIM.Tsec)/Math.log(In))); }
+(function(){
+  const gd=document.getElementById('chartTimeline'); let scrubbing=false;
+  function scrubAt(clientX){
+    if(!gd._fullLayout||!gd._fullLayout.xaxis||!gd._fullLayout.xaxis._length) return;
+    const xa=gd._fullLayout.xaxis, bb=gd.getBoundingClientRect();
+    const frac=Math.max(0,Math.min(1,(clientX-bb.left-xa._offset)/xa._length));
+    const tYr=Math.pow(10, xa.range[0]+frac*(xa.range[1]-xa.range[0]));
+    animU=timeToU(tYr); drawViz();
+  }
+  // Plotly's drag layer swallows events that land on the plot, so intercept at the window in
+  // the capture phase (before anything else) and act only when the press is inside the timeline.
+  window.addEventListener('pointerdown',(e)=>{ if(!gd.contains(e.target)) return;
+    scrubbing=true; stopPlay(); scrubAt(e.clientX); e.preventDefault(); }, true);
+  window.addEventListener('pointermove',(e)=>{ if(scrubbing) scrubAt(e.clientX); }, true);
+  window.addEventListener('pointerup',()=>{ scrubbing=false; }, true);
+})();
 // Scroll to zoom the 3D cubes: the data-extent (R/H) grows/shrinks while the camera stays,
 // so the cube keeps its screen size and Plotly re-scales the grid + AU/ly tick labels by decade.
 function wheelZoom(id, get, set){
