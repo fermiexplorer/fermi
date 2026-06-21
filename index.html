@@ -150,7 +150,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 39</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 40</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -665,7 +665,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 39, SRC_COMMIT = 'HEAD';
+const BUILD = 40, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -965,7 +965,7 @@ function drawViz(){
   document.getElementById('tlabel').textContent=
     `${fmt(c.es/YEAR)} yr · ${st.onSpiral?'spiral-out & solar escape':'interstellar cruise'} · `+
     (c.dist<2000?`${fmt(c.dist,1)} AU`:`${fmt(dly,3)} ly`);
-  { const ts=document.getElementById('tscrub'); if(ts && document.activeElement!==ts) ts.value=animU*100; }  // keep the top slider in sync
+  { const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; }  // keep the top slider in sync (Play, burn-graph scrub, etc.)
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
@@ -1362,20 +1362,29 @@ function camClose(a,b){ if(!a||!b||!a.eye||!b.eye) return false; const t=1e-3;
 function pushCamTo(ids, cam){ if(!ids.length) return; camSyncing=true;
   ids.forEach(id=>{ const gd=document.getElementById(id); if(gd&&gd._fullLayout&&gd._fullLayout.scene) Plotly.relayout(gd,{'scene.camera':cloneCam(cam)}); });
   camSyncing=false; }
-function onRelayout(id){
-  if(camSyncing || lockedToCam(id)) return;                 // ignore programmatic pushes & cam-driven views
-  const gd=document.getElementById(id);
-  if(!gd||!gd._fullLayout||!gd._fullLayout.scene||!gd._fullLayout.scene.camera) return;
-  const cam=gd._fullLayout.scene.camera;
-  if(camClose(cam,camFixed)) return;                        // nothing new
+// Live camera sync driven by the ACTUAL drag (a requestAnimationFrame loop), not Plotly's flaky
+// gl3d relayout events: whichever fixed-group view you press becomes the source, and its live
+// camera is pushed to the other fixed-group views every frame — so they rotate together in real time.
+let camDragId=null, camRAF=0, camLastPushed=null;
+// The LIVE camera during a gl3d orbit lives on the internal scene (getCamera()); the public
+// _fullLayout.scene.camera only commits on mouse-up. Read the live one so peers follow in real time.
+function liveCam(id){ const gd=document.getElementById(id), sc=gd&&gd._fullLayout&&gd._fullLayout.scene&&gd._fullLayout.scene._scene;
+  return (sc&&sc.getCamera)?sc.getCamera():(gd&&gd._fullLayout&&gd._fullLayout.scene?gd._fullLayout.scene.camera:null); }
+function syncPeers(srcId){
+  const cam=liveCam(srcId); if(!cam||!cam.eye) return;
   camFixed=cloneCam(cam);
-  pushCamTo(SYNC_IDS.filter(x=>x!==id && !lockedToCam(x)), camFixed);  // snap the other fixed views
+  pushCamTo(SYNC_IDS.filter(x=>x!==srcId && !lockedToCam(x)), cam);
 }
+function camTick(){
+  if(!camDragId){ camRAF=0; return; }
+  const cam=liveCam(camDragId);
+  if(cam && cam.eye && (!camLastPushed || !camClose(cam,camLastPushed))){ camLastPushed=cloneCam(cam); syncPeers(camDragId); }
+  camRAF=requestAnimationFrame(camTick);
+}
+function startCamDrag(id){ if(lockedToCam(id)) return; camDragId=id; camLastPushed=null; if(!camRAF) camRAF=requestAnimationFrame(camTick); }
+function endCamDrag(){ if(camDragId){ syncPeers(camDragId); camDragId=null; } camLastPushed=null; }
 function setupCamSync(){
   if(camListenersAttached) return; camListenersAttached=true;
-  SYNC_IDS.forEach(id=>{ const gd=document.getElementById(id); if(gd&&gd.on){
-    gd.on('plotly_relayout',()=>onRelayout(id));        // fires at drag end
-    gd.on('plotly_relayouting',()=>onRelayout(id)); }});  // fires continuously during the drag → all rotate together
   SYNC_IDS.forEach(id=>{ const cb=document.getElementById('lock_'+id); if(!cb) return;
     cb.addEventListener('change',()=>{ if(id==='follow3d'){ drawViz(); return; }
       pushCamTo([id], lockedToCam(id)?camCam:camFixed); }); });   // adopt the target group's orientation
@@ -1482,11 +1491,13 @@ wheelZoom('follow3d',    ()=>zoom3dCh, v=>zoom3dCh=v);
 // Pause the animation's redraws while the user drags a 3D figure, so rotation stays smooth.
 ['chartOrbit3d','follow3d','velSpeed','velDv'].forEach(id=>{
   document.getElementById(id).addEventListener('pointerdown',(e)=>{
-    if(e.target && (e.target.tagName==='CANVAS' || (e.target.closest && e.target.closest('.gl-container')))) dragging3d=true;
+    if(e.target && (e.target.tagName==='CANVAS' || (e.target.closest && e.target.closest('.gl-container')))){
+      dragging3d=true; startCamDrag(id);   // this view becomes the rotation source; peers follow live
+    }
   });
 });
-window.addEventListener('pointerup',()=>{ dragging3d=false; });
-window.addEventListener('pointercancel',()=>{ dragging3d=false; });
+window.addEventListener('pointerup',()=>{ dragging3d=false; endCamDrag(); });
+window.addEventListener('pointercancel',()=>{ dragging3d=false; endCamDrag(); });
 // 2D views are hidden by default; the checkbox reveals (and then draws) them
 document.getElementById('show2d').addEventListener('change',(e)=>{
   document.getElementById('twod').style.display = e.target.checked ? '' : 'none';
