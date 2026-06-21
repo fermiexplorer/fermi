@@ -99,6 +99,9 @@
   @media (max-width: 860px) { .viz3drow { grid-template-columns: 1fr; } }
   .vsec3d { margin-top: 18px; }
   .vsec-h { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  .camcell { display: flex; flex-direction: column; }
+  .camctl { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
+  .camctl label { display: inline-flex; gap: 5px; align-items: center; color: var(--ink); cursor: pointer; }
   #twod { margin-top: 4px; }
   #chartOrbit2d { min-height: 340px; }
   #chartTimeline { min-height: 200px; margin-top: 12px; }
@@ -143,7 +146,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 35</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 36</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -280,8 +283,14 @@
     <div class="kpis" id="kpis"></div>
     <div class="topviz">
       <div class="viz3drow">
-        <div class="chart prim" id="chartOrbit3d"></div>
-        <div class="chart prim" id="follow3d"></div>
+        <div class="camcell">
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label></div>
+          <div class="chart prim" id="chartOrbit3d"></div>
+        </div>
+        <div class="camcell">
+          <div class="camctl"><label title="Probe-aligned chase orientation (1st-party); updates as the velocity turns."><input type="checkbox" id="lock_follow3d" checked> lock to cam view</label></div>
+          <div class="chart prim" id="follow3d"></div>
+        </div>
       </div>
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
@@ -324,8 +333,14 @@
       <div class="vsec3d">
         <div class="vsec-h">Vector build-up over time — how the speeds and the Δv add up (drag to rotate · Play to evolve)</div>
         <div class="viz3drow">
-          <div class="chart prim" id="velSpeed"></div>
-          <div class="chart prim" id="velDv"></div>
+          <div class="camcell">
+            <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velSpeed"> lock to cam view</label></div>
+            <div class="chart prim" id="velSpeed"></div>
+          </div>
+          <div class="camcell">
+            <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velDv"> lock to cam view</label></div>
+            <div class="chart prim" id="velDv"></div>
+          </div>
         </div>
         <div class="vizlegend" style="margin-top:2px">
           <span><i class="vdot" style="background:#58a6ff"></i>Earth velocity (borrowed, in-plane)</span>
@@ -671,7 +686,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 35, SRC_COMMIT = 'HEAD';
+const BUILD = 36, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -975,6 +990,7 @@ function drawViz(){
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
   if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); }   // velocity / Δv vector build-up
+  setupCamSync();                                     // attach camera-sync listeners once
 
   // 2D views are off by default (checkbox) — only draw them when visible
   if(document.getElementById('show2d').checked){
@@ -1100,9 +1116,15 @@ function drawFollow3d(c,st){
   for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
     gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(0,0,null);
     gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(0,0,null); }
-  const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=1.55;
+  const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=2.3;
   let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
-  const eye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
+  const autoEye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
+  // Chase locked to cam (default): auto orientation behind the probe (no uirevision → it tracks
+  // the turning velocity, and defines the shared cam orientation). Unlocked: it joins the fixed
+  // (world) group — user-rotatable and synced via uirevision.
+  const camLock=lockedToCam('follow3d');
+  const sceneCam = camLock ? {eye:autoEye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}} : groupCam('follow3d');
+  if(camLock){ camCam=cloneCam(sceneCam); pushCamTo(SYNC_IDS.filter(x=>x!=='follow3d'&&lockedToCam(x)),camCam); }
   const A=cols(flown), tag = st.onSpiral?'solar-escape spiral':'interstellar cruise';
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
@@ -1115,8 +1137,9 @@ function drawFollow3d(c,st){
     {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
   ],{title:{text:`Chase cam (3D) — behind the probe (${fmt(2*H, H<10?2:0)} AU cube · ${tag}) · ${chaseIn?'scroll to zoom':'pulled back to AC'}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},
-    scene:{aspectmode:'cube',bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
-      camera:{eye:eye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}}}},{...CFG,scrollZoom:false});
+    uirevision: camLock?undefined:'follow3dsync',
+    scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
+      camera:sceneCam}},{...CFG,scrollZoom:false});
 }
 
 // Chase cam (2D): the flown path is projected into the craft's instantaneous frame
@@ -1181,7 +1204,7 @@ function drawZoom3d(c,st){
   ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · scroll to zoom, drag to rotate`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
-    scene:{aspectmode:'cube',bgcolor:'#161b22',camera:{eye:{x:1.08,y:0.76,z:0.4},center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}},
+    scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:groupCam('chartOrbit3d'),
       xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
     {...CFG,scrollZoom:false});
 }
@@ -1234,9 +1257,9 @@ function eclipticMesh(ctr,H){
   return {type:'mesh3d',x:[ctr[0]-H,ctr[0]+H,ctr[0]+H,ctr[0]-H],y:[ctr[1]-H,ctr[1]-H,ctr[1]+H,ctr[1]+H],z:[0,0,0,0],
           i:[0,0],j:[1,2],k:[2,3],color:'#586273',opacity:0.08,hoverinfo:'skip',flatshading:true,showscale:false,name:'ecliptic (z=0)'};
 }
-function vScene(ctr,H,xl,yl,zl){
+function vScene(ctr,H,xl,yl,zl,cam){
   const ax=(t,k)=>({range:[ctr[k]-H,ctr[k]+H],title:{text:t,font:{size:10}},color:'#9aa7b4',gridcolor:'#2a323d',tickfont:{size:9},zeroline:true,zerolinecolor:'#3a4452'});
-  return {aspectmode:'cube',bgcolor:'#161b22',camera:{eye:{x:1.25,y:0.9,z:0.5},center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}},
+  return {aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:cam,
           xaxis:ax(xl,0),yaxis:ax(yl,1),zaxis:ax(zl,2)};
 }
 function drawVelSpeed(r,c){
@@ -1255,7 +1278,7 @@ function drawVelSpeed(r,c){
   const mag=Math.hypot(V[0],V[1],V[2]), phase=t<F.tBurn?'burn (engine ON)':'coast (engine OFF — gravity slows it)';
   Plotly.react('velSpeed',traces,{title:{text:`Speeds — where the craft is going · |V| = ${fmt(mag,1)} km/s · ${phase}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
-    margin:{l:0,r:0,t:34,b:0},uirevision:'velSpeed',scene:vScene(ctr,H,'Vx (km/s)','Vy (km/s)','Vz — out of ecliptic')},{...CFG,scrollZoom:false});
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velSpeed',scene:vScene(ctr,H,'Vx (km/s)','Vy (km/s)','Vz (km/s) — out of ecliptic',groupCam('velSpeed'))},{...CFG,scrollZoom:false});
 }
 function drawVelDv(r,c){
   const F=velFrame(r), t=c.es/YEAR, O=[0,0,0], D=dvVecAt(F,t), full=scv(F.vhat,F.dvTot);
@@ -1272,7 +1295,7 @@ function drawVelDv(r,c){
   const aMg=(F.thrust/Math.max(1,D.m))/9.80665*1000;
   Plotly.react('velDv',traces,{title:{text:`Δv / thrust — where the engine points · Δv = ${fmt(D.mag,1)} / ${fmt(F.dvTot,1)} km/s · ${burning?`thrust ${fmt(aMg,2)} milli-g`:'engine OFF'}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
-    margin:{l:0,r:0,t:34,b:0},uirevision:'velDv',scene:vScene(ctr,H,'Δvx (km/s)','Δvy (km/s)','Δvz — out of ecliptic')},{...CFG,scrollZoom:false});
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velDv',scene:vScene(ctr,H,'Δvx (km/s)','Δvy (km/s)','Δvz (km/s) — out of ecliptic',groupCam('velDv'))},{...CFG,scrollZoom:false});
 }
 
 // ----- burn timeline (continuous ion thrust, then coast) -----
@@ -1322,6 +1345,44 @@ function drawTimeline(){
 let animU=0, animTimer=null;
 let zoom3dOv=1, zoom3dCh=1;   // user scroll-zoom multipliers for the overview / chase cubes
 let zoom3dVS=1, zoom3dDV=1;   // …and for the velocity-space / Δv-space vector views
+// ----- shared camera orientation per group (absolute sync) -----
+// Two independent groups: "fixed" (world / 3rd-party) and "cam" (chase / probe-aligned).
+// Every view in a group shares ONE orientation; dragging any fixed-group view snaps the
+// other fixed-group views to match. The two groups never affect each other. The chase cam
+// drives the cam orientation automatically (it follows the velocity).
+const SYNC_IDS = ['chartOrbit3d','follow3d','velSpeed','velDv'];
+// A wide, slightly-flattened box (parallelepiped) instead of a cube, so the scene fills the
+// landscape rectangle without scaling up so far that the top/bottom — and the axis labels —
+// get clipped. The camera is backed off enough to keep all three axis titles visible.
+const ASPECT = {x:1.55, y:1.55, z:1.0};
+let camFixed = {eye:{x:1.95,y:1.35,z:1.05}, center:{x:0,y:0,z:0}, up:{x:0,y:0,z:1}};
+let camCam   = {eye:{x:1.95,y:1.35,z:1.05}, center:{x:0,y:0,z:0}, up:{x:0,y:0,z:1}};
+let camSyncing = false, camListenersAttached = false;
+function lockedToCam(id){ const cb=document.getElementById('lock_'+id); return !!(cb && cb.checked); }
+function groupCam(id){ return cloneCam(lockedToCam(id) ? camCam : camFixed); }
+function cloneCam(c){ return {eye:{x:c.eye.x,y:c.eye.y,z:c.eye.z},center:{x:c.center.x,y:c.center.y,z:c.center.z},up:{x:c.up.x,y:c.up.y,z:c.up.z}}; }
+function camClose(a,b){ if(!a||!b||!a.eye||!b.eye) return false; const t=1e-3;
+  return Math.abs(a.eye.x-b.eye.x)<t&&Math.abs(a.eye.y-b.eye.y)<t&&Math.abs(a.eye.z-b.eye.z)<t
+      && Math.abs(a.up.x-b.up.x)<t&&Math.abs(a.up.y-b.up.y)<t&&Math.abs(a.up.z-b.up.z)<t; }
+function pushCamTo(ids, cam){ if(!ids.length) return; camSyncing=true;
+  ids.forEach(id=>{ const gd=document.getElementById(id); if(gd&&gd._fullLayout&&gd._fullLayout.scene) Plotly.relayout(gd,{'scene.camera':cloneCam(cam)}); });
+  camSyncing=false; }
+function onRelayout(id){
+  if(camSyncing || lockedToCam(id)) return;                 // ignore programmatic pushes & cam-driven views
+  const gd=document.getElementById(id);
+  if(!gd||!gd._fullLayout||!gd._fullLayout.scene||!gd._fullLayout.scene.camera) return;
+  const cam=gd._fullLayout.scene.camera;
+  if(camClose(cam,camFixed)) return;                        // nothing new
+  camFixed=cloneCam(cam);
+  pushCamTo(SYNC_IDS.filter(x=>x!==id && !lockedToCam(x)), camFixed);  // snap the other fixed views
+}
+function setupCamSync(){
+  if(camListenersAttached) return; camListenersAttached=true;
+  SYNC_IDS.forEach(id=>{ const gd=document.getElementById(id); if(gd&&gd.on) gd.on('plotly_relayout',()=>onRelayout(id)); });
+  SYNC_IDS.forEach(id=>{ const cb=document.getElementById('lock_'+id); if(!cb) return;
+    cb.addEventListener('change',()=>{ if(id==='follow3d'){ drawViz(); return; }
+      pushCamTo([id], lockedToCam(id)?camCam:camFixed); }); });   // adopt the target group's orientation
+}
 let dragging3d=false;         // true while the user is dragging a 3D figure (pause redraws so the drag is smooth)
 function togglePlay(){
   const btn=document.getElementById('playbtn');
