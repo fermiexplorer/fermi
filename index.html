@@ -138,7 +138,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 30</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 31</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -646,7 +646,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 30, SRC_COMMIT = 'HEAD';
+const BUILD = 31, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1191,12 +1191,14 @@ function drawTimeline(){
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
 let animU=0, animTimer=null;
 let zoom3dOv=1, zoom3dCh=1;   // user scroll-zoom multipliers for the overview / chase cubes
+let dragging3d=false;         // true while the user is dragging a 3D figure (pause redraws so the drag is smooth)
 function togglePlay(){
   const btn=document.getElementById('playbtn');
   if(animTimer){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; return; }
   if(animU>=1) animU=0;
   btn.textContent='⏸ Pause';
   animTimer=setInterval(()=>{
+    if(dragging3d) return;                 // don't redraw mid-drag — keeps rotation smooth while playing
     animU=Math.min(1, animU+0.004);
     document.getElementById('tscrub').value=animU*100;
     drawViz();
@@ -1270,6 +1272,14 @@ function wheelZoom(id, get, set){
 }
 wheelZoom('chartOrbit3d', ()=>zoom3dOv, v=>zoom3dOv=v);
 wheelZoom('follow3d',    ()=>zoom3dCh, v=>zoom3dCh=v);
+// Pause the animation's redraws while the user drags a 3D figure, so rotation stays smooth.
+['chartOrbit3d','follow3d'].forEach(id=>{
+  document.getElementById(id).addEventListener('pointerdown',(e)=>{
+    if(e.target && (e.target.tagName==='CANVAS' || (e.target.closest && e.target.closest('.gl-container')))) dragging3d=true;
+  });
+});
+window.addEventListener('pointerup',()=>{ dragging3d=false; });
+window.addEventListener('pointercancel',()=>{ dragging3d=false; });
 // 2D views are hidden by default; the checkbox reveals (and then draws) them
 document.getElementById('show2d').addEventListener('change',(e)=>{
   document.getElementById('twod').style.display = e.target.checked ? '' : 'none';
