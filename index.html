@@ -63,6 +63,7 @@
   .kpi .kcalc { display: none; margin-top: 8px; }
   .kpi.open { grid-column: 1 / -1; }
   .kpi.open .kcalc { display: block; }
+  .kpi .kcalc .ksymline { font-size: 12px; color: var(--accent); margin: 2px 0 6px; }
   .kpi .kcalc .kdesc { font-size: 12.5px; color: #c9d4de; line-height: 1.55; margin: 2px 0 8px; max-width: 70ch; }
   .kpi .kcalc .khead { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
   .kpi .kcalc pre { margin: 6px 0 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; line-height: 1.55; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
@@ -135,7 +136,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 27</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 28</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -201,11 +202,11 @@
       <div class="ctrl">
         <label>Propellant</label>
         <select id="propsel">
-          <option value="Xenon|8">Xenon (dense, easy storage)</option>
-          <option value="Krypton|12">Krypton (cheaper, bulkier)</option>
-          <option value="Argon|16">Argon (cheapest, bulkiest)</option>
+          <option value="Xenon|8|131.29">Xenon (heavy ion 131 amu, dense, easy storage)</option>
+          <option value="Krypton|12|83.80">Krypton (84 amu, cheaper, bulkier)</option>
+          <option value="Argon|16|39.95">Argon (light ion 40 amu, cheapest, bulkiest)</option>
         </select>
-        <div class="hint">Sets the storage/tank fraction and labels only — Isp and thrust are set above, not by this choice.</div>
+        <div class="hint">Sets the tank fraction (storage) <b>and</b> scales the effective Isp by the ion mass — a lighter ion reaches a higher exhaust velocity at the same accelerating voltage (Isp ∝ 1/√m), at the cost of lower thrust per kW and bulkier storage.</div>
       </div>
       <div class="ctrl">
         <label>Propellant tank <b><span id="o_tankfrac">8</span> % of propellant</b></label>
@@ -642,7 +643,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 27, SRC_COMMIT = 'HEAD';
+const BUILD = 28, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -666,7 +667,10 @@ function radio(name){ return document.querySelector(`input[name=${name}]:checked
 function compute(){
   const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
   const dry=val('dry'), pay=val('pay'), dryEff=dry+pay;   // total dry = bus/subsystems + payload
-  const isp=val('isp'), eta=val('eta'), ve=expv(isp);
+  const psV=document.getElementById('propsel').value.split('|');
+  const propName=psV[0], ionM=parseFloat(psV[2]||131.29), kIsp=Math.sqrt(131.29/ionM);
+  const ispBase=val('isp'), isp=ispBase*kIsp, eta=val('eta'), ve=expv(isp);   // lighter ion → higher Isp at fixed voltage
+  const acDistM=Math.hypot(R0[0],R0[1],R0[2]), vRelAc=acDistM/T;              // probe speed vs AC at arrival = |A₀|/T
   const pwr=radio('pwr'), ga=radio('ga');
   const gain = ga==='jupiter'?jupiterGain(9000):0;
   // departure Δv required to arrive at time Ts = the minimum fuel for that arrival
@@ -703,7 +707,6 @@ function compute(){
   else { psMass=pwrW/val('rtg'); psLabel='RTG'; }
   const dryPower=(pwr==='fuelcell')?0:psMass;
   const busPayload=dry-dryPower-engineMass-tankMass;
-  const propName=document.getElementById('propsel').value.split('|')[0];
   // --- feasibility: the design is IMPOSSIBLE when the tank can't hold the propellant,
   //     or the subsystems leave no room for the payload ---
   const FMAX=0.85;
@@ -712,7 +715,7 @@ function compute(){
   else if(busPayload<0){ feasible=false; infeasReason=`mass doesn't close — the sized array + engine + tank (${fmt(dry-busPayload,0)} kg) exceed the ${fmt(dry,0)} kg dry bus; raise the dry-bus mass, cut power, or use lighter cells`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
-    isp,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
+    isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName};
 }
 
@@ -730,7 +733,7 @@ function render(){
     ? `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> The mass closes — <b>${fmt(r.busPayload)} kg</b> of dry-bus structure margin after the array, engine &amp; tank (payload <b>${fmt(r.pay,1)} kg</b> is carried on top, in the wet mass).</div>`
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine +
-    `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s.</div>`+
+    `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+
     `<div class="sline"><b style="color:#3fb950">Fuel optimum at ~${fmt(r.minFuelYr)} yr</b> — AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
     `<div class="sline"><b>The trade (why ~73k yr):</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). The minimum-<em>Δv</em> point sits between, near the crossing — out-of-plane velocity can't be borrowed from Earth, it must be bought with propellant. Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
     `<div class="sline"><b>Profile:</b> Isp-${fmt(r.isp)} s ion, ~${fmt(r.burnYr,1)} yr burn at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then heliocentric escape), then coast ~${fmt(r.arrivalYr)} yr. Distance check: ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — where AC is at arrival.</div>`;
@@ -741,7 +744,7 @@ function render(){
   const psVal=r.pwr==='solar'?`${fmt(r.arrayArea,0)} m² · ${fmt(r.arrayMass)} kg`:`${fmt(r.psMass)} kg`;
   const psLab=r.pwr==='solar'?'silicon solar array @ 1 AU':`${r.psLabel} (experimental)`;
   document.getElementById('burnspec').innerHTML=
-    `<div class="sc-h">To reach cruise speed v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s${r.feasible?` (arrival ~${fmt(r.arrivalYr)} yr)`:` — below the 23.3 km/s floor: no intercept`}, the departure burn needs:</div>`+
+    `<div class="sc-h">To reach cruise speed v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (heliocentric — relative to the Sun)${r.feasible?` · arrival ~${fmt(r.arrivalYr)} yr`:` — below the 23.3 km/s floor: no intercept`}, the departure burn needs:</div>`+
     `<div class="sc-grid">`+
       `<div class="sc-i"><span class="sc-v">${fmt(r.pwrW/1000,1)} kW</span><span class="sc-l">electrical power (from the array)</span></div>`+
       `<div class="sc-i"><span class="sc-v">${psVal}</span><span class="sc-l">${psLab}</span></div>`+
@@ -757,15 +760,16 @@ function render(){
   const cE=val('cellEff'), arV=val('areal'), ekw=val('enginekg'), tkf=val('tankfrac');
   // extra intermediates traced back to the inputs (so each calc is self-contained)
   const rv=requiredVinfVec(r.Tsec), inK=Math.hypot(rv[0],rv[1])/1e3, vzK=rv[2]/1e3;
-  const acLy=Math.hypot(R0[0],R0[1],R0[2])/LY, vacK=Math.hypot(VAC[0],VAC[1],VAC[2])/1e3;
+  const acLy=Math.hypot(R0[0],R0[1],R0[2])/LY, vacK=Math.hypot(VAC[0],VAC[1],VAC[2])/1e3, vRelAcK=r.vRelAc/1e3;
   const gainK=(radio('ga')==='jupiter')?jupiterGain(9000)/1e3:0;
   // per-field INPUTS lines: only the slider inputs that feed THAT value
   const IN={ T:`arrival T=${fmt(r.arrivalYr)} yr`, pay:`payload=${fmt(r.pay,1)} kg`, alt:`LEO alt=${altKm} km`,
-    pen:`low-thrust penalty=${fmt(penK,1)} km/s`, dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp=${fmt(r.isp)} s`,
-    eta:`thruster η=${fmt(r.eta,2)}`, ekw:`engine=${fmt(ekw,1)} kg/kW`, tank:`tank=${fmt(tkf)}%`,
+    pen:`low-thrust penalty=${fmt(penK,1)} km/s`, dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp(base)=${fmt(r.ispBase)} s`,
+    eta:`thruster η=${fmt(r.eta,2)}`, ekw:`engine=${fmt(ekw,1)} kg/kW`, tank:`tank=${fmt(tkf)}%`, prop:`propellant=${r.propName}`,
     pwr:`power=${fmt(r.pwrW/1000,1)} kW`, cell:`cell eff=${fmt(cE)}%`, areal:`areal=${fmt(arV,1)} kg/m²`,
     ga:`architecture=${radio('ga')}`, rtg:`RTG=${fmt(val('rtg'),1)} W/kg`, rp:`perihelion=${fmt(val('rp'))} R☉` };
   const inl=(...ks)=>'INPUTS — '+ks.map(k=>IN[k]).join(' · ');
+  const ispScale=`Isp scales with propellant (lighter ion → faster exhaust at fixed voltage): Isp = Isp_base·√(m_Xe/m) = ${fmt(r.ispBase)}·√(131.3/${fmt(r.ionM,1)}) = ${fmt(r.isp)} s  (${r.propName}, ${fmt(r.ionM,1)} amu)`;
   // departure-Δv derivation (depends on architecture)
   let dvSteps;
   if(radio('ga')==='oberth'){
@@ -781,63 +785,66 @@ function render(){
       `Step 5 — add the low-thrust spiral penalty${gainK?' and subtract the Jupiter assist':''}:\n  Δv = floor + penalty${gainK?` − ${fmt(gainK,1)} (Jupiter)`:''} = ${fmt(r.dvFloor/1e3,2)} + ${fmt(penK,1)}${gainK?` − ${fmt(gainK,1)}`:''} = ${fmt(r.dvDesign/1e3,2)} km/s   (Δv the propulsion provides)`;
   }
   const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s — the velocity change the engine provides from LEO (see “Departure Δv”)`;
-  const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft);  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
+  const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s  (Isp = effective Isp for ${r.propName}; v_e = exhaust velocity vs the spacecraft);  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
   const K=[];
-  K.push({l:'Arrival (chosen)', v:fmt(r.arrivalYr)+' yr', i:inl('T'),
+  K.push({l:'Arrival (chosen)', v:fmt(r.arrivalYr)+' yr', i:inl('T'), s:'T — arrival time (years from launch)',
     d:'When the probe reaches Alpha Centauri — the point you aim at along AC’s moving track. This is your free choice (a slider) and it drives the whole mission: aim earlier, later, or more out of plane and the required velocity, the Δv, and hence the propellant and spacecraft size all change.',
     c:`Arrival time T = ${fmt(r.arrivalYr)} yr   (slider input).\nEverything below is derived from this aim point.`});
-  K.push({l:'Cruise v∞', v:fmt(vinfK,2)+' km/s', i:inl('T'),
-    d:'The probe’s heliocentric coast speed after it escapes the Sun — the speed it must hold to cover AC’s distance in the chosen time. It is the magnitude of the required intercept velocity V_p, set purely by geometry (where AC is and how fast it moves), not by the spacecraft. The years-long burn is negligible against the coast, so this speed effectively sets the travel time.',
-    c:`Every speed here is HELIOCENTRIC — measured relative to the Sun.\nAC now (ephemeris): distance |A₀| = ${fmt(acLy,3)} ly, space velocity |V_ac| = ${fmt(vacK,2)} km/s (AC vs the Sun)\nRequired intercept velocity:  V_p = A₀ / T + V_ac   (the velocity, vs the Sun, that lands the probe on AC at time T)\n  in-plane part (within Earth's orbital / ecliptic plane) = ${fmt(inK,2)} km/s\n  out-of-plane part (perpendicular to that plane)         = ${fmt(vzK,2)} km/s\nv∞ = |V_p| = √(in-plane² + out-of-plane²) = √(${fmt(inK,2)}² + ${fmt(vzK,2)}²) = ${fmt(vinfK,2)} km/s   (probe coast speed vs the Sun)`});
-  K.push({l:'Out-of-plane aim', v:fmt(tiltA,1)+'°', i:inl('T'),
+  K.push({l:'Cruise v∞', v:fmt(vinfK,2)+' km/s', i:inl('T'), s:'v∞ — heliocentric cruise speed, RELATIVE TO THE SUN',
+    d:'The probe’s heliocentric coast speed after it escapes the Sun — measured RELATIVE TO THE SUN (not relative to AC). It is the magnitude of the required intercept velocity V_p, set purely by geometry (where AC is and how fast it moves), not by the spacecraft. The years-long burn is negligible against the coast, so this speed effectively sets the travel time.',
+    c:`Every speed here is HELIOCENTRIC — relative to the Sun.\nAC now (ephemeris): distance |A₀| = ${fmt(acLy,3)} ly, space velocity |V_ac| = ${fmt(vacK,2)} km/s (AC vs the Sun)\nRequired intercept velocity:  V_p = A₀ / T + V_ac   (velocity vs the Sun that lands the probe on AC at time T)\n  in-plane part (within Earth's orbital / ecliptic plane) = ${fmt(inK,2)} km/s\n  out-of-plane part (perpendicular to that plane)         = ${fmt(vzK,2)} km/s\nv∞ = |V_p| = √(in-plane² + out-of-plane²) = √(${fmt(inK,2)}² + ${fmt(vzK,2)}²) = ${fmt(vinfK,2)} km/s   ←  RELATIVE TO THE SUN\nFor contrast, the probe passes AC at |A₀|/T = ${fmt(vRelAcK,2)} km/s RELATIVE TO AC (the flyby / closing speed) — a different number in a different frame.`});
+  K.push({l:'Out-of-plane aim', v:fmt(tiltA,1)+'°', i:inl('T'), s:'β — tilt of the (Sun-relative) departure velocity out of the ecliptic',
     d:'How far the required departure direction tilts out of Earth’s orbital (ecliptic) plane. It matters because Earth’s 29.8 km/s orbital velocity can only be borrowed in-plane — any out-of-plane component must be bought with propellant. It is ~0° where AC crosses the ecliptic (~79k yr) and ~10° at the 58k-yr aim, which is why the cheapest departure is near the crossing.',
-    c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\ntilt = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
-  K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','pen','ga'),
+    c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
+  K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','pen','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:'The total velocity change the propulsion must supply from LEO to place the probe on the correct interstellar trajectory. It is the impulsive (Oberth) minimum set by the geometry plus the low-thrust “spiral tax”. This is the number that sizes the propellant, so minimising it is the whole design objective.',
     c:dvSteps});
-  K.push({l:'Propellant fraction', v:fmt(100*r.f,1)+'%', i:inl('isp'),
+  K.push({l:'Propellant fraction', v:fmt(100*r.f,1)+'%', i:inl('isp','prop'), s:'f — propellant ÷ wet mass = m_p / m_wet',
     d:'The fraction of the fuelled (wet) mass that is propellant. The rocket equation fixes it from the Δv and the exhaust velocity (Isp) alone — it does NOT depend on how large the spacecraft is. Lower is better: more of every kilogram is then useful structure and payload rather than fuel.',
-    c:`${dvRef}\nv_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s\nMR = e^(Δv/v_e) = e^(${fmt(r.dvDesign,0)}/${fmt(ve,0)}) = ${fmt(r.MR,3)}\nf = 1 − 1/MR = ${fmt(r.f,3)} = ${fmt(100*r.f,1)}%   (independent of spacecraft mass)`});
-  K.push({l:'Wet mass', v:fmt(r.wet)+' kg', i:inl('dry','pay','isp'),
+    c:`${dvRef}\n${ispScale}\nv_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s\nMR = e^(Δv/v_e) = e^(${fmt(r.dvDesign,0)}/${fmt(ve,0)}) = ${fmt(r.MR,3)}\nf = 1 − 1/MR = ${fmt(r.f,3)} = ${fmt(100*r.f,1)}%   (depends on Δv and Isp only, not on spacecraft mass)`});
+  K.push({l:'Effective Isp', v:fmt(r.isp)+' s', i:inl('isp','prop'), s:'Isp — effective specific impulse for this propellant; v_e = Isp·g₀ (exhaust velocity vs the spacecraft)',
+    d:'The real specific impulse for the chosen propellant. A lighter ion reaches a higher exhaust velocity at the same accelerating voltage (Isp ∝ 1/√(ion mass)), so Argon and Krypton give a HIGHER Isp — and thus LESS propellant — than Xenon, at the cost of lower thrust per kW and bulkier storage (a heavier tank).',
+    c:`${ispScale}\nv_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s   (exhaust velocity, relative to the spacecraft)\nion masses: Xenon 131.3 · Krypton 83.8 · Argon 40.0 amu  →  e.g. Argon Isp = Xenon Isp · √(131.3/40.0) ≈ 1.81×`});
+  K.push({l:'Wet mass', v:fmt(r.wet)+' kg', i:inl('dry','pay','isp','prop'), s:'m_wet — fuelled mass at departure = m_dry+pay + m_p',
     d:'The fully-fuelled mass at departure = dry spacecraft + payload + propellant. This is what the launch vehicle must lift to LEO; choosing the fuel-optimal arrival and a high Isp exists precisely to make this number as small as possible.',
-    c:`${veRef}  (Δv ${fmt(r.dvDesign/1e3,2)} km/s — see Departure Δv)\ndry total = dry bus + payload = ${fmt(r.dry)} + ${fmt(r.pay,1)} = ${fmt(r.dryEff)} kg\nwet = dry total · MR = ${fmt(r.dryEff)} · ${fmt(r.MR,3)} = ${fmt(r.wet)} kg\npropellant m_p = wet − dry total = ${fmt(r.mp)} kg`});
-  K.push({l:r.propName+' propellant', v:fmt(r.mp)+' kg', i:inl('dry','pay','isp'),
+    c:`${veRef}  (Δv ${fmt(r.dvDesign/1e3,2)} km/s — see Departure Δv)\nm_dry+pay = dry bus + payload = ${fmt(r.dry)} + ${fmt(r.pay,1)} = ${fmt(r.dryEff)} kg\nm_wet = m_dry+pay · MR = ${fmt(r.dryEff)} · ${fmt(r.MR,3)} = ${fmt(r.wet)} kg\nm_p = m_wet − m_dry+pay = ${fmt(r.mp)} kg`});
+  K.push({l:r.propName+' propellant', v:fmt(r.mp)+' kg', i:inl('dry','pay','isp','prop'), s:'m_p — propellant mass',
     d:'The mass of working fluid the ion engine expels to produce the Δv. It scales with the dry+payload mass through the rocket equation, so a heavier bus or payload needs proportionally more of it.',
-    c:`${veRef}  (Δv ${fmt(r.dvDesign/1e3,2)} km/s — see Departure Δv)\ndry total = dry bus + payload = ${fmt(r.dry)} + ${fmt(r.pay,1)} = ${fmt(r.dryEff)} kg\nm_p = dry total · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (${fmt(100*r.mp/r.wet)}% of wet)`});
-  K.push({l:'Fuel optimum', v:fmt(r.minFuelYr)+' yr', i:inl('alt','pen','ga','dry','pay','isp'),
+    c:`${veRef}  (Δv ${fmt(r.dvDesign/1e3,2)} km/s — see Departure Δv)\nm_dry+pay = dry bus + payload = ${fmt(r.dry)} + ${fmt(r.pay,1)} = ${fmt(r.dryEff)} kg\nm_p = m_dry+pay · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (${fmt(100*r.mp/r.wet)}% of m_wet)`});
+  K.push({l:'Fuel optimum', v:fmt(r.minFuelYr)+' yr', i:inl('alt','pen','ga','dry','pay','isp','prop'), s:'T_opt — arrival that minimises Δv (→ smallest m_wet)',
     d:'The arrival time that minimises Δv — and therefore propellant and spacecraft mass. It is found by scanning every arrival and sits near where AC crosses the ecliptic (~73k yr). Aiming here yields the smallest possible spacecraft; the headline tells you how far above it your current aim is.',
-    c:`Scan arrivals 58k–100k yr (each via the Departure-Δv chain) for the minimum Δv:\n  optimum at ${fmt(r.minFuelYr)} yr,  Δv_min = ${fmt(r.dvMin/1e3,2)} km/s\nminimal wet = dry total · e^(Δv_min/v_e) = ${fmt(r.dryEff)} · e^(${fmt(r.dvMin,0)}/${fmt(ve,0)}) = ${fmt(r.minWet)} kg (smallest spacecraft)\nYour aim costs +${fmt((r.dvDesign-r.dvMin)/1e3,2)} km/s above this.`});
+    c:`Scan arrivals 58k–100k yr (each via the Departure-Δv chain) for the minimum Δv:\n  optimum at ${fmt(r.minFuelYr)} yr,  Δv_min = ${fmt(r.dvMin/1e3,2)} km/s\nm_wet,min = m_dry+pay · e^(Δv_min/v_e) = ${fmt(r.dryEff)} · e^(${fmt(r.dvMin,0)}/${fmt(ve,0)}) = ${fmt(r.minWet)} kg (smallest spacecraft)\nYour aim costs +${fmt((r.dvDesign-r.dvMin)/1e3,2)} km/s above this.`});
   if(r.pwr==='solar'){
-    K.push({l:'Solar array', v:fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg', i:inl('pwr','cell','areal'),
+    K.push({l:'Solar array', v:fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg', i:inl('pwr','cell','areal'), s:'A_arr, m_arr — array area & mass',
       d:'The photovoltaic array that powers the ion engine. Its area is the electrical power needed divided by the sunlight a cell converts at 1 AU; its mass is the area times the array’s areal density (kg per m²).',
-      c:`area = P / (S₀ · η_cell) = ${fmt(r.pwrW)} W / (1361 W/m² · ${fmt(cE/100,2)}) = ${fmt(r.arrayArea,1)} m²\nmass = area · areal density = ${fmt(r.arrayArea,1)} · ${fmt(arV,1)} kg/m² = ${fmt(r.arrayMass)} kg`});
-    K.push({l:'Array specific power', v:fmt(r.arraySpecPower)+' W/kg', i:inl('pwr','cell','areal'),
+      c:`A_arr = P / (S₀ · η_cell) = ${fmt(r.pwrW)} W / (1361 W/m² · ${fmt(cE/100,2)}) = ${fmt(r.arrayArea,1)} m²\nm_arr = A_arr · areal density = ${fmt(r.arrayArea,1)} · ${fmt(arV,1)} kg/m² = ${fmt(r.arrayMass)} kg`});
+    K.push({l:'Array specific power', v:fmt(r.arraySpecPower)+' W/kg', i:inl('pwr','cell','areal'), s:'P / m_arr — power per kg of array',
       d:'Watts of power delivered per kilogram of array — a figure of merit for the solar technology (higher is lighter for the same power). ~90 W/kg is representative of today’s commercial silicon arrays.',
-      c:`array mass = area·areal = (P/(S₀·η_cell))·areal = ${fmt(r.arrayArea,1)}·${fmt(arV,1)} = ${fmt(r.arrayMass)} kg\nspecific power = P / array mass = ${fmt(r.pwrW)} / ${fmt(r.arrayMass)} = ${fmt(r.arraySpecPower)} W/kg`});
+      c:`m_arr = A_arr·areal = (P/(S₀·η_cell))·areal = ${fmt(r.arrayArea,1)}·${fmt(arV,1)} = ${fmt(r.arrayMass)} kg\nP / m_arr = ${fmt(r.pwrW)} / ${fmt(r.arrayMass)} = ${fmt(r.arraySpecPower)} W/kg`});
   } else {
-    K.push({l:r.psLabel+' mass', v:fmt(r.psMass)+' kg', i:inl('pwr','isp'),
+    K.push({l:r.psLabel+' mass', v:fmt(r.psMass)+' kg', i:inl('pwr','isp'), s:'m_ps — power-source mass',
       d:'Mass of the chosen (non-solar) power source. Fuel cells and RTGs are experimental alternatives here — the methodology shows why solar wins for a burn done within a few AU of the Sun.',
-      c:`${r.psLabel} mass = ${fmt(r.psMass)} kg  (see the methodology for the energy/mass model)`});
+      c:`m_ps = ${fmt(r.psMass)} kg  (see the methodology for the energy/mass model)`});
   }
-  K.push({l:'Engine + PPU', v:fmt(r.engineMass)+' kg', i:inl('pwr','ekw'),
+  K.push({l:'Engine + PPU', v:fmt(r.engineMass)+' kg', i:inl('pwr','ekw'), s:'m_eng — ion thruster + power-processing unit mass',
     d:'Mass of the ion thruster plus its power-processing unit (the electronics that drive it), scaled from the input power at a few kilograms per kilowatt.',
-    c:`engine + PPU = power · specific mass = ${fmt(r.pwrW/1000,1)} kW · ${fmt(ekw,1)} kg/kW = ${fmt(r.engineMass)} kg`});
-  K.push({l:'Propellant tank', v:fmt(r.tankMass)+' kg', i:inl('tank','dry','pay','isp'),
+    c:`m_eng = power · specific mass = ${fmt(r.pwrW/1000,1)} kW · ${fmt(ekw,1)} kg/kW = ${fmt(r.engineMass)} kg`});
+  K.push({l:'Propellant tank', v:fmt(r.tankMass)+' kg', i:inl('tank','dry','pay','isp','prop'), s:'m_tank — propellant-tank mass',
     d:'Mass of the tank that stores the propellant, taken as a fixed fraction of the propellant it must hold (denser propellants such as xenon need a smaller fraction).',
-    c:`m_p = dry total · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (see propellant)\ntank = tank fraction · m_p = ${fmt(tkf)}% · ${fmt(r.mp)} kg = ${fmt(r.tankMass)} kg`});
-  K.push({l:'Burn duration', v:fmt(r.burnYr,1)+' yr', i:inl('pwr','eta','isp','dry','pay'),
+    c:`m_p = m_dry+pay · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (see propellant)\nm_tank = tank fraction · m_p = ${fmt(tkf)}% · ${fmt(r.mp)} kg = ${fmt(r.tankMass)} kg`});
+  K.push({l:'Burn duration', v:fmt(r.burnYr,1)+' yr', i:inl('pwr','eta','isp','dry','pay','prop'), s:'t_burn — continuous firing time',
     d:'How long the ion engine fires continuously to build the Δv — gentle thrust (a few hundredths of a g) sustained for months to a couple of years, after which it coasts. Set by the propellant, the exhaust velocity and the thrust.',
-    c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft)\nthrust F = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN\nm_p = ${fmt(r.mp)} kg  (see propellant)\nburn t = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
-  K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'),
+    c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft)\nF = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN  (thrust)\nm_p = ${fmt(r.mp)} kg  (see propellant)\nt_burn = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
+  K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'), s:'m_pay — delivered payload mass',
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
-    c:`Payload = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
-  K.push({l:'Dry-bus margin', v:fmt(r.busPayload)+' kg', i:inl('dry','pwr','cell','areal','ekw','tank'),
+    c:`m_pay = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
+  K.push({l:'Dry-bus margin', v:fmt(r.busPayload)+' kg', i:inl('dry','pwr','cell','areal','ekw','tank'), s:'m_margin — dry-bus mass left after the array, engine & tank',
     d:'Mass remaining in the dry bus once the array, engine and tank are subtracted — i.e. the budget left for structure, avionics, comms and harness. It must stay at or above zero, or the design does not close and is flagged NOT FEASIBLE.',
-    c:`array  = ${fmt(r.arrayMass)} kg   (P/(S₀·η_cell)·areal)\nengine = ${fmt(r.engineMass)} kg   (P·${fmt(ekw,1)} kg/kW)\ntank   = ${fmt(r.tankMass)} kg   (${fmt(tkf)}%·m_p)\nmargin = dry bus − array − engine − tank = ${fmt(r.dry)} − ${fmt(r.arrayMass)} − ${fmt(r.engineMass)} − ${fmt(r.tankMass)} = ${fmt(r.busPayload)} kg\nMust stay ≥ 0 or the design is NOT FEASIBLE.`});
+    c:`m_arr  = ${fmt(r.arrayMass)} kg   (P/(S₀·η_cell)·areal)\nm_eng  = ${fmt(r.engineMass)} kg   (P·${fmt(ekw,1)} kg/kW)\nm_tank = ${fmt(r.tankMass)} kg   (${fmt(tkf)}%·m_p)\nm_margin = dry bus − m_arr − m_eng − m_tank = ${fmt(r.dry)} − ${fmt(r.arrayMass)} − ${fmt(r.engineMass)} − ${fmt(r.tankMass)} = ${fmt(r.busPayload)} kg\nMust stay ≥ 0 or the design is NOT FEASIBLE.`});
   document.getElementById('kpis').innerHTML=K.map(k=>
-    `<div class="kpi" data-k="${k.l}" title="${k.d}">`+
+    `<div class="kpi" data-k="${k.l}" title="${k.s}">`+
       `<div class="v">${k.v}</div><div class="k">${k.l}</div>`+
-      `<div class="kcalc"><div class="kdesc">${k.d}</div><div class="khead"><span>How it’s computed (current values)</span><button class="kcopy" type="button">copy</button></div><pre>${k.i}\n\n${k.c}</pre></div>`+
+      `<div class="kcalc"><div class="ksymline"><b>Symbol:</b> ${k.s}</div><div class="kdesc">${k.d}</div><div class="khead"><span>How it’s computed (current values)</span><button class="kcopy" type="button">copy</button></div><pre>${k.i}\n\n${k.c}</pre></div>`+
     `</div>`).join('');
   document.querySelectorAll('#kpis .kpi').forEach(el=>{ if(openKpis.has(el.dataset.k)) el.classList.add('open'); });
   // badges

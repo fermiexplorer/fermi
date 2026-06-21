@@ -29,6 +29,7 @@ RESET_AND_COMPUTE = """
 (args) => {
   const [defs, radioDefs, over, radioOver] = args;
   for (const [k,v] of Object.entries(defs)) document.getElementById(k).value = v;
+  document.getElementById('propsel').value = 'Xenon|8|131.29';
   for (const [k,v] of Object.entries(radioDefs)) document.querySelector(`input[name=${k}][value="${v}"]`).checked = true;
   for (const [k,v] of Object.entries(over)) document.getElementById(k).value = v;
   for (const [k,v] of Object.entries(radioOver)) document.querySelector(`input[name=${k}][value="${v}"]`).checked = true;
@@ -37,7 +38,7 @@ RESET_AND_COMPUTE = """
           tiltDeg:r.tiltDeg, tiltAbs:Math.abs(r.tiltDeg), vinf:r.vinfSun, minFuelYr:r.minFuelYr,
           minWet:r.minWet, thrust:r.thrust, burnYr:r.burnYr, E:r.E, arrayArea:r.arrayArea,
           arrayMass:r.arrayMass, engineMass:r.engineMass, tankMass:r.tankMass,
-          busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible};
+          busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp};
 }
 """
 
@@ -128,6 +129,11 @@ def run(page):
     check("engine kg/kW↑ cuts dry-bus margin", en["busPayload"] < base["busPayload"])
     tk = comp({"tankfrac": 20})
     check("tank %↑ raises tank mass", tk["tankMass"] > base["tankMass"])
+
+    # --- PROPELLANT choice couples to effective Isp (lighter ion -> higher Isp -> less fuel) ---
+    ar = comp({"propsel": "Argon|16|39.95"})
+    check("Argon -> ~1.81x effective Isp vs Xenon", abs(ar["isp"]/base["isp"] - 1.81) < 0.05, f"{ar['isp']/base['isp']:.2f}x")
+    check("Argon -> lower propellant fraction than Xenon", ar["f"] < base["f"] - 0.05, f"{base['f']:.2f}->{ar['f']:.2f}")
 
     # --- POWER SOURCE radio ---
     fc = comp(radio={"pwr": "fuelcell"}); nu = comp(radio={"pwr": "nuclear"})
