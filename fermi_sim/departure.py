@@ -133,6 +133,25 @@ def earth_soi_radius(r_sun_au: float = 1.0) -> float:
     return a * (c.MU_EARTH / c.MU_SUN) ** 0.4
 
 
+def injection_pointing_dv(sigma_deg: float, alt_km: float = 590.0) -> float:
+    """Correction Δv (m/s) for an RMS pointing error in the LEO injection velocity. A direction
+    error σ at the circular parking-orbit speed must be re-aimed onto the departure asymptote;
+    the velocity-vector correction of magnitude σ at speed v_circ is Δv = 2·v_circ·sin(σ/2).
+    """
+    if sigma_deg <= 0.0:
+        return 0.0
+    v_circ = math.sqrt(c.MU_EARTH / (c.R_EARTH + alt_km * 1e3))
+    return 2.0 * v_circ * math.sin(math.radians(sigma_deg) / 2.0)
+
+
+def gnc_steering_factor(sigma_deg: float) -> float:
+    """Cosine steering-loss factor for an RMS thrust-pointing error σ during the orbit-raising
+    spiral & escape: only cos σ of the thrust is useful, so the required Δv inflates by sec σ.
+    Returns the multiplier (≥ 1) to apply to the ideal spiral Δv.
+    """
+    return 1.0 / math.cos(math.radians(max(0.0, min(89.0, sigma_deg))))
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float

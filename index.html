@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 59</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 60</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -186,8 +186,18 @@
         <div class="hint">Circular low-Earth parking orbit (the conservative baseline). The ion engine spirals out from here under continuous tangential thrust; the departure Δv is set by the orbit energy √(μ⊕/a) plus the heliocentric v∞.</div>
       </div>
       <div class="ctrl">
+        <label>Injection pointing error <b><span id="o_injerr">0.5</span>°</b></label>
+        <input type="range" id="injerr" min="0" max="3" step="0.1" value="0.5">
+        <div class="hint">RMS error in the <b>LEO injection</b> velocity direction. To re-aim onto the departure asymptote the ion engine adds a correction <code>Δv = 2·v_circ·sin(σ/2)</code> (the orbit-raising itself is unaffected). 0° = perfect injection.</div>
+      </div>
+      <div class="ctrl">
+        <label>GNC pointing error <b><span id="o_gncerr">2</span>°</b></label>
+        <input type="range" id="gncerr" min="0" max="10" step="0.5" value="2">
+        <div class="hint">RMS <b>thrust-pointing</b> inaccuracy through the orbit-raising spiral and escape (guidance/nav/control). Off-axis thrust wastes a <b>cosine steering loss</b>, inflating the spiral Δv by <code>sec σ</code>. Small (the long spiral averages random error) but real.</div>
+      </div>
+      <div class="ctrl">
         <label>Departure model</label>
-        <div class="hint">Departure Δv is <b>derived</b> from the integrated low-thrust Earth-escape spiral from the starting orbit (constant tangential thrust) — no penalty knob. The impulsive Oberth floor is shown only as a theoretical lower bound (it would need a high-thrust stage this vehicle does not carry). See the “Departure Δv” KPI.</div>
+        <div class="hint"><b>Pure ion thrust</b> is the baseline: departure Δv is derived from the integrated low-thrust Earth-escape spiral (continuous tangential thrust) — there is no chemical/impulsive kick. As a <b>secondary comparison</b>, the impulsive “chemical-boost” floor is shown (what an added high-thrust stage would buy); see the “Departure Δv” and “Chemical-boost option” KPIs.</div>
       </div>
     </div>
 
@@ -689,7 +699,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 59, SRC_COMMIT = 'HEAD';
+const BUILD = 60, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -699,7 +709,7 @@ const BUILD = 59, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -723,10 +733,15 @@ function compute(){
   // DERIVED low-thrust spiral (Plan 02): the ion engine must spiral out of Earth, so the
   // budget is the integrated constant-tangential-thrust escape (closed-form fit), NOT the
   // impulsive Oberth floor (unreachable without a high-thrust stage this vehicle lacks).
-  const needAt=(Ts)=>{ const ican=intercept(Ts);
+  // navigation margins (physical): GNC thrust-pointing error → cosine steering loss (sec σ);
+  // LEO-injection pointing error → a re-aim correction Δv. Both inflate the departure budget.
+  const gncF=gncSteeringFactor(val('gncerr')), injDv=injectionPointingDv(val('injerr'), alt);
+  const baseDvAt=(Ts)=>{ const ican=intercept(Ts);
     return ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
          : Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain); };
+  const needAt=(Ts)=> baseDvAt(Ts)*gncF + injDv;       // apply the navigation margins
   const ic=intercept(T), dvDesign=needAt(T);
+  const dvIdeal=baseDvAt(T), gncMargin=dvIdeal*(gncF-1), injMargin=injDv;   // ideal + the two margins (m/s)
   // global fuel optimum: the arrival that minimises Δv (and thus propellant)
   let Topt=tangentialT(), dvMin=Infinity;
   for(let y=58000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts); if(n<dvMin){ dvMin=n; Topt=Ts; } }
@@ -765,7 +780,7 @@ function compute(){
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
-    dryPower,busPayload,propName};
+    dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr')};
 }
 
 // ----- render KPIs + badges -----
@@ -850,6 +865,13 @@ function render(){
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:'The total velocity change the ion propulsion must supply from LEO. It is DERIVED from the integrated low-thrust Earth-escape spiral (continuous tangential thrust) — not the impulsive Oberth floor, which would need a high-thrust kick stage this vehicle does not carry. This is the number that sizes the propellant, so minimising it (by arrival choice) is the design objective.',
     c:dvSteps});
+  K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
+    d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
+    c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
+  { const mpFloor=r.dryEff*(Math.exp(r.dvFloor/ve)-1);
+  K.push({l:'Chemical-boost option', v:fmt(r.dvFloor/1e3,1)+' km/s · '+fmt(mpFloor)+' kg', i:inl('T','alt'), s:'comparison: departure Δv & xenon if a high-thrust chemical stage did the LEO escape',
+    d:'Secondary comparison — NOT the baseline. If an initial CHEMICAL boost stage performed the Earth escape impulsively (capturing the Oberth effect at perigee), the ion engine would only need the impulsive floor Δv — far less xenon — at the cost of carrying a chemical stage. Pure-ion instead spirals out and pays the ~spiral-tax Δv, avoiding that stage entirely.',
+    c:`impulsive (chemical-boost) floor Δv = ${fmt(r.dvFloor/1e3,2)} km/s   (vs pure-ion ${fmt(r.dvDesign/1e3,2)} km/s)\nxenon at the floor = m_dry+pay·(e^(Δv/v_e)−1) = ${fmt(r.dryEff)}·(e^(${fmt(r.dvFloor,0)}/${fmt(ve,0)})−1) = ${fmt(mpFloor)} kg   (vs ${fmt(r.mp)} kg pure-ion)\nTrade: saves ${fmt(r.mp-mpFloor)} kg xenon, but adds a chemical stage (its own mass, cost & complexity).`}); }
   K.push({l:'Propellant fraction', v:fmt(100*r.f,1)+'%', i:inl('isp','prop'), s:'f — propellant ÷ wet mass = m_p / m_wet',
     d:'The fraction of the fuelled (wet) mass that is propellant. The rocket equation fixes it from the Δv and the exhaust velocity (Isp) alone — it does NOT depend on how large the spacecraft is. Lower is better: more of every kilogram is then useful structure and payload rather than fuel.',
     c:`${dvRef}\n${ispScale}\nv_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s\nMR = e^(Δv/v_e) = e^(${fmt(r.dvDesign,0)}/${fmt(ve,0)}) = ${fmt(r.MR,3)}\nf = 1 − 1/MR = ${fmt(r.f,3)} = ${fmt(100*r.f,1)}%   (depends on Δv and Isp only, not on spacecraft mass)`});
@@ -941,7 +963,7 @@ function drawCharts(r){
     Ts.push(y); fl.push(f); de.push(lowthrustDepartureDv(ic.vinf,ic.tiltDeg,altC,altC)/1e3); vi.push(ic.vinf/1e3); }
   Plotly.react('chartDv',[
     {x:Ts,y:de,name:'Design Δv — derived low-thrust spiral',line:{color:'#4cc2ff'}},
-    {x:Ts,y:fl,name:'Impulsive floor (reference; needs a kick stage)',line:{color:'#3fb950',dash:'dot'}},
+    {x:Ts,y:fl,name:'With a chemical boost (comparison) — impulsive floor',line:{color:'#3fb950',dash:'dot'}},
     {x:Ts,y:vi,name:'cruise v∞ (right axis)',line:{color:'#d29922'},yaxis:'y2'},
     ...(r.feasible?[{x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...de)+2],name:'derived arrival',line:{color:'#8b949e',dash:'dash'},showlegend:false}]:[]),
   ],{...LAYOUT('Δv (left) & cruise speed v∞ (right) vs arrival time'),margin:{l:55,r:52,t:34,b:42},
@@ -1617,6 +1639,8 @@ function syncLabels(){
   document.getElementById('o_T').textContent=fmt(val('T'));
   document.getElementById('o_pay').textContent=val('pay').toFixed(1);
   document.getElementById('o_alt').textContent=val('alt');
+  document.getElementById('o_injerr').textContent=val('injerr').toFixed(1);
+  document.getElementById('o_gncerr').textContent=val('gncerr');
   document.getElementById('o_dry').textContent=val('dry');
   document.getElementById('o_isp').textContent=val('isp');
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
@@ -1739,7 +1763,7 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
 });
 
 // ----- shareable URL: every control value is encoded so the link reproduces the state -----
-const URL_KEYS=['T','pay','alt','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
+const URL_KEYS=['T','pay','alt','injerr','gncerr','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
 const URL_SELECTS=['propsel'];   // engine/solar presets only set sliders, which are encoded already
 const URL_RADIOS=['pwr','ga'];
 function baseDir(){ return location.pathname.replace(/[^/]*$/, ''); }   // directory of the current page

@@ -29,6 +29,9 @@ const REF = {
   sun_escape_revs_ref: 0.707852,
   // Earth sphere-of-influence radius (m) — the physical radius of the escape disk
   earth_soi_radius_ref: 924646795.104645,
+  // injection-pointing correction Δv (m/s) for 1° at 590 km, and GNC cosine-loss factor at 5°
+  injection_pointing_dv_ref: 132.0702276157546,
+  gnc_steering_factor_ref: 1.0038198375433474,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
 };
@@ -58,6 +61,8 @@ check("derived low-thrust Δv, 590x35786 elliptical start (km/s)", F.lowthrustDe
 check("Earth-escape revolutions (0.2 N, 600 kg, 590 km)", F.earthEscapeRevs(0.2, 600, 590).revs, REF.earth_escape_revs_ref, 1e-4);
 check("Sun-escape revolutions (0.2 N, 600 kg, 1 AU)", F.sunEscapeRevs(0.2, 600, 1).revs, REF.sun_escape_revs_ref, 1e-4);
 check("Earth SOI radius (m)", F.earthSoiRadius(1), REF.earth_soi_radius_ref, 1e-4);
+check("injection pointing Δv (1°, 590 km)", F.injectionPointingDv(1, 590), REF.injection_pointing_dv_ref, 1e-4);
+check("GNC steering factor (5°)", F.gncSteeringFactor(5), REF.gnc_steering_factor_ref, 1e-4);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 

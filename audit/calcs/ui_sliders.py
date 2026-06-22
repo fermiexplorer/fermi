@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 590, "dry": 255, "isp": 3000, "eta": 0.6,
+    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "dry": 255, "isp": 3000, "eta": 0.6,
     "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 5, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
@@ -104,6 +104,16 @@ def run(page):
     # A higher circular orbit carries more energy → slightly less ion Δv to spiral out.
     alt2000 = comp({"alt": 2000})
     check("higher circular orbit lowers Δv (more orbital energy)", alt2000["dvDesign"] < base["dvDesign"], f"{alt2000['dvDesign']/1e3:.2f} vs {base['dvDesign']/1e3:.2f} km/s")
+
+    # --- NAVIGATION MARGINS: injection + GNC pointing errors add Δv and xenon ---
+    perfect = comp({"injerr": 0, "gncerr": 0})
+    check("zero pointing errors → lowest departure Δv (baseline)", perfect["dvDesign"] < base["dvDesign"])
+    inj3 = comp({"injerr": 3, "gncerr": 0})
+    check("injection pointing error raises Δv", inj3["dvDesign"] > perfect["dvDesign"] + 100)
+    check("injection pointing error raises xenon", inj3["mp"] > perfect["mp"])
+    gnc10 = comp({"injerr": 0, "gncerr": 10})
+    check("GNC pointing error raises Δv (cosine loss)", gnc10["dvDesign"] > perfect["dvDesign"])
+    check("GNC pointing error raises xenon", gnc10["mp"] > perfect["mp"])
 
     # --- POWER: thrust, burn time, array size ---
     pw = comp({"pwrkw": 12})

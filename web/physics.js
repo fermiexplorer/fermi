@@ -92,6 +92,14 @@
   // Earth's sphere-of-influence radius (m): the orbit the spiral must reach to escape Earth =
   // the physical RADIUS of the escape disk. r_SOI = a·(mu_earth/mu_sun)^(2/5) ≈ 145 R_earth.
   function earthSoiRadius(rSunAu = 1) { return rSunAu * AU * Math.pow(MU_EARTH / MU_SUN, 0.4); }
+  // Correction Δv (m/s) for an RMS LEO-injection pointing error σ: re-aim at parking speed, Δv = 2·v_circ·sin(σ/2).
+  function injectionPointingDv(sigmaDeg, altKm = 590) {
+    if (sigmaDeg <= 0) return 0;
+    const vCirc = Math.sqrt(MU_EARTH / (R_EARTH + altKm * 1e3));
+    return 2 * vCirc * Math.sin(sigmaDeg * Math.PI / 180 / 2);
+  }
+  // Cosine steering-loss factor (≥1) for an RMS thrust-pointing error σ during the spiral: Δv ÷ cos σ.
+  function gncSteeringFactor(sigmaDeg) { return 1 / Math.cos(Math.max(0, Math.min(89, sigmaDeg)) * Math.PI / 180); }
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -104,7 +112,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;
