@@ -104,16 +104,16 @@
   // circular orbit, with thrust faded as 1/r² (array power). Saturates → practical SEP falls below
   // the ~23.4 km/s cruise floor (whitepaper Fig. 2). RK4 in SI; cached by argument key.
   const _sepCache = {};
-  function sepAchievableVinf(powerW, wetKg, dryPayKg, ispS, eff = 0.5, r0Au = 1) {
+  function sepAchievableVinf(powerW, wetKg, dryPayKg, ispS, eff = 0.5, r0Au = 1, fadeExp = 2) {
     const ve = ispS * G0, mp = wetKg - dryPayKg;
     if (mp <= 0 || powerW <= 0 || ve <= 0) return 0;
-    const key = [powerW, wetKg, dryPayKg, ispS, eff, r0Au].map(x => +(+x).toFixed(3)).join(',');
+    const key = [powerW, wetKg, dryPayKg, ispS, eff, r0Au, fadeExp].map(x => +(+x).toFixed(3)).join(',');
     if (_sepCache[key] !== undefined) return _sepCache[key];
     const mu = MU_SUN, r0 = r0Au * AU, F0 = 2 * eff * powerW / ve, dt = 5e4, TCAP = 400 * YEAR;
     let rx = r0, ry = 0, vx = 0, vy = Math.sqrt(mu / r0), m = wetKg, t = 0;
     const dr = (s, mass) => { const x = s[0], y = s[1], vxx = s[2], vyy = s[3];
       const r = Math.hypot(x, y) || 1, sp = Math.hypot(vxx, vyy) || 1, g = -mu / (r * r * r);
-      const Fm = mass > dryPayKg ? F0 * (r0 / r) * (r0 / r) : 0;
+      const Fm = mass > dryPayKg ? F0 * (r0 / r) ** fadeExp : 0;     // solar fadeExp=2 (1/r²); nuclear=0 (constant)
       return [vxx, vyy, g * x + Fm * vxx / sp / mass, g * y + Fm * vyy / sp / mass]; };
     while (t < TCAP) {
       const r = Math.hypot(rx, ry);
@@ -126,7 +126,7 @@
       ry += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
       vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
       vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
-      if (m > dryPayKg) { const Fm = F0 * (r0 / Math.hypot(rx, ry)) ** 2; m -= Fm / ve * dt; if (m < dryPayKg) m = dryPayKg; }
+      if (m > dryPayKg) { const Fm = F0 * (r0 / Math.hypot(rx, ry)) ** fadeExp; m -= Fm / ve * dt; if (m < dryPayKg) m = dryPayKg; }
       else { const rr = Math.hypot(rx, ry), ee = 0.5 * (vx * vx + vy * vy) - mu / rr; if (ee < 0 || rr > 8 * AU) break; }
       t += dt;
     }

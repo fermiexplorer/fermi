@@ -153,7 +153,7 @@ def gnc_steering_factor(sigma_deg: float) -> float:
 
 
 def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,
-                        eff: float = 0.5, r0_au: float = 1.0) -> float:
+                        eff: float = 0.5, r0_au: float = 1.0, fade_exp: float = 2.0) -> float:
     """Maximum heliocentric excess speed v∞ (m/s) a solar-electric probe can actually reach from a
     1-AU circular heliocentric orbit, accounting for the 1/r² SOLAR-POWER FADE that throttles the
     thrust as the probe recedes. This is the conservative feasibility quantity from the partner
@@ -182,7 +182,8 @@ def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s:
         x, y, vxx, vyy = state
         r = math.hypot(x, y) or 1.0
         sp = math.hypot(vxx, vyy) or 1.0
-        Fm = F0 * (r0 / r) ** 2 if mass > dry_pay_kg else 0.0
+        # fade_exp=2 → solar 1/r² power fade; fade_exp=0 → constant power (nuclear-electric)
+        Fm = F0 * (r0 / r) ** fade_exp if mass > dry_pay_kg else 0.0
         ag = -mu / (r * r * r)
         return [vxx, vyy, ag * x + Fm * vxx / sp / mass, ag * y + Fm * vyy / sp / mass]
 
@@ -203,7 +204,7 @@ def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s:
         vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
         vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
         if m > dry_pay_kg:
-            Fm = F0 * (r0 / math.hypot(rx, ry)) ** 2
+            Fm = F0 * (r0 / math.hypot(rx, ry)) ** fade_exp
             m -= (Fm / ve) * dt
             if m < dry_pay_kg:
                 m = dry_pay_kg

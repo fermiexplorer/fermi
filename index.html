@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 61</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 62</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -246,7 +246,7 @@
       <div class="radios">
         <label><input type="radio" name="pwr" value="solar" checked> Solar array (default — free energy, 1/r²)</label>
         <label><input type="radio" name="pwr" value="fuelcell"> Fuel cell <span class="exp">experimental</span> (chemical, energy-limited)</label>
-        <label><input type="radio" name="pwr" value="nuclear"> Nuclear / RTG <span class="exp">experimental</span> (energy-dense, heavy/kW)</label>
+        <label><input type="radio" name="pwr" value="nuclear"> Nuclear-electric (reactor) <span class="exp">experimental</span> (constant power — no 1/r² fade)</label>
       </div>
       <div class="ctrl" style="margin-top:10px">
         <label>Power at 1 AU <b><span id="o_pwr">5.0</span> kW</b></label>
@@ -274,8 +274,10 @@
         <div class="hint">Fuel-cell efficiency assumed 60%.</div>
       </div>
       <div class="ctrl" id="nucOpts" style="display:none">
-        <label>RTG specific power <b><span id="o_rtg">5</span> W/kg</b></label>
-        <input type="range" id="rtg" min="2" max="10" step="0.5" value="5">
+        <label>Reactor specific power <b><span id="o_rtg">40</span> W/kg</b></label>
+        <input type="range" id="rtg" min="2" max="50" step="1" value="40">
+        <div class="hint">RTG ≈ 5 W/kg; fission NEP (Kilopower→JIMO class) ≈ 25–50 W/kg. Constant power
+          removes the 1/r² fade — the only pure-electric path that reaches the cruise floor.</div>
       </div>
     </div>
 
@@ -699,7 +701,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 61, SRC_COMMIT = 'HEAD';
+const BUILD = 62, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -736,10 +738,22 @@ function compute(){
   // navigation margins (physical): GNC thrust-pointing error → cosine steering loss (sec σ);
   // LEO-injection pointing error → a re-aim correction Δv. Both inflate the departure budget.
   const gncF=gncSteeringFactor(val('gncerr')), injDv=injectionPointingDv(val('injerr'), alt);
+  // CONSERVATIVE departure Δv. Pure electric (ga=direct) does NOT cheaply borrow Earth's velocity:
+  // it must spiral up heliocentrically to v∞, which empirically costs v∞ + ~6 km/s (the low-thrust
+  // "spiral tax", from the integrated 1-AU spiral). Oberth/Jupiter buy v∞ from the gravity well.
+  // CONSERVATIVE pure-EP departure. The optimistic spiral (lowthrustDepartureDv) lets the probe
+  // borrow Earth's 29.8 km/s by building the hyperbolic excess DURING Earth escape (Oberth-deep).
+  // The conservative model instead builds v∞ on the HELIOCENTRIC spiral (Strategy 2, the whitepaper's
+  // case — where 1/r² solar power fades): that omitted heliocentric plane-raising leg adds a roughly
+  // fixed ~5 km/s. The tilt-dependence (and thus the ~73 kyr fuel optimum) is preserved by reusing the
+  // spiral fit; the constant offset shifts the budget without moving the optimum.
+  const EP_CONSERV_OFFSET=5000;
   const baseDvAt=(Ts)=>{ const ican=intercept(Ts);
-    return ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
-         : Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain); };
+    if(ga==='oberth')  return oberthBurnFor(val('rp'),ican.vinf)+2000;
+    if(ga==='jupiter') return Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain);
+    return lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) + EP_CONSERV_OFFSET; };
   const needAt=(Ts)=> baseDvAt(Ts)*gncF + injDv;       // apply the navigation margins
+  const dvOptimistic=Math.max(0, lowthrustDepartureDv(intercept(T).vinf, intercept(T).tiltDeg, alt, apo)-gain); // Earth-borrow spiral (comparison)
   const ic=intercept(T), dvDesign=needAt(T);
   const dvIdeal=baseDvAt(T), gncMargin=dvIdeal*(gncF-1), injMargin=injDv;   // ideal + the two margins (m/s)
   // global fuel optimum: the arrival that minimises Δv (and thus propellant)
@@ -768,7 +782,7 @@ function compute(){
   let psMass, psLabel;
   if(pwr==='solar'){ psMass=arrayMass; psLabel='Solar array'; }
   else if(pwr==='fuelcell'){ const ech=parseFloat(document.getElementById('reactant').value)*0.6; psMass=E/ech; psLabel='Fuel-cell reactant'; }
-  else { psMass=pwrW/val('rtg'); psLabel='RTG'; }
+  else { psMass=pwrW/val('rtg'); psLabel='Reactor'; }
   const dryPower=(pwr==='fuelcell')?0:psMass;
   const busPayload=dry-dryPower-engineMass-tankMass;
   // --- feasibility: the design is IMPOSSIBLE when the tank can't hold the propellant,
@@ -778,17 +792,24 @@ function compute(){
   // can the probe actually reach the heliocentric cruise floor given the 1/r² power fade? The
   // achievable v∞ saturates, so practical SEP masses fall short — this, not mass closure, is the
   // binding feasibility test. (Oberth/Jupiter buy v∞ from the gravity well, so the gate doesn't apply.)
-  const achievableVinf = (ga==='direct') ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta) : Infinity;
+  // SOLAR power fades 1/r² (→ achievable v∞ saturates below the floor); NUCLEAR-ELECTRIC is
+  // constant power (fade exponent 0) — the EP-only escape from the 1/r² ceiling.
+  const fadeExp = (pwr==='solar') ? 2 : 0;
+  const achievableVinf = (ga==='direct') ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, fadeExp) : Infinity;
   const powerFeasible = achievableVinf >= vinfSun;
   let feasible=true, infeasReason='';
-  if(f>=FMAX){ feasible=false; infeasReason=`propellant fraction ${fmt(100*f,0)}% exceeds the ~${100*FMAX}% tank/structure ceiling — at this Isp the Δv needs more propellant than the vehicle can physically carry`; }
+  // The power gate is the DECISIVE conservative test for a pure-electric departure — a v∞ that
+  // saturates below the floor cannot be fixed by more tankage — so it is reported first.
+  if(!powerFeasible){ feasible=false; infeasReason = (pwr==='solar')
+      ? `power-limited — solar power fades as 1/r², so the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Pure solar-electric does NOT close; switch to a nuclear-electric reactor (constant power), or enable the solar-Oberth (Jupiter) departure or a chemical boost`
+      : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the reactor power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
+  else if(f>=FMAX){ feasible=false; infeasReason=`propellant fraction ${fmt(100*f,0)}% exceeds the ~${100*FMAX}% tank/structure ceiling — at this Isp the Δv needs more propellant than the vehicle can physically carry`; }
   else if(busPayload<0){ feasible=false; infeasReason=`mass doesn't close — the sized array + engine + tank (${fmt(dry-busPayload,0)} kg) exceed the ${fmt(dry,0)} kg dry bus; raise the dry-bus mass, cut power, or use lighter cells`; }
-  else if(!powerFeasible){ feasible=false; infeasReason=`power-limited — solar power fades as 1/r², so the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Pure solar-electric does NOT close without a gravity assist; enable the solar-Oberth (Jupiter) departure or a chemical boost`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr'),
-    achievableVinf,powerFeasible,ga};
+    achievableVinf,powerFeasible,ga,fadeExp,dvOptimistic};
 }
 
 // ----- render KPIs + badges -----
@@ -874,11 +895,11 @@ function render(){
     d:'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞"), and the impulsive Oberth floor (see "Chemical-boost option") is the kick-stage comparison.',
     c:dvSteps});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
-    i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under 1/r² solar-power fade vs the required floor',
-    d:'THE conservative feasibility test (matches the partner whitepaper Fig. 2). As the probe spirals out, array power falls as 1/r², so the thrust starves and the achievable cruise speed SATURATES. A pure solar-electric departure closes only if this reaches the required v∞ — and for every practical mass it does not, so pure-SEP does NOT close without a gravity assist. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
+    i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
+    d:'THE conservative feasibility test (matches the partner whitepaper Fig. 2). For SOLAR, array power falls as 1/r² as the probe spirals out, so thrust starves and the achievable cruise speed SATURATES below the floor — pure solar-electric does NOT close. For NUCLEAR-ELECTRIC the power is CONSTANT (fade exponent 0): the spiral keeps thrusting and DOES reach the floor — this is the only pure-electric (no gravity assist) path that closes. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
     c:(r.ga==='direct'
-       ? `achievable v∞ (1/r² fade, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':'SATURATES BELOW the floor → pure SEP NOT feasible (enable Oberth/Jupiter or a chemical boost)'}`
-       : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the 1/r² solar-electric ceiling does not bind here.`)});
+       ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible (switch to nuclear-electric, or enable Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
+       : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the solar-electric ceiling does not bind here.`)});
   K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
     d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
     c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
@@ -948,9 +969,9 @@ function render(){
   b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
   const xf=r.mp/r.wet;
   b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `${r.propName} fraction ${fmt(100*xf)}%`]);
-  if(r.pwr==='solar') b.push(['ok','✓ Solar: ~tens of kg, energy free near Sun']);
+  if(r.pwr==='solar') b.push([r.powerFeasible?'ok':'no', r.powerFeasible?'✓ Solar: ~tens of kg, energy free near Sun':'✗ Solar: 1/r² fade — v∞ saturates below the floor']);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
-  if(r.pwr==='nuclear') b.push([r.psMass<200?'mid':'no', `△ RTG: ${fmt(r.psMass)} kg (heavy per kW)`]);
+  if(r.pwr==='nuclear') b.push([r.powerFeasible?'ok':'mid', `${r.powerFeasible?'✓':'△'} Nuclear-electric: ${fmt(r.psMass)} kg reactor, constant power (no 1/r² fade)`]);
   b.push([r.busPayload>0?'ok':'no', r.busPayload>0
     ? `✓ Mass closes: ${fmt(r.busPayload)} kg dry-bus margin`
     : `✗ Over budget by ${fmt(-r.busPayload)} kg`]);

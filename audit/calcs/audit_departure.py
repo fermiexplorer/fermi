@@ -154,7 +154,7 @@ def run() -> None:
     # --- conservative 1/r² SEP achievable-v∞ gate: independent (Euler-Cromer, finer dt) ---
     from fermi_sim.departure import sep_achievable_vinf
 
-    def sep_vinf_indep(power_w, wet, dry, isp, eff=0.5):
+    def sep_vinf_indep(power_w, wet, dry, isp, eff=0.5, fade_exp=2.0):
         ve = isp * c.G0
         if wet - dry <= 0:
             return 0.0
@@ -165,7 +165,7 @@ def run() -> None:
             if r > 80 * c.AU:
                 break
             sp = math.hypot(vx, vy) or 1.0
-            Fm = F0 * (r0 / r) ** 2 if m > dry else 0.0
+            Fm = F0 * (r0 / r) ** fade_exp if m > dry else 0.0
             vx += (-mu * x / r**3 + Fm * vx / sp / m) * dt
             vy += (-mu * y / r**3 + Fm * vy / sp / m) * dt
             x += vx * dt; y += vy * dt
@@ -185,6 +185,19 @@ def run() -> None:
           rel_err(v_rk4, v_ind) < 0.03, f"{v_rk4/1e3:.2f} vs {v_ind/1e3:.2f} km/s")
     check("conservative SEP (20 kW / 1600 kg) saturates BELOW the 23.4 km/s floor",
           v_rk4 < 23.4e3, f"achievable {v_rk4/1e3:.2f} km/s")
+
+    # --- EP-ONLY closure: nuclear-electric is CONSTANT power (fade_exp=0) — no 1/r² starvation. ---
+    # Same propellant, same probe; only the power law differs. Constant power MUST reach the floor
+    # where solar saturated. Closing design: 5 kW, 717 kg wet / 256 kg dry, gridded ion (Isp 3000).
+    nep_rk4 = sep_achievable_vinf(5000.0, 717.0, 256.0, 3000.0, 0.55, 1.0, 0.0)
+    nep_ind = sep_vinf_indep(5000.0, 717.0, 256.0, 3000.0, 0.55, 0.0)
+    sol_same = sep_achievable_vinf(5000.0, 717.0, 256.0, 3000.0, 0.55, 1.0, 2.0)
+    check("NEP achievable v∞: RK4 ≈ independent Euler-Cromer (<3%)",
+          rel_err(nep_rk4, nep_ind) < 0.03, f"{nep_rk4/1e3:.2f} vs {nep_ind/1e3:.2f} km/s")
+    check("EP-only closure: NEP (constant power) REACHES the 23.4 km/s floor",
+          nep_rk4 >= 23.4e3, f"achievable {nep_rk4/1e3:.2f} km/s")
+    check("same probe on SOLAR (1/r² fade) does NOT reach the floor — power law is decisive",
+          sol_same < nep_rk4 and sol_same < 23.4e3, f"solar {sol_same/1e3:.2f} vs nep {nep_rk4/1e3:.2f} km/s")
 
 
 if __name__ == "__main__":

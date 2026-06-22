@@ -34,6 +34,8 @@ const REF = {
   gnc_steering_factor_ref: 1.0038198375433474,
   // conservative 1/r² power-limited achievable v∞ (m/s): 20 kW, 1600 kg wet, 300 kg dry, Isp 1585, η0.5
   sep_achievable_vinf_ref: 19547.62063596138,
+  // constant-power (nuclear-electric, fade_exp=0) achievable v∞ (m/s), same args — the EP-only escape
+  sep_achievable_vinf_nep_ref: 31112.327059089537,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
 };
@@ -65,7 +67,8 @@ check("Sun-escape revolutions (0.2 N, 600 kg, 1 AU)", F.sunEscapeRevs(0.2, 600, 
 check("Earth SOI radius (m)", F.earthSoiRadius(1), REF.earth_soi_radius_ref, 1e-4);
 check("injection pointing Δv (1°, 590 km)", F.injectionPointingDv(1, 590), REF.injection_pointing_dv_ref, 1e-4);
 check("GNC steering factor (5°)", F.gncSteeringFactor(5), REF.gnc_steering_factor_ref, 1e-4);
-check("SEP achievable v∞ under 1/r² (20 kW, 1600 kg)", F.sepAchievableVinf(20000,1600,300,1585,0.5), REF.sep_achievable_vinf_ref, 2e-3);
+check("SEP achievable v∞ under 1/r² (20 kW, 1600 kg)", F.sepAchievableVinf(20000,1600,300,1585,0.5,1,2), REF.sep_achievable_vinf_ref, 2e-3);
+check("NEP achievable v∞ constant power (fade_exp=0)", F.sepAchievableVinf(20000,1600,300,1585,0.5,1,0), REF.sep_achievable_vinf_nep_ref, 2e-3);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 

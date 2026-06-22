@@ -20,7 +20,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 # default control values (must match index.html)
 DEFAULTS = {
     "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "dry": 255, "isp": 1585, "eta": 0.5,
-    "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 5, "rp": 6,
+    "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 40, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -63,6 +63,15 @@ def run(page):
     check("default achievable v∞ saturates below the floor", base["achievableVinf"] < base["vinf"],
           f"{base['achievableVinf']/1e3:.1f} < {base['vinf']/1e3:.1f} km/s")
     check("solar-Oberth (Jupiter) departure DOES close", comp(radio={"ga": "oberth"})["feasible"] is True)
+    # EP-ONLY closure: nuclear-electric is CONSTANT power (no 1/r² fade), so the spiral reaches the
+    # floor where solar cannot. The closing pure-electric design is ~5 kW reactor + gridded ion.
+    nep = comp({"isp": 3000, "rtg": 40}, {"pwr": "nuclear", "ga": "direct"})
+    check("pure-EP nuclear-electric (5 kW, gridded ion) DOES close — the EP-only path", nep["feasible"] is True,
+          f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s, feasible={nep['feasible']}")
+    check("nuclear-electric reaches the floor (constant power, no fade)", nep["powerFeasible"] is True,
+          f"{nep['achievableVinf']/1e3:.1f} >= {nep['vinf']/1e3:.1f}")
+    check("solar at the same Isp/power still does NOT close (1/r² fade)",
+          comp({"isp": 3000}, {"pwr": "solar", "ga": "direct"})["feasible"] is False)
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
     check("default arrival sits at the fuel optimum", abs(base["arrivalYr"] - base["minFuelYr"]) < 600, f"{base['arrivalYr']:.0f} vs {base['minFuelYr']:.0f}")
 
@@ -102,7 +111,10 @@ def run(page):
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 
     # --- DERIVED low-thrust departure Δv (no penalty knob anymore) ---
-    check("design Δv at default 590 circular is the derived spiral (~25.0 km/s)", abs(base["dvDesign"]/1e3 - 25.0) < 0.3, f"{base['dvDesign']/1e3:.2f}")
+    # CONSERVATIVE pure-EP departure: build v∞ on the heliocentric spiral (v∞ + ~6 km/s tax) + the
+    # plane-change penalty — ~30 km/s at the optimum, NOT the optimistic 25 km/s Earth-borrow spiral.
+    check("design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
+          abs(base["dvDesign"]/1e3 - 29.8) < 0.6, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
@@ -154,7 +166,7 @@ def run(page):
     # --- POWER SOURCE radio ---
     fc = comp(radio={"pwr": "fuelcell"}); nu = comp(radio={"pwr": "nuclear"})
     check("power source = fuel cell relabels", "Fuel-cell" in fc["psLabel"])
-    check("power source = RTG relabels", nu["psLabel"] == "RTG")
+    check("power source = reactor relabels", nu["psLabel"] == "Reactor")
 
     # --- ARCHITECTURE radio ---
     jup = comp(radio={"ga": "jupiter"})
