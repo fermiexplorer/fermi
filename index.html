@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 52</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 53</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 52, SRC_COMMIT = 'HEAD';
+const BUILD = 53, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1140,7 +1140,7 @@ function drawFollow3d(c,st){
   if(ed && ed.w<=0){                                            // EARTH: top-down, disk grows, zoom tracks the disk
     ctr=Epos.slice(); Hbase=ed.rAU*1.4; tc=0; rDraw=ed.rAU;
     diskOp=0.20+0.18*smooth01(ed.prog/0.4);                     // green disk visible from the start, fills in
-    lineOp=0.9*(1-smooth01(ed.prog/0.01));                      // a few tight turns only in the first ~1% → then pure disk
+    lineOp=0.9*(1-smooth01(animU/0.001));                       // a few tight turns only in the first ~0.1% of Play → then pure disk
   } else if(ed){                                                // TRANSITION: scheduled SOI→helio dolly, tilt to chase
     const s=smooth01(ed.w), Hstart=ed.soiAU*1.4, Htgt=Math.max(helioHbase, Hstart*1.001);
     Hbase=Hstart*Math.pow(Htgt/Hstart, s);                      // geometric (log-uniform) zoom = visually smooth
@@ -1201,12 +1201,23 @@ function drawFollow3d(c,st){
       const sp=spiralPts(Epos, ed.rpAU, Math.min(rDraw, ed.rpAU*1.6), 4, 30, Uax, Vax);
       extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#56d364',width:2},opacity:lineOp,hoverinfo:'skip',showlegend:false});
     }
-    // probe rides the disk edge while orbit-raising; on escape it cross-fades onto the REAL
-    // curved heliocentric arc (no straight-line→curve jerk), lerping out to the true position.
+    // probe rides the disk edge while orbit-raising. On escape, draw a curve that leaves the
+    // disk EDGE TANGENTIALLY (not Earth's centre) and bends out to the probe; its root shrinks
+    // to Earth's centre exactly at the hand-off, so it matches the heliocentric arc (no jump).
     const phi0=animU*24, cphi=Math.cos(phi0), sphi=Math.sin(phi0);
-    const E=[Epos[0]+rDraw*(cphi*Uax[0]+sphi*Vax[0]), Epos[1]+rDraw*(cphi*Uax[1]+sphi*Vax[1]), Epos[2]+rDraw*(cphi*Uax[2]+sphi*Vax[2])];
-    if(ed.w>0){ const s=smooth01(ed.w); flownOp=s; probe=[E[0]+(p[0]-E[0])*s, E[1]+(p[1]-E[1])*s, E[2]+(p[2]-E[2])*s]; }
-    else { flownOp=0; probe=E; }
+    const rad=[cphi*Uax[0]+sphi*Vax[0], cphi*Uax[1]+sphi*Vax[1], cphi*Uax[2]+sphi*Vax[2]];
+    flownOp=0;                                                  // disk view draws its own escape curve, not the helio arc
+    if(ed.w>0){
+      const s=smooth01(ed.w), rEdge=rDraw*(1-s);                // root: disk edge early → centre by the hand-off
+      const S=[Epos[0]+rEdge*rad[0], Epos[1]+rEdge*rad[1], Epos[2]+rEdge*rad[2]];
+      const tv=[-sphi*Uax[0]+cphi*Vax[0], -sphi*Uax[1]+cphi*Vax[1], -sphi*Uax[2]+cphi*Vax[2]];   // tangent (leaves tangentially)
+      const dl=Math.hypot(p[0]-S[0],p[1]-S[1],p[2]-S[2]);
+      const P1=[S[0]+tv[0]*dl*0.5, S[1]+tv[1]*dl*0.5, S[2]+tv[2]*dl*0.5];
+      const bez=t=>{const a=(1-t)*(1-t),b=2*(1-t)*t,c=t*t; return [a*S[0]+b*P1[0]+c*p[0], a*S[1]+b*P1[1]+c*p[1], a*S[2]+b*P1[2]+c*p[2]];};
+      const bx=[],by=[],bz=[]; for(let i=0;i<=40;i++){ const q=bez(i/40); bx.push(q[0]); by.push(q[1]); bz.push(q[2]); }
+      extra.push({type:'scatter3d',mode:'lines',x:bx,y:by,z:bz,line:{color:'#3fb950',width:3},hoverinfo:'skip',showlegend:false,name:'escape'});
+      probe=bez(s);
+    } else probe=[Epos[0]+rDraw*rad[0], Epos[1]+rDraw*rad[1], Epos[2]+rDraw*rad[2]];
   }
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
