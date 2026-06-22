@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 63</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 64</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -505,7 +505,7 @@
   <table class="chain">
     <tr><th>Architecture</th><th class="v">Onboard Δv from LEO</th><th>Extra hardware / complexity</th><th>Launch-timing window</th><th>When to choose it</th></tr>
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
-    <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield + a way to drop perihelion (retro burn or Venus/Jupiter assist)</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1–2 km/s burn at 4–20 R<sub>☉</sub> yields the full 24 km/s) — but heavier &amp; more complex.</td></tr>
+    <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
@@ -530,7 +530,7 @@
   burn, and worse at high Isp. The mass-optimal fuel-cell EP point with separate reactants is ~1350 s; if
   the spent exhaust is itself used as propellant, <code>v_e ≤ √(2η·e_chem)</code> ≈ 2.4 km/s. A solar array
   delivering the same power masses only tens of kg. <strong>Conclusion: deep-space EP power must be solar
-  (near the Sun) or nuclear/RTG — chemical fuel cells lose by ~3 orders of magnitude.</strong> Since the whole
+  (near the Sun) or nuclear-electric (a multi-kW reactor — an RTG is too low-power) — chemical fuel cells lose by ~3 orders of magnitude.</strong> Since the whole
   burn happens within a few AU of the Sun, solar is the natural match.</p>
 
   <h4>5 · Cruise time &amp; gravity assists</h4>
@@ -540,6 +540,38 @@
   <strong>solar Oberth</strong> burn at a few solar radii is hugely leveraged —
   <code>v∞ = √((v_peri+Δv)² − v_esc²)</code> — so ~1–2 km/s yields the full 24 km/s, but needs a heat shield and
   a way to drop perihelion. Direct solar-electric remains the simplest route.</p>
+
+  <h4>5b · Solar-Oberth, in depth</h4>
+  <p>Diving to a small perihelion makes the spacecraft enormously fast; a burn applied there buys
+  disproportionate energy (Oberth: Δv at high speed adds <code>≈ v·Δv</code> of specific energy). At each
+  perihelion the burn needed to reach the 23.4 km/s cruise floor is:</p>
+  <table class="chain">
+    <tr><th>Perihelion</th><th class="v">Speed at perihelion</th><th class="v">Burn to reach 23.4 km/s</th><th>Sunward-face temp (≈)</th></tr>
+    <tr><td>30 R<sub>☉</sub></td><td class="v">113 km/s</td><td class="v">2.40 km/s</td><td>~1060 K</td></tr>
+    <tr><td>20 R<sub>☉</sub></td><td class="v">138 km/s</td><td class="v">1.97 km/s</td><td>~1300 K</td></tr>
+    <tr><td><b>10 R<sub>☉</sub></b> (Parker-class)</td><td class="v"><b>195 km/s</b></td><td class="v"><b>1.40 km/s</b></td><td><b>~1830 K</b></td></tr>
+    <tr><td>5 R<sub>☉</sub></td><td class="v">276 km/s</td><td class="v">0.99 km/s</td><td>~2600 K</td></tr>
+    <tr><td>3 R<sub>☉</sub></td><td class="v">357 km/s</td><td class="v">0.77 km/s</td><td>~3350 K</td></tr>
+  </table>
+  <p>Buying the same 23.4 km/s at 1 AU (no dive) costs ~6 km/s, so <strong>10 R<sub>☉</sub> gives ~4.3× leverage</strong>
+  and the headline burn falls to ~1.4 km/s. That leverage is real — but three caveats make solar-Oberth an
+  <em>assist-staged, heat-shielded, chemical-at-perihelion</em> architecture rather than a cheap pure-ion shortcut:</p>
+  <ol>
+    <li><b>The perihelion burn must be high-thrust (chemical), not ion.</b> The Oberth benefit exists only during
+      the brief perihelion pass (hours). A ~0.2 N ion thruster would need ~58 days to deliver 1.4 km/s, so it cannot
+      capture the effect — a small storable-chemical or solid kick stage is required at perihelion. So this path is
+      <em>not</em> pure electric propulsion.</li>
+    <li><b>Thermal limit sets the floor at ~10 R<sub>☉</sub>.</b> ~1830 K demands a Parker Solar Probe-class carbon
+      heat shield (Parker grazes ~9–10 R<sub>☉</sub>). Diving deeper (3–5 R<sub>☉</sub>) shrinks the burn further but
+      pushes 2600–3350 K, beyond demonstrated shields — so the practical perihelion is materials-limited, not Δv-limited.</li>
+    <li><b>Getting to perihelion is the expensive leg.</b> Dropping perihelion from 1 AU to ~10 R<sub>☉</sub> means
+      shedding almost all of Earth’s 29.8 km/s of heliocentric angular momentum — via a Jupiter gravity assist or a
+      multi-year Venus-assist tour (Parker used seven). That setup cruise and its targeting are the true cost; the
+      1.4 km/s headline burn is the easy part.</li>
+  </ol>
+  <p>Net: solar-Oberth genuinely closes with a tiny burn, but it <em>sidesteps</em> the 1/r² power wall (heat shield +
+  kick stage + assist tour) rather than solving it — the trade against the constant-power nuclear-electric route, which
+  closes with pure ion but carries a reactor.</p>
 
   <h4>Limitations</h4>
   <ul>
@@ -701,7 +733,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 63, SRC_COMMIT = 'HEAD';
+const BUILD = 64, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -905,7 +937,7 @@ function render(){
     c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
   { const mpFloor=r.dryEff*(Math.exp(r.dvFloor/ve)-1);
   K.push({l:'Chemical-boost option', v:fmt(r.dvFloor/1e3,1)+' km/s · '+fmt(mpFloor)+' kg', i:inl('T','alt'), s:'comparison: departure Δv & xenon if a high-thrust chemical stage did the LEO escape',
-    d:'Secondary comparison — NOT the baseline. If an initial CHEMICAL boost stage performed the Earth escape impulsively (capturing the Oberth effect at perigee), the ion engine would only need the impulsive floor Δv — far less xenon — at the cost of carrying a chemical stage. Pure-ion instead spirals out and pays the ~spiral-tax Δv, avoiding that stage entirely.',
+    d:'Secondary comparison — NOT the baseline. If an initial CHEMICAL boost stage performed the Earth escape impulsively (capturing the Oberth effect at perigee), the ion engine would only need the impulsive floor Δv — far less xenon — at the cost of carrying a chemical stage. Pure-ion instead spirals out and pays the ~spiral-tax Δv, avoiding that stage entirely. SCALE NOTE: a chemical kick only helps if it is BIG. A ~3.7 km/s kick from LEO barely clears Earth’s SOI (~3.5 km/s Earth-relative excess) and leaves the probe still bound to the Sun (heliocentric v∞ ≈ 0). v∞ adds in quadrature, so to top up a power-limited solar-EP stage (~19.5 km/s) to the 23.4 km/s floor the chemical part must still supply √(23.4²−19.5²) ≈ 12.9 km/s of v∞ — a ~10 km/s kick. To reach the floor by chemistry ALONE takes the full ~14 km/s shown here. There is no cheap small-kick shortcut.',
     c:`impulsive (chemical-boost) floor Δv = ${fmt(r.dvFloor/1e3,2)} km/s   (vs pure-ion ${fmt(r.dvDesign/1e3,2)} km/s)\nxenon at the floor = m_dry+pay·(e^(Δv/v_e)−1) = ${fmt(r.dryEff)}·(e^(${fmt(r.dvFloor,0)}/${fmt(ve,0)})−1) = ${fmt(mpFloor)} kg   (vs ${fmt(r.mp)} kg pure-ion)\nTrade: saves ${fmt(r.mp-mpFloor)} kg xenon, but adds a chemical stage (its own mass, cost & complexity).`}); }
   K.push({l:'Propellant fraction', v:fmt(100*r.f,1)+'%', i:inl('isp','prop'), s:'f — propellant ÷ wet mass = m_p / m_wet',
     d:'The fraction of the fuelled (wet) mass that is propellant. The rocket equation fixes it from the Δv and the exhaust velocity (Isp) alone — it does NOT depend on how large the spacecraft is. Lower is better: more of every kilogram is then useful structure and payload rather than fuel.',
