@@ -113,6 +113,7 @@
   #animctl #playbtn { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 13px; white-space: nowrap; }
   #animctl #playbtn:hover { border-color: var(--accent); }
   #tscrub { flex: 1; accent-color: var(--accent); }
+  .logtime { font-size: 12.5px; color: var(--ink); display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; cursor: pointer; }
   #tlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 230px; text-align: right; }
   #chartTimeline { cursor: ew-resize; }
   .vinfo { cursor: help; color: var(--muted); font-size: 10px; margin-left: 6px; border: 1px solid var(--line); border-radius: 50%; width: 15px; height: 15px; line-height: 13px; display: inline-flex; align-items: center; justify-content: center; }
@@ -150,7 +151,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 43</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 44</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -287,6 +288,7 @@
     <div class="topviz">
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
+        <label class="logtime" title="Burn timeline on a log time axis (the ~1-yr burn is visible against the multi-10⁴-yr coast); uncheck for a linear axis."><input type="checkbox" id="logtime" checked> Logarithmic time</label>
         <input type="range" id="tscrub" min="0" max="100" step="0.25" value="0">
         <span id="tlabel"></span>
       </div>
@@ -673,7 +675,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 43, SRC_COMMIT = 'HEAD';
+const BUILD = 44, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1331,22 +1333,24 @@ function drawTimeline(){
     [tSun,  p.tBurn,   '#4cc2ff', `Sun escape · ${fmt(Math.max(0,p.tBurn-p.tEarth),2)} yr`],
     [p.tBurn, p.arrival,'#6e7681', `coast (engine off) · ${fmt(p.arrival)} yr`],
   ];
+  const logT=(document.getElementById('logtime')||{checked:true}).checked;
   const traces=[];
   segs.forEach(s=>{
+    const mid = logT ? Math.sqrt(s[0]*s[1]) : (s[0]+s[1])/2;   // log-midpoint vs linear midpoint
     traces.push({x:[s[0],s[1]],y:[0,0],mode:'lines',line:{color:s[2],width:26},text:s[3],hoverinfo:'text',showlegend:false});
-    traces.push({x:[Math.sqrt(s[0]*s[1])],y:[0.95],mode:'text',text:[s[3]],textfont:{size:10,color:'#c9d4de'},hoverinfo:'skip',showlegend:false});
+    traces.push({x:[mid],y:[0.95],mode:'text',text:[s[3]],textfont:{size:10,color:'#c9d4de'},hoverinfo:'skip',showlegend:false});
   });
   const now=Math.max(x0, craftState().es/YEAR);
   traces.push({x:[now,now],y:[-0.55,0.55],mode:'lines',line:{color:'#d29922',width:3},hoverinfo:'skip',showlegend:false});
   traces.push({x:[now],y:[-0.85],mode:'text',text:['▲ now'],textfont:{size:9,color:'#d29922'},hoverinfo:'skip',showlegend:false});
+  const xaxis = logT
+    ? {type:'log', range:[Math.log10(0.006), Math.log10(p.arrival*1.5)], gridcolor:'#2a323d',tickfont:{size:10},fixedrange:true,title:{text:'years from launch (log)',font:{size:10},standoff:8}}
+    : {type:'linear', range:[0, p.arrival*1.05], gridcolor:'#2a323d',tickfont:{size:10},fixedrange:true,title:{text:'years from launch (linear)',font:{size:10},standoff:8}};
   Plotly.react('chartTimeline',traces,{
     title:{text:'Burn timeline — continuous ion thrust, then coast',font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},
     margin:{l:14,r:16,t:34,b:38},showlegend:false,dragmode:false,
-    xaxis:{type:'log',gridcolor:'#2a323d',tickfont:{size:10},fixedrange:true,
-      title:{text:'years from launch',font:{size:10},standoff:8},
-      range:[Math.log10(0.006), Math.log10(p.arrival*1.5)]},
-    yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
+    xaxis:xaxis, yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
 }
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
@@ -1474,7 +1478,8 @@ function timeToU(tYr){ if(!SIM) return 0; const In=craftState().Inorm;
     if(!gd._fullLayout||!gd._fullLayout.xaxis||!gd._fullLayout.xaxis._length) return;
     const xa=gd._fullLayout.xaxis, bb=gd.getBoundingClientRect();
     const frac=Math.max(0,Math.min(1,(clientX-bb.left-xa._offset)/xa._length));
-    const tYr=Math.pow(10, xa.range[0]+frac*(xa.range[1]-xa.range[0]));
+    const lin=xa.range[0]+frac*(xa.range[1]-xa.range[0]);
+    const tYr=(xa.type==='log')?Math.pow(10,lin):lin;   // range is log10-units on a log axis
     animU=timeToU(tYr); drawViz();
   }
   // Plotly's drag layer swallows events that land on the plot, so intercept at the window in
@@ -1516,6 +1521,8 @@ document.getElementById('show2d').addEventListener('change',(e)=>{
   document.getElementById('twod').style.display = e.target.checked ? '' : 'none';
   if(e.target.checked) drawViz();
 });
+// Burn-timeline time axis: log (default) vs linear — redraw the timeline on toggle.
+document.getElementById('logtime').addEventListener('change',()=>drawTimeline());
 // Overview zoom mode: wide Sun→AC by default, close-up-and-dolly when checked
 document.getElementById('zoomstart').addEventListener('change',()=>{ zoom3dOv=1; drawViz(); });
 // Chase-cam zoom mode: tight chase by default, pull back to AC when unchecked
