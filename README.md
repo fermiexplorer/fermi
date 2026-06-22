@@ -55,7 +55,8 @@ audit/calcs/      independent verification suite (Python + Node parity)
 audit/codex/      Codex independent audit (conclusions + scripts)
 audit/grok/       Grok independent audit (conclusions + scripts)
 audit/gemini/     Gemini independent audit (astropy + scipy solve_ivp)
-docs/             REPORT.md (tender report), plans/, audit prompts
+audit/AUDIT_PROMPTS.md  adversarial audit prompts
+docs/             REPORT.md (tender report), plans/
 ```
 
 ## Run it

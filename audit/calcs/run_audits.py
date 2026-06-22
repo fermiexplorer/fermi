@@ -1,6 +1,6 @@
 """Run the full independent audit suite.
 
-Usage:  .venv/bin/python audits/run_audits.py
+Usage:  .venv/bin/python audit/calcs/run_audits.py
 Exit code is non-zero if any check fails.
 """
 

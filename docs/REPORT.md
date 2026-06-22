@@ -1,7 +1,7 @@
 # Project Fermi — feasibility report
 
 *A first-order analysis for the Alpha Centauri precursor tender. All numbers are
-produced by `run_analysis.py` and independently cross-checked in `audits/`.*
+produced by `run_analysis.py` and independently cross-checked in `audit/`.*
 
 ## The question
 

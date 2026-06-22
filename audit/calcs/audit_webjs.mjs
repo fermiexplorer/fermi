@@ -1,7 +1,7 @@
 // Audit 6 -- web calculator JS vs Python engine parity.
 // Loads the SAME physics module the web page uses (web/physics.js) and checks it
 // against reference values produced by the validated Python engine (fermi_sim).
-// Run:  node audits/audit_webjs.mjs
+// Run:  node audit/calcs/audit_webjs.mjs
 import { createRequire } from "module";
 import { fileURLToPath } from "url";
 import path from "path";

@@ -4,7 +4,7 @@ exercise the tech dropdowns + sliders, run the animation, and screenshot.
 Catches real render errors the DOM-shim parity check cannot (Plotly, 3D WebGL,
 interactions). Requires:  pip install playwright  &&  playwright install chromium
 
-Run:  .venv/bin/python audits/ui_playwright.py
+Run:  .venv/bin/python audit/calcs/ui_playwright.py
 """
 
 import os

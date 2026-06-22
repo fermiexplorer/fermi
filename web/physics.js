@@ -1,6 +1,6 @@
 // Project Fermi -- shared mission physics (browser + Node).
 // Ported from the validated Python engine (fermi_sim/). Loaded by index.html and
-// cross-checked against Python in audits/audit_webjs.mjs. No third-party code.
+// cross-checked against Python in audit/calcs/audit_webjs.mjs. No third-party code.
 (function (root) {
   "use strict";
 

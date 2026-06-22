@@ -1,7 +1,7 @@
 """Smoke / regression tests for the fermi_sim engine.
 
 Run:  .venv/bin/pytest    (or .venv/bin/python -m pytest)
-For the full independent cross-checks see audits/run_audits.py.
+For the full independent cross-checks see audit/calcs/run_audits.py.
 """
 
 import os
