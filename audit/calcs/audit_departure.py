@@ -124,6 +124,33 @@ def run() -> None:
     check("elliptical starting-orbit fit matches integrated spiral to <80 m/s (e up to 0.7, ~0.3%)",
           worst_e < 80.0, f"max |fit - integration| = {worst_e:.0f} m/s")
 
+    # 11. Earth-escape revolution count: analytic N = mu/(8·pi·a·r_p²) vs an INDEPENDENT geocentric
+    #     integration (count swept angle) — confirms the inset's rev count, and N ∝ 1/a.
+    from fermi_sim.departure import earth_escape_revs
+
+    def integ_revs(accel, peri_km):
+        mu = c.MU_EARTH; rp = c.R_EARTH + peri_km * 1e3
+        x, y, vx, vy = rp, 0.0, 0.0, math.sqrt(mu / rp)
+        t = 0.0; ang = 0.0
+        while t < 50 * c.YEAR:
+            r = math.hypot(x, y)
+            if 0.5 * (vx * vx + vy * vy) - mu / r >= 0.0:
+                break
+            sp = math.hypot(vx, vy) or 1.0
+            ax = -mu * x / r**3 + accel * vx / sp
+            ay = -mu * y / r**3 + accel * vy / sp
+            period = 2 * math.pi * math.sqrt(r**3 / mu)
+            dt = min(max(1.0, 0.01 * period), 1800.0)
+            ang += abs((x * vy - y * vx) / (r * r)) * dt
+            vx += ax * dt; vy += ay * dt; x += vx * dt; y += vy * dt; t += dt
+        return ang / (2 * math.pi)
+
+    for accel in (3.3e-4, 1e-3):
+        n_anal, _ = earth_escape_revs(accel, 1.0, 590.0)   # thrust=accel, mass=1 → a=accel
+        n_int = integ_revs(accel, 590.0)
+        check(f"Earth-escape rev count: analytic ≈ integration @ a={accel:.0e} (<3%)",
+              rel_err(n_anal, n_int) < 0.03, f"analytic {n_anal:.0f} vs integ {n_int:.0f}")
+
 
 if __name__ == "__main__":
     run()

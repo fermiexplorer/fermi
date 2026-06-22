@@ -99,6 +99,11 @@
   @media (max-width: 860px) { .viz3drow { grid-template-columns: 1fr; } }
   .vsec3d { margin-top: 18px; }
   .vsec-h { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  .espiralrow { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: center; margin-top: 14px; }
+  @media (max-width: 760px) { .espiralrow { grid-template-columns: 1fr; } }
+  #earthSpiral { min-height: 360px; }
+  .espiralcap { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+  .espiralcap code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; }
   .camcell { display: flex; flex-direction: column; }
   .camctl { font-size: 12px; color: var(--muted); margin: 0 0 4px 2px; }
   .camctl label { display: inline-flex; gap: 5px; align-items: center; color: var(--ink); cursor: pointer; }
@@ -151,7 +156,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 46</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 47</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -337,6 +342,18 @@
         <span><i class="vbar" style="background:#3fb950"></i>Earth-escape spiral (engine ON)</span>
         <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
+      </div>
+      <div class="espiralrow">
+        <div class="chart" id="earthSpiral"></div>
+        <div class="espiralcap">
+          <b>The many-revolution Earth departure.</b> Spiraling out of Earth's gravity well at ~milli-g
+          takes <b>hundreds of revolutions</b> (geocentric, within Earth's Hill sphere) — this is where the
+          ion "spiral tax" (~11 km/s of gravity loss above the impulsive floor) is paid, and it's far below
+          the scale of the solar-system views above. The rev count <code>N = μ/(8π·a·r_p²)</code> scales with
+          the real thrust-to-weight (a = thrust ÷ wet mass): more power or a lighter craft → fewer loops.
+          The ~0.7-yr departure is a single instant on the 75,000-yr timeline, so it plays here at its own
+          scale; with <b>log time</b> the revolutions accelerate (the slow high-altitude end is compressed).
+        </div>
       </div>
     </div>
     <div class="charts">
@@ -681,7 +698,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 46, SRC_COMMIT = 'HEAD';
+const BUILD = 47, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -691,7 +708,7 @@ const BUILD = 46, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -990,7 +1007,7 @@ function drawViz(){
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
-  if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); }   // velocity / Δv vector build-up
+  if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); drawEarthSpiral(SIM); }   // vectors + Earth-escape inset
   setupCamSync();                                     // attach camera-sync listeners once
 
   // 2D views are off by default (checkbox) — only draw them when visible
@@ -1371,6 +1388,41 @@ function drawTimeline(){
     paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},
     margin:{l:14,r:16,t:34,b:38},showlegend:false,dragmode:false,
     xaxis:xaxis, yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
+}
+
+// ----- Earth-escape spiral inset (geocentric) -----
+// The many-revolution climb out of Earth's well that dominates the ion departure Δv. It is far
+// below the solar-scale 3D views, so it gets its own panel. The real rev count N = μ/(8π·a·r_p²)
+// (a = thrust/wet mass) is design-responsive; ~hundreds of loops can't be drawn legibly, so we
+// draw ~48 representative loops and LABEL the true N. The ~0.7-yr departure is a single frame on
+// the 75,000-yr timeline, so the inset runs it over the full Play at its OWN scale; log time makes
+// the revolutions accelerate (compressing the slow high-altitude end), linear is uniform.
+const ESPIRAL_LOOPS = 48, ESPIRAL_ROUT = 140;   // representative loops; visual outer radius (Earth radii)
+function drawEarthSpiral(r){
+  const peri=val('alt'), ee=earthEscapeRevs(r.thrust, r.wet, peri);
+  const rpRE=(R_EARTH+peri*1e3)/R_EARTH;
+  const revProg = logTimeMode() ? (Math.exp(3.5*animU)-1)/(Math.exp(3.5)-1) : animU;  // log: accelerate
+  const phiMax=2*Math.PI*ESPIRAL_LOOPS, phiP=phiMax*revProg;
+  const rAt=ph=>rpRE+(ph/phiMax)*(ESPIRAL_ROUT-rpRE);
+  const sx=[],sy=[],fx=[],fy=[],M=1440;
+  for(let i=0;i<=M;i++){ const ph=phiMax*i/M, rr=rAt(ph), X=rr*Math.cos(ph), Y=rr*Math.sin(ph);
+    sx.push(X); sy.push(Y); if(ph<=phiP){ fx.push(X); fy.push(Y); } }
+  const rP=rAt(phiP), px=rP*Math.cos(phiP), py=rP*Math.sin(phiP);
+  const ex=[],ey=[]; for(let i=0;i<=64;i++){ const a=2*Math.PI*i/64; ex.push(Math.cos(a)); ey.push(Math.sin(a)); }
+  const escaped=revProg>=0.999, drawnDiv=Math.max(1,Math.round(ee.revs/ESPIRAL_LOOPS));
+  Plotly.react('earthSpiral',[
+    {x:sx,y:sy,mode:'lines',line:{color:'#2a323d',width:1},hoverinfo:'skip',showlegend:false},
+    {x:fx,y:fy,mode:'lines',line:{color:'#3fb950',width:1.5},hoverinfo:'skip',showlegend:false},
+    {x:ex,y:ey,mode:'lines',line:{color:'#58a6ff',width:1},fill:'toself',fillcolor:'rgba(88,166,255,0.3)',hoverinfo:'skip',showlegend:false},
+    {x:[px],y:[py],mode:'markers',marker:{color:escaped?'#d29922':'#a371f7',size:7},hoverinfo:'skip',showlegend:false},
+  ],{title:{text:`Earth-escape spiral — ≈${fmt(ee.revs)} revolutions · ${fmt(ee.tYr,2)} yr (geocentric)`,font:{size:12,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:10},margin:{l:6,r:6,t:28,b:6},showlegend:false,dragmode:false,
+    xaxis:{range:[-ESPIRAL_ROUT*1.04,ESPIRAL_ROUT*1.04],visible:false,fixedrange:true},
+    yaxis:{range:[-ESPIRAL_ROUT*1.04,ESPIRAL_ROUT*1.04],visible:false,scaleanchor:'x',scaleratio:1,fixedrange:true},
+    annotations:[
+      {x:0,y:-ESPIRAL_ROUT*0.93,text:escaped?'escaped Earth → now heliocentric':`${fmt(100*revProg)}% of the departure spiral`,showarrow:false,font:{size:10,color:escaped?'#d29922':'#9aa7b4'}},
+      {x:0,y:ESPIRAL_ROUT*0.93,text:`axes in Earth radii · ${ESPIRAL_LOOPS} loops drawn (÷${drawnDiv} of the real ≈${fmt(ee.revs)})`,showarrow:false,font:{size:9,color:'#6e7681'}}]},
+    {...CFG,scrollZoom:false});
 }
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----

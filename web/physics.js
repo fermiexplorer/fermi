@@ -72,6 +72,14 @@
     const r = rpRsun * R_SUN, ve = Math.sqrt(2 * MU_SUN / r);
     return Math.sqrt(vinf * vinf + ve * ve) - ve;
   }
+  // Earth-escape spiral: revolutions & time to spiral from circular LEO to C3=0 at a=thrust/mass.
+  // Analytic near-circular result N = mu/(8*pi*a*r_p^2), t = v_circ/a (matches integration ~0.2%).
+  function earthEscapeRevs(thrustN, massKg, periAltKm) {
+    const a = thrustN / Math.max(massKg, 1);
+    if (a <= 0) return { revs: 0, tYr: 0 };
+    const rp = R_EARTH + periAltKm * 1e3;
+    return { revs: MU_EARTH / (8 * Math.PI * a * rp * rp), tYr: (Math.sqrt(MU_EARTH / rp) / a) / YEAR };
+  }
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -84,7 +92,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

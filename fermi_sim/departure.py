@@ -90,6 +90,25 @@ def lowthrust_departure_dv(
             + _SPIRAL_FIT_CE1 * e + _SPIRAL_FIT_CE2 * e * e)
 
 
+def earth_escape_revs(thrust_n: float, mass_kg: float, perigee_km: float = 590.0):
+    """Revolutions and time to spiral from a circular LEO to Earth-escape (C3=0) under constant
+    tangential thrust at acceleration a = thrust/mass. ANALYTIC near-circular result (derived; see
+    tmp/ro/revcount.py, audit_departure.py):
+
+        N = mu / (8·pi·a·r_p²)        t_escape = v_circ(r_p) / a
+
+    Matches the geocentric RK integration to ~0.2 %. Design-responsive (a = thrust/wet mass) and
+    instant — this is the many-revolution Earth-escape that the solar-scale views can't show.
+    """
+    a = thrust_n / max(mass_kg, 1.0)
+    if a <= 0.0:
+        return 0.0, 0.0
+    r_p = c.R_EARTH + perigee_km * 1e3
+    n = c.MU_EARTH / (8.0 * math.pi * a * r_p * r_p)
+    t_yr = (math.sqrt(c.MU_EARTH / r_p) / a) / c.YEAR
+    return n, t_yr
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float
