@@ -33,18 +33,28 @@
     const e = Math.max(vDep * vDep + V_EARTH * V_EARTH - 2 * vDep * V_EARTH * Math.cos(b), 0);
     return { vInfE: Math.sqrt(e), vDep };
   }
-  function impulsiveDv(vInfE, altKm) {
-    const r = R_EARTH + altKm * 1e3, vc = Math.sqrt(MU_EARTH / r), ve = Math.sqrt(2 * MU_EARTH / r);
-    return Math.sqrt(vInfE * vInfE + ve * ve) - vc;
+  function impulsiveDv(vInfE, periAltKm, apoAltKm) {
+    // Single Oberth kick at perigee from the (possibly elliptical) starting orbit.
+    const rp = R_EARTH + periAltKm * 1e3;
+    const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
+    const a = 0.5 * (rp + ra);
+    const vp = Math.sqrt(MU_EARTH * (2 / rp - 1 / a));   // perigee speed of the starting orbit
+    const vesc = Math.sqrt(2 * MU_EARTH / rp);
+    return Math.sqrt(vInfE * vInfE + vesc * vesc) - vp;
   }
   // Derived naive low-thrust Earth-escape dv from LEO (Plan 02, Phase A). Closed-form fit of the
   // integrated constant-tangential spiral (fermi_sim spiral_escape_dv); see tools/fit_spiral.py.
   // dv = v_circ(alt) + C0 + C1*vInfE (m/s); matches the integration to 0.5 m/s over vInfE in [8,32] km/s.
   const SPIRAL_FIT_C0 = -1173.491, SPIRAL_FIT_C1 = 0.999997;
-  function lowthrustDepartureDv(vinfSun, tiltDeg, altKm) {
+  // Starting-orbit generalisation: v_circ -> sqrt(mu/a) (orbit energy) + small eccentricity term.
+  const SPIRAL_FIT_CE1 = 85.4, SPIRAL_FIT_CE2 = 284.8;
+  function lowthrustDepartureDv(vinfSun, tiltDeg, periAltKm, apoAltKm) {
     const vInfE = vInfEarth(vinfSun, tiltDeg).vInfE;
-    const vc = Math.sqrt(MU_EARTH / (R_EARTH + altKm * 1e3));
-    return vc + SPIRAL_FIT_C0 + SPIRAL_FIT_C1 * vInfE;
+    const rp = R_EARTH + periAltKm * 1e3;
+    const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
+    const a = 0.5 * (rp + ra), e = (ra - rp) / (ra + rp);
+    const va = Math.sqrt(MU_EARTH / a);
+    return va + SPIRAL_FIT_C0 + SPIRAL_FIT_C1 * vInfE + SPIRAL_FIT_CE1 * e + SPIRAL_FIT_CE2 * e * e;
   }
   function timeToAc(vinf) {
     const a = dot(R0, R0), b = dot(R0, VAC), cc = dot(VAC, VAC) - vinf * vinf;
@@ -72,7 +82,7 @@
 
   const API = {
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
-    SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, requiredVinfVec, intercept, tangentialT,
+    SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
     oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea,
   };

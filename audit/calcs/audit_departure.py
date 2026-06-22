@@ -109,6 +109,21 @@ def run() -> None:
     check("perigee-biased (gate 5) does NOT escape within 30 yr at ~milli-g (time-divergent)",
           not esc_pb, f"escaped={esc_pb} after {yr_pb:.0f} yr")
 
+    # 10. Starting-orbit generalisation: the elliptical closed-form fit (v_circ -> sqrt(mu/a) +
+    #     eccentricity correction) matches a fresh elliptical spiral integration.
+    from fermi_sim.departure import _SPIRAL_FIT_CE1, _SPIRAL_FIT_CE2
+    rp = c.R_EARTH + 590e3
+    worst_e = 0.0
+    for apo_km in (590.0, 5000.0, 20000.0, 35786.0):
+        ra = c.R_EARTH + apo_km * 1e3
+        a = 0.5 * (rp + ra); e = (ra - rp) / (ra + rp)
+        fit = (math.sqrt(c.MU_EARTH / a) + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * 18e3
+               + _SPIRAL_FIT_CE1 * e + _SPIRAL_FIT_CE2 * e * e)
+        integ = spiral_escape_dv(c.MU_EARTH, rp, 18e3, apogee_r=ra)
+        worst_e = max(worst_e, abs(fit - integ))
+    check("elliptical starting-orbit fit matches integrated spiral to <80 m/s (e up to 0.7, ~0.3%)",
+          worst_e < 80.0, f"max |fit - integration| = {worst_e:.0f} m/s")
+
 
 if __name__ == "__main__":
     run()

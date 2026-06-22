@@ -21,6 +21,8 @@ const REF = {
   dv_impulsive_75k_kms: 13.89,
   // DERIVED low-thrust (naïve spiral) departure Δv from LEO 400 km at 75k yr (km/s)
   dv_lowthrust_75k_kms: 25.127443,
+  // ...from a 590x35786 km elliptical (GTO-like) start at 75k yr (km/s)
+  dv_lowthrust_gto_75k_kms: 21.690959,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
 };
@@ -46,6 +48,7 @@ check("tilt at 75k yr (deg)", ic75.tiltDeg, REF.tilt_75k_deg, 1e-3);
 const dep = F.vInfEarth(ic75.vinf, ic75.tiltDeg);
 check("impulsive Δv from LEO at 75k (km/s)", F.impulsiveDv(dep.vInfE, 400) / 1e3, REF.dv_impulsive_75k_kms, 2e-3);
 check("derived low-thrust departure Δv at 75k (km/s)", F.lowthrustDepartureDv(ic75.vinf, ic75.tiltDeg, 400) / 1e3, REF.dv_lowthrust_75k_kms, 1e-4);
+check("derived low-thrust Δv, 590x35786 elliptical start (km/s)", F.lowthrustDepartureDv(ic75.vinf, ic75.tiltDeg, 590, 35786) / 1e3, REF.dv_lowthrust_gto_75k_kms, 1e-4);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 

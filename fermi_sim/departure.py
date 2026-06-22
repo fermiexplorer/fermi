@@ -58,20 +58,36 @@ def v_inf_earth_required(v_inf_sun: float, plane_angle_deg: float) -> float:
 # (<0.01%) over v∞,E ∈ [8, 32] km/s — the only band that occurs for feasible interstellar aims.
 _SPIRAL_FIT_C0 = -1173.491  # m/s
 _SPIRAL_FIT_C1 = 0.999997
+# Starting-orbit generalisation (Plan 02 follow-up): the spiral Δv depends on the orbit ENERGY,
+# i.e. the semi-major axis a — v_circ → sqrt(mu/a) — plus a small eccentricity correction (zero
+# for circular). Δv = sqrt(mu/a) + C0 + C1·v∞,E + CE1·e + CE2·e²; matches the integrated spiral
+# to ~25 m/s up to e=0.7 (validated in audit_departure.py; coefficients from tools/fit_spiral.py).
+_SPIRAL_FIT_CE1 = 85.4   # m/s
+_SPIRAL_FIT_CE2 = 284.8  # m/s
 
 
 def lowthrust_departure_dv(
-    v_inf_sun: float, plane_angle_deg: float, altitude_km: float = 400.0
+    v_inf_sun: float, plane_angle_deg: float, perigee_km: float = 400.0,
+    apogee_km: float | None = None,
 ) -> float:
-    """Derived naïve low-thrust Earth-escape Δv from LEO (m/s) — the design departure budget.
+    """Derived naïve low-thrust Earth-escape Δv (m/s) from a starting orbit — the design budget.
 
-    Closed-form fit of the integrated constant-tangential-thrust spiral (`spiral_escape_dv`);
-    see `tools/fit_spiral.py`. Used by both the engine and `web/physics.js` so they agree to
-    machine precision; the audit suite re-checks this fit against a fresh integration.
+    Circular start: apogee_km defaults to perigee_km (reduces exactly to the Phase A fit). For an
+    elliptical start a higher apogee carries more orbital energy, so the ion has less to spiral:
+    v_circ → sqrt(mu/a), plus a small eccentricity correction. Closed form of the integrated
+    constant-tangential spiral (`spiral_escape_dv`); the audit suite re-checks it vs integration.
     """
+    if apogee_km is None:
+        apogee_km = perigee_km
+    apogee_km = max(apogee_km, perigee_km)
     v_inf_e, _ = v_inf_earth_required(v_inf_sun, plane_angle_deg)
-    v_circ, _ = leo_speeds(altitude_km)
-    return v_circ + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * v_inf_e
+    r_p = c.R_EARTH + perigee_km * 1e3
+    r_a = c.R_EARTH + apogee_km * 1e3
+    a = 0.5 * (r_p + r_a)
+    e = (r_a - r_p) / (r_a + r_p)
+    v_a = math.sqrt(c.MU_EARTH / a)        # circular speed at the semi-major axis (energy proxy)
+    return (v_a + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * v_inf_e
+            + _SPIRAL_FIT_CE1 * e + _SPIRAL_FIT_CE2 * e * e)
 
 
 @dataclass
@@ -84,22 +100,34 @@ class DepartureResult:
     spiral_penalty: float
 
 
-def impulsive_dv_from_leo(v_inf_earth: float, altitude_km: float) -> float:
-    """Single-burn delta-v from circular LEO to hyperbolic excess v_inf_earth."""
-    v_circ, v_esc = leo_speeds(altitude_km)
-    v_peri = math.sqrt(v_inf_earth**2 + v_esc**2)
-    return v_peri - v_circ
+def impulsive_dv_from_leo(
+    v_inf_earth: float, perigee_km: float, apogee_km: float | None = None
+) -> float:
+    """Single Oberth kick at perigee from the (possibly elliptical) starting orbit.
+
+    Circular start (apogee_km defaults to perigee_km) reduces to the LEO floor v_peri - v_circ.
+    """
+    if apogee_km is None:
+        apogee_km = perigee_km
+    apogee_km = max(apogee_km, perigee_km)
+    r_p = c.R_EARTH + perigee_km * 1e3
+    r_a = c.R_EARTH + apogee_km * 1e3
+    a = 0.5 * (r_p + r_a)
+    v_p = math.sqrt(c.MU_EARTH * (2.0 / r_p - 1.0 / a))   # perigee speed of the starting orbit
+    v_esc = math.sqrt(2.0 * c.MU_EARTH / r_p)
+    return math.sqrt(v_inf_earth**2 + v_esc**2) - v_p
 
 
 def spiral_escape_dv(
-    mu: float, r0: float, v_inf_target: float, accel: float = 5e-4
+    mu: float, r0: float, v_inf_target: float, accel: float = 5e-4,
+    apogee_r: float | None = None,
 ) -> float:
-    """Delta-v to spiral from a circular orbit (radius r0) to hyperbolic excess
-    ``v_inf_target``, under constant tangential thrust acceleration.
+    """Delta-v to spiral from a starting orbit (perigee radius ``r0``, optional ``apogee_r``)
+    to hyperbolic excess ``v_inf_target``, under constant tangential thrust acceleration.
 
-    Integrated with scalar RK4 in 2-D, with a timestep that adapts to the local
-    orbital period (small near periapsis, large far out). For low ``accel`` the
-    result converges to the thrust-free 'low-thrust limit'; delta-v = accel * t.
+    Circular start when ``apogee_r`` is None/equal to r0. Integrated with scalar RK4 in 2-D,
+    timestep adapting to the local orbital period. For low ``accel`` the result converges to
+    the thrust-free 'low-thrust limit'; delta-v = accel * t.
     """
     target_energy = 0.5 * v_inf_target**2  # specific orbital energy at escape
 
@@ -111,8 +139,9 @@ def spiral_escape_dv(
         ay = -mu * y * inv_r3 + accel * vy / v
         return vx, vy, ax, ay
 
-    v_circ = math.sqrt(mu / r0)
-    x, y, vx, vy = r0, 0.0, 0.0, v_circ
+    a0 = r0 if apogee_r is None else 0.5 * (r0 + max(apogee_r, r0))
+    v_start = math.sqrt(mu * (2.0 / r0 - 1.0 / a0))   # perigee speed of the starting orbit
+    x, y, vx, vy = r0, 0.0, 0.0, v_start
     t = 0.0
     max_t = 200.0 * c.YEAR
     while t < max_t:

@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 400, "dry": 255, "isp": 3000, "eta": 0.6,
+    "T": 72800, "pay": 1, "alt": 590, "apo": 590, "dry": 255, "isp": 3000, "eta": 0.6,
     "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 5, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
@@ -96,13 +96,18 @@ def run(page):
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 
     # --- DERIVED low-thrust departure Δv (no penalty knob anymore) ---
-    check("design Δv at default is the derived spiral (~25.1 km/s)", abs(base["dvDesign"]/1e3 - 25.12) < 0.3, f"{base['dvDesign']/1e3:.2f}")
+    check("design Δv at default 590 circular is the derived spiral (~25.0 km/s)", abs(base["dvDesign"]/1e3 - 25.0) < 0.3, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
-    # --- LEO ALTITUDE: changes the impulsive Oberth Δv ---
-    alt2000 = comp({"alt": 2000})
-    check("altitude changes Δv (Oberth)", not rel(alt2000["dvDesign"], base["dvDesign"], 1e-3))
+    # --- STARTING ORBIT: higher apogee (elliptical) carries more energy -> less ion Δv ---
+    gto = comp({"apo": 35786})
+    check("elliptical (GTO apogee) lowers departure Δv vs circular", gto["dvDesign"] < base["dvDesign"] - 2000, f"{gto['dvDesign']/1e3:.2f} vs {base['dvDesign']/1e3:.2f} km/s")
+    check("elliptical lowers xenon too", gto["mp"] < base["mp"])
+
+    # --- perigee altitude: changes the spiral Δv (energy) ---
+    alt2000 = comp({"alt": 2000, "apo": 2000})
+    check("higher circular orbit changes Δv (more energy)", not rel(alt2000["dvDesign"], base["dvDesign"], 1e-3))
 
     # --- POWER: thrust, burn time, array size ---
     pw = comp({"pwrkw": 12})

@@ -151,7 +151,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 44</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 45</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -179,12 +179,17 @@
     <div class="group">
       <h3>Departure</h3>
       <div class="ctrl">
-        <label>LEO altitude <b><span id="o_alt">400</span> km</b></label>
-        <input type="range" id="alt" min="200" max="2000" step="50" value="400">
+        <label>Starting-orbit perigee <b><span id="o_alt">590</span> km</b></label>
+        <input type="range" id="alt" min="200" max="2000" step="10" value="590">
+      </div>
+      <div class="ctrl">
+        <label>Starting-orbit apogee <b><span id="o_apo">590</span> km</b></label>
+        <input type="range" id="apo" min="200" max="60000" step="10" value="590">
+        <div class="hint">Perigee = apogee → <b>circular</b> (the conservative baseline). Raising the apogee → elliptical: it carries more orbital energy, so the ion has less to spiral (Δv ∝ √(μ/a)). It's the orbit <em>energy</em> (semi-major axis), not the shape, that matters — but a higher orbit is a more energetic launch.</div>
       </div>
       <div class="ctrl">
         <label>Departure model</label>
-        <div class="hint">Departure Δv is now <b>derived</b> from the integrated low-thrust Earth-escape spiral (constant tangential thrust) — no penalty knob. The impulsive Oberth floor is shown only as a theoretical lower bound (it would need a high-thrust stage this vehicle does not carry). See the “Departure Δv” KPI.</div>
+        <div class="hint">Departure Δv is <b>derived</b> from the integrated low-thrust Earth-escape spiral from the starting orbit (constant tangential thrust) — no penalty knob. The impulsive Oberth floor is shown only as a theoretical lower bound (it would need a high-thrust stage this vehicle does not carry). See the “Departure Δv” KPI.</div>
       </div>
     </div>
 
@@ -675,7 +680,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 44, SRC_COMMIT = 'HEAD';
+const BUILD = 45, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -697,7 +702,7 @@ function radio(name){ return document.querySelector(`input[name=${name}]:checked
 // Fuel minimises near the in-plane optimum (~73k yr, ~2° off-ecliptic); aiming sooner /
 // more out-of-plane costs more Δv and more propellant.
 function compute(){
-  const T=val('T')*YEAR, alt=val('alt');
+  const T=val('T')*YEAR, alt=val('alt'), apo=Math.max(val('apo'),val('alt'));
   const dry=val('dry'), pay=val('pay'), dryEff=dry+pay;   // total dry = bus/subsystems + payload
   const psV=document.getElementById('propsel').value.split('|');
   const propName=psV[0]||'Xenon', ionM=parseFloat(psV[2])||131.29, kIsp=Math.sqrt(131.29/ionM);
@@ -711,7 +716,7 @@ function compute(){
   // impulsive Oberth floor (unreachable without a high-thrust stage this vehicle lacks).
   const needAt=(Ts)=>{ const ican=intercept(Ts);
     return ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
-         : Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt) - gain); };
+         : Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain); };
   const ic=intercept(T), dvDesign=needAt(T);
   // global fuel optimum: the arrival that minimises Δv (and thus propellant)
   let Topt=tangentialT(), dvMin=Infinity;
@@ -720,7 +725,7 @@ function compute(){
   const MR=Math.exp(dvDesign/ve), mp=dryEff*(MR-1), wet=dryEff+mp, f=1-1/MR;
   const minWet=dryEff*Math.exp(dvMin/ve), minFrac=1-Math.exp(-dvMin/ve);
   const dep=vInfEarth(ic.vinf, ic.tiltDeg);
-  const dvFloor=impulsiveDv(dep.vInfE, alt), dvNaive=dvFloor+SPIRAL_MAX;
+  const dvFloor=impulsiveDv(dep.vInfE, alt, apo), dvNaive=dvFloor+SPIRAL_MAX;
   let gaNote='';
   if(ga==='jupiter') gaNote=`+${(gain/1e3).toFixed(0)} km/s from Jupiter`;
   else if(ga==='oberth') gaNote=`Oberth burn @ ${val('rp')} R☉`;
@@ -789,8 +794,10 @@ function render(){
     `</div>`+
     `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   // ----- KPI tiles, each click-to-expand with the exact calculation (copy-pasteable) -----
-  const g0=9.80665, ve=r.isp*g0, altKm=val('alt');
-  const rLEO=R_EARTH+altKm*1e3, vc=Math.sqrt(MU_EARTH/rLEO)/1e3, veL=Math.sqrt(2*MU_EARTH/rLEO)/1e3;
+  const g0=9.80665, ve=r.isp*g0, altKm=val('alt'), apoKm=Math.max(val('apo'),val('alt'));
+  const rLEO=R_EARTH+altKm*1e3, veL=Math.sqrt(2*MU_EARTH/rLEO)/1e3;
+  const aSemi=0.5*(rLEO + R_EARTH+apoKm*1e3), eccen=(apoKm-altKm)*1e3/(2*R_EARTH+(altKm+apoKm)*1e3);
+  const vc=Math.sqrt(MU_EARTH/aSemi)/1e3;   // √(μ/a) — the energy-equivalent circular speed (= v_circ when circular)
   const vDepK=r.dep.vDep/1e3, vInfEK=r.dep.vInfE/1e3, vinfK=r.vinfSun/1e3, tiltA=Math.abs(r.tiltDeg);
   const cE=val('cellEff'), arV=val('areal'), ekw=val('enginekg'), tkf=val('tankfrac');
   // extra intermediates traced back to the inputs (so each calc is self-contained)
@@ -798,7 +805,7 @@ function render(){
   const acLy=Math.hypot(R0[0],R0[1],R0[2])/LY, vacK=Math.hypot(VAC[0],VAC[1],VAC[2])/1e3, vRelAcK=r.vRelAc/1e3;
   const gainK=(radio('ga')==='jupiter')?jupiterGain(9000)/1e3:0;
   // per-field INPUTS lines: only the slider inputs that feed THAT value
-  const IN={ T:`arrival T=${fmt(r.arrivalYr)} yr`, pay:`payload=${fmt(r.pay,1)} kg`, alt:`LEO alt=${altKm} km`,
+  const IN={ T:`arrival T=${fmt(r.arrivalYr)} yr`, pay:`payload=${fmt(r.pay,1)} kg`, alt:`start orbit=${altKm}×${apoKm} km`,
     dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp(base)=${fmt(r.ispBase)} s`,
     eta:`thruster η=${fmt(r.eta,2)}`, ekw:`engine=${fmt(ekw,1)} kg/kW`, tank:`tank=${fmt(tkf)}%`, prop:`propellant=${r.propName}`,
     pwr:`power=${fmt(r.pwrW/1000,1)} kW`, cell:`cell eff=${fmt(cE)}%`, areal:`areal=${fmt(arV,1)} kg/m²`,
@@ -816,8 +823,8 @@ function render(){
       `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
       `Step 2 — heliocentric speed needed at 1 AU to leave on that hyperbola (vs Sun):\n  v_dep = √(v∞² + v_esc,☉²) = √(${fmt(vinfK,2)}² + 42.12²) = ${fmt(vDepK,2)} km/s   [v_esc,☉ = 42.12 = Sun's escape speed at 1 AU, vs Sun]\n`+
       `Step 3 — excess relative to EARTH (Earth lends its v_E = 29.78 km/s orbital speed, in-plane only):\n  v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β) = √(${fmt(vDepK,2)}² + 29.78² − 2·${fmt(vDepK,2)}·29.78·cos ${fmt(tiltA,2)}°) = ${fmt(vInfEK,2)} km/s   [hyperbolic excess vs Earth]\n`+
-      `Step 4 — DERIVED low-thrust Earth-escape Δv from LEO (alt ${altKm} km; speeds vs Earth):\n  The ion engine has no impulsive kick — it spirals out of Earth under continuous tangential thrust.\n  v_circ = √(μ⊕/r) = ${fmt(vc,2)} km/s (LEO orbital speed at r = R⊕+alt = ${fmt(rLEO/1e3,0)} km)\n  Δv_spiral = v_circ + v∞,E − 1.173 = ${fmt(vc,2)} + ${fmt(vInfEK,2)} − 1.173 = ${fmt((r.dvDesign+ (gainK?gainK*1e3:0))/1e3,2)} km/s${gainK?` − ${fmt(gainK,1)} (Jupiter) = ${fmt(r.dvDesign/1e3,2)} km/s`:''}\n  (closed-form fit of the integrated spiral — tools/fit_spiral.py — matched to 0.5 m/s; the Δv the propulsion actually provides)\n`+
-      `Reference only — impulsive Oberth floor (NOT this vehicle; needs a high-thrust kick stage):\n  floor = √(v∞,E² + v_esc,LEO²) − v_circ = √(${fmt(vInfEK,2)}² + ${fmt(veL,2)}²) − ${fmt(vc,2)} = ${fmt(r.dvFloor/1e3,2)} km/s   (theoretical lower bound)`;
+      `Step 4 — DERIVED low-thrust Earth-escape Δv from the starting orbit (perigee ${altKm} × apogee ${apoKm} km, e=${fmt(eccen,3)}; vs Earth):\n  The ion engine has no impulsive kick — it spirals out under continuous tangential thrust. The cost is set by the orbit ENERGY (semi-major axis a), not the shape.\n  √(μ⊕/a) = ${fmt(vc,2)} km/s (energy-equivalent circular speed; = v_circ for a circular start)\n  Δv_spiral = √(μ⊕/a) + v∞,E − 1.173 + ε-corr = ${fmt(vc,2)} + ${fmt(vInfEK,2)} − 1.173 + ${fmt(0.0854*eccen+0.2848*eccen*eccen,3)} = ${fmt((r.dvDesign+ (gainK?gainK*1e3:0))/1e3,2)} km/s${gainK?` − ${fmt(gainK,1)} (Jupiter) = ${fmt(r.dvDesign/1e3,2)} km/s`:''}\n  (closed-form fit of the integrated spiral — tools/fit_spiral.py — matched to ~25 m/s; the Δv the propulsion actually provides)\n`+
+      `Reference only — impulsive Oberth floor (NOT this vehicle; needs a high-thrust kick stage):\n  floor = √(v∞,E² + v_esc,peri²) − v_peri,orbit = ${fmt(r.dvFloor/1e3,2)} km/s   (theoretical lower bound from the starting orbit)`;
   }
   const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s — the velocity change the engine provides from LEO (see “Departure Δv”)`;
   const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s  (Isp = effective Isp for ${r.propName}; v_e = exhaust velocity vs the spacecraft);  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
@@ -912,9 +919,10 @@ function drawCharts(r){
   //    Shows the two DIFFERENT minima: v∞ floors at the tangential intercept (~58k yr)
   //    and RISES afterwards (AC recedes); Δv minimises later (~73k) due to plane change.
   const Ts=[], fl=[], de=[], vi=[];
+  const apoC=Math.max(val('apo'),val('alt'));
   for(let y=45000;y<=100000;y+=1000){ const T=y*YEAR; const ic=intercept(T);
-    const d=vInfEarth(ic.vinf,ic.tiltDeg); const f=impulsiveDv(d.vInfE,val('alt'))/1e3;
-    Ts.push(y); fl.push(f); de.push(lowthrustDepartureDv(ic.vinf,ic.tiltDeg,val('alt'))/1e3); vi.push(ic.vinf/1e3); }
+    const d=vInfEarth(ic.vinf,ic.tiltDeg); const f=impulsiveDv(d.vInfE,val('alt'),apoC)/1e3;
+    Ts.push(y); fl.push(f); de.push(lowthrustDepartureDv(ic.vinf,ic.tiltDeg,val('alt'),apoC)/1e3); vi.push(ic.vinf/1e3); }
   Plotly.react('chartDv',[
     {x:Ts,y:de,name:'Design Δv — derived low-thrust spiral',line:{color:'#4cc2ff'}},
     {x:Ts,y:fl,name:'Impulsive floor (reference; needs a kick stage)',line:{color:'#3fb950',dash:'dot'}},
@@ -1426,6 +1434,7 @@ function syncLabels(){
   document.getElementById('o_T').textContent=fmt(val('T'));
   document.getElementById('o_pay').textContent=val('pay').toFixed(1);
   document.getElementById('o_alt').textContent=val('alt');
+  document.getElementById('o_apo').textContent=val('apo');
   document.getElementById('o_dry').textContent=val('dry');
   document.getElementById('o_isp').textContent=val('isp');
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
@@ -1540,7 +1549,7 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
 });
 
 // ----- shareable URL: every control value is encoded so the link reproduces the state -----
-const URL_KEYS=['T','pay','alt','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
+const URL_KEYS=['T','pay','alt','apo','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
 const URL_SELECTS=['propsel'];   // engine/solar presets only set sliders, which are encoded already
 const URL_RADIOS=['pwr','ga'];
 function baseDir(){ return location.pathname.replace(/[^/]*$/, ''); }   // directory of the current page

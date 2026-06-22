@@ -67,6 +67,26 @@ def main():
         if v in (8, 10, 15, 18, 20, 25, 30):
             print(f"  {v:5.1f}   {dv[400.0][i]:10.3f}   {vc4 + c0 + c1*v:8.3f}")
 
+    # --- Starting-orbit (eccentricity) generalisation: v_circ -> sqrt(mu/a) + g(e) ---
+    # Δv(perigee, apogee, v∞,E) = sqrt(mu/a) + C0 + C1·v∞,E + (CE1·e + CE2·e²). Integrate the
+    # spiral from elliptical starts; the offset (Δv − sqrt(mu/a) − v∞,E) depends only on e.
+    from fermi_sim.departure import spiral_escape_dv
+    es, offs = [], []
+    for rp_alt in (400.0, 590.0):
+        rp = c.R_EARTH + rp_alt * 1e3
+        for e in (0.0, 0.1, 0.2, 0.3, 0.5, 0.7):
+            ra = rp * (1 + e) / (1 - e)
+            a = 0.5 * (rp + ra); va = math.sqrt(c.MU_EARTH / a) / K
+            for vk in (12.0, 18.0, 24.0):
+                d = spiral_escape_dv(c.MU_EARTH, rp, vk * K, apogee_r=ra) / K
+                es.append(e); offs.append(d - va - vk)   # = g(e)
+    es = np.array(es); offs = np.array(offs)
+    Ae = np.vstack([np.ones_like(es), es, es * es]).T
+    (ge0, ce1, ce2), *_ = np.linalg.lstsq(Ae, offs, rcond=None)
+    gerr = np.max(np.abs(Ae @ np.array([ge0, ce1, ce2]) - offs))
+    print(f"\nECCENTRICITY  g(e) = {ge0:.4f} + {ce1:.4f}·e + {ce2:.4f}·e²  (km/s); max err {gerr*1000:.0f} m/s")
+    print(f"  embed (keeping Phase-A C0):  CE1 = {ce1*1000:.1f} m/s,  CE2 = {ce2*1000:.1f} m/s")
+
 
 if __name__ == "__main__":
     main()
