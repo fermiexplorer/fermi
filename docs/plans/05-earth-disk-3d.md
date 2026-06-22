@@ -82,6 +82,24 @@ start of the journey.
 4. Screenshot at three Play positions (mid-earth, escape handoff, cruise) for visual review
    BEFORE deploy.
 
+## Refinements (build 50)
+
+- **Circular LEO only.** Removed the starting-orbit apogee slider (the elliptical option);
+  the departure now models a single circular parking orbit (default 590 km). `compute()`
+  uses `apo = alt`; the calc text, `chartDv`, `URL_KEYS`, and `ui_sliders.py` updated.
+  (The engine/`physics.js` functions keep their elliptical capability — only the UI is
+  circular-only — so the parity audit is unchanged.)
+- **Tighter, representative spiral.** `spiralPts` draws many near-even turns (`10 + prog·32`)
+  with a mild `t^1.3` inner-density profile (the extreme `r=r0/u²` profile put one giant
+  final sweep to the tip, which read as the probe "running ahead"). The probe rides the
+  spiral's leading tip (`sp.tip`), so it's always on the curve.
+- **Earth to scale.** A blue 1 R⊕ filled disk at Earth (slightly z-raised over the green
+  disk to avoid z-fighting) so the +590 km orbit visibly hugs the surface.
+- **Disk stays visible through the dolly.** During the transition the frame keeps Earth
+  centered while zooming out (the disk is clamped to ~16 % of the frame, so it stays a
+  visible green disk with the escape arc emerging from it); the camera pans to the Sun and
+  the disk fades only in the last ~45 % of the window. Fixes the empty post-escape frame.
+
 ## Push / deploy
 1. Commit index.html + plan with `git commit -F tmp/rw/commit-msg.txt`; push `origin HEAD:main`.
 2. Bump `BUILD 48 → 49`, h1 "build 48" → "build 49".
