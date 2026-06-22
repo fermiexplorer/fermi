@@ -150,9 +150,9 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 41</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 42</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
-  <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic departure, additive low-thrust penalty, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
+  <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
 </header>
 
@@ -182,9 +182,8 @@
         <input type="range" id="alt" min="200" max="2000" step="50" value="400">
       </div>
       <div class="ctrl">
-        <label>Low-thrust penalty Δv <b><span id="o_pen">6.0</span> km/s</b></label>
-        <input type="range" id="pen" min="0" max="11.3" step="0.1" value="6">
-        <div class="hint">0 = impulsive (full Oberth, chemical-like). ~6 = optimised perigee-biased SEP (≈ a benchmarked 20 km/s). 11.3 = naïve continuous spiral (worst case).</div>
+        <label>Departure model</label>
+        <div class="hint">Departure Δv is now <b>derived</b> from the integrated low-thrust Earth-escape spiral (constant tangential thrust) — no penalty knob. The impulsive Oberth floor is shown only as a theoretical lower bound (it would need a high-thrust stage this vehicle does not carry). See the “Departure Δv” KPI.</div>
       </div>
     </div>
 
@@ -368,7 +367,7 @@
     <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.0 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
     <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
   </table>
-  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em>; the realistic low-thrust budget adds the ~6 km/s spiral penalty on top, ≈ 20 km/s total — which is what the calculator's "required Δv" shows.)</p>
+  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral, ≈ 25 km/s at the optimum. The ion engine has no impulsive kick, so it cannot capture the Oberth floor.)</p>
   <p><strong>Why does an out-of-plane aim raise Δv only <em>modestly</em>?</strong> A fair worry: a 10° tilt on
   a ~48 km/s departure vector is an ~8 km/s out-of-plane "plane change" — shouldn't that be huge? It isn't,
   because it adds in <em>quadrature</em> to an already-large in-plane excess, not on top of it. At 1 AU the
@@ -400,11 +399,13 @@
   orbital speed, the perigee Oberth effect, and Earth's 29.8 km/s it produces a heliocentric cruise of
   <code>v∞</code> ≈ 24 km/s (so 24 km/s × ~70,000 yr ≈ 5.5 ly, matching where AC is at arrival).
   Low-thrust ion spreads thrust over many revolutions, losing the perigee Oberth benefit and paying a
-  spiral tax; a naïve continuous spiral (integrated numerically, RK4) costs ~25 km/s, while optimised
-  perigee-biased thrusting lands near <strong>20 km/s</strong> (a benchmarked industry figure). The realistic
-  budget is therefore <em>bracketed</em> by the ~14 km/s impulsive floor and the ~25 km/s spiral bound; the
-  low-thrust-penalty slider is the sensitivity control across that range. The ~20 km/s point is an engineering
-  benchmark, not derived here — a full phased finite-burn optimisation is future work.</p>
+  spiral tax. The calculator now uses the <strong>derived</strong> naïve continuous spiral (constant tangential
+  thrust, integrated by RK4 and reduced to the closed form <code>Δv = v_circ + v∞,E − 1.17 km/s</code>, matched
+  to the integration within 0.5 m/s — see <code>tools/fit_spiral.py</code> and <code>audit/calcs/audit_departure.py</code>):
+  ≈ <strong>25 km/s</strong> at the optimum. This sits in the physical bracket between the ~14 km/s impulsive
+  floor (a theoretical lower bound, unreachable by an ion engine) and the spiral itself. Recovering the
+  perigee-biased optimum (which lands lower, between the floor and the naïve spiral) is the next step — see
+  <code>docs/plans/02-derived-lowthrust-departure.md</code> Phase B.</p>
 
   <div class="worked">
     <p class="wt">Worked example — the Δv budget is <em>not</em> the cruise speed</p>
@@ -449,8 +450,9 @@
   (electrical); thrust <strong>~0.20 N (204 mN)</strong>; <strong>firing time ~1.1 yr continuous</strong>
   (0.9 yr at Isp 2000 s rising to 1.4 yr at 4000 s). Power comes from a <strong>~18 m² / ~55 kg commercial
   silicon array</strong> (20% cells, ~3 kg/m², Starlink-class) delivering the 5 kW at 1 AU. Δv from LEO is
-  <strong>~20 km/s</strong> (perigee-biased SEP; ~14 km/s is the impulsive floor), for a wet mass of
-  <strong>~500 kg</strong> (~248 kg xenon, ~49%).</p>
+  the <strong>derived naïve low-thrust spiral ≈ 25 km/s</strong> (~14 km/s is the impulsive floor, a
+  reference an ion engine can't reach; perigee-biasing would land lower — plan 02 Phase B), for a wet mass of
+  <strong>~600 kg</strong> (~344 kg xenon, ~57% at Isp 3000 s).</p>
   <p><strong>This is slow, gentle thrust — not a fast burn.</strong> The acceleration is only
   ~0.04–0.08 milli-<em>g</em> (0.2 N on a ~500 kg craft), sustained for <strong>~1 year</strong> to reach
   terminal velocity <code>v∞</code> ≈ 24 km/s — <em>not</em> a few months. Over that year the probe makes
@@ -471,7 +473,7 @@
   <h4>Architecture comparison — direct vs solar Oberth vs gravity assist</h4>
   <table class="chain">
     <tr><th>Architecture</th><th class="v">Onboard Δv from LEO</th><th>Extra hardware / complexity</th><th>Launch-timing window</th><th>When to choose it</th></tr>
-    <tr><td><b>Direct solar-electric ion</b></td><td class="v">~20 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
+    <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield + a way to drop perihelion (retro burn or Venus/Jupiter assist)</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1–2 km/s burn at 4–20 R<sub>☉</sub> yields the full 24 km/s) — but heavier &amp; more complex.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
   </table>
@@ -482,8 +484,8 @@
   <h4>3 · Mass &amp; the rocket equation</h4>
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
-  power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For 20 km/s a ~500 kg vehicle is
-  ~40–50% xenon at Isp 3000–4000 s — comfortably feasible today.</p>
+  power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For the derived ~25 km/s a vehicle is
+  ~50–60% xenon at Isp 3000–4000 s (≈600 kg wet on a 255 kg dry bus) — still comfortably feasible today.</p>
   <p><strong>Subsystem sizing.</strong> The solar array is sized physically rather than by a fixed W/kg:
   area <code>= P / (S₀·η_cell / r²)</code> with <code>S₀</code> = 1361 W/m², and mass <code>= area · areal density</code>.
   Defaults are commercial, buy-today <em>silicon</em> (~20% cells, ~3 kg/m² → ~90 W/kg at 1 AU; Starlink-class,
@@ -511,7 +513,7 @@
   <h4>Limitations</h4>
   <ul>
     <li>Alpha Centauri is propagated as straight-line motion (galactic curvature negligible over 10⁵ yr / 1% miss).</li>
-    <li>Patched-conic departure with best-case launch timing; no detailed finite-burn or steering losses beyond the additive low-thrust penalty.</li>
+    <li>Patched-conic geometry with best-case launch timing; the low-thrust departure is a naïve constant-tangential Earth-escape spiral (no perigee-biasing yet — that lands lower; see plan 02 Phase B), and no finite-burn steering losses beyond it.</li>
     <li>Gravity-assist figures are geometric upper bounds, not phased trajectory solutions.</li>
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
     <li>All four trajectory panels draw the <em>same</em> path: one continuous low-thrust solar escape, numerically integrated (RK4, μ=4π², tangential thrust until v∞ is reached, then coast) and rotated so its escape asymptote points at the AC intercept — so the spiral opens <em>smoothly</em> into the cruise with no hard turns. The scrubber is <em>log-scaled</em> in distance (1 AU → AC), and every view renders only the <em>flown</em> path (never the future). The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape is correctly a sub-revolution arc.</li>
@@ -554,8 +556,9 @@
     <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~50,000 kWh
       burn — orders of magnitude over a solar array.</li>
     <li><b>Probe for what's missing.</b> This is a first-order model; a rigorous audit should push on:
-      (a) a full <em>finite-burn / phased low-thrust</em> trajectory (the ~20 km/s SEP figure is a benchmark,
-      not solved here); (b) launch-window and calendar phasing (best-case timing is assumed);
+      (a) <em>perigee-biased / phased low-thrust</em> optimisation — the departure Δv is now the <em>derived</em>
+      naïve spiral (~25 km/s); perigee-biasing recovers a lower optimum (plan 02 Phase B), and a full
+      finite-burn solution is still future work; (b) launch-window and calendar phasing (best-case timing is assumed);
       (c) gravity-assist phasing (the Jupiter/Oberth numbers are geometric bounds); (d) navigation, comms and
       component survival over ~75,000 yr; (e) thermal, radiation and propellant boil-off across the cruise;
       (f) primary-source validation of the cell, thruster and tank assumptions. File findings against
@@ -568,9 +571,10 @@
   <ol class="pipeline">
     <li><b>Aim geometry.</b> <code>Arrival time</code> → where AC is (and how fast) at that time → the required
       heliocentric velocity <code>V_p</code> → <b>cruise v∞</b> and <b>out-of-plane tilt</b>.</li>
-    <li><b>Required Δv.</b> <code>v∞, tilt, LEO altitude, low-thrust penalty</code> + <code>architecture</code>
-      (direct / Jupiter / Oberth) → <b>departure Δv from LEO</b>. Geometry sets the floor; the penalty is the
-      low-thrust spiral tax.</li>
+    <li><b>Required Δv.</b> <code>v∞, tilt, LEO altitude</code> + <code>architecture</code>
+      (direct / Jupiter / Oberth) → <b>departure Δv from LEO</b>, derived from the integrated low-thrust
+      Earth-escape spiral (<code>Δv = v_circ + v∞,E − 1.17 km/s</code>); the impulsive Oberth floor is a
+      reference lower bound only.</li>
     <li><b>Minimum propellant.</b> <code>Δv, Isp</code> → mass ratio (Tsiolkovsky) → minimum <b>propellant
       fraction</b>; with <code>dry mass</code> → <b>propellant &amp; wet mass</b> — the spacecraft being minimised.</li>
     <li><b>Power &amp; subsystems.</b> <code>power, Isp, efficiency</code> → <b>thrust &amp; burn time</b>;
@@ -587,7 +591,7 @@
       propellant <em>fraction</em> (only the absolute kg of propellant, array, etc.).</li>
     <li><code>Isp</code> — higher ⇒ less propellant for the same Δv, but more electrical energy per kg.</li>
     <li><code>Power</code> — thrust, burn time and array size (not Δv or arrival).</li>
-    <li><code>Low-thrust penalty</code> — the spiral tax added to the impulsive Δv floor.</li>
+    <li><code>Departure Δv</code> — derived from the integrated low-thrust Earth-escape spiral (no penalty knob; the impulsive floor is a reference only).</li>
     <li><code>Cell efficiency / areal density / engine kg-per-kW / tank %</code> — subsystem masses only.</li>
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
@@ -665,7 +669,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 41, SRC_COMMIT = 'HEAD';
+const BUILD = 42, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -674,7 +678,7 @@ const BUILD = 41, SRC_COMMIT = 'HEAD';
 // ----- physics from the shared module (web/physics.js), itself parity-checked
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
-  intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, timeToAc,
+  intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
   jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
@@ -687,7 +691,7 @@ function radio(name){ return document.querySelector(`input[name=${name}]:checked
 // Fuel minimises near the in-plane optimum (~73k yr, ~2° off-ecliptic); aiming sooner /
 // more out-of-plane costs more Δv and more propellant.
 function compute(){
-  const T=val('T')*YEAR, alt=val('alt'), pen=val('pen')*1e3;
+  const T=val('T')*YEAR, alt=val('alt');
   const dry=val('dry'), pay=val('pay'), dryEff=dry+pay;   // total dry = bus/subsystems + payload
   const psV=document.getElementById('propsel').value.split('|');
   const propName=psV[0]||'Xenon', ionM=parseFloat(psV[2])||131.29, kIsp=Math.sqrt(131.29/ionM);
@@ -695,10 +699,13 @@ function compute(){
   const acDistM=Math.hypot(R0[0],R0[1],R0[2]), vRelAc=acDistM/T;              // probe speed vs AC at arrival = |A₀|/T
   const pwr=radio('pwr'), ga=radio('ga');
   const gain = ga==='jupiter'?jupiterGain(9000):0;
-  // departure Δv required to arrive at time Ts = the minimum fuel for that arrival
+  // departure Δv required to arrive at time Ts = the minimum fuel for that arrival.
+  // DERIVED low-thrust spiral (Plan 02): the ion engine must spiral out of Earth, so the
+  // budget is the integrated constant-tangential-thrust escape (closed-form fit), NOT the
+  // impulsive Oberth floor (unreachable without a high-thrust stage this vehicle lacks).
   const needAt=(Ts)=>{ const ican=intercept(Ts);
     return ga==='oberth' ? oberthBurnFor(val('rp'),ican.vinf)+2000
-         : Math.max(0, impulsiveDv(vInfEarth(ican.vinf,ican.tiltDeg).vInfE, alt) + pen - gain); };
+         : Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt) - gain); };
   const ic=intercept(T), dvDesign=needAt(T);
   // global fuel optimum: the arrival that minimises Δv (and thus propellant)
   let Topt=tangentialT(), dvMin=Infinity;
@@ -776,7 +783,7 @@ function render(){
     `</div>`+
     `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   // ----- KPI tiles, each click-to-expand with the exact calculation (copy-pasteable) -----
-  const g0=9.80665, ve=r.isp*g0, penK=val('pen'), altKm=val('alt');
+  const g0=9.80665, ve=r.isp*g0, altKm=val('alt');
   const rLEO=R_EARTH+altKm*1e3, vc=Math.sqrt(MU_EARTH/rLEO)/1e3, veL=Math.sqrt(2*MU_EARTH/rLEO)/1e3;
   const vDepK=r.dep.vDep/1e3, vInfEK=r.dep.vInfE/1e3, vinfK=r.vinfSun/1e3, tiltA=Math.abs(r.tiltDeg);
   const cE=val('cellEff'), arV=val('areal'), ekw=val('enginekg'), tkf=val('tankfrac');
@@ -786,7 +793,7 @@ function render(){
   const gainK=(radio('ga')==='jupiter')?jupiterGain(9000)/1e3:0;
   // per-field INPUTS lines: only the slider inputs that feed THAT value
   const IN={ T:`arrival T=${fmt(r.arrivalYr)} yr`, pay:`payload=${fmt(r.pay,1)} kg`, alt:`LEO alt=${altKm} km`,
-    pen:`low-thrust penalty=${fmt(penK,1)} km/s`, dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp(base)=${fmt(r.ispBase)} s`,
+    dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp(base)=${fmt(r.ispBase)} s`,
     eta:`thruster η=${fmt(r.eta,2)}`, ekw:`engine=${fmt(ekw,1)} kg/kW`, tank:`tank=${fmt(tkf)}%`, prop:`propellant=${r.propName}`,
     pwr:`power=${fmt(r.pwrW/1000,1)} kW`, cell:`cell eff=${fmt(cE)}%`, areal:`areal=${fmt(arV,1)} kg/m²`,
     ga:`architecture=${radio('ga')}`, rtg:`RTG=${fmt(val('rtg'),1)} W/kg`, rp:`perihelion=${fmt(val('rp'))} R☉` };
@@ -803,8 +810,8 @@ function render(){
       `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
       `Step 2 — heliocentric speed needed at 1 AU to leave on that hyperbola (vs Sun):\n  v_dep = √(v∞² + v_esc,☉²) = √(${fmt(vinfK,2)}² + 42.12²) = ${fmt(vDepK,2)} km/s   [v_esc,☉ = 42.12 = Sun's escape speed at 1 AU, vs Sun]\n`+
       `Step 3 — excess relative to EARTH (Earth lends its v_E = 29.78 km/s orbital speed, in-plane only):\n  v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β) = √(${fmt(vDepK,2)}² + 29.78² − 2·${fmt(vDepK,2)}·29.78·cos ${fmt(tiltA,2)}°) = ${fmt(vInfEK,2)} km/s   [hyperbolic excess vs Earth]\n`+
-      `Step 4 — impulsive Oberth Δv from LEO (alt ${altKm} km; these speeds are vs Earth):\n  r = R⊕+alt = 6371+${altKm} = ${fmt(rLEO/1e3,0)} km;  v_circ = √(μ⊕/r) = ${fmt(vc,2)} (LEO orbital, vs Earth);  v_esc,LEO = √2·v_circ = ${fmt(veL,2)} (escape from LEO, vs Earth)\n  floor = √(v∞,E² + v_esc,LEO²) − v_circ = √(${fmt(vInfEK,2)}² + ${fmt(veL,2)}²) − ${fmt(vc,2)} = ${fmt(r.dvFloor/1e3,2)} km/s\n`+
-      `Step 5 — add the low-thrust spiral penalty${gainK?' and subtract the Jupiter assist':''}:\n  Δv = floor + penalty${gainK?` − ${fmt(gainK,1)} (Jupiter)`:''} = ${fmt(r.dvFloor/1e3,2)} + ${fmt(penK,1)}${gainK?` − ${fmt(gainK,1)}`:''} = ${fmt(r.dvDesign/1e3,2)} km/s   (Δv the propulsion provides)`;
+      `Step 4 — DERIVED low-thrust Earth-escape Δv from LEO (alt ${altKm} km; speeds vs Earth):\n  The ion engine has no impulsive kick — it spirals out of Earth under continuous tangential thrust.\n  v_circ = √(μ⊕/r) = ${fmt(vc,2)} km/s (LEO orbital speed at r = R⊕+alt = ${fmt(rLEO/1e3,0)} km)\n  Δv_spiral = v_circ + v∞,E − 1.173 = ${fmt(vc,2)} + ${fmt(vInfEK,2)} − 1.173 = ${fmt((r.dvDesign+ (gainK?gainK*1e3:0))/1e3,2)} km/s${gainK?` − ${fmt(gainK,1)} (Jupiter) = ${fmt(r.dvDesign/1e3,2)} km/s`:''}\n  (closed-form fit of the integrated spiral — tools/fit_spiral.py — matched to 0.5 m/s; the Δv the propulsion actually provides)\n`+
+      `Reference only — impulsive Oberth floor (NOT this vehicle; needs a high-thrust kick stage):\n  floor = √(v∞,E² + v_esc,LEO²) − v_circ = √(${fmt(vInfEK,2)}² + ${fmt(veL,2)}²) − ${fmt(vc,2)} = ${fmt(r.dvFloor/1e3,2)} km/s   (theoretical lower bound)`;
   }
   const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s — the velocity change the engine provides from LEO (see “Departure Δv”)`;
   const veRef=`v_e = Isp·g₀ = ${fmt(r.isp)}·9.80665 = ${fmt(ve,0)} m/s  (Isp = effective Isp for ${r.propName}; v_e = exhaust velocity vs the spacecraft);  MR = e^(Δv/v_e) = ${fmt(r.MR,3)}`;
@@ -818,8 +825,8 @@ function render(){
   K.push({l:'Out-of-plane aim', v:fmt(tiltA,1)+'°', i:inl('T'), s:'β — tilt of the (Sun-relative) departure velocity out of the ecliptic',
     d:'How far the required departure direction tilts out of Earth’s orbital (ecliptic) plane. It matters because Earth’s 29.8 km/s orbital velocity can only be borrowed in-plane — any out-of-plane component must be bought with propellant. It is ~0° where AC crosses the ecliptic (~79k yr) and ~10° at the 58k-yr aim, which is why the cheapest departure is near the crossing.',
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
-  K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','pen','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
-    d:'The total velocity change the propulsion must supply from LEO to place the probe on the correct interstellar trajectory. It is the impulsive (Oberth) minimum set by the geometry plus the low-thrust “spiral tax”. This is the number that sizes the propellant, so minimising it is the whole design objective.',
+  K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
+    d:'The total velocity change the ion propulsion must supply from LEO. It is DERIVED from the integrated low-thrust Earth-escape spiral (continuous tangential thrust) — not the impulsive Oberth floor, which would need a high-thrust kick stage this vehicle does not carry. This is the number that sizes the propellant, so minimising it (by arrival choice) is the design objective.',
     c:dvSteps});
   K.push({l:'Propellant fraction', v:fmt(100*r.f,1)+'%', i:inl('isp','prop'), s:'f — propellant ÷ wet mass = m_p / m_wet',
     d:'The fraction of the fuelled (wet) mass that is propellant. The rocket equation fixes it from the Δv and the exhaust velocity (Isp) alone — it does NOT depend on how large the spacecraft is. Lower is better: more of every kilogram is then useful structure and payload rather than fuel.',
@@ -898,16 +905,15 @@ function drawCharts(r){
   // 1. Δv (left axis) AND cruise speed v∞ (right axis) vs arrival time.
   //    Shows the two DIFFERENT minima: v∞ floors at the tangential intercept (~58k yr)
   //    and RISES afterwards (AC recedes); Δv minimises later (~73k) due to plane change.
-  const Ts=[], fl=[], de=[], na=[], vi=[];
+  const Ts=[], fl=[], de=[], vi=[];
   for(let y=45000;y<=100000;y+=1000){ const T=y*YEAR; const ic=intercept(T);
     const d=vInfEarth(ic.vinf,ic.tiltDeg); const f=impulsiveDv(d.vInfE,val('alt'))/1e3;
-    Ts.push(y); fl.push(f); de.push(f+val('pen')); na.push(f+SPIRAL_MAX); vi.push(ic.vinf/1e3); }
+    Ts.push(y); fl.push(f); de.push(lowthrustDepartureDv(ic.vinf,ic.tiltDeg,val('alt'))/1e3); vi.push(ic.vinf/1e3); }
   Plotly.react('chartDv',[
-    {x:Ts,y:fl,name:'Impulsive Δv floor',line:{color:'#3fb950'}},
-    {x:Ts,y:de,name:'Design Δv (low-thrust)',line:{color:'#4cc2ff'}},
-    {x:Ts,y:na,name:'Naïve spiral Δv',line:{color:'#f85149',dash:'dot'}},
+    {x:Ts,y:de,name:'Design Δv — derived low-thrust spiral',line:{color:'#4cc2ff'}},
+    {x:Ts,y:fl,name:'Impulsive floor (reference; needs a kick stage)',line:{color:'#3fb950',dash:'dot'}},
     {x:Ts,y:vi,name:'cruise v∞ (right axis)',line:{color:'#d29922'},yaxis:'y2'},
-    ...(r.feasible?[{x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...na)+2],name:'derived arrival',line:{color:'#8b949e',dash:'dash'},showlegend:false}]:[]),
+    ...(r.feasible?[{x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...de)+2],name:'derived arrival',line:{color:'#8b949e',dash:'dash'},showlegend:false}]:[]),
   ],{...LAYOUT('Δv (left) & cruise speed v∞ (right) vs arrival time'),margin:{l:55,r:52,t:34,b:42},
      xaxis:{title:'arrival (yr)',gridcolor:'#2a323d'},
      yaxis:{title:'Δv (km/s)',gridcolor:'#2a323d'},
@@ -1412,7 +1418,6 @@ function syncLabels(){
   document.getElementById('o_T').textContent=fmt(val('T'));
   document.getElementById('o_pay').textContent=val('pay').toFixed(1);
   document.getElementById('o_alt').textContent=val('alt');
-  document.getElementById('o_pen').textContent=val('pen').toFixed(1);
   document.getElementById('o_dry').textContent=val('dry');
   document.getElementById('o_isp').textContent=val('isp');
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
@@ -1524,7 +1529,7 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
 });
 
 // ----- shareable URL: every control value is encoded so the link reproduces the state -----
-const URL_KEYS=['T','pay','alt','pen','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
+const URL_KEYS=['T','pay','alt','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
 const URL_SELECTS=['propsel'];   // engine/solar presets only set sliders, which are encoded already
 const URL_RADIOS=['pwr','ga'];
 function baseDir(){ return location.pathname.replace(/[^/]*$/, ''); }   // directory of the current page

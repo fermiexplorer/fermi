@@ -50,6 +50,30 @@ def v_inf_earth_required(v_inf_sun: float, plane_angle_deg: float) -> float:
     return math.sqrt(max(v_inf_e_sq, 0.0)), v_dep
 
 
+# --- Derived low-thrust departure fit (Plan 02, Phase A: naïve constant-tangential spiral) ---
+# Closed form for the integrated `spiral_escape_dv` so the web tool evaluates it instantly
+# (no live integration) while staying DERIVED, not a hand-set penalty. Generated and validated
+# by `tools/fit_spiral.py`: Δv = v_circ(alt) + C0 + C1·v∞,E  (SI, m/s). The (Δv − v_circ)
+# curve is altitude-independent to 0.8 m/s, and this fit matches the integration to 0.5 m/s
+# (<0.01%) over v∞,E ∈ [8, 32] km/s — the only band that occurs for feasible interstellar aims.
+_SPIRAL_FIT_C0 = -1173.491  # m/s
+_SPIRAL_FIT_C1 = 0.999997
+
+
+def lowthrust_departure_dv(
+    v_inf_sun: float, plane_angle_deg: float, altitude_km: float = 400.0
+) -> float:
+    """Derived naïve low-thrust Earth-escape Δv from LEO (m/s) — the design departure budget.
+
+    Closed-form fit of the integrated constant-tangential-thrust spiral (`spiral_escape_dv`);
+    see `tools/fit_spiral.py`. Used by both the engine and `web/physics.js` so they agree to
+    machine precision; the audit suite re-checks this fit against a fresh integration.
+    """
+    v_inf_e, _ = v_inf_earth_required(v_inf_sun, plane_angle_deg)
+    v_circ, _ = leo_speeds(altitude_km)
+    return v_circ + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * v_inf_e
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float

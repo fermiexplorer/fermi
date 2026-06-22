@@ -37,6 +37,15 @@
     const r = R_EARTH + altKm * 1e3, vc = Math.sqrt(MU_EARTH / r), ve = Math.sqrt(2 * MU_EARTH / r);
     return Math.sqrt(vInfE * vInfE + ve * ve) - vc;
   }
+  // Derived naive low-thrust Earth-escape dv from LEO (Plan 02, Phase A). Closed-form fit of the
+  // integrated constant-tangential spiral (fermi_sim spiral_escape_dv); see tools/fit_spiral.py.
+  // dv = v_circ(alt) + C0 + C1*vInfE (m/s); matches the integration to 0.5 m/s over vInfE in [8,32] km/s.
+  const SPIRAL_FIT_C0 = -1173.491, SPIRAL_FIT_C1 = 0.999997;
+  function lowthrustDepartureDv(vinfSun, tiltDeg, altKm) {
+    const vInfE = vInfEarth(vinfSun, tiltDeg).vInfE;
+    const vc = Math.sqrt(MU_EARTH / (R_EARTH + altKm * 1e3));
+    return vc + SPIRAL_FIT_C0 + SPIRAL_FIT_C1 * vInfE;
+  }
   function timeToAc(vinf) {
     const a = dot(R0, R0), b = dot(R0, VAC), cc = dot(VAC, VAC) - vinf * vinf;
     const disc = b * b - a * cc;
@@ -63,8 +72,9 @@
 
   const API = {
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
-    SOLAR_CONST, requiredVinfVec, intercept, tangentialT, eclipticCrossingT, vInfEarth,
-    impulsiveDv, timeToAc, jupiterGain, oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea,
+    SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, requiredVinfVec, intercept, tangentialT,
+    eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
+    oberthBurnFor, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

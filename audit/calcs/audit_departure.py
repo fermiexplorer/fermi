@@ -15,6 +15,8 @@ from _util import check, rel_err, summary
 
 from fermi_sim import constants as c
 from fermi_sim.departure import (
+    _SPIRAL_FIT_C0,
+    _SPIRAL_FIT_C1,
     impulsive_dv_from_leo,
     leo_speeds,
     spiral_escape_dv,
@@ -74,6 +76,24 @@ def run() -> None:
     vmin = min_speed_arrival(alpha_centauri_state()).v_inf / c.KMS
     check("min cruise v_inf exceeds Voyager-1 (16.6 km/s), as expected",
           22 < vmin < 24, f"{vmin:.2f} km/s")
+
+    # 6. DERIVED departure fit (Plan 02, Phase A) must match a FRESH spiral integration
+    #    (independent re-derivation: the embedded closed-form vs the RK4 it replaced).
+    worst = 0.0
+    for v in (10e3, 15e3, 18e3, 20e3, 22e3, 25e3):
+        fit = v_circ + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * v
+        integ = spiral_escape_dv(c.MU_EARTH, r_leo, v)
+        worst = max(worst, abs(fit - integ))
+    check("derived departure fit matches integrated spiral to <0.5% (10-25 km/s)",
+          worst < 0.005 * 18e3, f"max |fit - integration| = {worst:.1f} m/s")
+
+    # 7. Cross-method: the integrated spiral is within ~1.5 km/s of the classic Edelbaum
+    #    estimate (v_circ + v_inf,E) at every test point -> it is genuinely spiral-class.
+    for v in (15e3, 20e3, 25e3):
+        integ = spiral_escape_dv(c.MU_EARTH, r_leo, v)
+        check(f"spiral within 1.5 km/s of Edelbaum (v_circ+v_inf) @ {v/1e3:.0f} km/s",
+              abs(integ - (v_circ + v)) < 1.5e3,
+              f"{integ/1e3:.2f} vs {(v_circ+v)/1e3:.2f} km/s")
 
 
 if __name__ == "__main__":

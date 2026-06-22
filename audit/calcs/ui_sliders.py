@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 400, "pen": 6, "dry": 255, "isp": 3000, "eta": 0.6,
+    "T": 72800, "pay": 1, "alt": 400, "dry": 255, "isp": 3000, "eta": 0.6,
     "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 5, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
@@ -58,7 +58,7 @@ def run(page):
     # sanity on the default design
     check("default is feasible", base["feasible"] is True)
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
-    check("default near fuel optimum (dvDesign≈min)", abs(base["dvDesign"]/1e3 - 13.88 - 6) < 0.3, f"{base['dvDesign']:.0f}")
+    check("default arrival sits at the fuel optimum", abs(base["arrivalYr"] - base["minFuelYr"]) < 600, f"{base['arrivalYr']:.0f} vs {base['minFuelYr']:.0f}")
 
     # --- PAYLOAD: must raise propellant & wet, but NOT arrival / Δv / fraction ---
     p = comp({"pay": 50})
@@ -95,11 +95,10 @@ def run(page):
     check("fuel optimum stays ~72.8k regardless of aim", abs(a58["minFuelYr"]-72800) < 400 and abs(a100["minFuelYr"]-72800) < 400)
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 
-    # --- LOW-THRUST PENALTY: adds straight onto Δv ---
-    pen0 = comp({"pen": 0}); pen11 = comp({"pen": 11})
-    check("penalty↑ raises Δv", pen11["dvDesign"] > pen0["dvDesign"] + 5000)
-    check("penalty=0 ≈ impulsive floor (~13.9 km/s)", abs(pen0["dvDesign"]/1e3 - 13.9) < 0.6, f"{pen0['dvDesign']/1e3:.2f}")
-    check("penalty↑ raises xenon", pen11["mp"] > pen0["mp"])
+    # --- DERIVED low-thrust departure Δv (no penalty knob anymore) ---
+    check("design Δv at default is the derived spiral (~25.1 km/s)", abs(base["dvDesign"]/1e3 - 25.12) < 0.3, f"{base['dvDesign']/1e3:.2f}")
+    check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
+    check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
     # --- LEO ALTITUDE: changes the impulsive Oberth Δv ---
     alt2000 = comp({"alt": 2000})
