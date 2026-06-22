@@ -13,6 +13,17 @@ open issue to fix later, rather than continue iterating now.
   Earth's centre at the hand-off to the heliocentric arc.
 - Burn-timeline Earth-escape segment aligned to the real geocentric escape time (0.70 yr).
 
+## Build 55 — tangent-by-construction escape + exact SOI (RESOLVED the tangency complaint)
+- **Exact disk diameter**: `earth_soi_radius()` (engine) = a·(μ⊕/μ☉)^(2/5) = 9.246×10⁸ m ≈
+  145.13 R⊕ → disk diameter 0.01236 AU. Mirrored to `physics.earthSoiRadius`, JS↔Py parity.
+- **Escape curve tangent BY CONSTRUCTION**: P(s) = E + t̂·(rDisk·A·s) + r̂_out·(rDisk·B·s²),
+  E on the disk edge, so dP/ds|₀ = t̂·rDisk·A ⟂ radius. In the dawn-dusk plane; scales with the
+  rendered disk radius → tangent at the edge at ANY zoom (fixed the out-of-plane Bézier loop).
+- **Dot rides the curve** per log-time; orbit-raising dot rides the disk edge.
+- **Test**: `tmp/ro/test_tangent.py` — 48 combinations (3 arrival angles × 4 Play times × 4
+  zoom levels), asserts escape rooted on the edge, tangent (⟂ radius), and in-plane. ALL PASS.
+  (Tangency is a 3D property → preserved under every camera projection.)
+
 ## Known remaining rough spots (to revisit)
 - The transition (≈1 yr) hand-off from the disk-view escape curve to the real heliocentric
   arc can still look imperfect (shape change between the tangential Bézier and the true

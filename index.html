@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 54</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 55</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 54, SRC_COMMIT = 'HEAD';
+const BUILD = 55, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -699,7 +699,7 @@ const BUILD = 54, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -1211,23 +1211,24 @@ function drawFollow3d(c,st){
       const sp=spiralPts(Epos, ed.rpAU, Math.min(rDraw, ed.rpAU*1.6), 4, 30, Uax, Vax);
       extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#56d364',width:2},opacity:lineOp,hoverinfo:'skip',showlegend:false});
     }
-    // probe rides the disk edge while orbit-raising. On escape, draw a curve that leaves the
-    // disk EDGE TANGENTIALLY (not Earth's centre) and bends out to the probe; its root shrinks
-    // to Earth's centre exactly at the hand-off, so it matches the heliocentric arc (no jump).
-    const phi0=animU*24, cphi=Math.cos(phi0), sphi=Math.sin(phi0);
-    const rad=[cphi*Uax[0]+sphi*Vax[0], cphi*Uax[1]+sphi*Vax[1], cphi*Uax[2]+sphi*Vax[2]];
-    flownOp=0;                                                  // disk view draws its own escape curve, not the helio arc
-    if(ed.w>0){
-      const s=smooth01(ed.w), rEdge=rDraw*(1-s);                // root: disk edge early → centre by the hand-off
-      const S=[Epos[0]+rEdge*rad[0], Epos[1]+rEdge*rad[1], Epos[2]+rEdge*rad[2]];
-      const tv=[-sphi*Uax[0]+cphi*Vax[0], -sphi*Uax[1]+cphi*Vax[1], -sphi*Uax[2]+cphi*Vax[2]];   // tangent (leaves tangentially)
-      const dl=Math.hypot(p[0]-S[0],p[1]-S[1],p[2]-S[2]);
-      const P1=[S[0]+tv[0]*dl*0.5, S[1]+tv[1]*dl*0.5, S[2]+tv[2]*dl*0.5];
-      const bez=t=>{const a=(1-t)*(1-t),b=2*(1-t)*t,c=t*t; return [a*S[0]+b*P1[0]+c*p[0], a*S[1]+b*P1[1]+c*p[1], a*S[2]+b*P1[2]+c*p[2]];};
-      const bx=[],by=[],bz=[]; for(let i=0;i<=40;i++){ const q=bez(i/40); bx.push(q[0]); by.push(q[1]); bz.push(q[2]); }
-      extra.push({type:'scatter3d',mode:'lines',x:bx,y:by,z:bz,line:{color:'#3fb950',width:3},hoverinfo:'skip',showlegend:false,name:'escape'});
-      probe=bez(s);
-    } else probe=[Epos[0]+rDraw*rad[0], Epos[1]+rDraw*rad[1], Epos[2]+rDraw*rad[2]];
+    // ----- probe + escape curve (Plan 06): dawn-dusk plane, TANGENT to the disk edge at any zoom -----
+    flownOp=0;                                                 // hide the heliocentric arc while in the disk view
+    const REV=24;
+    if(ed.w<=0){                                               // orbit-raising: the dot rides the disk edge
+      const ph=animU*REV, cph=Math.cos(ph), sph=Math.sin(ph);
+      probe=[Epos[0]+rDraw*(cph*Uax[0]+sph*Vax[0]), Epos[1]+rDraw*(cph*Uax[1]+sph*Vax[1]), Epos[2]+rDraw*(cph*Uax[2]+sph*Vax[2])];
+    } else {                                                   // escape: curve tangent to the edge BY CONSTRUCTION
+      const phE=(1/3)*REV, cE=Math.cos(phE), sE=Math.sin(phE);                       // frozen exit angle on the rim
+      const rOut=[cE*Uax[0]+sE*Vax[0], cE*Uax[1]+sE*Vax[1], cE*Uax[2]+sE*Vax[2]];    // radial-out unit at exit
+      const tHat=[-sE*Uax[0]+cE*Vax[0], -sE*Uax[1]+cE*Vax[1], -sE*Uax[2]+cE*Vax[2]]; // tangent unit at exit
+      const E=[Epos[0]+rDraw*rOut[0], Epos[1]+rDraw*rOut[1], Epos[2]+rDraw*rOut[2]];  // start EXACTLY on the disk edge
+      // P(s) = E + tHat·(rDisk·A·s) + rOut·(rDisk·B·s²) → dP/ds|₀ = tHat·rDisk·A (⟂ radius = tangent)
+      const A=6, B=3, esc=s=>[ E[0]+tHat[0]*rDraw*A*s+rOut[0]*rDraw*B*s*s, E[1]+tHat[1]*rDraw*A*s+rOut[1]*rDraw*B*s*s, E[2]+tHat[2]*rDraw*A*s+rOut[2]*rDraw*B*s*s ];
+      const ex=[],ey=[],ez=[]; for(let i=0;i<=48;i++){ const q=esc(i/48); ex.push(q[0]); ey.push(q[1]); ez.push(q[2]); }
+      flownOp=smooth01((ed.w-0.75)/0.25);                      // heliocentric arc fades in over the last 25%
+      extra.push({type:'scatter3d',mode:'lines',x:ex,y:ey,z:ez,line:{color:'#3fb950',width:3},opacity:1-flownOp,hoverinfo:'skip',showlegend:false,name:'escape'});
+      probe=esc(smooth01(ed.w));
+    }
   }
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
@@ -1515,7 +1516,8 @@ function earthDiskGeom(){
   const uE=1/3;
   if(animU >= uE+ESC_W) return null;                   // past the dolly → pure heliocentric chase
   const peri=val('alt'), ee=earthEscapeRevs(SIM.thrust, SIM.wet, peri);
-  const rpRE=(R_EARTH+peri*1e3)/R_EARTH, soiAU=SOI_RE*R_EARTH_AU, rpAU=rpRE*R_EARTH_AU;
+  const soiAU=earthSoiRadius(1)/AU;                     // EXACT escape-disk radius (≈145 R⊕)
+  const rpRE=(R_EARTH+peri*1e3)/R_EARTH, rpAU=rpRE*R_EARTH_AU;
   let prog, w;                                          // prog = orbit-raising 0..1; w = transition 0..1
   if(animU < uE){ const ef=phaseOf(animU).f; prog=(Math.exp(3.5*ef)-1)/(Math.exp(3.5)-1); w=0; }
   else { prog=1; w=(animU-uE)/ESC_W; }

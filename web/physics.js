@@ -89,6 +89,9 @@
     const r0 = r0Au * AU;
     return { revs: MU_SUN / (8 * Math.PI * a * r0 * r0) };
   }
+  // Earth's sphere-of-influence radius (m): the orbit the spiral must reach to escape Earth =
+  // the physical RADIUS of the escape disk. r_SOI = a·(mu_earth/mu_sun)^(2/5) ≈ 145 R_earth.
+  function earthSoiRadius(rSunAu = 1) { return rSunAu * AU * Math.pow(MU_EARTH / MU_SUN, 0.4); }
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -101,7 +104,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

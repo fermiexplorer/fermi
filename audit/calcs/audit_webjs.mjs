@@ -27,6 +27,8 @@ const REF = {
   earth_escape_revs_ref: 981.919542,
   // Sun-escape revolutions (heliocentric spiral-out) for 0.2 N on 600 kg from 1 AU
   sun_escape_revs_ref: 0.707852,
+  // Earth sphere-of-influence radius (m) — the physical radius of the escape disk
+  earth_soi_radius_ref: 924646795.104645,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
 };
@@ -55,6 +57,7 @@ check("derived low-thrust departure Δv at 75k (km/s)", F.lowthrustDepartureDv(i
 check("derived low-thrust Δv, 590x35786 elliptical start (km/s)", F.lowthrustDepartureDv(ic75.vinf, ic75.tiltDeg, 590, 35786) / 1e3, REF.dv_lowthrust_gto_75k_kms, 1e-4);
 check("Earth-escape revolutions (0.2 N, 600 kg, 590 km)", F.earthEscapeRevs(0.2, 600, 590).revs, REF.earth_escape_revs_ref, 1e-4);
 check("Sun-escape revolutions (0.2 N, 600 kg, 1 AU)", F.sunEscapeRevs(0.2, 600, 1).revs, REF.sun_escape_revs_ref, 1e-4);
+check("Earth SOI radius (m)", F.earthSoiRadius(1), REF.earth_soi_radius_ref, 1e-4);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 

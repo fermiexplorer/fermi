@@ -123,6 +123,16 @@ def sun_escape_revs(thrust_n: float, mass_kg: float, r0_au: float = 1.0) -> floa
     return c.MU_SUN / (8.0 * math.pi * a * r0 * r0)
 
 
+def earth_soi_radius(r_sun_au: float = 1.0) -> float:
+    """Earth's sphere-of-influence radius (m):  r_SOI = a · (m_earth/m_sun)^(2/5), with a the
+    Earth–Sun distance and the mass ratio taken from the GM ratio (μ⊕/μ☉). This is the orbit the
+    low-thrust spiral must reach to leave Earth's gravity — i.e. the physical RADIUS of the
+    escape disk (≈ 9.24×10⁵ km ≈ 145 R⊕; diameter ≈ 290 R⊕ ≈ 0.0124 AU).
+    """
+    a = r_sun_au * c.AU
+    return a * (c.MU_EARTH / c.MU_SUN) ** 0.4
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float
