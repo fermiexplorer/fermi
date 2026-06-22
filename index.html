@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 56</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 57</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 56, SRC_COMMIT = 'HEAD';
+const BUILD = 57, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1214,20 +1214,24 @@ function drawFollow3d(c,st){
     // ----- probe + escape curve (Plan 06): dawn-dusk plane, TANGENT to the disk edge at any zoom -----
     flownOp=0;                                                 // hide the heliocentric arc while in the disk view
     const REV=24;
+    // shared orbital basis (so the orbit-raising spin and the escape go the SAME way): the escape
+    // launch tangent T projected into the disk plane (tIn), and the in-plane radial rO = n × tIn.
+    const td=T[0]*sunDir[0]+T[1]*sunDir[1]+T[2]*sunDir[2];
+    let tIn=[T[0]-td*sunDir[0], T[1]-td*sunDir[1], T[2]-td*sunDir[2]]; const tnn=Math.hypot(tIn[0],tIn[1],tIn[2])||1; tIn=[tIn[0]/tnn,tIn[1]/tnn,tIn[2]/tnn];
+    let rO=[sunDir[1]*tIn[2]-sunDir[2]*tIn[1], sunDir[2]*tIn[0]-sunDir[0]*tIn[2], sunDir[0]*tIn[1]-sunDir[1]*tIn[0]]; const ron=Math.hypot(rO[0],rO[1],rO[2])||1; rO=[rO[0]/ron,rO[1]/ron,rO[2]/ron];
     if(ed.w<=0){                                               // orbit-raising: the dot rides the disk edge
-      const ph=animU*REV, cph=Math.cos(ph), sph=Math.sin(ph);
-      probe=[Epos[0]+rDraw*(cph*Uax[0]+sph*Vax[0]), Epos[1]+rDraw*(cph*Uax[1]+sph*Vax[1]), Epos[2]+rDraw*(cph*Uax[2]+sph*Vax[2])];
+      // ψ=0 at escape onset (animU=1/3), reaching the rim point rO moving along +tIn — exactly the
+      // direction the escape then continues, so the spin and the escape share one rotational sense.
+      const psi=(animU-1/3)*REV, cps=Math.cos(psi), sps=Math.sin(psi);
+      probe=[Epos[0]+rDraw*(cps*rO[0]+sps*tIn[0]), Epos[1]+rDraw*(cps*rO[1]+sps*tIn[1]), Epos[2]+rDraw*(cps*rO[2]+sps*tIn[2])];
     } else {                                                   // escape: the REAL heliocentric arc, translated by one
       // SOI so it roots on the disk edge TANGENTIALLY. The shift (⟂ the arc's launch tangent, in
       // the disk plane) is ≈ SOI — negligible at AU scale — so as we zoom out it IS the cruise
       // arc (no second curve, no shape change, no jump). flownOp stays 0 (the unshifted arc is
       // hidden until we're fully heliocentric).
-      const a0=flown[0], a1=flown[Math.min(1,flown.length-1)];
-      let tH=[a1[0]-a0[0],a1[1]-a0[1],a1[2]-a0[2]]; let tn=Math.hypot(tH[0],tH[1],tH[2])||1; tH=[tH[0]/tn,tH[1]/tn,tH[2]/tn];
-      // rOut = n × tHat → in the disk plane (⟂ n) AND ⟂ the launch tangent → tangent root by construction
-      let rOut=[sunDir[1]*tH[2]-sunDir[2]*tH[1], sunDir[2]*tH[0]-sunDir[0]*tH[2], sunDir[0]*tH[1]-sunDir[1]*tH[0]];
-      let rn=Math.hypot(rOut[0],rOut[1],rOut[2])||1; rOut=[rOut[0]/rn,rOut[1]/rn,rOut[2]/rn];
-      const sh=[rDraw*rOut[0], rDraw*rOut[1], rDraw*rOut[2]];                              // shift ≈ one SOI
+      // shift along the SAME in-plane radial rO as the orbit-raising rim point → the escape roots
+      // exactly where the orbiting dot was, ⟂ the launch tangent (tangent root), and same sense.
+      const sh=[rDraw*rO[0], rDraw*rO[1], rDraw*rO[2]];                                    // shift ≈ one SOI
       const ex=flown.map(q=>q[0]+sh[0]), ey=flown.map(q=>q[1]+sh[1]), ez=flown.map(q=>q[2]+sh[2]);
       extra.push({type:'scatter3d',mode:'lines',x:ex,y:ey,z:ez,line:{color:'#3fb950',width:3},hoverinfo:'skip',showlegend:false,name:'escape'});
       probe=[p[0]+sh[0], p[1]+sh[1], p[2]+sh[2]];
