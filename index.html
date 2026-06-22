@@ -151,7 +151,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 45</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 46</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -293,7 +293,8 @@
     <div class="topviz">
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
-        <label class="logtime" title="Burn timeline on a log time axis (the ~1-yr burn is visible against the multi-10⁴-yr coast); uncheck for a linear axis."><input type="checkbox" id="logtime" checked> Logarithmic time</label>
+        <label class="logtime" title="Map time logarithmically (the ~1-yr burn is visible against the multi-10⁴-yr coast). Uncheck for PURE LINEAR time — Play, the scrubber and all views advance uniformly in elapsed time (the burn then occupies the first instant)."><input type="checkbox" id="logtime" checked> Logarithmic time</label>
+        <label class="logtime" title="Loop the animation: when Play reaches the arrival it restarts from launch."><input type="checkbox" id="loop"> Loop</label>
         <input type="range" id="tscrub" min="0" max="100" step="0.25" value="0">
         <span id="tlabel"></span>
       </div>
@@ -680,7 +681,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 45, SRC_COMMIT = 'HEAD';
+const BUILD = 46, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1015,8 +1016,19 @@ function craftState(){
   const I=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
   const Inorm=Math.hypot(I[0],I[1],I[2]);
   const RDEP=1;                                    // departure at Earth's orbit (1 AU from Sun)
-  const dist=RDEP*Math.pow(Inorm/RDEP, animU);     // LOG-spaced heliocentric distance: 1 AU -> AC
-  const f=dist/Inorm, es=f*T;                      // journey fraction (0..1) and elapsed time
+  // "Logarithmic time" (default): the scrubber maps animU to LOG-spaced distance, so the early
+  // burn/escape (1 AU → tens of AU) is spread out and visible. Unchecked: PURE LINEAR time —
+  // elapsed time is uniform in animU (es = animU·T), distance ~ constant-rate coast. The whole
+  // evolution (Play, scrub, all views) follows this; the burn then occupies the first instant.
+  let dist, es;
+  if(logTimeMode()){
+    dist=RDEP*Math.pow(Inorm/RDEP, animU);         // log-spaced distance
+    es=(dist/Inorm)*T;
+  } else {
+    es=animU*T;                                    // linear in time
+    dist=RDEP+animU*(Inorm-RDEP);                  // ~constant-rate (coast) distance
+  }
+  const f=dist/Inorm;                              // journey fraction (0..1)
   const ac=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
   const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
   const tEx=T*1.18, acEnd=[(R0[0]+VAC[0]*tEx)*s,(R0[1]+VAC[1]*tEx)*s,(R0[2]+VAC[2]*tEx)*s];
@@ -1423,9 +1435,12 @@ function togglePlay(){
   btn.textContent='⏸ Pause';
   animTimer=setInterval(()=>{
     if(dragging3d) return;                 // don't redraw mid-drag — keeps rotation smooth while playing
-    animU=Math.min(1, animU+0.004);
+    animU=animU+0.004;
+    if(animU>=1){
+      if(document.getElementById('loop').checked){ animU=0; }   // Loop: restart from launch
+      else { animU=1; clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
+    }
     drawViz();                             // the burn timeline's "now" marker advances with animU
-    if(animU>=1){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
   },40);
 }
 
@@ -1479,7 +1494,10 @@ document.getElementById('playbtn').addEventListener('click', togglePlay);
 // ----- the burn timeline IS the scrubber: drag along it to set the current time -----
 // Map a click x (years, log axis) back to the animation parameter u, the inverse of the
 // craftState() u→elapsed-time mapping (elapsed = Inorm^(u−1)·T).
-function timeToU(tYr){ if(!SIM) return 0; const In=craftState().Inorm;
+function logTimeMode(){ const c=document.getElementById('logtime'); return c?c.checked:true; }
+function timeToU(tYr){ if(!SIM) return 0;
+  if(!logTimeMode()) return Math.max(0, Math.min(1, tYr*YEAR/SIM.Tsec));     // linear: animU = t/T
+  const In=craftState().Inorm;                                              // log: invert es = Inorm^(u-1)·T
   return Math.max(0, Math.min(1, 1 + Math.log((tYr*YEAR)/SIM.Tsec)/Math.log(In))); }
 (function(){
   const gd=document.getElementById('chartTimeline'); let scrubbing=false;
@@ -1531,7 +1549,8 @@ document.getElementById('show2d').addEventListener('change',(e)=>{
   if(e.target.checked) drawViz();
 });
 // Burn-timeline time axis: log (default) vs linear — redraw the timeline on toggle.
-document.getElementById('logtime').addEventListener('change',()=>drawTimeline());
+// Log/linear time changes the whole animU→time mapping (Play, scrub, all views) — redraw live.
+document.getElementById('logtime').addEventListener('change',()=>{ const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; drawViz(); });
 // Overview zoom mode: wide Sun→AC by default, close-up-and-dolly when checked
 document.getElementById('zoomstart').addEventListener('change',()=>{ zoom3dOv=1; drawViz(); });
 // Chase-cam zoom mode: tight chase by default, pull back to AC when unchecked
