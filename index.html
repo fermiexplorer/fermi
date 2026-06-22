@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 53</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 54</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 53, SRC_COMMIT = 'HEAD';
+const BUILD = 54, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -699,7 +699,7 @@ const BUILD = 53, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -886,6 +886,13 @@ function render(){
   K.push({l:'Burn duration', v:fmt(r.burnYr,1)+' yr', i:inl('pwr','eta','isp','dry','pay','prop'), s:'t_burn — continuous firing time',
     d:'How long the ion engine fires continuously to build the Δv — gentle thrust (a few hundredths of a g) sustained for months to a couple of years, after which it coasts. Set by the propellant, the exhaust velocity and the thrust.',
     c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft)\nF = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN  (thrust)\nm_p = ${fmt(r.mp)} kg  (see propellant)\nt_burn = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
+  { const aAcc=r.thrust/r.wet, eRev=earthEscapeRevs(r.thrust,r.wet,val('alt')), sRev=sunEscapeRevs(r.thrust,r.wet,1).revs, rpKm=(R_EARTH+val('alt')*1e3)/1e3;
+  K.push({l:'Revolutions ⟳ Earth', v:fmt(eRev.revs), i:inl('pwr','eta','isp','dry','pay','prop','alt'), s:'N⊕ — orbit-raising revolutions to escape Earth',
+    d:'How many times the spacecraft loops Earth while the ion engine slowly spirals it out of low orbit to escape. At milli-g thrust each loop adds only Δr ≈ 4π·a·r³/μ⊕ — a few km at LEO — so it takes hundreds of revolutions; this is where the bulk of the Earth-departure Δv (the “spiral tax”) is spent.',
+    c:`a = thrust / wet mass = ${fmt(r.thrust*1e3,0)} mN / ${fmt(r.wet)} kg = ${aAcc.toExponential(2)} m/s²\nr_p = R⊕ + ${val('alt')} km = ${fmt(rpKm,0)} km\nN⊕ = μ⊕ / (8π·a·r_p²) = ${fmt(eRev.revs)} revolutions   (escape time ≈ v_circ/a = ${fmt(eRev.tYr,2)} yr)`});
+  K.push({l:'Revolutions ⟳ Sun', v:fmt(sRev,2), i:inl('pwr','eta','isp','dry','pay','prop'), s:'N☉ — heliocentric loops while spiralling to solar escape',
+    d:'How many times the probe loops the Sun while the ion raises its heliocentric orbit from 1 AU to solar-escape speed. The Sun is far heavier and 1 AU far larger, so this is typically LESS THAN ONE full turn — the craft barely loops the Sun once before coasting straight to Alpha Centauri (contrast the hundreds of loops around Earth).',
+    c:`a = thrust / wet mass = ${aAcc.toExponential(2)} m/s²\nN☉ = μ☉ / (8π·a·(1 AU)²) = ${fmt(sRev,2)} revolutions\nThe interstellar cruise that follows is a straight coast (no orbiting), so this is effectively the total turns around the Sun.`}); }
   K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'), s:'m_pay — delivered payload mass',
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
     c:`m_pay = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
@@ -991,7 +998,7 @@ function drawViz(){
   const c=craftState(), st=trajState(c);
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown);
   const dly=c.dist*AU/LY;
-  const _phaseTxt = phaseOf(animU).stage==='earth' ? 'Earth-escape spiral (geocentric)'
+  const _phaseTxt = (logTimeMode() && phaseOf(animU).stage==='earth') ? 'Earth-escape spiral (geocentric)'
                   : (st.onSpiral?'spiral-out & solar escape':'interstellar cruise');
   document.getElementById('tlabel').textContent=
     `${fmt(c.es/YEAR)} yr · ${_phaseTxt} · `+
@@ -1029,19 +1036,22 @@ function craftState(){
   const vhat=[I[0]/Inorm,I[1]/Inorm,I[2]/Inorm];
   const rv=requiredVinfVec(T), vinfKmS=Math.hypot(rv[0],rv[1],rv[2])/1000;
   const rLast=buildTraj(vhat,vinfKmS).rLast;       // end of the heliocentric escape arc (~24 AU)
-  // ONE phase clock (Plan 04): animU's three thirds are Earth escape / Sun escape / cruise.
-  //  • earth third → heliocentric distance is FROZEN at 1 AU (the craft is still bound to Earth;
-  //    it climbs out geocentrically — shown in the Earth-escape inset — and must NOT fly out yet).
-  //  • sun third   → distance sweeps 1 AU → end of the escape arc (v∞ reached).
-  //  • ac third    → distance sweeps escape-arc end → the intercept (cruise).
-  // Within the heliocentric thirds, log time spreads distance geometrically (early AU stay
-  // visible), linear spreads it uniformly. Elapsed time comes from elapsedYrFromU, so the
-  // burn-timeline "▲ now" marker and every 3D view share this exact phase clock.
-  const ph=phaseOf(animU); let dist;
-  if(ph.stage==='earth')      dist=RDEP;
-  else if(ph.stage==='sun')   dist = logTimeMode() ? RDEP*Math.pow(rLast/RDEP, ph.f) : RDEP+ph.f*(rLast-RDEP);
-  else                        dist = logTimeMode() ? rLast*Math.pow(Inorm/rLast, ph.f) : rLast+ph.f*(Inorm-rLast);
-  const es=elapsedYrFromU(animU)*YEAR;             // unified elapsed time (coherent with the burn timeline)
+  // TWO independent time clocks (selected by the Log-time checkbox; toggling resets to 0):
+  //  • LOG time → animU's three thirds (Earth escape / Sun escape / cruise) at staged scales,
+  //    distance spread geometrically so the early AU stay visible; drives the Earth-escape disk.
+  //  • LINEAR time → elapsed years increase UNIFORMLY 0 → arrival as the slider advances, and
+  //    distance grows at the constant cruise rate. No phases, no disk.
+  let dist, es;
+  if(logTimeMode()){
+    const ph=phaseOf(animU);
+    if(ph.stage==='earth')      dist=RDEP;
+    else if(ph.stage==='sun')   dist=RDEP*Math.pow(rLast/RDEP, ph.f);
+    else                        dist=rLast*Math.pow(Inorm/rLast, ph.f);
+    es=elapsedYrFromU(animU)*YEAR;
+  } else {
+    es=animU*T;                                    // uniform years 0 → arrival
+    dist=RDEP+animU*(Inorm-RDEP);                  // constant-rate cruise distance
+  }
   const f=dist/Inorm;                              // journey fraction (0..1)
   const ac=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
   const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
@@ -1417,7 +1427,8 @@ function burnPhases(r){
   return {tEarth, tBurn:r.burnYr, arrival:r.arrivalYr};
 }
 function elapsedYrFromU(u){
-  const ph=phaseOf(u), p=burnPhases(compute());      // real segment durations (Earth escape / Sun escape / coast)
+  if(!logTimeMode()) return u*(SIM&&SIM.feasible?SIM.arrivalYr:(val('T')||75000));   // LINEAR: uniform 0 → arrival
+  const ph=phaseOf(u), p=burnPhases(compute());      // LOG: real segment durations (Earth / Sun escape / coast)
   if(ph.stage==='earth') return ph.f*p.tEarth;
   if(ph.stage==='sun')   return p.tEarth + ph.f*Math.max(0,p.tBurn-p.tEarth);
   return p.tBurn + ph.f*Math.max(0,p.arrival-p.tBurn);
@@ -1632,10 +1643,10 @@ document.getElementById('playbtn').addEventListener('click', togglePlay);
 // ----- the burn timeline IS the scrubber: drag along it to set the current time -----
 // Map a click x (years, log axis) back to the animation parameter u, the inverse of the
 function logTimeMode(){ const c=document.getElementById('logtime'); return c?c.checked:true; }
-// Invert the unified phase clock (Plan 04): map a real elapsed-year (a burn-timeline click)
-// back to animU by locating which phase segment it lands in, then animU = stageStart + f/3.
+// Map a real elapsed-year (a burn-timeline click) back to animU.
 function timeToU(tYr){ if(!SIM) return 0;
-  const p=burnPhases(compute()), t=Math.max(0,tYr); let stage,f;
+  if(!logTimeMode()) return Math.max(0, Math.min(1, tYr/(SIM.arrivalYr||1)));   // LINEAR: animU = t / arrival
+  const p=burnPhases(compute()), t=Math.max(0,tYr); let stage,f;                // LOG: invert the phase clock
   if(t<=p.tEarth){ stage='earth'; f=p.tEarth>0? t/p.tEarth:0; }
   else if(t<=p.tBurn){ stage='sun'; f=(t-p.tEarth)/Math.max(1e-9,p.tBurn-p.tEarth); }
   else { stage='ac'; f=(t-p.tBurn)/Math.max(1e-9,p.arrival-p.tBurn); }
@@ -1691,7 +1702,8 @@ document.getElementById('show2d').addEventListener('change',(e)=>{
 });
 // Burn-timeline time axis: log (default) vs linear — redraw the timeline on toggle.
 // Log/linear time changes the whole animU→time mapping (Play, scrub, all views) — redraw live.
-document.getElementById('logtime').addEventListener('change',()=>{ const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; drawViz(); });
+// Log/linear are two separate clocks — toggling resets the timeline to zero (no mid-stream switch).
+document.getElementById('logtime').addEventListener('change',()=>{ stopPlay(); animU=0; const ts=document.getElementById('tscrub'); if(ts) ts.value=0; drawViz(); });
 // Overview zoom mode: wide Sun→AC by default, close-up-and-dolly when checked
 document.getElementById('zoomstart').addEventListener('change',()=>{ zoom3dOv=1; drawViz(); });
 // Chase-cam zoom mode: tight chase by default, pull back to AC when unchecked

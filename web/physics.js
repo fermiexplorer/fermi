@@ -80,6 +80,15 @@
     const rp = R_EARTH + periAltKm * 1e3;
     return { revs: MU_EARTH / (8 * Math.PI * a * rp * rp), tYr: (Math.sqrt(MU_EARTH / rp) / a) / YEAR };
   }
+  // Heliocentric spiral-out: revolutions around the Sun raising the orbit from r0 (~1 AU) to solar
+  // escape. N = mu_sun/(8*pi*a*r0^2). The cruise after is a straight coast, so this is the total
+  // turns around the Sun — typically < 1 (vs ~hundreds around Earth).
+  function sunEscapeRevs(thrustN, massKg, r0Au = 1) {
+    const a = thrustN / Math.max(massKg, 1);
+    if (a <= 0) return { revs: 0 };
+    const r0 = r0Au * AU;
+    return { revs: MU_SUN / (8 * Math.PI * a * r0 * r0) };
+  }
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -92,7 +101,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

@@ -109,6 +109,20 @@ def earth_escape_revs(thrust_n: float, mass_kg: float, perigee_km: float = 590.0
     return n, t_yr
 
 
+def sun_escape_revs(thrust_n: float, mass_kg: float, r0_au: float = 1.0) -> float:
+    """Revolutions around the Sun while the ion spirals the heliocentric orbit out from r0 (≈1 AU)
+    to solar escape under constant tangential thrust (a = thrust/mass) — the same near-circular
+    result with the Sun's gravity:  N = mu_sun / (8·pi·a·r0²).  The interstellar coast that follows
+    is a straight cruise (no orbiting), so this is effectively the total number of turns around the
+    Sun — typically < 1, in stark contrast to the ~hundreds of revolutions to climb out of Earth.
+    """
+    a = thrust_n / max(mass_kg, 1.0)
+    if a <= 0.0:
+        return 0.0
+    r0 = r0_au * c.AU
+    return c.MU_SUN / (8.0 * math.pi * a * r0 * r0)
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float
