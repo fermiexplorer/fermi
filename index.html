@@ -99,9 +99,6 @@
   @media (max-width: 860px) { .viz3drow { grid-template-columns: 1fr; } }
   .vsec3d { margin-top: 18px; }
   .vsec-h { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
-  .espiralrow { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: center; margin-top: 14px; }
-  @media (max-width: 760px) { .espiralrow { grid-template-columns: 1fr; } }
-  #earthSpiral { min-height: 360px; }
   .espiralcap { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
   .espiralcap code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; }
   .camcell { display: flex; flex-direction: column; }
@@ -156,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 48</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 49</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -343,17 +340,15 @@
         <span><i class="vbar" style="background:#4cc2ff"></i>heliocentric escape (engine ON)</span>
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
       </div>
-      <div class="espiralrow">
-        <div class="chart" id="earthSpiral"></div>
-        <div class="espiralcap">
-          <b>The many-revolution Earth departure.</b> Spiraling out of Earth's gravity well at ~milli-g
-          takes <b>hundreds of revolutions</b> (geocentric, within Earth's Hill sphere) — this is where the
-          ion "spiral tax" (~11 km/s of gravity loss above the impulsive floor) is paid, and it's far below
-          the scale of the solar-system views above. The rev count <code>N = μ/(8π·a·r_p²)</code> scales with
-          the real thrust-to-weight (a = thrust ÷ wet mass): more power or a lighter craft → fewer loops.
-          The ~0.7-yr departure is a single instant on the 75,000-yr timeline, so it plays here at its own
-          scale; with <b>log time</b> the revolutions accelerate (the slow high-altitude end is compressed).
-        </div>
+      <div class="espiralcap" style="margin-top:14px">
+        <b>The many-revolution Earth departure.</b> Spiraling out of Earth's gravity well at ~milli-g
+        takes <b>hundreds of revolutions</b> (geocentric, within Earth's Hill sphere) — this is where the
+        ion "spiral tax" (~11 km/s of gravity loss above the impulsive floor) is paid, and it's far below
+        the scale of the solar-system views above. The rev count <code>N = μ/(8π·a·r_p²)</code> scales with
+        the real thrust-to-weight (a = thrust ÷ wet mass): more power or a lighter craft → fewer loops.
+        The ~0.7-yr departure is a single instant on the 75,000-yr timeline, so in <b>log time</b> the chase
+        cam opens top-down on the orbit-raising spiral/disk and zooms out into the escape arc (the
+        revolutions accelerate as the slow high-altitude end is compressed); in linear time it's skipped.
       </div>
     </div>
     <div class="charts">
@@ -698,7 +693,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 48, SRC_COMMIT = 'HEAD';
+const BUILD = 49, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1009,7 +1004,7 @@ function drawViz(){
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
   drawFollow3d(c,st);  // chase cam (3D, second)
   drawTimeline();      // burn timeline + moving "now" marker
-  if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); drawEarthSpiral(SIM); }   // vectors + Earth-escape inset
+  if(SIM){ drawVelSpeed(SIM,c); drawVelDv(SIM,c); }   // velocity-space vector views
   setupCamSync();                                     // attach camera-sync listeners once
 
   // 2D views are off by default (checkbox) — only draw them when visible
@@ -1133,46 +1128,79 @@ function cols(a){ return {x:a.map(p=>p[0]), y:a.map(p=>p[1]), z:a.map(p=>p[2])};
 function drawFollow3d(c,st){
   const p=st.pos, T=st.tan;
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc;
+  const Epos = flown[0];                                        // Earth's heliocentric position (arc start)
+  const ed = earthDiskGeom();                                   // Earth-escape disk geometry (log time only; null = skip)
   // Default (checked): tight cube around the flown path + Sun. Unchecked: pull the frame
   // back to also enclose AC and the intercept, so the target ahead of the probe is in view.
   const chaseIn = document.getElementById('chasezoom') ? document.getElementById('chasezoom').checked : true;
-  const all = chaseIn ? flown.concat([[0,0,0]])
-                      : flown.concat([[0,0,0], c.ac, c.acEnd, c.I]);
-  let mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
-  all.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<mn[k])mn[k]=q[k]; if(q[k]>mx[k])mx[k]=q[k]; }});
-  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
-  const H=0.5*Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],0.5)*1.3*zoom3dCh;   // cube half-width × user zoom
+  // ----- heliocentric framing (always computed; also the dolly's zoom-out target) -----
+  const helioPts = chaseIn ? flown.concat([[0,0,0]]) : flown.concat([[0,0,0], c.ac, c.acEnd, c.I]);
+  let hmn=[1e30,1e30,1e30], hmx=[-1e30,-1e30,-1e30];
+  helioPts.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<hmn[k])hmn[k]=q[k]; if(q[k]>hmx[k])hmx[k]=q[k]; }});
+  const helioCtr=[(hmn[0]+hmx[0])/2,(hmn[1]+hmx[1])/2,(hmn[2]+hmx[2])/2];
+  const helioHbase=0.5*Math.max(hmx[0]-hmn[0],hmx[1]-hmn[1],hmx[2]-hmn[2],0.5)*1.3;
+  // ----- choose frame center + half-width by regime (continuous geocentric → heliocentric) -----
+  let ctr, Hbase, tc, diskOp=0, lineOp=0, rDraw=0;
+  if(ed && ed.w<=0){                                            // EARTH: top-down, disk grows, zoom tracks the disk
+    ctr=Epos.slice(); Hbase=ed.rAU*1.4; tc=0; rDraw=ed.rAU;
+    diskOp=0.30*smooth01((ed.prog-0.25)/0.5);
+    lineOp=0.55+0.45*(1-smooth01((ed.prog-0.4)/0.5));
+  } else if(ed){                                                // TRANSITION: scheduled SOI→helio dolly, tilt to chase
+    const s=smooth01(ed.w), Hstart=ed.soiAU*1.4, Htgt=Math.max(helioHbase, Hstart*1.001);
+    Hbase=Hstart*Math.pow(Htgt/Hstart, s);                      // geometric (log-uniform) zoom = visually smooth
+    ctr=[Epos[0]+(helioCtr[0]-Epos[0])*s, Epos[1]+(helioCtr[1]-Epos[1])*s, Epos[2]+(helioCtr[2]-Epos[2])*s];
+    tc=s; rDraw=ed.soiAU; diskOp=0.30*(1-s); lineOp=0.6*(1-s);  // disk shrinks to a dot + fades
+  } else {                                                      // HELIOCENTRIC: standard chase
+    ctr=helioCtr; Hbase=helioHbase; tc=1;
+  }
+  const H=Hbase*zoom3dCh;
   const ttl=['x (AU)','y (AU)','z (AU)'];
   const ax=k=>({range:[ctr[k]-H,ctr[k]+H],showticklabels:true,tickformat:H<100?'':'.2g',tickfont:{size:9},title:{text:ttl[k],font:{size:10}},color:'#9aa7b4',gridcolor:'#1d242d'});
-  // full ecliptic grid (z=0) spanning the frame
-  const gx=[],gy=[],gz=[],gn=10;
+  // reference grid spanning the frame (at the disk plane while geocentric, else the ecliptic z=0)
+  const gx=[],gy=[],gz=[],gn=10, zPlane=ed?Epos[2]:0;
   for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
-    gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(0,0,null);
-    gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(0,0,null); }
+    gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(zPlane,zPlane,null);
+    gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(zPlane,zPlane,null); }
   const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=2.3;
   let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
   const autoEye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
-  // Chase locked to cam (default): auto orientation behind the probe (no uirevision → it tracks
-  // the turning velocity, and defines the shared cam orientation). Unlocked: it joins the fixed
-  // (world) group — user-rotatable and synced via uirevision.
+  // ----- camera: top-down (looking straight down on the orbit) → true chase as it escapes -----
   const camLock=lockedToCam('follow3d');
-  const sceneCam = camLock ? {eye:autoEye,center:{x:0,y:0,z:0},up:{x:0,y:0,z:1}} : groupCam('follow3d');
-  // The chase defines the cam orientation; push it to cam-locked peers only when it actually
-  // changes (as the velocity turns), so a manual cam-group rotation isn't overwritten every frame.
-  if(camLock && !camClose(sceneCam,camCam)){ camCam=cloneCam(sceneCam);
+  let eye=autoEye, up={x:0,y:0,z:1};
+  if(tc<1){                                                     // tc: 0 = top-down, 1 = chase (set per regime)
+    let ex=autoEye.x*tc, ey=autoEye.y*tc, ez=D+(autoEye.z-D)*tc;   // top eye = (0,0,D), looking straight down
+    const en=Math.hypot(ex,ey,ez)||1; eye={x:D*ex/en,y:D*ey/en,z:D*ez/en};
+    let uy=1-tc, uz=tc; const un=Math.hypot(uy,uz)||1; up={x:0,y:uy/un,z:uz/un};
+  }
+  const sceneCam = camLock ? {eye,center:{x:0,y:0,z:0},up} : groupCam('follow3d');
+  // Push the orientation to cam-locked peers only when fully in chase (don't spin the
+  // velocity-space views while this one is in its top-down Earth-escape view).
+  if(camLock && tc>0.99 && !camClose(sceneCam,camCam)){ camCam=cloneCam(sceneCam);
     pushCamTo(SYNC_IDS.filter(x=>x!=='follow3d'&&lockedToCam(x)),camCam); }
-  const A=cols(flown), tag = phaseOf(animU).stage==='earth' ? 'Earth escape (see inset)'
-                           : (st.onSpiral?'solar-escape spiral':'interstellar cruise');
+  // probe rides the disk rim while orbit-raising (earth regime), else sits on the trajectory
+  let probe=p;
+  if(ed && ed.w<=0){ const phi=animU*16*Math.PI; probe=[Epos[0]+ed.rAU*Math.cos(phi), Epos[1]+ed.rAU*Math.sin(phi), Epos[2]]; }
+  const A=cols(flown);
+  const tag = ed ? `orbit-raising · ≈${fmt(ed.ee.revs)} rev · ${fmt(ed.ee.tYr,2)} yr`
+                 : (st.onSpiral?'solar-escape spiral':'interstellar cruise');
+  const cubeLbl = (ed && H<0.02) ? `${fmt(2*H/R_EARTH_AU,0)} R⊕` : `${fmt(2*H, H<10?2:0)} AU`;
+  const extra=[];
+  if(ed){
+    extra.push(diskMesh(Epos, rDraw, 64, '#3fb950', diskOp));         // tiltable green disk (orbit-raising envelope)
+    const sp=spiralPts(Epos, ed.rpAU, rDraw, ed.turns, 26);
+    extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#3fb950',width:3},opacity:lineOp,hoverinfo:'skip',showlegend:false,name:'orbit-raising'});
+  }
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
+    ...extra,
     {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
     {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2,dash:'dot'},name:'AC track'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
-    {type:'scatter3d',mode:'markers',x:[flown[0][0]],y:[flown[0][1]],z:[flown[0][2]],marker:{color:'#58a6ff',size:4},name:'Earth'},
-    {type:'scatter3d',mode:'markers',x:[p[0]],y:[p[1]],z:[p[2]],marker:{color:'#a371f7',size:6},name:'probe'},
+    {type:'scatter3d',mode:'markers',x:[Epos[0]],y:[Epos[1]],z:[Epos[2]],marker:{color:'#58a6ff',size:ed?6:4},name:'Earth'},
+    {type:'scatter3d',mode:'markers',x:[probe[0]],y:[probe[1]],z:[probe[2]],marker:{color:'#a371f7',size:6},name:'probe'},
     {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'Alpha Centauri'},
     {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
-  ],{title:{text:`Chase cam (3D) — behind the probe (${fmt(2*H, H<10?2:0)} AU cube · ${tag}) · ${chaseIn?'scroll to zoom':'pulled back to AC'}`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`Chase cam (3D) — ${ed?'top-down → chase':'behind the probe'} (${cubeLbl} cube · ${tag})`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},
     uirevision: camLock?undefined:'follow3dsync',
     scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
@@ -1395,40 +1423,44 @@ function drawTimeline(){
     xaxis:xaxis, yaxis:{visible:false,range:[-1.2,1.7]}},CFG);
 }
 
-// ----- Earth-escape spiral inset (geocentric) -----
-// The many-revolution climb out of Earth's well that dominates the ion departure Δv. It is far
-// below the solar-scale 3D views, so it gets its own panel. The real rev count N = μ/(8π·a·r_p²)
-// (a = thrust/wet mass) is design-responsive; ~hundreds of loops can't be drawn legibly, so we
-// draw ~48 representative loops and LABEL the true N. The ~0.7-yr departure is a single frame on
-// the 75,000-yr timeline, so the inset runs it over the full Play at its OWN scale; log time makes
-// the revolutions accelerate (compressing the slow high-altitude end), linear is uniform.
-const ESPIRAL_LOOPS = 48, ESPIRAL_ROUT = 140;   // representative loops; visual outer radius (Earth radii)
-function drawEarthSpiral(r){
-  const peri=val('alt'), ee=earthEscapeRevs(r.thrust, r.wet, peri);
-  const rpRE=(R_EARTH+peri*1e3)/R_EARTH;
-  const eph=phaseOf(animU), ef = eph.stage==='earth' ? eph.f : 1;   // Earth escape = the FIRST third only; escaped after
-  const revProg = logTimeMode() ? (Math.exp(3.5*ef)-1)/(Math.exp(3.5)-1) : ef;  // log: accelerate within the phase
-  const phiMax=2*Math.PI*ESPIRAL_LOOPS, phiP=phiMax*revProg;
-  const rAt=ph=>rpRE+(ph/phiMax)*(ESPIRAL_ROUT-rpRE);
-  const sx=[],sy=[],fx=[],fy=[],M=1440;
-  for(let i=0;i<=M;i++){ const ph=phiMax*i/M, rr=rAt(ph), X=rr*Math.cos(ph), Y=rr*Math.sin(ph);
-    sx.push(X); sy.push(Y); if(ph<=phiP){ fx.push(X); fy.push(Y); } }
-  const rP=rAt(phiP), px=rP*Math.cos(phiP), py=rP*Math.sin(phiP);
-  const ex=[],ey=[]; for(let i=0;i<=64;i++){ const a=2*Math.PI*i/64; ex.push(Math.cos(a)); ey.push(Math.sin(a)); }
-  const escaped=revProg>=0.999, drawnDiv=Math.max(1,Math.round(ee.revs/ESPIRAL_LOOPS));
-  Plotly.react('earthSpiral',[
-    {x:sx,y:sy,mode:'lines',line:{color:'#2a323d',width:1},hoverinfo:'skip',showlegend:false},
-    {x:fx,y:fy,mode:'lines',line:{color:'#3fb950',width:1.5},hoverinfo:'skip',showlegend:false},
-    {x:ex,y:ey,mode:'lines',line:{color:'#58a6ff',width:1},fill:'toself',fillcolor:'rgba(88,166,255,0.3)',hoverinfo:'skip',showlegend:false},
-    {x:[px],y:[py],mode:'markers',marker:{color:escaped?'#d29922':'#a371f7',size:7},hoverinfo:'skip',showlegend:false},
-  ],{title:{text:`Earth-escape spiral — ≈${fmt(ee.revs)} revolutions · ${fmt(ee.tYr,2)} yr (geocentric)`,font:{size:12,color:'#e6edf3'}},
-    paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',font:{color:'#9aa7b4',size:10},margin:{l:6,r:6,t:28,b:6},showlegend:false,dragmode:false,
-    xaxis:{range:[-ESPIRAL_ROUT*1.04,ESPIRAL_ROUT*1.04],visible:false,fixedrange:true},
-    yaxis:{range:[-ESPIRAL_ROUT*1.04,ESPIRAL_ROUT*1.04],visible:false,scaleanchor:'x',scaleratio:1,fixedrange:true},
-    annotations:[
-      {x:0,y:-ESPIRAL_ROUT*0.93,text:escaped?'escaped Earth → now heliocentric':`${fmt(100*revProg)}% of the departure spiral`,showarrow:false,font:{size:10,color:escaped?'#d29922':'#9aa7b4'}},
-      {x:0,y:ESPIRAL_ROUT*0.93,text:`axes in Earth radii · ${ESPIRAL_LOOPS} loops drawn (÷${drawnDiv} of the real ≈${fmt(ee.revs)})`,showarrow:false,font:{size:9,color:'#6e7681'}}]},
-    {...CFG,scrollZoom:false});
+// ----- Earth-escape disk/spiral geometry (drawn IN the chase cam, Plan 05) -----
+// The many-revolution climb out of Earth's well is ~0.7 yr / ~hundreds of revolutions,
+// geocentric, far below the solar-system scale. In LOG time the chase cam opens on a
+// top-down view of Earth with a few-turn green spiral that grows and fills into a disk
+// (the orbit-raising envelope out to the sphere of influence), then the camera rotates to
+// a true chase and zooms out continuously into the heliocentric escape arc. In LINEAR time
+// the whole treatment is skipped — the escape is a single instant on the timeline.
+const SOI_RE = 145;                                   // Earth sphere of influence (Earth radii)
+const R_EARTH_AU = R_EARTH/AU;                         // one Earth radius in AU
+const smooth01 = t => { t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
+function spiralPts(C, r0, r1, turns, perTurn){        // Archimedean spiral in the z=C[2] plane
+  const n=Math.max(8, Math.round(turns*perTurn)), x=[],y=[],z=[];
+  for(let i=0;i<=n;i++){ const t=i/n, ph=2*Math.PI*turns*t, r=r0+(r1-r0)*t;
+    x.push(C[0]+r*Math.cos(ph)); y.push(C[1]+r*Math.sin(ph)); z.push(C[2]); }
+  return {x,y,z,phEnd:2*Math.PI*turns, rEnd:r1};
+}
+function diskMesh(C, R, n, color, op){                 // filled disk (fan) in the z=C[2] plane
+  const x=[C[0]],y=[C[1]],z=[C[2]],I=[],J=[],K=[];
+  for(let k=0;k<=n;k++){ const a=2*Math.PI*k/n; x.push(C[0]+R*Math.cos(a)); y.push(C[1]+R*Math.sin(a)); z.push(C[2]); }
+  for(let k=1;k<=n;k++){ I.push(0); J.push(k); K.push(k===n?1:k+1); }
+  return {type:'mesh3d',x,y,z,i:I,j:J,k:K,color,opacity:op,flatshading:true,hoverinfo:'skip',showlegend:false};
+}
+const ESC_W = 0.12;                                    // transition-window width in animU (the SOI→AU dolly)
+// Earth-escape disk geometry for the current animU. Two sub-regimes inside the log-time
+// earth window: `earth` (animU < 1/3) the disk grows R⊕→SOI top-down; `transition`
+// (1/3 ≤ animU < 1/3+ESC_W) a scheduled camera dolly zooms SOI→heliocentric while the disk
+// fades to a dot and the camera tilts to chase. Returns null in linear time / afterwards.
+function earthDiskGeom(){
+  if(!logTimeMode() || !SIM) return null;              // log time only — skipped in linear time
+  const uE=1/3;
+  if(animU >= uE+ESC_W) return null;                   // past the dolly → pure heliocentric chase
+  const peri=val('alt'), ee=earthEscapeRevs(SIM.thrust, SIM.wet, peri);
+  const rpRE=(R_EARTH+peri*1e3)/R_EARTH, soiAU=SOI_RE*R_EARTH_AU, rpAU=rpRE*R_EARTH_AU;
+  let prog, w;                                          // prog = orbit-raising 0..1; w = transition 0..1
+  if(animU < uE){ const ef=phaseOf(animU).f; prog=(Math.exp(3.5*ef)-1)/(Math.exp(3.5)-1); w=0; }
+  else { prog=1; w=(animU-uE)/ESC_W; }
+  const rAU = rpAU + prog*(soiAU-rpAU);
+  return {ee, rpAU, soiAU, prog, w, rAU, turns:2+prog*6};
 }
 
 // ----- animation: auto-advances through Earth -> Sun -> AC stages -----
