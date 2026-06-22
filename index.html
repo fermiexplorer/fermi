@@ -150,7 +150,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 42</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 43</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -403,9 +403,12 @@
   thrust, integrated by RK4 and reduced to the closed form <code>Δv = v_circ + v∞,E − 1.17 km/s</code>, matched
   to the integration within 0.5 m/s — see <code>tools/fit_spiral.py</code> and <code>audit/calcs/audit_departure.py</code>):
   ≈ <strong>25 km/s</strong> at the optimum. This sits in the physical bracket between the ~14 km/s impulsive
-  floor (a theoretical lower bound, unreachable by an ion engine) and the spiral itself. Recovering the
-  perigee-biased optimum (which lands lower, between the floor and the naïve spiral) is the next step — see
-  <code>docs/plans/02-derived-lowthrust-departure.md</code> Phase B.</p>
+  floor (a theoretical lower bound, unreachable by an ion engine) and the spiral itself. We also checked
+  <em>perigee-biased</em> thrusting (plan 02 Phase B, audited): at this vehicle's ~milli-g thrust it is
+  <strong>time-divergent</strong> — escape would take centuries, because perigee-thrusting raises apogee until
+  the pre-escape orbits have unbounded period and the coast through them never ends. So perigee-biasing cannot
+  lower the <em>practical</em> budget here (it needs a much higher-thrust stage), and the naïve always-on
+  spiral is the realistic operating point.</p>
 
   <div class="worked">
     <p class="wt">Worked example — the Δv budget is <em>not</em> the cruise speed</p>
@@ -440,7 +443,7 @@
   <table class="chain">
     <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
     <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
-    <tr><td>1 · Earth-escape spiral</td><td>Continuous ion thrust, <em>perigee-biased</em>, spiralling out of Earth to C₃≈0 (geocentric escape). This is where the low-thrust "spiral tax" is paid.</td><td class="v">~weeks–months</td></tr>
+    <tr><td>1 · Earth-escape spiral</td><td>Continuous (always-on, tangential) ion thrust, spiralling out of Earth to C₃≈0 (geocentric escape). This is where the low-thrust "spiral tax" is paid. (Perigee-biasing would cut the Δv but is time-divergent at this thrust — see below.)</td><td class="v">~1 yr</td></tr>
     <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1 yr total burn</td></tr>
     <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~248 kg xenon spent</td><td class="v">—</td></tr>
     <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
@@ -451,7 +454,7 @@
   (0.9 yr at Isp 2000 s rising to 1.4 yr at 4000 s). Power comes from a <strong>~18 m² / ~55 kg commercial
   silicon array</strong> (20% cells, ~3 kg/m², Starlink-class) delivering the 5 kW at 1 AU. Δv from LEO is
   the <strong>derived naïve low-thrust spiral ≈ 25 km/s</strong> (~14 km/s is the impulsive floor, a
-  reference an ion engine can't reach; perigee-biasing would land lower — plan 02 Phase B), for a wet mass of
+  reference an ion engine can't reach; perigee-biasing is time-divergent at this thrust — plan 02 Phase B), for a wet mass of
   <strong>~600 kg</strong> (~344 kg xenon, ~57% at Isp 3000 s).</p>
   <p><strong>This is slow, gentle thrust — not a fast burn.</strong> The acceleration is only
   ~0.04–0.08 milli-<em>g</em> (0.2 N on a ~500 kg craft), sustained for <strong>~1 year</strong> to reach
@@ -466,7 +469,7 @@
   ~1-yr spiral, not an impulsive kick. But for a <em>direct</em> interstellar departure there is <strong>no tight
   launch window</strong> to miss: the aim is a fixed <em>inertial</em> direction (where AC will be in ~75,000 yr),
   and AC's bearing drifts negligibly over a 1-yr spiral, so launch date is essentially free. The spiral is also
-  not "aimless" — thrust is steered (perigee-biased) to build <code>v∞</code> in the chosen escape direction; the
+  not "aimless" — thrust is steered (continuous, tangential) to build <code>v∞</code> in the chosen escape direction; the
   ~1 yr it adds is negligible against the ~75,000-yr coast. Launch <em>timing</em> only becomes a hard constraint
   for the optional architectures below (a Jupiter flyby needs alignment; a solar Oberth needs a perihelion drop).</p>
 
@@ -513,7 +516,7 @@
   <h4>Limitations</h4>
   <ul>
     <li>Alpha Centauri is propagated as straight-line motion (galactic curvature negligible over 10⁵ yr / 1% miss).</li>
-    <li>Patched-conic geometry with best-case launch timing; the low-thrust departure is a naïve constant-tangential Earth-escape spiral (no perigee-biasing yet — that lands lower; see plan 02 Phase B), and no finite-burn steering losses beyond it.</li>
+    <li>Patched-conic geometry with best-case launch timing; the low-thrust departure is a naïve constant-tangential Earth-escape spiral (perigee-biasing was checked — plan 02 Phase B — and is time-divergent at this thrust, so always-on is the operating point), and no finite-burn steering losses beyond it.</li>
     <li>Gravity-assist figures are geometric upper bounds, not phased trajectory solutions.</li>
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
     <li>All four trajectory panels draw the <em>same</em> path: one continuous low-thrust solar escape, numerically integrated (RK4, μ=4π², tangential thrust until v∞ is reached, then coast) and rotated so its escape asymptote points at the AC intercept — so the spiral opens <em>smoothly</em> into the cruise with no hard turns. The scrubber is <em>log-scaled</em> in distance (1 AU → AC), and every view renders only the <em>flown</em> path (never the future). The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape is correctly a sub-revolution arc.</li>
@@ -556,8 +559,9 @@
     <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~50,000 kWh
       burn — orders of magnitude over a solar array.</li>
     <li><b>Probe for what's missing.</b> This is a first-order model; a rigorous audit should push on:
-      (a) <em>perigee-biased / phased low-thrust</em> optimisation — the departure Δv is now the <em>derived</em>
-      naïve spiral (~25 km/s); perigee-biasing recovers a lower optimum (plan 02 Phase B), and a full
+      (a) <em>phased low-thrust</em> at higher thrust-to-weight — the departure Δv is now the <em>derived</em>
+      naïve spiral (~25 km/s); perigee-biasing was found time-divergent at this milli-g thrust (plan 02 Phase B),
+      so a lower budget needs a higher-T/W stage, and a full
       finite-burn solution is still future work; (b) launch-window and calendar phasing (best-case timing is assumed);
       (c) gravity-assist phasing (the Jupiter/Oberth numbers are geometric bounds); (d) navigation, comms and
       component survival over ~75,000 yr; (e) thermal, radiation and propellant boil-off across the cruise;
@@ -669,7 +673,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 42, SRC_COMMIT = 'HEAD';
+const BUILD = 43, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;

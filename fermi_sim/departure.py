@@ -139,6 +139,57 @@ def spiral_escape_dv(
     return accel * t
 
 
+def perigee_biased_escape_dv(
+    mu: float, r0: float, v_inf_target: float, gate: float = 2.0,
+    accel: float = 5e-4, max_t_yr: float = 400.0
+):
+    """Perigee-biased low-thrust escape (Plan 02, Phase B). Thrust only while r <= gate * (the
+    osculating perigee radius), coast otherwise, to recover the Oberth benefit lost by the naïve
+    always-on spiral. Returns (dv, escaped, years).
+
+    FINDING (see audit_departure.py): at this vehicle's ~milli-g thrust the perigee-biased escape
+    is *time-divergent* — the pre-escape orbits have periods → ∞ and the gate coasts through them,
+    so escape is not reached within a practical horizon (centuries). A loose gate degenerates to
+    the always-on spiral. Hence the naïve spiral (`spiral_escape_dv` / `lowthrust_departure_dv`)
+    remains the realistic departure budget; perigee-biasing pays off only at much higher T/W.
+    """
+    target_E = 0.5 * v_inf_target**2
+    vc = math.sqrt(mu / r0)
+    x, y, vx, vy = r0, 0.0, 0.0, vc
+    t = 0.0
+    thrust_t = 0.0
+    max_t = max_t_yr * c.YEAR
+
+    def acc(x, y, vx, vy, thr):
+        r = math.hypot(x, y); v = math.hypot(vx, vy) or 1.0
+        g = -mu / (r * r * r)
+        return vx, vy, g * x + thr * vx / v, g * y + thr * vy / v
+
+    escaped = False
+    while t < max_t:
+        r = math.hypot(x, y); v2 = vx * vx + vy * vy
+        if 0.5 * v2 - mu / r >= target_E:
+            escaped = True
+            break
+        h = x * vy - y * vx
+        eps = 0.5 * v2 - mu / r
+        e = math.sqrt(max(0.0, 1.0 + 2.0 * eps * h * h / (mu * mu)))
+        r_peri = (h * h / mu) / (1.0 + e)            # osculating perigee radius
+        thr = accel if r <= gate * r_peri else 0.0
+        period = 2.0 * math.pi * math.sqrt(max(r, r0) ** 3 / mu)
+        dt = min(max(2.0, 0.004 * period), 3600.0)
+        k1 = acc(x, y, vx, vy, thr)
+        k2 = acc(x + .5*dt*k1[0], y + .5*dt*k1[1], vx + .5*dt*k1[2], vy + .5*dt*k1[3], thr)
+        k3 = acc(x + .5*dt*k2[0], y + .5*dt*k2[1], vx + .5*dt*k2[2], vy + .5*dt*k2[3], thr)
+        k4 = acc(x + dt*k3[0], y + dt*k3[1], vx + dt*k3[2], vy + dt*k3[3], thr)
+        x += dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]); y += dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1])
+        vx += dt/6*(k1[2]+2*k2[2]+2*k3[2]+k4[2]); vy += dt/6*(k1[3]+2*k2[3]+2*k3[3]+k4[3])
+        t += dt
+        if thr:
+            thrust_t += dt
+    return accel * thrust_t, escaped, t / c.YEAR
+
+
 def departure_budget(
     v_inf_sun: float, plane_angle_deg: float, altitude_km: float = 400.0
 ) -> DepartureResult:

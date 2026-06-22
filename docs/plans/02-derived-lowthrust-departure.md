@@ -37,9 +37,25 @@ optimum. Both are precomputed → instant; both are fully derived (no hand-set p
 
 | Phase | What it derives | 73k departure Δv | Xenon (Isp 3000, 255 kg dry) | Status |
 |---|---|---|---|---|
-| (current) floor + 6 penalty | hand-set | ~20 km/s | ~248 kg | **the hack we're removing** |
-| **A — naïve spiral** | integrate constant-tangential spiral | ~25 km/s | ~344 kg (57 %) | ship first |
-| **B — perigee-biased optimised** | duty-cycled spiral, minimised over the gate | ~18–22 km/s | ~250–290 kg | ship second (refines A) |
+| (old) floor + 6 penalty | hand-set | ~20 km/s | ~248 kg | **removed (the hack)** |
+| **A — naïve spiral** | integrated constant-tangential spiral (closed-form fit) | **~25 km/s** | **~345 kg (57 %)** | **shipped (build 42)** |
+| **B — perigee-biased** | duty-cycled spiral, minimised over the gate | — | — | **investigated → not viable here (see finding)** |
+
+### Phase B finding (build 43): perigee-biasing is time-divergent at this vehicle's thrust
+Implemented `perigee_biased_escape_dv` (thrust only while `r ≤ gate·perigee`, coast otherwise) and
+swept the gate. Result, validated by audit:
+- A **loose gate degenerates to the always-on spiral** (25.1 km/s, 1.6 yr) — confirms the integrator.
+- **Every perigee-biased gate fails to escape within 400 yr** at our ~milli-g thrust (accel ≈ 5×10⁻⁴
+  m/s²). It is *physically* time-divergent: as perigee-thrusting raises apogee, the pre-escape orbits
+  have period → ∞ and the gate coasts through them. The low Δv it would buy is unreachable in any
+  practical time.
+- **Therefore the naïve spiral (Phase A, ~25 km/s, ~1.6 yr) is the realistic departure budget.**
+  Perigee-biasing pays off only at much higher thrust-to-weight (a chemical/NTP kick stage or far
+  higher-power SEP — extra hardware not in this model). This also shows the old ~20 km/s "optimised
+  SEP" benchmark was optimistic: it implied a perigee-biasing that isn't time-feasible here.
+
+Deliverable for B = the auditable artifact (the integrator + audit checks #8/#9 demonstrating
+loose-gate≈always-on and the divergence) + this finding; **no headline change**.
 
 **Headline impact:** A *raises* the baseline (~248 → ~344 kg) — more conservative/honest; B then
 brings it back toward today's value, but *derived* rather than assumed. The design **closes** at

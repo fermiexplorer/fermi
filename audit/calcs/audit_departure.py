@@ -95,6 +95,20 @@ def run() -> None:
               abs(integ - (v_circ + v)) < 1.5e3,
               f"{integ/1e3:.2f} vs {(v_circ+v)/1e3:.2f} km/s")
 
+    # 8. Phase B — a LOOSE gate degenerates to the always-on spiral (validates the gated integrator).
+    from fermi_sim.departure import perigee_biased_escape_dv
+    dv_loose, esc_loose, _ = perigee_biased_escape_dv(c.MU_EARTH, r_leo, 18e3, gate=1e9)
+    check("perigee-biased loose gate reproduces the naïve spiral (escapes, same Δv)",
+          esc_loose and rel_err(dv_loose, dv_a) < 0.02,
+          f"{dv_loose/1e3:.2f} vs naïve {dv_a/1e3:.2f} km/s")
+
+    # 9. Phase B FINDING — at ~milli-g thrust, real perigee-biasing is time-divergent: it does NOT
+    #    reach escape within a practical horizon, so it cannot lower the usable departure budget.
+    #    (Hence the naïve spiral / lowthrust_departure_dv stays the design Δv.)
+    _, esc_pb, yr_pb = perigee_biased_escape_dv(c.MU_EARTH, r_leo, 18e3, gate=5.0, max_t_yr=30.0)
+    check("perigee-biased (gate 5) does NOT escape within 30 yr at ~milli-g (time-divergent)",
+          not esc_pb, f"escaped={esc_pb} after {yr_pb:.0f} yr")
+
 
 if __name__ == "__main__":
     run()
