@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 62</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 63</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -701,7 +701,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 62, SRC_COMMIT = 'HEAD';
+const BUILD = 63, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -743,8 +743,8 @@ function compute(){
   // "spiral tax", from the integrated 1-AU spiral). Oberth/Jupiter buy v∞ from the gravity well.
   // CONSERVATIVE pure-EP departure. The optimistic spiral (lowthrustDepartureDv) lets the probe
   // borrow Earth's 29.8 km/s by building the hyperbolic excess DURING Earth escape (Oberth-deep).
-  // The conservative model instead builds v∞ on the HELIOCENTRIC spiral (Strategy 2, the whitepaper's
-  // case — where 1/r² solar power fades): that omitted heliocentric plane-raising leg adds a roughly
+  // The conservative model instead builds v∞ on the HELIOCENTRIC spiral (Strategy 2 — the case
+  // where 1/r² solar power fades): that omitted heliocentric plane-raising leg adds a roughly
   // fixed ~5 km/s. The tilt-dependence (and thus the ~73 kyr fuel optimum) is preserved by reusing the
   // spiral fit; the constant offset shifts the budget without moving the optimum.
   const EP_CONSERV_OFFSET=5000;
@@ -896,7 +896,7 @@ function render(){
     c:dvSteps});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
-    d:'THE conservative feasibility test (matches the partner whitepaper Fig. 2). For SOLAR, array power falls as 1/r² as the probe spirals out, so thrust starves and the achievable cruise speed SATURATES below the floor — pure solar-electric does NOT close. For NUCLEAR-ELECTRIC the power is CONSTANT (fade exponent 0): the spiral keeps thrusting and DOES reach the floor — this is the only pure-electric (no gravity assist) path that closes. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
+    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out, so thrust starves and the achievable cruise speed SATURATES below the floor — pure solar-electric does NOT close. For NUCLEAR-ELECTRIC the power is CONSTANT (fade exponent 0): the spiral keeps thrusting and DOES reach the floor — this is the only pure-electric (no gravity assist) path that closes. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
     c:(r.ga==='direct'
        ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible (switch to nuclear-electric, or enable Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
        : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the solar-electric ceiling does not bind here.`)});

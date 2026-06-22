@@ -156,9 +156,9 @@ def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s:
                         eff: float = 0.5, r0_au: float = 1.0, fade_exp: float = 2.0) -> float:
     """Maximum heliocentric excess speed v∞ (m/s) a solar-electric probe can actually reach from a
     1-AU circular heliocentric orbit, accounting for the 1/r² SOLAR-POWER FADE that throttles the
-    thrust as the probe recedes. This is the conservative feasibility quantity from the partner
-    whitepaper (Fig. 2): because power ∝ 1/r², the achievable v∞ SATURATES — extra propellant burnt
-    far out adds little, so practical SEP masses fall below the ~23.4 km/s cruise floor.
+    thrust as the probe recedes. This is the decisive conservative feasibility quantity: because
+    power ∝ 1/r², the achievable v∞ SATURATES — extra propellant burnt far out adds little, so
+    practical SEP masses fall below the ~23.4 km/s cruise floor.
 
     F(r) = 2·η·P0/(v_e·r²) (thrust prograde), ṁ = F/v_e, RK4 in SI. Integrate from 1-AU circular
     until the propellant is spent OR the probe coasts far enough that power is negligible, then

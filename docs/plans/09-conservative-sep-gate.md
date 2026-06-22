@@ -2,8 +2,8 @@
 
 > **STATUS (build 61): IMPLEMENTED + VERIFIED.** Gap 1: `sep_achievable_vinf` (1/r² power-fade
 > RK4) in fermi_sim, mirrored to physics.js, parity 18/18; it is now a feasibility gate so a PURE
-> solar-electric design is `feasible` only if achievable v∞ ≥ the cruise floor. Reproduces the
-> whitepaper (20 kW/1.6 t → 19.5 km/s, below 23.4) and the default pure-SEP is now **NOT FEASIBLE
+> solar-electric design is `feasible` only if achievable v∞ ≥ the cruise floor. The conservative
+> power-fade analysis (20 kW/1.6 t → 19.5 km/s, below 23.4) makes the default pure-SEP **NOT FEASIBLE
 > (power-limited)** — Oberth/Jupiter and the chemical boost remain the closing paths. Gap 2:
 > conservative defaults — Hall thruster Isp 1585 s, η 0.50. Gap 3: Departure-Δv relabelled as the
 > optimistic Earth-escape budget; feasibility set by the gate; chemical/impulsive floor is the
@@ -15,7 +15,7 @@ Goal: `feasible` must mean **survives the conservative case**, not "masses add u
 (fermi_sim source of truth) → mirror physics.js → independent audit → UI.
 
 ## Gap 1 (decisive): power-limited achievable-v∞ gate — the 1/r² coupled SEP model
-Today feasibility = mass closure only. Add the whitepaper's physics: as the probe spirals out,
+Today feasibility = mass closure only. Add the power-fade physics: as the probe spirals out,
 array power falls as 1/r², throttling thrust before v∞ is reached.
 
 **Model (new engine fn `sep_achievable_vinf`)**, for a given installed power P0 (at 1 AU), wet mass,
@@ -30,12 +30,12 @@ dry+payload, Isp, efficiency:
 **Feasibility gate:** the probe is **power-feasible** iff achievable v∞ ≥ required floor (≈23.4 km/s)
 for the CURRENT design (one integration per compute(), like buildTraj — cheap). For the headline
 verdict, also report the **best achievable v∞ optimised over P0** (grid/golden-section, ~12 P0
-samples) so we can state "no practical mass reaches the floor" the way the whitepaper does.
+samples) so we can state "no practical mass reaches the floor" on an independent basis.
 → If power-infeasible, the design is **NOT FEASIBLE** even when the mass budget closes.
 
 Independent audit (`audit/calcs/`): re-integrate the same scenario with a *different* integrator/step
 and confirm achievable v∞ matches; confirm the **saturation** (achievable v∞ vs wet mass is monotone
-and stays < floor for SEP-from-1-AU) — i.e. reproduce the whitepaper Fig. 2 shape by an independent
+and stays < floor for SEP-from-1-AU) — i.e. reproduce the saturation-curve shape by an independent
 method (not by calling the engine against itself).
 
 ## Gap 2: conservative defaults
@@ -53,8 +53,8 @@ method (not by calling the engine against itself).
 
 ## Verdict reframing
 - `feasible` = mass closure **AND** power-feasible (achievable v∞ ≥ floor) **AND** propellant ≥ 0.
-- Expected outcome: pure-SEP from 1 AU **does NOT close** without a gravity assist — matching the
-  whitepaper. The solar-Oberth/Sundiver (`ga=oberth`) and chemical-boost remain the closing paths.
+- Expected outcome: pure-SEP from 1 AU **does NOT close** without a gravity assist — on the
+  conservative basis. The solar-Oberth/Sundiver (`ga=oberth`) and chemical-boost remain the closing paths.
 - New KPI "Power-limited v∞" showing achievable vs required, and the infeasibility reason when it bites.
 
 ## Verification

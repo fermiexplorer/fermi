@@ -102,7 +102,7 @@
   function gncSteeringFactor(sigmaDeg) { return 1 / Math.cos(Math.max(0, Math.min(89, sigmaDeg)) * Math.PI / 180); }
   // CONSERVATIVE solar-electric feasibility: max heliocentric v∞ a SEP probe can reach from a 1-AU
   // circular orbit, with thrust faded as 1/r² (array power). Saturates → practical SEP falls below
-  // the ~23.4 km/s cruise floor (whitepaper Fig. 2). RK4 in SI; cached by argument key.
+  // the ~23.4 km/s cruise floor (the 1/r² power-fade analysis). RK4 in SI; cached by argument key.
   const _sepCache = {};
   function sepAchievableVinf(powerW, wetKg, dryPayKg, ispS, eff = 0.5, r0Au = 1, fadeExp = 2) {
     const ve = ispS * G0, mp = wetKg - dryPayKg;
