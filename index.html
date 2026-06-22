@@ -156,7 +156,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 47</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 48</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -698,7 +698,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 47, SRC_COMMIT = 'HEAD';
+const BUILD = 48, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1000,8 +1000,10 @@ function drawViz(){
   const c=craftState(), st=trajState(c);
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc, F=cols(flown);
   const dly=c.dist*AU/LY;
+  const _phaseTxt = phaseOf(animU).stage==='earth' ? 'Earth-escape spiral (geocentric)'
+                  : (st.onSpiral?'spiral-out & solar escape':'interstellar cruise');
   document.getElementById('tlabel').textContent=
-    `${fmt(c.es/YEAR)} yr · ${st.onSpiral?'spiral-out & solar escape':'interstellar cruise'} · `+
+    `${fmt(c.es/YEAR)} yr · ${_phaseTxt} · `+
     (c.dist<2000?`${fmt(c.dist,1)} AU`:`${fmt(dly,3)} ly`);
   { const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; }  // keep the top slider in sync (Play, burn-graph scrub, etc.)
   drawZoom3d(c,st);    // 3D overview (first): Sun + AC + intercept, tilted ecliptic
@@ -1033,24 +1035,26 @@ function craftState(){
   const I=[(R0[0]+VAC[0]*T)*s,(R0[1]+VAC[1]*T)*s,(R0[2]+VAC[2]*T)*s];
   const Inorm=Math.hypot(I[0],I[1],I[2]);
   const RDEP=1;                                    // departure at Earth's orbit (1 AU from Sun)
-  // "Logarithmic time" (default): the scrubber maps animU to LOG-spaced distance, so the early
-  // burn/escape (1 AU → tens of AU) is spread out and visible. Unchecked: PURE LINEAR time —
-  // elapsed time is uniform in animU (es = animU·T), distance ~ constant-rate coast. The whole
-  // evolution (Play, scrub, all views) follows this; the burn then occupies the first instant.
-  let dist, es;
-  if(logTimeMode()){
-    dist=RDEP*Math.pow(Inorm/RDEP, animU);         // log-spaced distance
-    es=(dist/Inorm)*T;
-  } else {
-    es=animU*T;                                    // linear in time
-    dist=RDEP+animU*(Inorm-RDEP);                  // ~constant-rate (coast) distance
-  }
+  const vhat=[I[0]/Inorm,I[1]/Inorm,I[2]/Inorm];
+  const rv=requiredVinfVec(T), vinfKmS=Math.hypot(rv[0],rv[1],rv[2])/1000;
+  const rLast=buildTraj(vhat,vinfKmS).rLast;       // end of the heliocentric escape arc (~24 AU)
+  // ONE phase clock (Plan 04): animU's three thirds are Earth escape / Sun escape / cruise.
+  //  • earth third → heliocentric distance is FROZEN at 1 AU (the craft is still bound to Earth;
+  //    it climbs out geocentrically — shown in the Earth-escape inset — and must NOT fly out yet).
+  //  • sun third   → distance sweeps 1 AU → end of the escape arc (v∞ reached).
+  //  • ac third    → distance sweeps escape-arc end → the intercept (cruise).
+  // Within the heliocentric thirds, log time spreads distance geometrically (early AU stay
+  // visible), linear spreads it uniformly. Elapsed time comes from elapsedYrFromU, so the
+  // burn-timeline "▲ now" marker and every 3D view share this exact phase clock.
+  const ph=phaseOf(animU); let dist;
+  if(ph.stage==='earth')      dist=RDEP;
+  else if(ph.stage==='sun')   dist = logTimeMode() ? RDEP*Math.pow(rLast/RDEP, ph.f) : RDEP+ph.f*(rLast-RDEP);
+  else                        dist = logTimeMode() ? rLast*Math.pow(Inorm/rLast, ph.f) : rLast+ph.f*(Inorm-rLast);
+  const es=elapsedYrFromU(animU)*YEAR;             // unified elapsed time (coherent with the burn timeline)
   const f=dist/Inorm;                              // journey fraction (0..1)
   const ac=[(R0[0]+VAC[0]*es)*s,(R0[1]+VAC[1]*es)*s,(R0[2]+VAC[2]*es)*s];
   const acNow=[R0[0]*s,R0[1]*s,R0[2]*s];
   const tEx=T*1.18, acEnd=[(R0[0]+VAC[0]*tEx)*s,(R0[1]+VAC[1]*tEx)*s,(R0[2]+VAC[2]*tEx)*s];
-  const vhat=[I[0]/Inorm,I[1]/Inorm,I[2]/Inorm];
-  const rv=requiredVinfVec(T), vinfKmS=Math.hypot(rv[0],rv[1],rv[2])/1000;
   return {I,Inorm,dist,f,es,ac,acNow,acEnd,vhat,vinfKmS};
 }
 
@@ -1157,7 +1161,8 @@ function drawFollow3d(c,st){
   // changes (as the velocity turns), so a manual cam-group rotation isn't overwritten every frame.
   if(camLock && !camClose(sceneCam,camCam)){ camCam=cloneCam(sceneCam);
     pushCamTo(SYNC_IDS.filter(x=>x!=='follow3d'&&lockedToCam(x)),camCam); }
-  const A=cols(flown), tag = st.onSpiral?'solar-escape spiral':'interstellar cruise';
+  const A=cols(flown), tag = phaseOf(animU).stage==='earth' ? 'Earth escape (see inset)'
+                           : (st.onSpiral?'solar-escape spiral':'interstellar cruise');
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
     {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
@@ -1355,10 +1360,10 @@ function burnPhases(r){
   return {tEarth:fEarth*r.burnYr, tBurn:r.burnYr, arrival:r.arrivalYr};
 }
 function elapsedYrFromU(u){
-  const ph=phaseOf(u);
-  if(ph.stage==='earth') return ph.f*1.2;
-  if(ph.stage==='sun') return ph.f*6;
-  return ph.f*(SIM&&SIM.feasible?SIM.arrivalYr:75000);
+  const ph=phaseOf(u), p=burnPhases(compute());      // real segment durations (Earth escape / Sun escape / coast)
+  if(ph.stage==='earth') return ph.f*p.tEarth;
+  if(ph.stage==='sun')   return p.tEarth + ph.f*Math.max(0,p.tBurn-p.tEarth);
+  return p.tBurn + ph.f*Math.max(0,p.arrival-p.tBurn);
 }
 function drawTimeline(){
   const r=compute(), p=burnPhases(r), x0=0.01;
@@ -1377,7 +1382,7 @@ function drawTimeline(){
     traces.push({x:[s[0],s[1]],y:[0,0],mode:'lines',line:{color:s[2],width:26},text:s[3],hoverinfo:'text',showlegend:false});
     traces.push({x:[mid],y:[0.95],mode:'text',text:[s[3]],textfont:{size:10,color:'#c9d4de'},hoverinfo:'skip',showlegend:false});
   });
-  const now=Math.max(x0, craftState().es/YEAR);
+  const now=Math.max(x0, elapsedYrFromU(animU));
   traces.push({x:[now,now],y:[-0.55,0.55],mode:'lines',line:{color:'#d29922',width:3},hoverinfo:'skip',showlegend:false});
   traces.push({x:[now],y:[-0.85],mode:'text',text:['▲ now'],textfont:{size:9,color:'#d29922'},hoverinfo:'skip',showlegend:false});
   const xaxis = logT
@@ -1401,7 +1406,8 @@ const ESPIRAL_LOOPS = 48, ESPIRAL_ROUT = 140;   // representative loops; visual 
 function drawEarthSpiral(r){
   const peri=val('alt'), ee=earthEscapeRevs(r.thrust, r.wet, peri);
   const rpRE=(R_EARTH+peri*1e3)/R_EARTH;
-  const revProg = logTimeMode() ? (Math.exp(3.5*animU)-1)/(Math.exp(3.5)-1) : animU;  // log: accelerate
+  const eph=phaseOf(animU), ef = eph.stage==='earth' ? eph.f : 1;   // Earth escape = the FIRST third only; escaped after
+  const revProg = logTimeMode() ? (Math.exp(3.5*ef)-1)/(Math.exp(3.5)-1) : ef;  // log: accelerate within the phase
   const phiMax=2*Math.PI*ESPIRAL_LOOPS, phiP=phiMax*revProg;
   const rAt=ph=>rpRE+(ph/phiMax)*(ESPIRAL_ROUT-rpRE);
   const sx=[],sy=[],fx=[],fy=[],M=1440;
@@ -1545,12 +1551,15 @@ document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); ani
 document.getElementById('playbtn').addEventListener('click', togglePlay);
 // ----- the burn timeline IS the scrubber: drag along it to set the current time -----
 // Map a click x (years, log axis) back to the animation parameter u, the inverse of the
-// craftState() u→elapsed-time mapping (elapsed = Inorm^(u−1)·T).
 function logTimeMode(){ const c=document.getElementById('logtime'); return c?c.checked:true; }
+// Invert the unified phase clock (Plan 04): map a real elapsed-year (a burn-timeline click)
+// back to animU by locating which phase segment it lands in, then animU = stageStart + f/3.
 function timeToU(tYr){ if(!SIM) return 0;
-  if(!logTimeMode()) return Math.max(0, Math.min(1, tYr*YEAR/SIM.Tsec));     // linear: animU = t/T
-  const In=craftState().Inorm;                                              // log: invert es = Inorm^(u-1)·T
-  return Math.max(0, Math.min(1, 1 + Math.log((tYr*YEAR)/SIM.Tsec)/Math.log(In))); }
+  const p=burnPhases(compute()), t=Math.max(0,tYr); let stage,f;
+  if(t<=p.tEarth){ stage='earth'; f=p.tEarth>0? t/p.tEarth:0; }
+  else if(t<=p.tBurn){ stage='sun'; f=(t-p.tEarth)/Math.max(1e-9,p.tBurn-p.tEarth); }
+  else { stage='ac'; f=(t-p.tBurn)/Math.max(1e-9,p.arrival-p.tBurn); }
+  return Math.max(0, Math.min(1, stageStartU(stage)+Math.max(0,Math.min(1,f))/3)); }
 (function(){
   const gd=document.getElementById('chartTimeline'); let scrubbing=false;
   function scrubAt(clientX){
