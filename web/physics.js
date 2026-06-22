@@ -100,6 +100,41 @@
   }
   // Cosine steering-loss factor (≥1) for an RMS thrust-pointing error σ during the spiral: Δv ÷ cos σ.
   function gncSteeringFactor(sigmaDeg) { return 1 / Math.cos(Math.max(0, Math.min(89, sigmaDeg)) * Math.PI / 180); }
+  // CONSERVATIVE solar-electric feasibility: max heliocentric v∞ a SEP probe can reach from a 1-AU
+  // circular orbit, with thrust faded as 1/r² (array power). Saturates → practical SEP falls below
+  // the ~23.4 km/s cruise floor (whitepaper Fig. 2). RK4 in SI; cached by argument key.
+  const _sepCache = {};
+  function sepAchievableVinf(powerW, wetKg, dryPayKg, ispS, eff = 0.5, r0Au = 1) {
+    const ve = ispS * G0, mp = wetKg - dryPayKg;
+    if (mp <= 0 || powerW <= 0 || ve <= 0) return 0;
+    const key = [powerW, wetKg, dryPayKg, ispS, eff, r0Au].map(x => +(+x).toFixed(3)).join(',');
+    if (_sepCache[key] !== undefined) return _sepCache[key];
+    const mu = MU_SUN, r0 = r0Au * AU, F0 = 2 * eff * powerW / ve, dt = 5e4, TCAP = 400 * YEAR;
+    let rx = r0, ry = 0, vx = 0, vy = Math.sqrt(mu / r0), m = wetKg, t = 0;
+    const dr = (s, mass) => { const x = s[0], y = s[1], vxx = s[2], vyy = s[3];
+      const r = Math.hypot(x, y) || 1, sp = Math.hypot(vxx, vyy) || 1, g = -mu / (r * r * r);
+      const Fm = mass > dryPayKg ? F0 * (r0 / r) * (r0 / r) : 0;
+      return [vxx, vyy, g * x + Fm * vxx / sp / mass, g * y + Fm * vyy / sp / mass]; };
+    while (t < TCAP) {
+      const r = Math.hypot(rx, ry);
+      if (r > 80 * AU) break;
+      const s = [rx, ry, vx, vy], k1 = dr(s, m);
+      const s2 = s.map((v, i) => v + 0.5 * dt * k1[i]), k2 = dr(s2, m);
+      const s3 = s.map((v, i) => v + 0.5 * dt * k2[i]), k3 = dr(s3, m);
+      const s4 = s.map((v, i) => v + dt * k3[i]), k4 = dr(s4, m);
+      rx += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+      ry += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+      vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+      vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
+      if (m > dryPayKg) { const Fm = F0 * (r0 / Math.hypot(rx, ry)) ** 2; m -= Fm / ve * dt; if (m < dryPayKg) m = dryPayKg; }
+      else { const rr = Math.hypot(rx, ry), ee = 0.5 * (vx * vx + vy * vy) - mu / rr; if (ee < 0 || rr > 8 * AU) break; }
+      t += dt;
+    }
+    const r = Math.hypot(rx, ry), E = 0.5 * (vx * vx + vy * vy) - mu / r;
+    const out = E > 0 ? Math.sqrt(2 * E) : 0;
+    _sepCache[key] = out;
+    return out;
+  }
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -112,7 +147,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

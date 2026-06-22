@@ -151,6 +151,41 @@ def run() -> None:
         check(f"Earth-escape rev count: analytic ≈ integration @ a={accel:.0e} (<3%)",
               rel_err(n_anal, n_int) < 0.03, f"analytic {n_anal:.0f} vs integ {n_int:.0f}")
 
+    # --- conservative 1/r² SEP achievable-v∞ gate: independent (Euler-Cromer, finer dt) ---
+    from fermi_sim.departure import sep_achievable_vinf
+
+    def sep_vinf_indep(power_w, wet, dry, isp, eff=0.5):
+        ve = isp * c.G0
+        if wet - dry <= 0:
+            return 0.0
+        mu, r0, F0 = c.MU_SUN, c.AU, 2 * eff * power_w / ve
+        x, y, vx, vy, m, t, dt = r0, 0.0, 0.0, math.sqrt(c.MU_SUN / c.AU), wet, 0.0, 1.0e4
+        while t < 400 * c.YEAR:
+            r = math.hypot(x, y)
+            if r > 80 * c.AU:
+                break
+            sp = math.hypot(vx, vy) or 1.0
+            Fm = F0 * (r0 / r) ** 2 if m > dry else 0.0
+            vx += (-mu * x / r**3 + Fm * vx / sp / m) * dt
+            vy += (-mu * y / r**3 + Fm * vy / sp / m) * dt
+            x += vx * dt; y += vy * dt
+            if m > dry:
+                m = max(dry, m - Fm / ve * dt)
+            else:
+                e = 0.5 * (vx * vx + vy * vy) - mu / math.hypot(x, y)
+                if e < 0 or math.hypot(x, y) > 8 * c.AU:
+                    break
+            t += dt
+        r = math.hypot(x, y); e = 0.5 * (vx * vx + vy * vy) - mu / r
+        return math.sqrt(2 * e) if e > 0 else 0.0
+
+    v_rk4 = sep_achievable_vinf(20000.0, 1600.0, 300.0, 1585.0, 0.5)
+    v_ind = sep_vinf_indep(20000.0, 1600.0, 300.0, 1585.0, 0.5)
+    check("SEP achievable v∞: RK4 ≈ independent Euler-Cromer (<3%)",
+          rel_err(v_rk4, v_ind) < 0.03, f"{v_rk4/1e3:.2f} vs {v_ind/1e3:.2f} km/s")
+    check("conservative SEP (20 kW / 1600 kg) saturates BELOW the 23.4 km/s floor",
+          v_rk4 < 23.4e3, f"achievable {v_rk4/1e3:.2f} km/s")
+
 
 if __name__ == "__main__":
     run()

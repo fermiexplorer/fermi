@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 60</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 61</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -210,17 +210,17 @@
       <div class="ctrl">
         <label>Ion engine technology</label>
         <select id="enginetech">
-          <option value="hall|2000|0.55|5">Hall thruster (Isp ~2000 s)</option>
-          <option value="gridded|3000|0.60|6" selected>Gridded ion (Isp ~3000 s)</option>
+          <option value="hall|1585|0.50|5" selected>Hall thruster — conservative (Isp ~1585 s, 50%)</option>
+          <option value="gridded|3000|0.60|6">Gridded ion — optimistic (Isp ~3000 s, 60%)</option>
         </select>
       </div>
       <div class="ctrl">
-        <label>Ion engine Isp <b><span id="o_isp">3000</span> s</b></label>
-        <input type="range" id="isp" min="1000" max="5000" step="100" value="3000">
+        <label>Ion engine Isp <b><span id="o_isp">1585</span> s</b></label>
+        <input type="range" id="isp" min="1000" max="5000" step="5" value="1585">
       </div>
       <div class="ctrl">
         <label>Thruster efficiency <b><span id="o_eta">0.60</span></b></label>
-        <input type="range" id="eta" min="0.4" max="0.8" step="0.01" value="0.6">
+        <input type="range" id="eta" min="0.4" max="0.8" step="0.01" value="0.5">
       </div>
       <div class="ctrl">
         <label>Engine + PPU mass <b><span id="o_enginekg">6.0</span> kg/kW</b></label>
@@ -699,7 +699,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 60, SRC_COMMIT = 'HEAD';
+const BUILD = 61, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -709,7 +709,7 @@ const BUILD = 60, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -774,13 +774,21 @@ function compute(){
   // --- feasibility: the design is IMPOSSIBLE when the tank can't hold the propellant,
   //     or the subsystems leave no room for the payload ---
   const FMAX=0.85;
+  // CONSERVATIVE power gate (Plan 09): for a PURE solar-electric departure (no gravity assist),
+  // can the probe actually reach the heliocentric cruise floor given the 1/r² power fade? The
+  // achievable v∞ saturates, so practical SEP masses fall short — this, not mass closure, is the
+  // binding feasibility test. (Oberth/Jupiter buy v∞ from the gravity well, so the gate doesn't apply.)
+  const achievableVinf = (ga==='direct') ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta) : Infinity;
+  const powerFeasible = achievableVinf >= vinfSun;
   let feasible=true, infeasReason='';
   if(f>=FMAX){ feasible=false; infeasReason=`propellant fraction ${fmt(100*f,0)}% exceeds the ~${100*FMAX}% tank/structure ceiling — at this Isp the Δv needs more propellant than the vehicle can physically carry`; }
   else if(busPayload<0){ feasible=false; infeasReason=`mass doesn't close — the sized array + engine + tank (${fmt(dry-busPayload,0)} kg) exceed the ${fmt(dry,0)} kg dry bus; raise the dry-bus mass, cut power, or use lighter cells`; }
+  else if(!powerFeasible){ feasible=false; infeasReason=`power-limited — solar power fades as 1/r², so the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Pure solar-electric does NOT close without a gravity assist; enable the solar-Oberth (Jupiter) departure or a chemical boost`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
-    dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr')};
+    dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr'),
+    achievableVinf,powerFeasible,ga};
 }
 
 // ----- render KPIs + badges -----
@@ -863,8 +871,14 @@ function render(){
     d:'How far the required departure direction tilts out of Earth’s orbital (ecliptic) plane. It matters because Earth’s 29.8 km/s orbital velocity can only be borrowed in-plane — any out-of-plane component must be bought with propellant. It is ~0° where AC crosses the ecliptic (~79k yr) and ~10° at the 58k-yr aim, which is why the cheapest departure is near the crossing.',
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
-    d:'The total velocity change the ion propulsion must supply from LEO. It is DERIVED from the integrated low-thrust Earth-escape spiral (continuous tangential thrust) — not the impulsive Oberth floor, which would need a high-thrust kick stage this vehicle does not carry. This is the number that sizes the propellant, so minimising it (by arrival choice) is the design objective.',
+    d:'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞"), and the impulsive Oberth floor (see "Chemical-boost option") is the kick-stage comparison.',
     c:dvSteps});
+  K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
+    i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under 1/r² solar-power fade vs the required floor',
+    d:'THE conservative feasibility test (matches the partner whitepaper Fig. 2). As the probe spirals out, array power falls as 1/r², so the thrust starves and the achievable cruise speed SATURATES. A pure solar-electric departure closes only if this reaches the required v∞ — and for every practical mass it does not, so pure-SEP does NOT close without a gravity assist. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
+    c:(r.ga==='direct'
+       ? `achievable v∞ (1/r² fade, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':'SATURATES BELOW the floor → pure SEP NOT feasible (enable Oberth/Jupiter or a chemical boost)'}`
+       : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the 1/r² solar-electric ceiling does not bind here.`)});
   K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
     d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
     c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
@@ -1104,7 +1118,8 @@ function buildTraj(vhat, vinfKmS){
   while(n++<400000){
     const rr=Math.hypot(r[0],r[1]);
     if(burning && 0.5*(v[0]*v[0]+v[1]*v[1])-MU/rr>=Et) burning=false;
-    const th=burning?at:0;
+    if(burning && rr>30) burning=false;            // power has faded out — coast (safety cap)
+    const th=burning?at/(rr*rr):0;                 // thrust FADES as 1/r² with solar power (Plan 09)
     const a1=acc(r,v,th);
     const r2=[r[0]+0.5*dt*v[0],r[1]+0.5*dt*v[1]], v2=[v[0]+0.5*dt*a1[0],v[1]+0.5*dt*a1[1]], a2=acc(r2,v2,th);
     const r3=[r[0]+0.5*dt*v2[0],r[1]+0.5*dt*v2[1]], v3=[v[0]+0.5*dt*a2[0],v[1]+0.5*dt*a2[1]], a3=acc(r3,v3,th);

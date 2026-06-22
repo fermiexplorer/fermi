@@ -152,6 +152,72 @@ def gnc_steering_factor(sigma_deg: float) -> float:
     return 1.0 / math.cos(math.radians(max(0.0, min(89.0, sigma_deg))))
 
 
+def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,
+                        eff: float = 0.5, r0_au: float = 1.0) -> float:
+    """Maximum heliocentric excess speed v∞ (m/s) a solar-electric probe can actually reach from a
+    1-AU circular heliocentric orbit, accounting for the 1/r² SOLAR-POWER FADE that throttles the
+    thrust as the probe recedes. This is the conservative feasibility quantity from the partner
+    whitepaper (Fig. 2): because power ∝ 1/r², the achievable v∞ SATURATES — extra propellant burnt
+    far out adds little, so practical SEP masses fall below the ~23.4 km/s cruise floor.
+
+    F(r) = 2·η·P0/(v_e·r²) (thrust prograde), ṁ = F/v_e, RK4 in SI. Integrate from 1-AU circular
+    until the propellant is spent OR the probe coasts far enough that power is negligible, then
+    v∞ = sqrt(2·E) for the specific orbital energy E (0 if it never reaches escape).
+    """
+    ve = isp_s * c.G0
+    m_p = wet_kg - dry_pay_kg
+    if m_p <= 0.0 or power_w <= 0.0 or ve <= 0.0:
+        return 0.0
+    mu, r0 = c.MU_SUN, r0_au * c.AU
+    F0 = 2.0 * eff * power_w / ve            # thrust at 1 AU (N)
+    rx, ry = r0, 0.0
+    vx, vy = 0.0, math.sqrt(mu / r0)         # circular at 1 AU
+    m = wet_kg
+    dt = 5.0e4                                # s
+    t = 0.0
+    R_FAR = 80.0 * c.AU                       # beyond here power is negligible — stop, read v∞
+    T_CAP = 400.0 * c.YEAR
+
+    def deriv(state, mass):
+        x, y, vxx, vyy = state
+        r = math.hypot(x, y) or 1.0
+        sp = math.hypot(vxx, vyy) or 1.0
+        Fm = F0 * (r0 / r) ** 2 if mass > dry_pay_kg else 0.0
+        ag = -mu / (r * r * r)
+        return [vxx, vyy, ag * x + Fm * vxx / sp / mass, ag * y + Fm * vyy / sp / mass]
+
+    while t < T_CAP:
+        r = math.hypot(rx, ry)
+        if r > R_FAR:
+            break
+        s = [rx, ry, vx, vy]
+        k1 = deriv(s, m)
+        s2 = [s[i] + 0.5 * dt * k1[i] for i in range(4)]
+        k2 = deriv(s2, m)
+        s3 = [s[i] + 0.5 * dt * k2[i] for i in range(4)]
+        k3 = deriv(s3, m)
+        s4 = [s[i] + dt * k3[i] for i in range(4)]
+        k4 = deriv(s4, m)
+        rx += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
+        ry += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
+        vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
+        vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
+        if m > dry_pay_kg:
+            Fm = F0 * (r0 / math.hypot(rx, ry)) ** 2
+            m -= (Fm / ve) * dt
+            if m < dry_pay_kg:
+                m = dry_pay_kg
+        else:                                  # propellant spent — decide the outcome and stop
+            rr = math.hypot(rx, ry)
+            ee = 0.5 * (vx * vx + vy * vy) - mu / rr
+            if ee < 0.0 or rr > 8.0 * c.AU:
+                break                          # bound (never escapes) OR escaped & coasting — settled
+        t += dt
+    r = math.hypot(rx, ry)
+    energy = 0.5 * (vx * vx + vy * vy) - mu / r
+    return math.sqrt(2.0 * energy) if energy > 0.0 else 0.0
+
+
 @dataclass
 class DepartureResult:
     v_inf_sun: float

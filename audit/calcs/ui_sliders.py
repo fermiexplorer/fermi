@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "dry": 255, "isp": 3000, "eta": 0.6,
+    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "dry": 255, "isp": 1585, "eta": 0.5,
     "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 5, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
@@ -38,7 +38,8 @@ RESET_AND_COMPUTE = """
           tiltDeg:r.tiltDeg, tiltAbs:Math.abs(r.tiltDeg), vinf:r.vinfSun, minFuelYr:r.minFuelYr,
           minWet:r.minWet, thrust:r.thrust, burnYr:r.burnYr, E:r.E, arrayArea:r.arrayArea,
           arrayMass:r.arrayMass, engineMass:r.engineMass, tankMass:r.tankMass,
-          busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp};
+          busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp,
+          achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason};
 }
 """
 
@@ -55,8 +56,13 @@ def run(page):
         return page.evaluate(RESET_AND_COMPUTE, [DEFAULTS, RADIO_DEFAULTS, over or {}, radio or {}])
 
     base = comp()
-    # sanity on the default design
-    check("default is feasible", base["feasible"] is True)
+    # sanity on the default design — CONSERVATIVE: pure solar-electric is power-limited (1/r² fade)
+    # and does NOT close; this is the intended headline, not a bug.
+    check("default pure-SEP is NOT feasible (power-limited)", base["feasible"] is False)
+    check("default infeasibility is the power-fade reason", "power-limited" in base["infeasReason"])
+    check("default achievable v∞ saturates below the floor", base["achievableVinf"] < base["vinf"],
+          f"{base['achievableVinf']/1e3:.1f} < {base['vinf']/1e3:.1f} km/s")
+    check("solar-Oberth (Jupiter) departure DOES close", comp(radio={"ga": "oberth"})["feasible"] is True)
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
     check("default arrival sits at the fuel optimum", abs(base["arrivalYr"] - base["minFuelYr"]) < 600, f"{base['arrivalYr']:.0f} vs {base['minFuelYr']:.0f}")
 
@@ -161,7 +167,10 @@ def run(page):
     check("Isp=1000 → NOT feasible (tank ceiling)", lowisp["feasible"] is False)
     heavy = comp({"pwrkw": 20, "dry": 80})
     check("20 kW on 80 kg bus → NOT feasible (mass)", heavy["feasible"] is False)
-    check("returns to feasible after reset", comp()["feasible"] is True)
+    check("reset returns to the conservative (power-limited) default", comp()["feasible"] is False)
+    # the coupled trap: more power → either still below the floor (power) or the array breaks the
+    # mass budget — pure-SEP does not close at any setting on the default bus.
+    check("even 50 kW pure-SEP still does not close (coupled power/mass)", comp({"pwrkw": 50})["feasible"] is False)
 
 def main():
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT)],

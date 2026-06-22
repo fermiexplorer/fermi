@@ -32,6 +32,8 @@ const REF = {
   // injection-pointing correction Δv (m/s) for 1° at 590 km, and GNC cosine-loss factor at 5°
   injection_pointing_dv_ref: 132.0702276157546,
   gnc_steering_factor_ref: 1.0038198375433474,
+  // conservative 1/r² power-limited achievable v∞ (m/s): 20 kW, 1600 kg wet, 300 kg dry, Isp 1585, η0.5
+  sep_achievable_vinf_ref: 19547.62063596138,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
 };
@@ -63,6 +65,7 @@ check("Sun-escape revolutions (0.2 N, 600 kg, 1 AU)", F.sunEscapeRevs(0.2, 600, 
 check("Earth SOI radius (m)", F.earthSoiRadius(1), REF.earth_soi_radius_ref, 1e-4);
 check("injection pointing Δv (1°, 590 km)", F.injectionPointingDv(1, 590), REF.injection_pointing_dv_ref, 1e-4);
 check("GNC steering factor (5°)", F.gncSteeringFactor(5), REF.gnc_steering_factor_ref, 1e-4);
+check("SEP achievable v∞ under 1/r² (20 kW, 1600 kg)", F.sepAchievableVinf(20000,1600,300,1585,0.5), REF.sep_achievable_vinf_ref, 2e-3);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 
