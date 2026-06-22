@@ -10,6 +10,11 @@
 > "Chemical-boost option" comparison. Gap 4: `buildTraj` thrust now fades as 1/r². New KPI
 > "Power-limited v∞". Independent audit (Euler-Cromer, different dt) in audit_departure (19/19);
 > ui_sliders 60/60 (default infeasible, Oberth closes, 50 kW still doesn't close), pytest 8/8.
+>
+> **FOLLOW-ON — see [10-ep-closure-nuclear-electric.md](10-ep-closure-nuclear-electric.md)** (builds
+> 62–64): the conservative gate left "what pure-electric path closes?" open. Answer: nuclear-electric
+> (constant power). That plan adds the `fade_exp` power law, the EP-only closure, the solar-Oberth
+> depth, and the compliance scrub of the benchmarking-source wording introduced here.
 
 Goal: `feasible` must mean **survives the conservative case**, not "masses add up". Engine-first
 (fermi_sim source of truth) → mirror physics.js → independent audit → UI.

@@ -160,7 +160,8 @@ def main() -> None:
         f"{ve_self / KMS:.1f} km/s (Isp {ve_self / c.G0:.0f} s) -- chemical-rocket class."
     )
     print("=> Chemical energy (~MJ/kg) is 10^4-10^5x too sparse to feed an ion engine.")
-    print("   Deep-space EP power must be solar (near Sun) or nuclear/RTG -- not fuel cells.")
+    print("   Deep-space EP power must be solar (near the Sun -- but it saturates far out, see")
+    print("   sec 7) or a nuclear-electric reactor -- not fuel cells, and not a low-power RTG.")
 
     # ---------------------------------------------------------------
     header("5. TIME TO AC vs CRUISE SPEED (architecture comparison)")
@@ -202,17 +203,53 @@ def main() -> None:
     )
 
     # ---------------------------------------------------------------
-    header("7. VERDICT")
+    header("7. CONSERVATIVE FEASIBILITY -- THE 1/r^2 POWER GATE (decisive)")
+    from fermi_sim.departure import sep_achievable_vinf
+
+    floor = 23.4e3
+    dry_pay = 256.0
+    dv_cons = 30_000.0  # conservative pure-EP departure (heliocentric spiral, no Earth-velocity borrow)
+    print("Sections 2-3 size the OPTIMISTIC baseline. The decisive conservative test: as the probe")
+    print("spirals out, SOLAR power falls as 1/r^2, thrust starves, and the achievable cruise v_inf")
+    print(f"SATURATES. A pure-electric departure closes only if it reaches the {floor / KMS:.1f} km/s floor.\n")
+    ve = exhaust_velocity(3000)
+    wet = dry_pay * np.exp(dv_cons / ve)  # ~30 km/s conservative departure at gridded-ion Isp
+    print(f"Gridded ion (Isp 3000 s), conservative ~{dv_cons / KMS:.0f} km/s departure "
+          f"(wet {wet:.0f} kg / dry {dry_pay:.0f} kg):")
+    for kw in (5, 10, 20):
+        vs = sep_achievable_vinf(kw * 1e3, wet, dry_pay, 3000, 0.5, 1.0, 2.0)  # SOLAR 1/r^2 fade
+        tag = "closes" if vs >= floor else "SATURATES < floor -> NOT feasible"
+        print(f"   SOLAR  (1/r^2)   {kw:2d} kW -> v_inf {vs / KMS:5.1f} km/s   {tag}")
+    for kw in (1, 3, 5):
+        vn = sep_achievable_vinf(kw * 1e3, wet, dry_pay, 3000, 0.55, 1.0, 0.0)  # NUCLEAR constant power
+        tag = "CLOSES (constant power, no fade)" if vn >= floor else "short -- raise reactor power"
+        print(f"   NUCLEAR (const) {kw:2d} kW -> v_inf {vn / KMS:5.1f} km/s   {tag}")
     print(
-        "* Direct LEO->AC with solar-electric ion is FEASIBLE: ~20 km/s low-thrust\n"
-        "  budget, ~40-50% xenon, ~75-80k yr arrival, well inside 100k yr.\n"
-        "* Minimum direct departure delta-v from LEO: ~14 km/s (impulsive floor),\n"
-        "  ~20 km/s realistic SEP, arriving near 73,000 yr (75,000 yr is nearly\n"
-        "  identical), aimed close to the ecliptic -- matching your intuition.\n"
-        "* Solar beats fuel cells decisively (energy density). Hybrid adds no value;\n"
-        "  fuel-cell exhaust as propellant does not help -- energy, not v_e, is the wall.\n"
-        "* Gravity assists are optional: a solar Oberth could cut onboard delta-v to a\n"
-        "  few km/s but adds a heat shield; Jupiter rarely aligns. Direct is simplest."
+        "\n=> Pure SOLAR-electric is POWER-LIMITED and does NOT close from LEO (any power: bigger\n"
+        "   array -> more mass, same saturation). The pure-electric path that DOES close is\n"
+        "   NUCLEAR-ELECTRIC (constant power): ~5 kW fission reactor @ ~40 W/kg + gridded ion\n"
+        "   (Isp ~3000 s) -> v_inf ~24.8 km/s, ~64% xenon, ~+64 kg dry-bus margin. An RTG is the\n"
+        "   right kind of power but too low (<=1 kW -> only ~15-18 km/s) and too heavy (~5 W/kg)."
+    )
+
+    # ---------------------------------------------------------------
+    header("8. VERDICT (conservative)")
+    print(
+        "* The mission CLOSES, but only the conservative power gate settles it. PURE SOLAR-\n"
+        "  ELECTRIC from LEO is power-limited (1/r^2 fade) and does NOT reach the 23.4 km/s\n"
+        "  cruise floor at practical masses -- the optimistic ~20 km/s baseline (sec 2-3) is\n"
+        "  necessary but not sufficient.\n"
+        "* Three architectures DO close:\n"
+        "    - NUCLEAR-ELECTRIC ion (constant power): the only PURE-ELECTRIC path; ~5 kW reactor\n"
+        "      @ ~40 W/kg + gridded ion -> ~24.8 km/s, mass closes. Carries a reactor.\n"
+        "    - SOLAR-OBERTH: a ~1.4 km/s burn at ~10 Rsun yields the full 24 km/s (~4.3x Oberth\n"
+        "      leverage), but the burn must be CHEMICAL (ion too slow for the hours-long pass),\n"
+        "      needs a Parker-class heat shield (~1830 K), and a Jupiter/Venus tour to drop\n"
+        "      perihelion. Sidesteps the power wall rather than solving it.\n"
+        "    - CHEMICAL kick: ~14 km/s impulsive from LEO does it all (a 3.7 km/s kick does NOT --\n"
+        "      it barely escapes Earth; v_inf adds in quadrature, so a useful kick is ~10+ km/s).\n"
+        "* Solar still beats fuel cells decisively (energy density); fuel cells remain a dead end.\n"
+        "* Arrival ~73,000 yr (75,000 yr nearly identical), aimed close to the ecliptic."
     )
 
 
