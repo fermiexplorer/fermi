@@ -100,6 +100,25 @@ start of the journey.
   visible green disk with the escape arc emerging from it); the camera pans to the Sun and
   the disk fades only in the last ~45 % of the window. Fixes the empty post-escape frame.
 
+## Refinements (build 51)
+
+- **Representative spacing.** The real low-thrust spiral increments only Δr ≈ 4π·a·r³/μ per
+  rev — ~3.5 km at LEO, so ~75 % of the ~hundreds of revolutions sit below 2 R⊕ and are
+  unresolvable. So the **disk IS the wound-up spiral**: a clearly-visible green filled disk +
+  bright edge ring is the envelope, with only a **few illustrative turns** near Earth (faded
+  out as the disk fills). No more many wide turns.
+- **Earth as a true sphere** (`sphereMesh`, lit) at 1 R⊕ — reads as a sphere when tilted,
+  Saturn-like with the disk ring.
+- **Tangential escape.** The radial heliocentric arc is suppressed in the disk view; the
+  escape leaves the disk **edge tangentially** (in the orbit plane) — not radially from
+  Earth's center.
+- **Dawn-dusk orbit plane.** Disk/spiral/ring are drawn in the plane ⊥ the Earth→Sun line
+  (orbit normal = Sun direction → eclipse-free, ideal for the solar ion tug). The top-down
+  camera looks down the Sun line so the disk is face-on, then rotates to the chase.
+- **Burn-timeline alignment.** `burnPhases.tEarth` now uses the real geocentric escape time
+  `earthEscapeRevs(...).tYr` (0.70 yr) instead of the old `fEarth·burnYr` heuristic (0.48 yr),
+  so the burn graph and the disk agree.
+
 ## Push / deploy
 1. Commit index.html + plan with `git commit -F tmp/rw/commit-msg.txt`; push `origin HEAD:main`.
 2. Bump `BUILD 48 → 49`, h1 "build 48" → "build 49".

@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 50</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 51</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 50, SRC_COMMIT = 'HEAD';
+const BUILD = 51, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1139,8 +1139,8 @@ function drawFollow3d(c,st){
   let ctr, Hbase, tc, diskOp=0, lineOp=0, rDraw=0;
   if(ed && ed.w<=0){                                            // EARTH: top-down, disk grows, zoom tracks the disk
     ctr=Epos.slice(); Hbase=ed.rAU*1.4; tc=0; rDraw=ed.rAU;
-    diskOp=0.30*smooth01((ed.prog-0.25)/0.5);
-    lineOp=0.55+0.45*(1-smooth01((ed.prog-0.4)/0.5));
+    diskOp=0.20+0.18*smooth01(ed.prog/0.4);                     // green disk visible from the start, fills in
+    lineOp=0.85*(1-smooth01((ed.prog-0.05)/0.35));              // a few turns early → faded (disk) by ~40%
   } else if(ed){                                                // TRANSITION: scheduled SOI→helio dolly, tilt to chase
     const s=smooth01(ed.w), Hstart=ed.soiAU*1.4, Htgt=Math.max(helioHbase, Hstart*1.001);
     Hbase=Hstart*Math.pow(Htgt/Hstart, s);                      // geometric (log-uniform) zoom = visually smooth
@@ -1157,21 +1157,26 @@ function drawFollow3d(c,st){
   const H=Hbase*zoom3dCh;
   const ttl=['x (AU)','y (AU)','z (AU)'];
   const ax=k=>({range:[ctr[k]-H,ctr[k]+H],showticklabels:true,tickformat:H<100?'':'.2g',tickfont:{size:9},title:{text:ttl[k],font:{size:10}},color:'#9aa7b4',gridcolor:'#1d242d'});
-  // reference grid spanning the frame (at the disk plane while geocentric, else the ecliptic z=0)
-  const gx=[],gy=[],gz=[],gn=10, zPlane=ed?Epos[2]:0;
-  for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
-    gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(zPlane,zPlane,null);
-    gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(zPlane,zPlane,null); }
+  // ecliptic reference grid (z=0). Skipped in the geocentric disk view (it'd be edge-on / irrelevant).
+  const gx=[],gy=[],gz=[],gn=10;
+  if(!ed) for(let i=0;i<=gn;i++){ const t=i/gn, xx=ctr[0]-H+2*H*t, yy=ctr[1]-H+2*H*t;
+    gx.push(xx,xx,null); gy.push(ctr[1]-H,ctr[1]+H,null); gz.push(0,0,null);
+    gx.push(ctr[0]-H,ctr[0]+H,null); gy.push(yy,yy,null); gz.push(0,0,null); }
   const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=2.3;
   let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
   const autoEye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
-  // ----- camera: top-down (looking straight down on the orbit) → true chase as it escapes -----
+  // dawn-dusk orbit basis: orbit plane ⊥ the Earth→Sun line (normal = Sun dir → eclipse-free, full solar)
+  const _L=Math.hypot(Epos[0],Epos[1],Epos[2])||1, sunDir=[Epos[0]/_L,Epos[1]/_L,Epos[2]/_L];
+  let Uax=[-sunDir[1],sunDir[0],0], _ul=Math.hypot(Uax[0],Uax[1],Uax[2]); if(_ul<1e-6){Uax=[1,0,0];_ul=1;} Uax=[Uax[0]/_ul,Uax[1]/_ul,Uax[2]/_ul];
+  const Vax=[sunDir[1]*Uax[2]-sunDir[2]*Uax[1], sunDir[2]*Uax[0]-sunDir[0]*Uax[2], sunDir[0]*Uax[1]-sunDir[1]*Uax[0]];
+  // ----- camera: top-down ALONG the Sun line (dawn-dusk disk face-on) → true chase as it escapes -----
   const camLock=lockedToCam('follow3d');
   let eye=autoEye, up={x:0,y:0,z:1};
-  if(tc<1){                                                     // tc: 0 = top-down, 1 = chase (set per regime)
-    let ex=autoEye.x*tc, ey=autoEye.y*tc, ez=D+(autoEye.z-D)*tc;   // top eye = (0,0,D), looking straight down
+  if(tc<1){                                                     // tc: 0 = top-down (down the Sun line), 1 = chase
+    const tEx=sunDir[0]*D, tEy=sunDir[1]*D, tEz=sunDir[2]*D;    // top eye on the Sun line → disk seen face-on
+    let ex=tEx+(autoEye.x-tEx)*tc, ey=tEy+(autoEye.y-tEy)*tc, ez=tEz+(autoEye.z-tEz)*tc;
     const en=Math.hypot(ex,ey,ez)||1; eye={x:D*ex/en,y:D*ey/en,z:D*ez/en};
-    let uy=1-tc, uz=tc; const un=Math.hypot(uy,uz)||1; up={x:0,y:uy/un,z:uz/un};
+    let ux=Uax[0]*(1-tc), uy=Uax[1]*(1-tc), uz=Uax[2]*(1-tc)+tc; const un=Math.hypot(ux,uy,uz)||1; up={x:ux/un,y:uy/un,z:uz/un};
   }
   const sceneCam = camLock ? {eye,center:{x:0,y:0,z:0},up} : groupCam('follow3d');
   // Push the orientation to cam-locked peers only when fully in chase (don't spin the
@@ -1184,17 +1189,29 @@ function drawFollow3d(c,st){
   const cubeLbl = (ed && H<0.02) ? `${fmt(2*H/R_EARTH_AU,0)} R⊕` : `${fmt(2*H, H<10?2:0)} AU`;
   const extra=[]; let probe=p;
   if(ed){
-    const sp=spiralPts(Epos, ed.rpAU, rDraw, ed.turns, 26);
-    const eC=[Epos[0],Epos[1],Epos[2]+H*0.004];                       // tiny z-raise → Earth disk sits above the green disk
-    extra.push(diskMesh(Epos, rDraw, 64, '#3fb950', diskOp));         // green orbit-raising disk (escape envelope)
-    extra.push(diskMesh(eC, ed.rEarthAU, 40, '#2b6cb0', 0.95));       // Earth to scale (1 R⊕)
-    extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#3fb950',width:3},opacity:lineOp,hoverinfo:'skip',showlegend:false,name:'orbit-raising'});
-    if(ed.w<=0) probe=sp.tip;                                         // probe rides the spiral's leading tip
+    extra.push(diskMesh(Epos, rDraw, 72, '#2ea043', diskOp, Uax, Vax));   // green orbit-raising disk = the wound-up spiral
+    const ring=ringPts(Epos, rDraw, 96, Uax, Vax);                        // bright edge ring (current orbit / SOI envelope)
+    extra.push({type:'scatter3d',mode:'lines',x:ring.x,y:ring.y,z:ring.z,line:{color:'#3fb950',width:2},opacity:Math.min(1,diskOp*2.4),hoverinfo:'skip',showlegend:false});
+    extra.push(sphereMesh(Epos, ed.rEarthAU, '#3b7fd6'));                 // Earth as a true sphere (1 R⊕) — Saturn-like with the disk
+    if(lineOp>0.02){                                                      // a few illustrative orbit-raising turns near Earth
+      const sp=spiralPts(Epos, ed.rpAU, ed.rpAU+(rDraw-ed.rpAU)*0.5, 4, 30, Uax, Vax);
+      extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#56d364',width:2},opacity:lineOp,hoverinfo:'skip',showlegend:false});
+    }
+    // probe rides the disk edge (in the dawn-dusk plane); once escaping it leaves TANGENTIALLY
+    const phi0=animU*24, cphi=Math.cos(phi0), sphi=Math.sin(phi0);
+    const E=[Epos[0]+rDraw*(cphi*Uax[0]+sphi*Vax[0]), Epos[1]+rDraw*(cphi*Uax[1]+sphi*Vax[1]), Epos[2]+rDraw*(cphi*Uax[2]+sphi*Vax[2])];
+    if(ed.w>0){
+      const tv=[-sphi*Uax[0]+cphi*Vax[0], -sphi*Uax[1]+cphi*Vax[1], -sphi*Uax[2]+cphi*Vax[2]], len=rDraw*6*smooth01(ed.w);
+      const ex=[E[0],E[0]+tv[0]*len], ey=[E[1],E[1]+tv[1]*len], ez=[E[2],E[2]+tv[2]*len];
+      extra.push({type:'scatter3d',mode:'lines',x:ex,y:ey,z:ez,line:{color:'#3fb950',width:3},hoverinfo:'skip',showlegend:false,name:'escape'});
+      probe=[ex[1],ey[1],ez[1]];
+    } else probe=E;
   }
+  const Adraw = ed ? {x:[],y:[],z:[]} : A;                            // suppress the radial heliocentric arc during the disk view
   Plotly.react('follow3d',[
     {type:'scatter3d',mode:'lines',x:gx,y:gy,z:gz,line:{color:'#222c38',width:1},connectgaps:false,hoverinfo:'skip',name:'ecliptic'},
     ...extra,
-    {type:'scatter3d',mode:'lines',x:A.x,y:A.y,z:A.z,line:{color:'#3fb950',width:3},name:'flown'},
+    {type:'scatter3d',mode:'lines',x:Adraw.x,y:Adraw.y,z:Adraw.z,line:{color:'#3fb950',width:3},name:'flown'},
     {type:'scatter3d',mode:'lines',x:[c.acNow[0],c.acEnd[0]],y:[c.acNow[1],c.acEnd[1]],z:[c.acNow[2],c.acEnd[2]],line:{color:'#f0883e',width:2,dash:'dot'},name:'AC track'},
     {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:5},name:'Sun'},
     {type:'scatter3d',mode:'markers',x:[Epos[0]],y:[Epos[1]],z:[Epos[2]],marker:{color:'#58a6ff',size:ed?6:4},name:'Earth'},
@@ -1384,9 +1401,9 @@ function drawVelDv(r,c){
 // (until SOI escape, ~when cumulative dv ~ LEO circular speed), then thrusting
 // heliocentrically to build v_inf, then the engine shuts off and it coasts.
 function burnPhases(r){
-  const vcirc=7.67; // km/s, LEO circular speed -> ~dv to spiral to Earth escape
-  const fEarth=Math.min(0.6, vcirc/(r.dvDeliver/1e3));
-  return {tEarth:fEarth*r.burnYr, tBurn:r.burnYr, arrival:r.arrivalYr};
+  // Earth-escape segment = the REAL geocentric spiral time (matches the disk inset), capped to the burn.
+  const tEarth=Math.min(earthEscapeRevs(r.thrust, r.wet, val('alt')).tYr, r.burnYr);
+  return {tEarth, tBurn:r.burnYr, arrival:r.arrivalYr};
 }
 function elapsedYrFromU(u){
   const ph=phaseOf(u), p=burnPhases(compute());      // real segment durations (Earth escape / Sun escape / coast)
@@ -1434,21 +1451,37 @@ function drawTimeline(){
 const SOI_RE = 145;                                   // Earth sphere of influence (Earth radii)
 const R_EARTH_AU = R_EARTH/AU;                         // one Earth radius in AU
 const smooth01 = t => { t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
-// Orbit-raising escape spiral, z=C[2] plane. Many tight, near-even turns (slightly denser
-// near Earth via the t^1.3 radius profile — representative of the real low-thrust spiral)
-// from r0→r1 over `turns` revolutions. The probe rides the leading tip.
-function spiralPts(C, r0, r1, turns, perTurn){
-  const n=Math.max(24, Math.round(turns*perTurn)), x=[],y=[],z=[]; let lx=C[0]+r0,ly=C[1];
-  for(let i=0;i<=n;i++){ const t=i/n, ph=2*Math.PI*turns*t, r=r0+(r1-r0)*Math.pow(t,1.3);
-    lx=C[0]+r*Math.cos(ph); ly=C[1]+r*Math.sin(ph);
-    x.push(lx); y.push(ly); z.push(C[2]); }
-  return {x,y,z, tip:[lx,ly,C[2]]};
+// A FEW schematic orbit-raising turns near Earth (z=C[2] plane). The real low-thrust spiral
+// increments only Δr ≈ 4π·a·r³/μ per rev — sub-km at LEO, so ~75% of its ~hundreds of revs
+// sit below 2 R⊕ and are unresolvable: the DISK is the wound-up spiral. These few turns are
+// illustrative of the winding, drawn tight near Earth and faded out as the disk fills in.
+// All drawn in the orbital plane spanned by basis (U,V) about center C (dawn-dusk: U,V ⊥ Sun).
+function spiralPts(C, r0, r1, turns, perTurn, U, V){
+  const n=Math.max(16, Math.round(turns*perTurn)), x=[],y=[],z=[];
+  let tip=[C[0]+r0*U[0],C[1]+r0*U[1],C[2]+r0*U[2]];
+  for(let i=0;i<=n;i++){ const t=i/n, ph=2*Math.PI*turns*t, r=r0+(r1-r0)*t, cu=r*Math.cos(ph), sv=r*Math.sin(ph);
+    const px=C[0]+cu*U[0]+sv*V[0], py=C[1]+cu*U[1]+sv*V[1], pz=C[2]+cu*U[2]+sv*V[2];
+    x.push(px); y.push(py); z.push(pz); tip=[px,py,pz]; }
+  return {x,y,z, tip};
 }
-function diskMesh(C, R, n, color, op){                 // filled disk (fan) in the z=C[2] plane
+function ringPts(C, R, seg, U, V){ const x=[],y=[],z=[]; for(let i=0;i<=seg;i++){ const a=2*Math.PI*i/seg, cu=R*Math.cos(a), sv=R*Math.sin(a);
+  x.push(C[0]+cu*U[0]+sv*V[0]); y.push(C[1]+cu*U[1]+sv*V[1]); z.push(C[2]+cu*U[2]+sv*V[2]); } return {x,y,z}; }
+function diskMesh(C, R, seg, color, op, U, V){         // filled disk (fan) in the plane spanned by U,V about C
   const x=[C[0]],y=[C[1]],z=[C[2]],I=[],J=[],K=[];
-  for(let k=0;k<=n;k++){ const a=2*Math.PI*k/n; x.push(C[0]+R*Math.cos(a)); y.push(C[1]+R*Math.sin(a)); z.push(C[2]); }
-  for(let k=1;k<=n;k++){ I.push(0); J.push(k); K.push(k===n?1:k+1); }
+  for(let k=0;k<=seg;k++){ const a=2*Math.PI*k/seg, cu=R*Math.cos(a), sv=R*Math.sin(a);
+    x.push(C[0]+cu*U[0]+sv*V[0]); y.push(C[1]+cu*U[1]+sv*V[1]); z.push(C[2]+cu*U[2]+sv*V[2]); }
+  for(let k=1;k<=seg;k++){ I.push(0); J.push(k); K.push(k===seg?1:k+1); }
   return {type:'mesh3d',x,y,z,i:I,j:J,k:K,color,opacity:op,flatshading:true,hoverinfo:'skip',showlegend:false};
+}
+function sphereMesh(C, R, color){                       // lit UV sphere → Earth reads as a sphere when tilted
+  const nu=18, nv=12, x=[],y=[],z=[], I=[],J=[],K=[], W=nu+1;
+  for(let i=0;i<=nv;i++){ const th=Math.PI*i/nv; for(let j=0;j<=nu;j++){ const ph=2*Math.PI*j/nu;
+    x.push(C[0]+R*Math.sin(th)*Math.cos(ph)); y.push(C[1]+R*Math.sin(th)*Math.sin(ph)); z.push(C[2]+R*Math.cos(th)); } }
+  for(let i=0;i<nv;i++) for(let j=0;j<nu;j++){ const a=i*W+j, b=a+1, cc=a+W, d=cc+1;
+    I.push(a,b); J.push(b,d); K.push(cc,cc); }
+  return {type:'mesh3d',x,y,z,i:I,j:J,k:K,color,opacity:1,flatshading:false,
+          lighting:{ambient:0.6,diffuse:0.8,specular:0.15,roughness:0.7},lightposition:{x:1e4,y:1e4,z:1e4},
+          hoverinfo:'skip',showlegend:false};
 }
 const ESC_W = 0.12;                                    // transition-window width in animU (the SOI→AU dolly)
 // Earth-escape disk geometry for the current animU. Two sub-regimes inside the log-time
