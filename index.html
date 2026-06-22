@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 57</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 58</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 57, SRC_COMMIT = 'HEAD';
+const BUILD = 58, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1214,10 +1214,16 @@ function drawFollow3d(c,st){
     // ----- probe + escape curve (Plan 06): dawn-dusk plane, TANGENT to the disk edge at any zoom -----
     flownOp=0;                                                 // hide the heliocentric arc while in the disk view
     const REV=24;
-    // shared orbital basis (so the orbit-raising spin and the escape go the SAME way): the escape
-    // launch tangent T projected into the disk plane (tIn), and the in-plane radial rO = n × tIn.
-    const td=T[0]*sunDir[0]+T[1]*sunDir[1]+T[2]*sunDir[2];
-    let tIn=[T[0]-td*sunDir[0], T[1]-td*sunDir[1], T[2]-td*sunDir[2]]; const tnn=Math.hypot(tIn[0],tIn[1],tIn[2])||1; tIn=[tIn[0]/tnn,tIn[1]/tnn,tIn[2]/tnn];
+    // shared orbital basis (so the orbit spin AND the escape go the SAME way, AND the exit point
+    // stays put). Use the arc's FIXED launch (root) tangent — NOT st.tan (the moving probe tangent,
+    // which rotates as the probe sweeps the arc and would walk the exit point around the disk).
+    const _tj=buildTraj(c.vhat,c.vinfKmS);
+    let rT=[_tj.pts[1][0]-_tj.pts[0][0], _tj.pts[1][1]-_tj.pts[0][1], _tj.pts[1][2]-_tj.pts[0][2]];
+    const td=rT[0]*sunDir[0]+rT[1]*sunDir[1]+rT[2]*sunDir[2];
+    let tIn=[rT[0]-td*sunDir[0], rT[1]-td*sunDir[1], rT[2]-td*sunDir[2]]; const tnn=Math.hypot(tIn[0],tIn[1],tIn[2])||1; tIn=[tIn[0]/tnn,tIn[1]/tnn,tIn[2]/tnn];
+    // in-plane radial at the (fixed) exit point. The orbiting dot reaches it moving +tIn, exactly
+    // where the escape then leaves — same point, same velocity ⇒ no reversal. (Exit point is fixed
+    // because rO derives from the FIXED launch tangent, not the moving probe tangent.)
     let rO=[sunDir[1]*tIn[2]-sunDir[2]*tIn[1], sunDir[2]*tIn[0]-sunDir[0]*tIn[2], sunDir[0]*tIn[1]-sunDir[1]*tIn[0]]; const ron=Math.hypot(rO[0],rO[1],rO[2])||1; rO=[rO[0]/ron,rO[1]/ron,rO[2]/ron];
     if(ed.w<=0){                                               // orbit-raising: the dot rides the disk edge
       // ψ=0 at escape onset (animU=1/3), reaching the rim point rO moving along +tIn — exactly the
@@ -1526,7 +1532,7 @@ function earthDiskGeom(){
   const soiAU=earthSoiRadius(1)/AU;                     // EXACT escape-disk radius (≈145 R⊕)
   const rpRE=(R_EARTH+peri*1e3)/R_EARTH, rpAU=rpRE*R_EARTH_AU;
   let prog, w;                                          // prog = orbit-raising 0..1; w = transition 0..1
-  if(animU < uE){ const ef=phaseOf(animU).f; prog=(Math.exp(3.5*ef)-1)/(Math.exp(3.5)-1); w=0; }
+  if(animU < uE){ const ef=phaseOf(animU).f; prog=ef*(2-ef); w=0; }   // ease-out: growth → 0 at escape onset (smooth hand-off)
   else { prog=1; w=(animU-uE)/ESC_W; }
   const rAU = rpAU + prog*(soiAU-rpAU);
   return {ee, rpAU, soiAU, prog, w, rAU, rEarthAU:R_EARTH_AU, turns:10+prog*32};
