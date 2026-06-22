@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 58</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 59</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -689,7 +689,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 58, SRC_COMMIT = 'HEAD';
+const BUILD = 59, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1176,18 +1176,27 @@ function drawFollow3d(c,st){
   const el=val('tilt')*Math.PI/180, C30=Math.cos(el), S30=Math.sin(el), D=2.3;
   let zp=[-T[2]*T[0],-T[2]*T[1],1-T[2]*T[2]]; const zn=Math.hypot(zp[0],zp[1],zp[2])||1; zp=[zp[0]/zn,zp[1]/zn,zp[2]/zn];
   const autoEye={x:D*(-C30*T[0]+S30*zp[0]), y:D*(-C30*T[1]+S30*zp[1]), z:D*(-C30*T[2]+S30*zp[2])};
-  // dawn-dusk orbit basis: orbit plane ⊥ the Earth→Sun line (normal = Sun dir → eclipse-free, full solar)
+  // Orbit/disk basis: the plane is oriented to CONTAIN the escape launch direction (rootTan) so
+  // the orbit→escape hand-off is tangent/smooth, with the normal as close to the Sun line
+  // (dawn-dusk, eclipse-free) as that allows: n = sunDir projected ⟂ rootTan. Uax = rootTan
+  // (the escape direction, in-plane); Vax = n × Uax.
   const _L=Math.hypot(Epos[0],Epos[1],Epos[2])||1, sunDir=[Epos[0]/_L,Epos[1]/_L,Epos[2]/_L];
-  let Uax=[-sunDir[1],sunDir[0],0], _ul=Math.hypot(Uax[0],Uax[1],Uax[2]); if(_ul<1e-6){Uax=[1,0,0];_ul=1;} Uax=[Uax[0]/_ul,Uax[1]/_ul,Uax[2]/_ul];
-  const Vax=[sunDir[1]*Uax[2]-sunDir[2]*Uax[1], sunDir[2]*Uax[0]-sunDir[0]*Uax[2], sunDir[0]*Uax[1]-sunDir[1]*Uax[0]];
+  const _tj0=buildTraj(c.vhat,c.vinfKmS);
+  let rootTan=[_tj0.pts[1][0]-_tj0.pts[0][0], _tj0.pts[1][1]-_tj0.pts[0][1], _tj0.pts[1][2]-_tj0.pts[0][2]];
+  { const rt=Math.hypot(rootTan[0],rootTan[1],rootTan[2])||1; rootTan=[rootTan[0]/rt,rootTan[1]/rt,rootTan[2]/rt]; }
+  const _sd=sunDir[0]*rootTan[0]+sunDir[1]*rootTan[1]+sunDir[2]*rootTan[2];
+  let nrm=[sunDir[0]-_sd*rootTan[0], sunDir[1]-_sd*rootTan[1], sunDir[2]-_sd*rootTan[2]];
+  { let nn=Math.hypot(nrm[0],nrm[1],nrm[2]); if(nn<1e-3){ nrm=[-rootTan[1],rootTan[0],0]; nn=Math.hypot(nrm[0],nrm[1],nrm[2])||1; } nrm=[nrm[0]/nn,nrm[1]/nn,nrm[2]/nn]; }
+  const Uax=[rootTan[0],rootTan[1],rootTan[2]];
+  const Vax=[nrm[1]*Uax[2]-nrm[2]*Uax[1], nrm[2]*Uax[0]-nrm[0]*Uax[2], nrm[0]*Uax[1]-nrm[1]*Uax[0]];
   // ----- camera: top-down ALONG the Sun line (dawn-dusk disk face-on) → true chase as it escapes -----
   const camLock=lockedToCam('follow3d');
   let eye=autoEye, up={x:0,y:0,z:1};
-  if(tc<1){                                                     // tc: 0 = top-down (down the Sun line), 1 = chase
-    const tEx=sunDir[0]*D, tEy=sunDir[1]*D, tEz=sunDir[2]*D;    // top eye on the Sun line → disk seen face-on
+  if(tc<1){                                                     // tc: 0 = face-on the disk (along its normal), 1 = chase
+    const tEx=nrm[0]*D, tEy=nrm[1]*D, tEz=nrm[2]*D;            // top eye along the disk normal → disk seen face-on
     let ex=tEx+(autoEye.x-tEx)*tc, ey=tEy+(autoEye.y-tEy)*tc, ez=tEz+(autoEye.z-tEz)*tc;
     const en=Math.hypot(ex,ey,ez)||1; eye={x:D*ex/en,y:D*ey/en,z:D*ez/en};
-    let ux=Uax[0]*(1-tc), uy=Uax[1]*(1-tc), uz=Uax[2]*(1-tc)+tc; const un=Math.hypot(ux,uy,uz)||1; up={x:ux/un,y:uy/un,z:uz/un};
+    let ux=Vax[0]*(1-tc), uy=Vax[1]*(1-tc), uz=Vax[2]*(1-tc)+tc; const un=Math.hypot(ux,uy,uz)||1; up={x:ux/un,y:uy/un,z:uz/un};
   }
   const sceneCam = camLock ? {eye,center:{x:0,y:0,z:0},up} : groupCam('follow3d');
   // Push the orientation to cam-locked peers only when fully in chase (don't spin the
@@ -1211,20 +1220,14 @@ function drawFollow3d(c,st){
       const sp=spiralPts(Epos, ed.rpAU, Math.min(rDraw, ed.rpAU*1.6), 4, 30, Uax, Vax);
       extra.push({type:'scatter3d',mode:'lines',x:sp.x,y:sp.y,z:sp.z,line:{color:'#56d364',width:2},opacity:lineOp,hoverinfo:'skip',showlegend:false});
     }
-    // ----- probe + escape curve (Plan 06): dawn-dusk plane, TANGENT to the disk edge at any zoom -----
+    // ----- probe + escape curve (Plan 07): orbit plane CONTAINS the escape tangent ⇒ smooth -----
     flownOp=0;                                                 // hide the heliocentric arc while in the disk view
     const REV=24;
-    // shared orbital basis (so the orbit spin AND the escape go the SAME way, AND the exit point
-    // stays put). Use the arc's FIXED launch (root) tangent — NOT st.tan (the moving probe tangent,
-    // which rotates as the probe sweeps the arc and would walk the exit point around the disk).
-    const _tj=buildTraj(c.vhat,c.vinfKmS);
-    let rT=[_tj.pts[1][0]-_tj.pts[0][0], _tj.pts[1][1]-_tj.pts[0][1], _tj.pts[1][2]-_tj.pts[0][2]];
-    const td=rT[0]*sunDir[0]+rT[1]*sunDir[1]+rT[2]*sunDir[2];
-    let tIn=[rT[0]-td*sunDir[0], rT[1]-td*sunDir[1], rT[2]-td*sunDir[2]]; const tnn=Math.hypot(tIn[0],tIn[1],tIn[2])||1; tIn=[tIn[0]/tnn,tIn[1]/tnn,tIn[2]/tnn];
-    // in-plane radial at the (fixed) exit point. The orbiting dot reaches it moving +tIn, exactly
-    // where the escape then leaves — same point, same velocity ⇒ no reversal. (Exit point is fixed
-    // because rO derives from the FIXED launch tangent, not the moving probe tangent.)
-    let rO=[sunDir[1]*tIn[2]-sunDir[2]*tIn[1], sunDir[2]*tIn[0]-sunDir[0]*tIn[2], sunDir[0]*tIn[1]-sunDir[1]*tIn[0]]; const ron=Math.hypot(rO[0],rO[1],rO[2])||1; rO=[rO[0]/ron,rO[1]/ron,rO[2]/ron];
+    // tIn = the in-plane launch tangent (= rootTan, since the plane contains it); rO = n × tIn is
+    // the in-plane radial. The orbiting dot exits along +tIn — exactly the escape direction — so the
+    // hand-off is tangent and smooth, and the (fixed) exit point doesn't walk around the disk.
+    const tIn=Uax;
+    let rO=[nrm[1]*tIn[2]-nrm[2]*tIn[1], nrm[2]*tIn[0]-nrm[0]*tIn[2], nrm[0]*tIn[1]-nrm[1]*tIn[0]]; const ron=Math.hypot(rO[0],rO[1],rO[2])||1; rO=[rO[0]/ron,rO[1]/ron,rO[2]/ron];
     if(ed.w<=0){                                               // orbit-raising: the dot rides the disk edge
       // ψ=0 at escape onset (animU=1/3), reaching the rim point rO moving along +tIn — exactly the
       // direction the escape then continues, so the spin and the escape share one rotational sense.
