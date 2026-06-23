@@ -225,23 +225,46 @@ def main() -> None:
         tag = "CLOSES (constant power, no fade)" if vn >= floor else "short -- raise reactor power"
         print(f"   NUCLEAR (const) {kw:2d} kW -> v_inf {vn / KMS:5.1f} km/s   {tag}")
     print(
-        "\n=> Pure SOLAR-electric is POWER-LIMITED and does NOT close from LEO (any power: bigger\n"
-        "   array -> more mass, same saturation). The pure-electric path that DOES close is\n"
-        "   NUCLEAR-ELECTRIC (constant power): ~5 kW fission reactor @ ~40 W/kg + gridded ion\n"
-        "   (Isp ~3000 s) -> v_inf ~24.8 km/s, ~64% xenon, ~+64 kg dry-bus margin. An RTG is the\n"
-        "   right kind of power but too low (<=1 kW -> only ~15-18 km/s) and too heavy (~5 W/kg)."
+        "\n=> At CONSERVATIVE specific masses pure SOLAR-electric does NOT close. The binding variable\n"
+        "   is the whole-vehicle specific power alpha = power/dry_mass, NOT the kilowatts. The pure-\n"
+        "   electric path that closes at near-term specific masses is NUCLEAR-ELECTRIC (constant power):\n"
+        "   ~5 kW reactor @ ~40 W/kg + gridded ion (Isp ~3000 s) -> v_inf ~24.8 km/s, ~64% xenon."
+    )
+
+    # ---------------------------------------------------------------
+    header("7b. SOLAR FEASIBILITY FRONTIER -- the high-alpha corner (pure solar CAN close)")
+    from fermi_sim.spacecraft import minimal_dry_mass
+    floor2 = 24.0e3
+    print("A light enough vehicle burns briefly NEAR 1 AU, so the 1/r^2 fade barely bites and the")
+    print("achievable v_inf approaches the impulsive-from-1-AU limit (~38 km/s). Frontier vs alpha")
+    print("(array W/kg + thruster kg/kW set alpha; Isp 2300, struct 9%, tank 4%, 2 kW, 1 kg payload):\n")
+    print(f"{'array W/kg':>10} {'eng kg/kW':>9} {'alpha':>7} {'achV km/s':>10} {'result':>8}")
+    for wkg, eng in ((100, 6), (300, 4), (300, 2), (600, 2), (800, 2)):
+        active = 2000 / wkg + eng * 2.0
+        r = minimal_dry_mass(active, 1.0, 30e3, 2300, 0.04, 0.09)
+        achv = sep_achievable_vinf(2000, r["wet"], r["dry_eff"], 2300, 0.48, 1.0, 2.0)
+        alpha = 2000 / r["dry_eff"]
+        print(f"{wkg:>10} {eng:>9} {alpha:>7.0f} {achv / KMS:>10.1f} {'CLOSES' if achv >= floor2 else 'short':>8}")
+    print(
+        "\n=> Pure SOLAR-electric closes ABOVE alpha ~ 100 W/kg -- an ultralight ~50 kg micro-probe with\n"
+        "   BOTH a light array (>=~300 W/kg, far-term thin-film) AND a light thruster (<=~2-4 kg/kW vs\n"
+        "   ~6 today); achV saturates ~38 km/s. Feasibility is power-INDEPENDENT (alpha scales the\n"
+        "   probe, not the margin); optimal Isp ~2800-3500 s. This is the optimistic mirror of the\n"
+        "   nuclear closer (low alpha ~23 W/kg, near-term masses, optimistic reactor)."
     )
 
     # ---------------------------------------------------------------
     header("8. VERDICT (conservative)")
     print(
-        "* The mission CLOSES, but only the conservative power gate settles it. PURE SOLAR-\n"
-        "  ELECTRIC from LEO is power-limited (1/r^2 fade) and does NOT reach the 23.4 km/s\n"
-        "  cruise floor at practical masses -- the optimistic ~20 km/s baseline (sec 2-3) is\n"
-        "  necessary but not sufficient.\n"
-        "* Three architectures DO close:\n"
-        "    - NUCLEAR-ELECTRIC ion (constant power): the only PURE-ELECTRIC path; ~5 kW reactor\n"
-        "      @ ~40 W/kg + gridded ion -> ~24.8 km/s, mass closes. Carries a reactor.\n"
+        "* The mission CLOSES, but the conservative power gate settles it, and it reduces to ONE\n"
+        "  number: the whole-vehicle specific power alpha = power/dry_mass. At today's specific\n"
+        "  masses (alpha ~20-30 W/kg) pure solar-electric does NOT reach the 23.4 km/s floor.\n"
+        "* Closing architectures:\n"
+        "    - NUCLEAR-ELECTRIC ion (constant power): closes at LOW alpha (~23 W/kg) with near-term\n"
+        "      specific masses but an optimistic ~40 W/kg reactor; ~5 kW + gridded ion -> ~24.8 km/s.\n"
+        "    - HIGH-ALPHA SOLAR-ELECTRIC: pure solar DOES close above alpha ~ 100 W/kg -- an ultralight\n"
+        "      ~50 kg micro-probe (>=~300 W/kg array + ~2 kg/kW thruster, Isp ~3000 s) burns briefly\n"
+        "      near 1 AU and dodges the fade (-> ~37 km/s). Far-term tech, but no reactor, no assist.\n"
         "    - SOLAR-OBERTH: a ~1.4 km/s burn at ~10 Rsun yields the full 24 km/s (~4.3x Oberth\n"
         "      leverage), but the burn must be CHEMICAL (ion too slow for the hours-long pass),\n"
         "      needs a Parker-class heat shield (~1830 K), and a Jupiter/Venus tour to drop\n"

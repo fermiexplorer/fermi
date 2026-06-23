@@ -67,14 +67,33 @@ extra propellant burnt far out adds almost nothing:
 | **Solar (1/r² fade)** | 0.0 km/s | 0.0 km/s | 14.4 km/s |
 | **Required floor** | — 23.4 km/s — | | |
 
-Every practical pure-solar design lands **below the 23.4 km/s floor**. More power doesn't
-fix it: a bigger array adds mass for the same saturated speed. **Pure solar-electric from
-LEO is power-limited and does not close.** (This supersedes the optimistic ~20 km/s
-"departure-Δv" sizing in §3 — that budget is necessary but not sufficient; the gate is.)
+At *conservative* specific masses those designs land **below the 23.4 km/s floor** — but the
+binding variable is **not power, it is the whole-vehicle specific power α = power ÷ dry mass**.
+More kilowatts don't help (a bigger array just scales the probe at the same α); what matters is
+how light the *whole* vehicle is.
 
-The optimistic baseline still describes the vehicle *class*: at Isp 3000 s a ~30 km/s
-conservative departure is ~64% xenon, ~700 kg wet on a ~256 kg dry bus, drawing a few kW
-over a ~1-yr burn. The arithmetic of the bus is fine — it's the *power physics* that bites.
+### 2b. The high-α corner — where solar DOES close
+A light enough vehicle has a **short burn (~0.3 yr) near 1 AU**, so the 1/r² fade barely bites and
+the achievable v∞ approaches the impulsive-from-1-AU limit (~38 km/s). The feasibility frontier is:
+
+| Vehicle α (W/kg) | Achievable v∞ | |
+|---|---|---|
+| ~60 | ~5 km/s | ✗ |
+| **~100** | **~24 km/s** | **← threshold** |
+| ~155 | 37 km/s | ✓ |
+| ~200 | 38 km/s (saturates) | ✓ |
+
+So **pure solar-electric closes above α ≈ 100 W/kg.** Reaching it needs BOTH a light array (≥~300
+W/kg — far-term thin-film) AND a light thruster (≤~2–4 kg/kW vs ~6 today): the thruster kg/kW is as
+binding as the array W/kg. A worked example (≈50 kg ultralight micro-probe, 789 W/kg array, 2 kg/kW
+thruster, Isp ~2300–3500 s, α ≈ 155) reaches v∞ ≈ 37 km/s with margin. Optimal Isp ≈ 2800–3500 s;
+feasibility is power-independent (2 kW → 50 kg probe, 20 kW → 435 kg, same α and same margin).
+
+This is the optimistic mirror of the nuclear-electric closer: solar closes at a high α (~150 W/kg)
+reached only with far-term array+thruster tech; nuclear closes at a low α (~23 W/kg) with near-term
+specific masses but an optimistic reactor. The conservative *default* (today's silicon ~91 W/kg, Hall
+~6 kg/kW → α ~20–30) does **not** close — that is still the headline; the high-α corner is the path
+to make pure solar work.
 
 ## 3. The pure-electric closure — nuclear-electric ion
 
@@ -167,11 +186,20 @@ opportunistic Δv-saver, not a baseline.
 
 ## Bottom line for the tender
 
-The geometry closes easily; the **power physics** is the real constraint. **Pure
-solar-electric from LEO does not close** — its 1/r² power fade saturates the cruise speed
-below the 23.4 km/s floor. The recommended closing architecture is **nuclear-electric ion**
-(constant power, the only pure-electric path: ~5 kW reactor + gridded ion → ~24.8 km/s,
-mass closes). **Solar-Oberth** (tiny burn, but heat shield + chemical kick + assist tour)
-and a **~14 km/s chemical kick** are the alternative closing routes. Fuel cells remain a
-dead end; a low-power RTG cannot supply the needed kilowatts. Arrival ~73,000–75,000 yr,
-aimed close to the ecliptic.
+The geometry closes easily; the **power physics** is the real constraint, and it reduces to
+one number — the whole-vehicle specific power **α = power ÷ dry mass**. At conservative,
+today's specific masses (α ~20–30 W/kg) **pure solar-electric does not close** (the 1/r² fade
+saturates the cruise speed below the 23.4 km/s floor). Three architectures do close:
+
+1. **Nuclear-electric ion** — constant power (no fade); closes at low α (~23 W/kg) with
+   near-term specific masses but an optimistic ~40 W/kg reactor. The recommended baseline.
+2. **High-α solar-electric** — pure solar *does* close above **α ≈ 100 W/kg**: an ultralight
+   ~50 kg micro-probe (≥~300 W/kg array + ~2 kg/kW thruster, Isp ~3000 s) burns briefly near
+   1 AU and dodges the fade. Needs far-term array + thruster tech, but no reactor and no assist.
+3. **Solar-Oberth** (tiny burn, but heat shield + chemical kick + assist tour) or a **~14 km/s
+   chemical kick** — the assist/kick routes.
+
+Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
+~73,000–75,000 yr (or ~80,000 yr at the ecliptic crossing for the lowest plane-change penalty),
+aimed close to the ecliptic. **Optimizing feasibility = maximizing α** (light array + light
+thruster + small structure/tank/payload, Isp ~3000 s); power then just sets the probe size.
