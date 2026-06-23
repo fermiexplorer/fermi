@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 71</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 72</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -757,7 +757,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 71, SRC_COMMIT = 'HEAD';
+const BUILD = 72, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1284,8 +1284,20 @@ function chase3dInit(){
   const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
   const dots = {sun:mkDot(0xf5d020), earth:mkDot(0x58a6ff), probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
   scene.add(grid, flown, actrack, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt);
-  _t3 = {..._t3, ren, scene, cam, el, grid, flown, actrack, dots};
+  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, dots, az:0, elev:0.52, userRot:false};
+  // ----- mouse: drag to orbit (overrides the auto behind-velocity view), wheel to zoom, dbl-click reset -----
+  const cv = ren.domElement; cv.style.cursor = 'grab'; let drag = false, lx = 0, ly = 0;
+  cv.addEventListener('pointerdown', e=>{ drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+  cv.addEventListener('pointermove', e=>{ if(!drag) return; _t3.userRot = true;
+    _t3.az -= (e.clientX-lx)*0.008; _t3.elev = Math.max(-1.45, Math.min(1.45, _t3.elev + (e.clientY-ly)*0.008));
+    lx = e.clientX; ly = e.clientY; chase3dRefresh(); });
+  cv.addEventListener('pointerup', e=>{ drag = false; cv.style.cursor = 'grab'; });
+  cv.addEventListener('wheel', e=>{ e.preventDefault(); zoom3dCh = Math.max(0.05, Math.min(40, zoom3dCh*(e.deltaY>0?1.12:0.89))); chase3dRefresh(); }, {passive:false});
+  cv.addEventListener('dblclick', ()=>{ _t3.userRot = false; chase3dRefresh(); });   // back to auto chase
+  window.addEventListener('resize', ()=>{ const w = el.clientWidth||600, h = el.clientHeight||420;
+    ren.setSize(w,h); cam.aspect = w/h; cam.updateProjectionMatrix(); chase3dRefresh(); });
 }
+function chase3dRefresh(){ if(_t3.ready){ const c = craftState(), st = trajState(c); chase3dDraw(c, st); } }
 function _t3setLine(line, pts, ctr){
   const a = line.geometry.attributes.position.array, n = Math.min(pts.length, 4096);
   for(let i=0;i<n;i++){ a[3*i]=pts[i][0]-ctr[0]; a[3*i+1]=pts[i][1]-ctr[1]; a[3*i+2]=pts[i][2]-ctr[2]; }
@@ -1305,9 +1317,13 @@ function chase3dDraw(c, st){
   place(_t3.dots.sun,[0,0,0],0.012); place(_t3.dots.earth,flownPts[0],0.012);
   place(_t3.dots.probe,probe,0.022); place(_t3.dots.ac,c.ac,0.022); place(_t3.dots.icpt,c.I,0.016);
   _t3.grid.scale.set(H, H, 1); _t3.grid.position.set(0, 0, -ctr[2]);   // grid on world z=0
-  const fov = 50*Math.PI/180, camDist = H/Math.tan(fov/2)*1.2;          // behind probe along −v̂, looking forward
-  _t3.cam.position.set(-T[0]*camDist, -T[1]*camDist, -T[2]*camDist);
-  _t3.cam.near = Math.max(camDist*0.004, 1e-4); _t3.cam.far = camDist*30 + H*60; _t3.cam.updateProjectionMatrix();
+  // spherical orbit around the probe (origin). Default: behind the velocity azimuth + ~30° above for
+  // depth (not sighting straight down the velocity → no flat/edge-on view). Drag overrides (userRot).
+  const fov = 50*Math.PI/180, camDist = H/Math.tan(fov/2)*1.25;
+  if(!_t3.userRot){ _t3.az = Math.atan2(-T[1], -T[0]); _t3.elev = 0.52; }
+  const ce = Math.cos(_t3.elev), se = Math.sin(_t3.elev), ca = Math.cos(_t3.az), sa = Math.sin(_t3.az);
+  _t3.cam.position.set(camDist*ce*ca, camDist*ce*sa, camDist*se);
+  _t3.cam.near = Math.max(camDist*0.004, 1e-4); _t3.cam.far = camDist*40 + H*80; _t3.cam.updateProjectionMatrix();
   _t3.cam.lookAt(0, 0, 0);
 }
 function chase3dLoop(){ if(_t3.ready) _t3.ren.render(_t3.scene, _t3.cam); requestAnimationFrame(chase3dLoop); }
