@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 64</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 65</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -250,20 +250,26 @@
       </div>
       <div class="ctrl" style="margin-top:10px">
         <label>Power at 1 AU <b><span id="o_pwr">5.0</span> kW</b></label>
-        <input type="range" id="pwrkw" min="1" max="20" step="0.5" value="5">
+        <input type="range" id="pwrkw" min="1" max="200" step="0.5" value="5">
       </div>
       <div class="ctrl" id="solarOpts">
         <label>Solar cell technology</label>
         <select id="soltech">
-          <option value="20|3.0" selected>Silicon (~20%, Starlink-class)</option>
-          <option value="30|2.8">GaAs triple-junction (~30%)</option>
-          <option value="13|1.5">Thin-film CIGS (~13%, light)</option>
+          <option value="20|3.0" selected>Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
+          <option value="30|2.8">GaAs triple-junction (~30%, 146 W/kg)</option>
+          <option value="13|1.5">Thin-film CIGS (~13%, 118 W/kg, light)</option>
+          <option value="30|2.7">ROSA / advanced rigid (~30%, 151 W/kg)</option>
+          <option value="18|0.8">Thin-film roadmap (~18%, 306 W/kg, ultralight)</option>
+          <option value="25|0.7">Solar concentrator (~25% net, 486 W/kg)</option>
         </select>
-        <label style="margin-top:8px">Cell efficiency <b><span id="o_cellEff">20</span> %</b></label>
+        <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">20</span> %</b></label>
         <input type="range" id="cellEff" min="10" max="34" step="1" value="20">
         <label>Array areal density <b><span id="o_areal">3.0</span> kg/m²</b></label>
-        <input type="range" id="areal" min="1" max="6" step="0.1" value="3.0">
-        <div class="hint">Silicon ≈ 90 W/kg today; GaAs lighter &amp; smaller but pricier.</div>
+        <input type="range" id="areal" min="0.5" max="6" step="0.1" value="3.0">
+        <div class="hint">Specific power = 1361·η/areal at 1 AU. A <b>concentrator</b> swaps heavy cells for a
+          light reflector (high W/kg) — but, like any array, its power still fades as <b>1/r²</b>, so it raises
+          the achievable v∞ only by letting you install more power per kg, not by beating the fade. Watch
+          "Power-limited v∞": a big, light array gets closer to (and can clear) the floor.</div>
       </div>
       <div class="ctrl" id="fcOpts" style="display:none">
         <label>Fuel-cell reactant</label>
@@ -733,7 +739,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 64, SRC_COMMIT = 'HEAD';
+const BUILD = 65, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;

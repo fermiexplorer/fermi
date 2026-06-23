@@ -183,6 +183,12 @@ def run(page):
     # the coupled trap: more power → either still below the floor (power) or the array breaks the
     # mass budget — pure-SEP does not close at any setting on the default bus.
     check("even 50 kW pure-SEP still does not close (coupled power/mass)", comp({"pwrkw": 50})["feasible"] is False)
+    # A big, LIGHT (concentrator) array raises achievable v∞ but still does NOT close: reaching the
+    # floor under 1/r² fade needs ~30-80 kW, and the thruster/PPU (6 kg/kW) + propellant mass at that
+    # power break the dry-bus budget. The array's specific power is not the binding constraint.
+    conc = comp({"cellEff": 25, "areal": 0.7, "pwrkw": 60})  # concentrator (~486 W/kg), 60 kW
+    check("concentrator + 60 kW still does not close solar (engine+propellant mass)", conc["feasible"] is False,
+          f"achV={conc['achievableVinf']/1e3:.1f} km/s, bus={conc['busPayload']:.0f} kg, feasible={conc['feasible']}")
 
 def main():
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT)],
