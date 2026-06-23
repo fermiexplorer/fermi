@@ -69,6 +69,8 @@ check("injection pointing Δv (1°, 590 km)", F.injectionPointingDv(1, 590), REF
 check("GNC steering factor (5°)", F.gncSteeringFactor(5), REF.gnc_steering_factor_ref, 1e-4);
 check("SEP achievable v∞ under 1/r² (20 kW, 1600 kg)", F.sepAchievableVinf(20000,1600,300,1585,0.5,1,2), REF.sep_achievable_vinf_ref, 2e-3);
 check("NEP achievable v∞ constant power (fade_exp=0)", F.sepAchievableVinf(20000,1600,300,1585,0.5,1,0), REF.sep_achievable_vinf_nep_ref, 2e-3);
+check("derived minimal dry mass (active 155, pay 1, 30 km/s, Isp 3000, tank 2.5%, struct 10%)",
+  F.minimalDryMass(155,1,30000,3000,0.025,0.10).dryEff, 221.5710758812226, 1e-6);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
 

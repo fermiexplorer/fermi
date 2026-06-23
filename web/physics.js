@@ -139,6 +139,19 @@
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
 
+  // DERIVED minimal dry mass (mirror of fermi_sim.spacecraft.minimal_dry_mass). The dry mass is the
+  // minimum that must be there: active(power source + engine) + tank + structure (+payload in dry_eff),
+  // with structure = ks·(active + (propCoef+1)·m_p) and m_p = dry_eff·(MR−1). propCoef = dry mass added
+  // per kg of propellant (tank fraction, plus fuel-cell reactant on the web). Denominator ≤0 ⇒ diverges.
+  function minimalDryMass(activeKg, payloadKg, dv, isp, propCoef, structFrac) {
+    const K = Math.exp(dv / expv(isp)) - 1, ks = structFrac, gp = propCoef;
+    const D = 1 - K * (gp + ks * (gp + 1));
+    if (D <= 0) return { converges: false, dryEff: Infinity, mProp: Infinity, structure: Infinity, wet: Infinity };
+    const dryEff = (activeKg * (1 + ks) + payloadKg) / D, mProp = dryEff * K;
+    const structure = ks * (activeKg + (gp + 1) * mProp);
+    return { converges: true, dryEff, mProp, structure, wet: dryEff + mProp };
+  }
+
   // Solar array sizing: area = power / (solar flux * efficiency); flux ~ 1/r^2.
   const SOLAR_CONST = 1361.0; // W/m^2 at 1 AU
   const solarArrayArea = (powerW, eff, distAu = 1) => powerW / ((SOLAR_CONST / (distAu * distAu)) * eff);
@@ -147,7 +160,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

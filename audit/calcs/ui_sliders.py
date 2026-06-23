@@ -19,8 +19,8 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "dry": 255, "isp": 1585, "eta": 0.5,
-    "enginekg": 6, "tankfrac": 8, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 40, "rp": 6,
+    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 1585, "eta": 0.5,
+    "enginekg": 6, "tankfrac": 2.5, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 40, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -29,7 +29,7 @@ RESET_AND_COMPUTE = """
 (args) => {
   const [defs, radioDefs, over, radioOver] = args;
   for (const [k,v] of Object.entries(defs)) document.getElementById(k).value = v;
-  document.getElementById('propsel').value = 'Xenon|8|131.29';
+  document.getElementById('propsel').value = 'Xenon|2.5|131.29';
   for (const [k,v] of Object.entries(radioDefs)) document.querySelector(`input[name=${k}][value="${v}"]`).checked = true;
   for (const [k,v] of Object.entries(over)) document.getElementById(k).value = v;
   for (const [k,v] of Object.entries(radioOver)) document.querySelector(`input[name=${k}][value="${v}"]`).checked = true;
@@ -39,7 +39,8 @@ RESET_AND_COMPUTE = """
           minWet:r.minWet, thrust:r.thrust, burnYr:r.burnYr, E:r.E, arrayArea:r.arrayArea,
           arrayMass:r.arrayMass, engineMass:r.engineMass, tankMass:r.tankMass,
           busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp,
-          achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason};
+          achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason,
+          dry:r.dry, structureMass:r.structureMass, massConverges:r.massConverges, active:r.active};
 }
 """
 
@@ -82,22 +83,23 @@ def run(page):
     check("payload↑ leaves Δv unchanged", rel(p["dvDesign"], base["dvDesign"], 1e-3))
     check("payload↑ leaves arrival unchanged", p["arrivalYr"] == base["arrivalYr"])
     check("payload↑ leaves propellant FRACTION unchanged", rel(p["f"], base["f"], 1e-3))
-    check("payload↑ raises dryEff by ~49 kg", abs((p["dryEff"]-base["dryEff"]) - 49) < 1)
+    # derived dry: +49 kg payload drags propellant + structure, so dry_eff rises by MORE than 49 kg
+    check("payload↑ raises dryEff (amplified by the derived sizing)", p["dryEff"] > base["dryEff"] + 49)
 
-    # --- DRY-BUS MASS: scales mp & wet, but NOT arrival / fraction / Δv ---
-    d = comp({"dry": 400})
-    check("dry↑ raises wet mass", d["wet"] > base["wet"] + 50)
-    check("dry↑ raises xenon", d["mp"] > base["mp"] + 50)
-    check("dry↑ leaves arrival unchanged", d["arrivalYr"] == base["arrivalYr"])
-    check("dry↑ leaves propellant fraction unchanged", rel(d["f"], base["f"], 1e-3))
-    check("dry↑ leaves Δv unchanged", rel(d["dvDesign"], base["dvDesign"], 1e-3))
+    # --- BUS STRUCTURE FRACTION: raises structure → dry → wet (use Isp 3000 so the mass converges) ---
+    s0 = comp({"isp": 3000, "kstruct": 5}); d = comp({"isp": 3000, "kstruct": 20})
+    check("structure frac↑ raises structure mass", d["structureMass"] > s0["structureMass"] + 5)
+    check("structure frac↑ raises dry mass", d["dry"] > s0["dry"] + 5)
+    check("structure frac↑ raises wet mass", d["wet"] > s0["wet"] + 5)
+    check("structure frac↑ leaves arrival unchanged", d["arrivalYr"] == s0["arrivalYr"])
+    check("structure frac↑ leaves Δv unchanged", rel(d["dvDesign"], s0["dvDesign"], 1e-3))
 
-    # --- ISP: higher Isp ⇒ less propellant & fraction, less thrust, more energy ---
+    # --- ISP: higher Isp ⇒ less propellant & fraction, less thrust, lighter (derived) vehicle ---
     i = comp({"isp": 4500})
     check("Isp↑ lowers xenon", i["mp"] < base["mp"] - 5)
     check("Isp↑ lowers propellant fraction", i["f"] < base["f"] - 0.02)
     check("Isp↑ lowers thrust", i["thrust"] < base["thrust"])
-    check("Isp↑ raises electrical energy E", i["E"] > base["E"])
+    check("Isp↑ lowers wet mass (derived dry shrinks with less propellant)", i["wet"] < base["wet"])
     check("Isp↑ leaves arrival/Δv unchanged", i["arrivalYr"] == base["arrivalYr"] and rel(i["dvDesign"], base["dvDesign"], 1e-3))
 
     # --- ARRIVAL TIME: drives tilt, Δv, fuel; optimum & 79k crossing behaviour ---
@@ -151,15 +153,15 @@ def run(page):
     ar = comp({"areal": 5})
     check("areal density↑ raises array mass", ar["arrayMass"] > base["arrayMass"])
 
-    # --- ENGINE kg/kW and TANK % eat the dry-bus margin ---
+    # --- ENGINE kg/kW and TANK % feed the derived dry mass ---
     en = comp({"enginekg": 12})
     check("engine kg/kW↑ raises engine mass", en["engineMass"] > base["engineMass"])
-    check("engine kg/kW↑ cuts dry-bus margin", en["busPayload"] < base["busPayload"])
+    check("engine kg/kW↑ raises derived dry mass", en["dry"] > base["dry"])
     tk = comp({"tankfrac": 20})
     check("tank %↑ raises tank mass", tk["tankMass"] > base["tankMass"])
 
     # --- PROPELLANT choice couples to effective Isp (lighter ion -> higher Isp -> less fuel) ---
-    ar = comp({"propsel": "Argon|16|39.95"})
+    ar = comp({"propsel": "Argon|6|39.95"})
     check("Argon -> ~1.81x effective Isp vs Xenon", abs(ar["isp"]/base["isp"] - 1.81) < 0.05, f"{ar['isp']/base['isp']:.2f}x")
     check("Argon -> lower propellant fraction than Xenon", ar["f"] < base["f"] - 0.05, f"{base['f']:.2f}->{ar['f']:.2f}")
 
@@ -176,9 +178,9 @@ def run(page):
 
     # --- FEASIBILITY transitions ---
     lowisp = comp({"isp": 1000})
-    check("Isp=1000 → NOT feasible (tank ceiling)", lowisp["feasible"] is False)
-    heavy = comp({"pwrkw": 20, "dry": 80})
-    check("20 kW on 80 kg bus → NOT feasible (mass)", heavy["feasible"] is False)
+    check("Isp=1000 → mass diverges (NOT feasible)", lowisp["feasible"] is False and lowisp["massConverges"] is False)
+    nuc_opt = comp({"isp": 3000, "rtg": 40}, {"pwr": "nuclear", "ga": "direct"})
+    check("derived dry mass is leaner than the old 255 kg bus (nuclear closer)", nuc_opt["dry"] < 255, f"{nuc_opt['dry']:.0f} kg dry")
     check("reset returns to the conservative (power-limited) default", comp()["feasible"] is False)
     # the coupled trap: more power → either still below the floor (power) or the array breaks the
     # mass budget — pure-SEP does not close at any setting on the default bus.

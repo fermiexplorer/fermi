@@ -29,6 +29,40 @@ def propellant_mass(dry_mass: float, dv: float, isp_s: float) -> float:
     return dry_mass * (math.exp(dv / exhaust_velocity(isp_s)) - 1.0)
 
 
+def minimal_dry_mass(
+    active_kg: float, payload_kg: float, dv: float, isp_s: float,
+    tank_frac: float, struct_frac: float,
+):
+    """Self-consistent MINIMAL dry mass — no extraneous bus margin.
+
+    The dry (final) mass is built up from only what must be there:
+        dry = active + tank + structure          (+ payload, in dry_eff)
+    where ``active`` = power source + thruster/PPU (propellant-independent),
+        tank      = tank_frac · m_prop,
+        structure = struct_frac · (active + tank + m_prop)   (frame/harness/mounts),
+        m_prop    = dry_eff · (MR − 1),  dry_eff = dry + payload.
+
+    Substituting m_prop = dry_eff·K (K = MR−1) gives a closed form. The denominator
+    D = 1 − K·(ft + ks·(ft+1)) is the convergence condition: if D ≤ 0 the
+    propellant + tank + structure mass spirals without bound (the rocket-equation
+    wall) and the design does NOT close. Returns ``None`` in that case.
+    """
+    K = math.exp(dv / exhaust_velocity(isp_s)) - 1.0
+    ft, ks = tank_frac, struct_frac
+    D = 1.0 - K * (ft + ks * (ft + 1.0))
+    if D <= 0.0:
+        return None
+    dry_eff = (active_kg * (1.0 + ks) + payload_kg) / D
+    m_prop = dry_eff * K
+    tank = ft * m_prop
+    structure = ks * (active_kg + tank + m_prop)
+    dry_bus = active_kg + tank + structure
+    return {
+        "dry_eff": dry_eff, "dry_bus": dry_bus, "m_prop": m_prop,
+        "tank": tank, "structure": structure, "wet": dry_eff + m_prop,
+    }
+
+
 def electrical_energy(prop_mass: float, isp_s: float, eta: float) -> float:
     """Electrical energy to expel ``prop_mass`` at the given Isp (J)."""
     ve = exhaust_velocity(isp_s)

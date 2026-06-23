@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 65</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 66</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -203,20 +203,33 @@
 
     <div class="group">
       <h3>Spacecraft &amp; propulsion</h3>
+      <div class="ctrl" style="margin-bottom:8px">
+        <a href="#" id="optimizeBtn"><b>⚙ Optimize system →</b></a> find the lightest design (min wet mass) that still
+        clears the cruise floor — sweeps Isp × power and sets the sliders to the optimum.
+        <div id="optresult" class="hint" style="margin-top:4px">Optimal Isp is a sweet spot (~3000–4000 s), not “as high as possible”.</div>
+      </div>
       <div class="ctrl">
-        <label>Dry-bus mass (bus + subsystems, <em>excl. payload</em>) <b><span id="o_dry">255</span> kg</b></label>
-        <input type="range" id="dry" min="80" max="600" step="5" value="255">
+        <label>Bus structure fraction <b><span id="o_kstruct">10</span> %</b> <span class="exp">of (subsystems + propellant)</span></label>
+        <input type="range" id="kstruct" min="5" max="25" step="1" value="10">
+        <div class="hint">Dry mass is now <b>derived</b> — no extraneous margin. It is the minimum that must
+          be there: power source + engine + tank + this structure fraction (bus frame, harness, mounts) +
+          payload. See the derived <b>Dry mass</b> KPI.</div>
       </div>
       <div class="ctrl">
         <label>Ion engine technology</label>
         <select id="enginetech">
           <option value="hall|1585|0.50|5" selected>Hall thruster — conservative (Isp ~1585 s, 50%)</option>
           <option value="gridded|3000|0.60|6">Gridded ion — optimistic (Isp ~3000 s, 60%)</option>
+          <option value="gridded-opt|3500|0.62|6">Gridded ion — near-optimum (Isp ~3500 s, 62%)</option>
+          <option value="vasimr|10000|0.65|8">VASIMR / high-Isp (Isp ~10,000 s — thrust-starved here)</option>
         </select>
       </div>
       <div class="ctrl">
         <label>Ion engine Isp <b><span id="o_isp">1585</span> s</b></label>
-        <input type="range" id="isp" min="1000" max="5000" step="5" value="1585">
+        <input type="range" id="isp" min="1000" max="50000" step="50" value="1585">
+        <div class="hint">Higher Isp cuts propellant but <b>cuts thrust</b> (F = 2ηP/v_e) — in this power-limited
+          regime there is an <b>optimum</b> (~3000–4000 s); pushing toward VASIMR-class 50,000 s starves the
+          thrust and the achievable v∞ falls below the floor. See the <b>Optimal Isp</b> KPI / Optimize button.</div>
       </div>
       <div class="ctrl">
         <label>Thruster efficiency <b><span id="o_eta">0.60</span></b></label>
@@ -229,15 +242,15 @@
       <div class="ctrl">
         <label>Propellant</label>
         <select id="propsel">
-          <option value="Xenon|8|131.29">Xenon (heavy ion 131 amu, dense, easy storage)</option>
-          <option value="Krypton|12|83.80">Krypton (84 amu, cheaper, bulkier)</option>
-          <option value="Argon|16|39.95">Argon (light ion 40 amu, cheapest, bulkiest)</option>
+          <option value="Xenon|2.5|131.29">Xenon (heavy ion 131 amu, densest → lightest tank ~2.5%)</option>
+          <option value="Krypton|4|83.80">Krypton (84 amu, cheaper, less dense → tank ~4%)</option>
+          <option value="Argon|6|39.95">Argon (light ion 40 amu, cheapest, least dense → tank ~6%)</option>
         </select>
         <div class="hint">Sets the tank fraction (storage) <b>and</b> scales the effective Isp by the ion mass — a lighter ion reaches a higher exhaust velocity at the same accelerating voltage (Isp ∝ 1/√m), at the cost of lower thrust per kW and bulkier storage.</div>
       </div>
       <div class="ctrl">
-        <label>Propellant tank <b><span id="o_tankfrac">8</span> % of propellant</b></label>
-        <input type="range" id="tankfrac" min="3" max="20" step="1" value="8">
+        <label>Propellant tank <b><span id="o_tankfrac">2.5</span> % of propellant</b></label>
+        <input type="range" id="tankfrac" min="1" max="20" step="0.5" value="2.5">
       </div>
     </div>
 
@@ -522,7 +535,7 @@
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
   power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For the derived ~25 km/s a vehicle is
-  ~50–60% xenon at Isp 3000–4000 s (≈600 kg wet on a 255 kg dry bus) — still comfortably feasible today.</p>
+  ~50–60% xenon at Isp 3000–4000 s (≈600 kg wet on a ~220 kg derived dry mass) — still comfortably feasible today.</p>
   <p><strong>Subsystem sizing.</strong> The solar array is sized physically rather than by a fixed W/kg:
   area <code>= P / (S₀·η_cell / r²)</code> with <code>S₀</code> = 1361 W/m², and mass <code>= area · areal density</code>.
   Defaults are commercial, buy-today <em>silicon</em> (~20% cells, ~3 kg/m² → ~90 W/kg at 1 AU; Starlink-class,
@@ -666,11 +679,11 @@
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
   <ul>
-    <li><b>Tank ceiling</b> — the required propellant fraction exceeds ~85%: the Δv needs more propellant than the
-      vehicle can physically carry at that Isp. Reproduce it by dropping <code>Isp</code> toward ~1000 s (mass ratio
-      &gt; ~7), or aiming far from the fuel optimum.</li>
-    <li><b>Mass doesn't close</b> — the array + engine + tank exceed the dry mass, leaving less than the payload.
-      Reproduce it by pushing <code>power</code> high (a big, heavy array) on a small <code>dry mass</code>.</li>
+    <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. Pure solar-electric
+      always fails this (1/r² fade); nuclear-electric clears it at the right power. See "Power-limited v∞".</li>
+    <li><b>Mass diverges</b> — with the <em>derived</em> minimal dry mass, every kg of propellant drags a fixed
+      mass of tank + structure; if that times the mass ratio exceeds 1, the propellant + structure spiral has no
+      finite solution (the rocket-equation wall). Reproduce it by dropping <code>Isp</code> toward ~1000 s.</li>
   </ul>
   <p>In the default ~73k-yr, 5 kW, Isp-3000 s configuration the margins are comfortable, so it reads feasible —
   push those sliders to the edges to see the limits bite.</p>
@@ -739,7 +752,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 65, SRC_COMMIT = 'HEAD';
+const BUILD = 66, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -749,7 +762,7 @@ const BUILD = 65, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -762,7 +775,7 @@ function radio(name){ return document.querySelector(`input[name=${name}]:checked
 // more out-of-plane costs more Δv and more propellant.
 function compute(){
   const T=val('T')*YEAR, alt=val('alt'), apo=alt;   // circular LEO (perigee = apogee)
-  const dry=val('dry'), pay=val('pay'), dryEff=dry+pay;   // total dry = bus/subsystems + payload
+  const pay=val('pay');   // dry mass is DERIVED below (minimal: active + tank + structure), no margin
   const psV=document.getElementById('propsel').value.split('|');
   const propName=psV[0]||'Xenon', ionM=parseFloat(psV[2])||131.29, kIsp=Math.sqrt(131.29/ionM);
   const ispBase=val('isp'), isp=ispBase*kIsp, eta=val('eta'), ve=expv(isp);   // lighter ion → higher Isp at fixed voltage
@@ -797,35 +810,40 @@ function compute(){
   // global fuel optimum: the arrival that minimises Δv (and thus propellant)
   let Topt=tangentialT(), dvMin=Infinity;
   for(let y=58000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts); if(n<dvMin){ dvMin=n; Topt=Ts; } }
-  // minimum propellant for the chosen arrival, and at the optimum (rocket equation)
-  const MR=Math.exp(dvDesign/ve), mp=dryEff*(MR-1), wet=dryEff+mp, f=1-1/MR;
-  const minWet=dryEff*Math.exp(dvMin/ve), minFrac=1-Math.exp(-dvMin/ve);
+  // --- power source & engine: propellant-INDEPENDENT active hardware (sized by power) ---
+  const pwrW=val('pwrkw')*1000, effc=val('cellEff')/100, areal=val('areal');
+  const arrayArea=solarArrayArea(pwrW, effc, 1), arrayMass=arrayArea*areal, arraySpecPower=pwrW/arrayMass;
+  const engineMass=val('enginekg')*pwrW/1000;
+  const ft=val('tankfrac')/100, ks=val('kstruct')/100;
+  const ech=parseFloat((document.getElementById('reactant')||{value:'8e6'}).value)*0.6;
+  const cfc=(pwr==='fuelcell')?0.5*ve*ve/(eta*ech):0;          // fuel-cell reactant kg per kg propellant (E ∝ m_p)
+  const psFixed=(pwr==='solar')?arrayMass:(pwr==='nuclear'?pwrW/val('rtg'):0);
+  const active=psFixed+engineMass;                             // propellant-independent dry hardware
+  const gpp=ft+cfc;                                            // dry mass added per kg of propellant (tank + reactant)
+  // --- DERIVED MINIMAL DRY MASS — no extraneous margin. Mirrors fermi_sim.minimal_dry_mass:
+  //   dry = active + tank + reactant + structure (+payload);  structure = ks·(active + (gpp+1)·m_p);
+  //   m_p = dryEff·(MR−1). Closed form; denominator ≤0 ⇒ propellant+structure mass diverges. ---
+  const MR=Math.exp(dvDesign/ve), K=MR-1, f=1-1/MR;
+  const _md=minimalDryMass(active, pay, dvDesign, isp, gpp, ks);     // mirror of fermi_sim.minimal_dry_mass
+  const massConverges=_md.converges, dryEff=_md.dryEff, mp=_md.mProp, wet=_md.wet, structureMass=_md.structure;
+  const tankMass=ft*mp, reactantMass=cfc*mp;
+  const psMass=(pwr==='fuelcell')?reactantMass:psFixed, dryPower=(pwr==='fuelcell')?0:psFixed;
+  const psLabel=(pwr==='solar')?'Solar array':(pwr==='fuelcell'?'Fuel-cell reactant':'Reactor');
+  const dry=active+tankMass+reactantMass+structureMass, dryEffOut=dryEff;   // derived dry bus (excl. payload)
+  const busPayload=structureMass;                             // structure is the only non-active dry mass
+  // optimum-arrival minimal wet mass (same derived sizing at the min-Δv arrival)
+  const Kmin=Math.exp(dvMin/ve)-1, Dmin=1-Kmin*(gpp+ks*(gpp+1));
+  const minWet=(Dmin>0)?((active*(1+ks)+pay)/Dmin)*(1+Kmin):Infinity, minFrac=1-1/Math.exp(dvMin/ve);
   const dep=vInfEarth(ic.vinf, ic.tiltDeg);
   const dvFloor=impulsiveDv(dep.vInfE, alt, apo), dvNaive=dvFloor+SPIRAL_MAX;
   let gaNote='';
   if(ga==='jupiter') gaNote=`+${(gain/1e3).toFixed(0)} km/s from Jupiter`;
   else if(ga==='oberth') gaNote=`Oberth burn @ ${val('rp')} R☉`;
   const arrivalYr=T/YEAR, Tsec=T, vinfSun=ic.vinf, dvDeliver=dvDesign;
-  // --- mass / power / subsystems ---
+  // --- propellant-dependent: energy, thrust, burn time ---
   const E=elecEnergy(mp,isp,eta);
-  const pwrW=val('pwrkw')*1000;
   const thrust=2*eta*pwrW/ve;
-  const burnYr=mp>0?(mp*ve/thrust)/YEAR:0;
-  const eff=val('cellEff')/100, areal=val('areal');
-  const arrayArea=solarArrayArea(pwrW, eff, 1);
-  const arrayMass=arrayArea*areal;
-  const arraySpecPower=pwrW/arrayMass;
-  const engineMass=val('enginekg')*pwrW/1000;
-  const tankMass=(val('tankfrac')/100)*mp;
-  let psMass, psLabel;
-  if(pwr==='solar'){ psMass=arrayMass; psLabel='Solar array'; }
-  else if(pwr==='fuelcell'){ const ech=parseFloat(document.getElementById('reactant').value)*0.6; psMass=E/ech; psLabel='Fuel-cell reactant'; }
-  else { psMass=pwrW/val('rtg'); psLabel='Reactor'; }
-  const dryPower=(pwr==='fuelcell')?0:psMass;
-  const busPayload=dry-dryPower-engineMass-tankMass;
-  // --- feasibility: the design is IMPOSSIBLE when the tank can't hold the propellant,
-  //     or the subsystems leave no room for the payload ---
-  const FMAX=0.85;
+  const burnYr=(mp>0&&isFinite(mp))?(mp*ve/thrust)/YEAR:0;
   // CONSERVATIVE power gate (Plan 09): for a PURE solar-electric departure (no gravity assist),
   // can the probe actually reach the heliocentric cruise floor given the 1/r² power fade? The
   // achievable v∞ saturates, so practical SEP masses fall short — this, not mass closure, is the
@@ -833,21 +851,22 @@ function compute(){
   // SOLAR power fades 1/r² (→ achievable v∞ saturates below the floor); NUCLEAR-ELECTRIC is
   // constant power (fade exponent 0) — the EP-only escape from the 1/r² ceiling.
   const fadeExp = (pwr==='solar') ? 2 : 0;
-  const achievableVinf = (ga==='direct') ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, fadeExp) : Infinity;
+  const achievableVinf = (ga==='direct'&&massConverges) ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, fadeExp) : (ga==='direct'?0:Infinity);
   const powerFeasible = achievableVinf >= vinfSun;
   let feasible=true, infeasReason='';
-  // The power gate is the DECISIVE conservative test for a pure-electric departure — a v∞ that
-  // saturates below the floor cannot be fixed by more tankage — so it is reported first.
-  if(!powerFeasible){ feasible=false; infeasReason = (pwr==='solar')
+  // Two binding tests: (1) the mass must CONVERGE (propellant + tank + structure can't spiral past the
+  // rocket-equation wall), and (2) the conservative power gate (a pure-electric v∞ that saturates below
+  // the floor can't be fixed by more tankage). Mass-divergence reported first; then the power gate.
+  if(!massConverges){ feasible=false; infeasReason=`mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + structure, so the propellant + structure mass spirals without bound (the rocket-equation wall). Raise Isp, lighten the tank/structure fraction, or cut Δv`; }
+  else if(!powerFeasible){ feasible=false; infeasReason = (pwr==='solar')
       ? `power-limited — solar power fades as 1/r², so the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Pure solar-electric does NOT close; switch to a nuclear-electric reactor (constant power), or enable the solar-Oberth (Jupiter) departure or a chemical boost`
       : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the reactor power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
-  else if(f>=FMAX){ feasible=false; infeasReason=`propellant fraction ${fmt(100*f,0)}% exceeds the ~${100*FMAX}% tank/structure ceiling — at this Isp the Δv needs more propellant than the vehicle can physically carry`; }
-  else if(busPayload<0){ feasible=false; infeasReason=`mass doesn't close — the sized array + engine + tank (${fmt(dry-busPayload,0)} kg) exceed the ${fmt(dry,0)} kg dry bus; raise the dry-bus mass, cut power, or use lighter cells`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr'),
-    achievableVinf,powerFeasible,ga,fadeExp,dvOptimistic};
+    achievableVinf,powerFeasible,ga,fadeExp,dvOptimistic,
+    massConverges,structureMass,reactantMass,active,kstruct:val('kstruct'),tankPct:val('tankfrac')};
 }
 
 // ----- render KPIs + badges -----
@@ -861,7 +880,7 @@ function render(){
   const acDistLy=r.feasible?Math.hypot(R0[0]+VAC[0]*r.Tsec, R0[1]+VAC[1]*r.Tsec, R0[2]+VAC[2]*r.Tsec)/LY:0;
   const tilt=r.tiltDeg, offOpt=r.dvDesign-r.dvMin, atOpt=Math.abs(r.arrivalYr-r.minFuelYr)<600;
   const feasLine = r.feasible
-    ? `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> The mass closes — <b>${fmt(r.busPayload)} kg</b> of dry-bus structure margin after the array, engine &amp; tank (payload <b>${fmt(r.pay,1)} kg</b> is carried on top, in the wet mass).</div>`
+    ? `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine +
     `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+
@@ -991,9 +1010,12 @@ function render(){
   K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'), s:'m_pay — delivered payload mass',
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
     c:`m_pay = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
-  K.push({l:'Dry-bus margin', v:fmt(r.busPayload)+' kg', i:inl('dry','pwr','cell','areal','ekw','tank'), s:'m_margin — dry-bus mass left after the array, engine & tank',
-    d:'Mass remaining in the dry bus once the array, engine and tank are subtracted — i.e. the budget left for structure, avionics, comms and harness. It must stay at or above zero, or the design does not close and is flagged NOT FEASIBLE.',
-    c:`m_arr  = ${fmt(r.arrayMass)} kg   (P/(S₀·η_cell)·areal)\nm_eng  = ${fmt(r.engineMass)} kg   (P·${fmt(ekw,1)} kg/kW)\nm_tank = ${fmt(r.tankMass)} kg   (${fmt(tkf)}%·m_p)\nm_margin = dry bus − m_arr − m_eng − m_tank = ${fmt(r.dry)} − ${fmt(r.arrayMass)} − ${fmt(r.engineMass)} − ${fmt(r.tankMass)} = ${fmt(r.busPayload)} kg\nMust stay ≥ 0 or the design is NOT FEASIBLE.`});
+  K.push({l:'Dry mass (derived)', v:fmt(r.dry)+' kg', i:inl('kstruct','pwr','cell','areal','ekw','tank','isp'), s:'m_dry — minimal dry bus: power source + engine + tank + structure (no margin)',
+    d:'The dry mass is DERIVED, not assumed — it is the minimum that must be there, with no extraneous padding: power source + thruster/PPU + tank + a structure fraction (bus frame, harness, mounts). Lower it by raising Isp (less propellant → less tank & structure), a lighter power source, or a smaller structure fraction.',
+    c:`m_dry = power-source + engine + tank + structure\n      = ${fmt(r.psMass)} + ${fmt(r.engineMass)} + ${fmt(r.tankMass)} + ${fmt(r.structureMass)} = ${fmt(r.dry)} kg\n(+ payload ${fmt(r.pay,1)} kg ⇒ m_dry+pay = ${fmt(r.dryEff)} kg in the rocket equation)`});
+  K.push({l:'Bus structure', v:fmt(r.structureMass)+' kg', i:inl('kstruct','isp','tank'), s:'m_struct = k_struct·(active + (g+1)·m_p) — frame, harness, mounts',
+    d:'The structural mass holding the vehicle together, modelled as a physical fraction k_struct of everything it must carry (power source + engine + tank + propellant). This REPLACES the old arbitrary "dry-bus margin" — there is no unallocated mass any more.',
+    c:`m_struct = k_struct · (active + tank + propellant)\n        = ${fmt(r.kstruct)}% · (${fmt(r.active)} + ${fmt(r.tankMass)} + ${fmt(r.mp)}) = ${fmt(r.structureMass)} kg`});
   document.getElementById('kpis').innerHTML=K.map(k=>
     `<div class="kpi" data-k="${k.l}" title="${k.s}">`+
       `<div class="v">${k.v}</div><div class="k">${k.l}</div>`+
@@ -1010,9 +1032,9 @@ function render(){
   if(r.pwr==='solar') b.push([r.powerFeasible?'ok':'no', r.powerFeasible?'✓ Solar: ~tens of kg, energy free near Sun':'✗ Solar: 1/r² fade — v∞ saturates below the floor']);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
   if(r.pwr==='nuclear') b.push([r.powerFeasible?'ok':'mid', `${r.powerFeasible?'✓':'△'} Nuclear-electric: ${fmt(r.psMass)} kg reactor, constant power (no 1/r² fade)`]);
-  b.push([r.busPayload>0?'ok':'no', r.busPayload>0
-    ? `✓ Mass closes: ${fmt(r.busPayload)} kg dry-bus margin`
-    : `✗ Over budget by ${fmt(-r.busPayload)} kg`]);
+  b.push([r.massConverges?'ok':'no', r.massConverges
+    ? `✓ Minimal dry mass ${fmt(r.dry)} kg (incl. ${fmt(r.structureMass)} kg structure)`
+    : `✗ Mass diverges (propellant + structure spiral)`]);
   if(r.gaNote) b.push(['mid', r.gaNote]);
   document.getElementById('badges').innerHTML=b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
   drawViz();
@@ -1715,14 +1737,14 @@ function syncLabels(){
   document.getElementById('o_alt').textContent=val('alt');
   document.getElementById('o_injerr').textContent=val('injerr').toFixed(1);
   document.getElementById('o_gncerr').textContent=val('gncerr');
-  document.getElementById('o_dry').textContent=val('dry');
+  document.getElementById('o_kstruct').textContent=val('kstruct');
   document.getElementById('o_isp').textContent=val('isp');
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
   document.getElementById('o_pwr').textContent=val('pwrkw').toFixed(1);
   document.getElementById('o_cellEff').textContent=val('cellEff');
   document.getElementById('o_areal').textContent=val('areal').toFixed(1);
   document.getElementById('o_enginekg').textContent=val('enginekg').toFixed(1);
-  document.getElementById('o_tankfrac').textContent=val('tankfrac');
+  document.getElementById('o_tankfrac').textContent=val('tankfrac').toFixed(1);
   document.getElementById('o_rtg').textContent=val('rtg');
   document.getElementById('o_rp').textContent=val('rp');
   document.getElementById('o_tilt').textContent=val('tilt');
@@ -1747,6 +1769,26 @@ document.getElementById('tilt').addEventListener('input',()=>{ document.getEleme
 document.getElementById('T').addEventListener('input',()=>{ document.getElementById('o_T').textContent=fmt(val('T')); render(); stateToURL(); });
 document.getElementById('snapopt').addEventListener('click',(e)=>{ e.preventDefault();
   if(SIM){ const v=Math.round(SIM.minFuelYr/200)*200; document.getElementById('T').value=v; document.getElementById('o_T').textContent=fmt(v); render(); stateToURL(); } });
+// ----- system optimizer: lightest FEASIBLE design (min wet mass) over Isp × power -----
+function optimizeDesign(){
+  const pwr=radio('pwr'), isp0=val('isp'), kw0=val('pwrkw');
+  const ispGrid=[1500,2000,2500,3000,3500,4000,4500,5000,6000,8000];
+  const pwrGrid=(pwr==='nuclear')?[2,3,4,5,6,8,10,14]:(pwr==='solar')?[5,10,20,40,80,150]:[kw0];
+  let best=null;
+  for(const kw of pwrGrid){ for(const isp of ispGrid){
+    setVal('pwrkw',kw); setVal('isp',isp);
+    const r=compute();
+    if(r.feasible && (!best || r.wet<best.wet)) best={isp,kw,wet:r.wet,dry:r.dry,achV:r.achievableVinf};
+  }}
+  if(best){ setVal('isp',best.isp); setVal('pwrkw',best.kw); }
+  else { setVal('isp',isp0); setVal('pwrkw',kw0); }
+  syncLabels(); render(); stateToURL();
+  document.getElementById('optresult').innerHTML = best
+    ? `▸ lightest feasible: <b>Isp ${best.isp} s</b>, <b>${best.kw} kW</b> → ${fmt(best.wet)} kg wet (${fmt(best.dry)} kg dry)`
+    : `▸ no feasible design for this power source at any Isp/power — try <b>nuclear-electric</b> or a gravity assist.`;
+}
+document.getElementById('optimizeBtn').addEventListener('click',(e)=>{ e.preventDefault();
+  const el=document.getElementById('optresult'); el.textContent='optimizing…'; setTimeout(optimizeDesign,20); });
 document.querySelectorAll('input,select').forEach(el=>{
   if(el.id==='tilt' || el.id==='T' || el.id==='tscrub' || el.name==='viz') return;  // handled separately (live view controls)
   el.addEventListener('input',()=>{
@@ -1837,7 +1879,7 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
 });
 
 // ----- shareable URL: every control value is encoded so the link reproduces the state -----
-const URL_KEYS=['T','pay','alt','injerr','gncerr','dry','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
+const URL_KEYS=['T','pay','alt','injerr','gncerr','kstruct','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
 const URL_SELECTS=['propsel'];   // engine/solar presets only set sliders, which are encoded already
 const URL_RADIOS=['pwr','ga'];
 function baseDir(){ return location.pathname.replace(/[^/]*$/, ''); }   // directory of the current page
