@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 70</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 71</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -757,7 +757,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 70, SRC_COMMIT = 'HEAD';
+const BUILD = 71, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1255,10 +1255,68 @@ function trajState(c){
 }
 function cols(a){ return {x:a.map(p=>p[0]), y:a.map(p=>p[1]), z:a.map(p=>p[2])}; }
 
+// ===== Three.js chase cam (prototype behind ?r3=1) — option B: clean behind-the-probe chase =====
+// Renderer-only swap: reuse craftState()/trajState() geometry; Three.js does projection + camera.
+// Scene is recentered on the probe (probe at origin) so 32-bit GPU coords stay small at any distance.
+const R3 = new URLSearchParams(location.search).get('r3') === '1';
+let _t3 = {ready:false, loading:false};
+function chase3dEnsure(){
+  if(_t3.ready || _t3.loading) return;
+  _t3.loading = true;
+  const s = document.createElement('script');
+  s.src = 'web/three.min.js';   // vendored (three r0.149) — offline-safe, no extra CDN dependency
+  s.onload = ()=>{ chase3dInit(); _t3.ready = true; requestAnimationFrame(chase3dLoop); drawViz(); };
+  s.onerror = ()=>{ _t3.loading = false; console.error('three.js failed to load'); };
+  document.head.appendChild(s);
+}
+function chase3dInit(){
+  const el = document.getElementById('follow3d'); el.innerHTML = '';
+  const W = el.clientWidth||600, H = el.clientHeight||420;
+  const ren = new THREE.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio||1)); ren.setSize(W,H);
+  el.appendChild(ren.domElement);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x161b22);
+  const cam = new THREE.PerspectiveCamera(50, W/H, 1e-3, 1e13); cam.up.set(0,0,1);
+  const grid = new THREE.GridHelper(2, 20, 0x2a3340, 0x1d242d); grid.rotation.x = Math.PI/2;   // ecliptic z=0
+  const mkLine = (color)=>{ const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4096*3), 3));
+    const l = new THREE.Line(g, new THREE.LineBasicMaterial({color})); l.frustumCulled = false; return l; };
+  const flown = mkLine(0x3fb950), actrack = mkLine(0xf0883e);
+  const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
+  const dots = {sun:mkDot(0xf5d020), earth:mkDot(0x58a6ff), probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
+  scene.add(grid, flown, actrack, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt);
+  _t3 = {..._t3, ren, scene, cam, el, grid, flown, actrack, dots};
+}
+function _t3setLine(line, pts, ctr){
+  const a = line.geometry.attributes.position.array, n = Math.min(pts.length, 4096);
+  for(let i=0;i<n;i++){ a[3*i]=pts[i][0]-ctr[0]; a[3*i+1]=pts[i][1]-ctr[1]; a[3*i+2]=pts[i][2]-ctr[2]; }
+  line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
+}
+function chase3dDraw(c, st){
+  if(!_t3.ready) return;
+  const flownPts = st.cruise ? st.arc.concat([st.pos]) : st.arc, probe = st.pos, T = st.tan;
+  const chaseIn = !document.getElementById('chasezoom') || document.getElementById('chasezoom').checked;
+  const fpts = chaseIn ? flownPts.concat([[0,0,0]]) : flownPts.concat([[0,0,0], c.ac, c.acEnd, c.I]);
+  let mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
+  fpts.forEach(q=>{ for(let k=0;k<3;k++){ if(q[k]<mn[k])mn[k]=q[k]; if(q[k]>mx[k])mx[k]=q[k]; }});
+  const Hbase = 0.5*Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2], 0.5)*1.3, H = Hbase*(zoom3dCh||1);
+  const ctr = probe;                                                   // probe at origin → no float jitter
+  _t3setLine(_t3.flown, flownPts, ctr); _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
+  const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=H*scl; m.scale.set(s,s,s); };
+  place(_t3.dots.sun,[0,0,0],0.012); place(_t3.dots.earth,flownPts[0],0.012);
+  place(_t3.dots.probe,probe,0.022); place(_t3.dots.ac,c.ac,0.022); place(_t3.dots.icpt,c.I,0.016);
+  _t3.grid.scale.set(H, H, 1); _t3.grid.position.set(0, 0, -ctr[2]);   // grid on world z=0
+  const fov = 50*Math.PI/180, camDist = H/Math.tan(fov/2)*1.2;          // behind probe along −v̂, looking forward
+  _t3.cam.position.set(-T[0]*camDist, -T[1]*camDist, -T[2]*camDist);
+  _t3.cam.near = Math.max(camDist*0.004, 1e-4); _t3.cam.far = camDist*30 + H*60; _t3.cam.updateProjectionMatrix();
+  _t3.cam.lookAt(0, 0, 0);
+}
+function chase3dLoop(){ if(_t3.ready) _t3.ren.render(_t3.scene, _t3.cam); requestAnimationFrame(chase3dLoop); }
+
 // Chase cam (3D): camera behind the craft's velocity, 30° up, framing the WHOLE flown
 // path (Sun -> probe) so nothing is ever clipped. As the velocity turns along the
 // escape arc, the path + ecliptic grid rotate in view. Only the flown path is drawn.
 function drawFollow3d(c,st){
+  if(R3){ if(!_t3.ready) chase3dEnsure(); else chase3dDraw(c,st); return; }   // Three.js chase cam (?r3=1)
   const p=st.pos, T=st.tan;
   const flown = st.cruise ? st.arc.concat([st.pos]) : st.arc;
   const Epos = flown[0];                                        // Earth's heliocentric position (arc start)
