@@ -57,6 +57,19 @@ def run(page):
     def comp(over=None, radio=None):
         return page.evaluate(RESET_AND_COMPUTE, [DEFAULTS, RADIO_DEFAULTS, over or {}, radio or {}])
 
+    # GUARD: the page's NATIVE on-load defaults (the HTML value= attributes / selected radios), read
+    # BEFORE any reset — this is what a fresh visitor sees. comp() overrides the sliders, so it would
+    # NOT catch a mismatch between the DEFAULTS dict and the actual value= attributes (e.g. a slider
+    # left at a stale value). The default design must be feasible on a pristine load.
+    native = page.evaluate("""() => { const r = compute();
+      return {feasible:r.feasible, achV:r.achievableVinf, floor:r.vinfSun,
+              wkgsolar:+document.getElementById('wkgsolar').value,
+              enginekg:+document.getElementById('enginekg').value, isp:+document.getElementById('isp').value}; }""")
+    check("page NATIVE on-load default is FEASIBLE (value= attributes, no reset)",
+          native["feasible"] is True,
+          f"achV={native['achV']/1e3:.1f} vs floor {native['floor']/1e3:.1f}; "
+          f"loaded wkgsolar={native['wkgsolar']} enginekg={native['enginekg']} isp={native['isp']}")
+
     base = comp()
     # The DEFAULT is now the high-α solar feasible design (build 68): 400 W/kg array + 3 kg/kW thruster
     # + Isp 3000 → vehicle α ≈ 118 W/kg → pure solar CLOSES with a ~3-4 km/s margin.
