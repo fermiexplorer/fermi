@@ -83,11 +83,12 @@ the achievable v∞ approaches the impulsive-from-1-AU limit (~38 km/s). The fea
 | ~155 | 37 km/s | ✓ |
 | ~200 | 38 km/s (saturates) | ✓ |
 
-So **pure solar-electric closes above α ≈ 100 W/kg.** Reaching it needs BOTH a light array (≥~300
-W/kg — far-term thin-film) AND a light thruster (≤~2–4 kg/kW vs ~6 today): the thruster kg/kW is as
-binding as the array W/kg. A worked example (≈50 kg ultralight micro-probe, 789 W/kg array, 2 kg/kW
-thruster, Isp ~2300–3500 s, α ≈ 155) reaches v∞ ≈ 37 km/s with margin. Optimal Isp ≈ 2800–3500 s;
-feasibility is power-independent (2 kW → 50 kg probe, 20 kW → 435 kg, same α and same margin).
+So **pure solar-electric closes above α ≈ 100 W/kg.** The **recommended (default) high-α point uses
+ultra-thin GaAs** (~1000 W/kg array — Alta-Devices-class epitaxial-liftoff cells, demonstrated at cell
+level; lightweight blanket is the far-term step) paired with a **near-term ~4 kg/kW thruster** → α ≈
+130, v∞ ≈ 30 km/s, ~40 kg wet. Crucially the 1000 W/kg array makes the array the demonstrated lever and
+relaxes the thruster to ~4–5 kg/kW (close to today's ~6) — a *single* far-term stretch rather than two.
+Optimal Isp ≈ 2800–3500 s; feasibility is power-independent (2 kW → 40 kg probe, 20 kW → larger, same α).
 
 ### 2c. Feasibility frontier & the tech-maturity trade
 The two α levers (array W/kg, thruster kg/kW) trade along the closing contour — and crucially you
@@ -209,7 +210,7 @@ saturates the cruise speed below the 23.4 km/s floor). Three architectures do cl
 1. **Nuclear-electric ion** — constant power (no fade); closes at low α (~23 W/kg) with
    near-term specific masses but an optimistic ~40 W/kg reactor. The recommended baseline.
 2. **High-α solar-electric** — pure solar *does* close above **α ≈ 100 W/kg**: an ultralight
-   ~50 kg micro-probe (≥~300 W/kg array + ~2 kg/kW thruster, Isp ~3000 s) burns briefly near
+   ~40 kg micro-probe (ultra-thin GaAs ~1000 W/kg array + ~4 kg/kW thruster, Isp ~3000 s) burns briefly near
    1 AU and dodges the fade. Needs far-term array + thruster tech, but no reactor and no assist.
 3. **Solar-Oberth** (tiny burn, but heat shield + chemical kick + assist tour) or a **~14 km/s
    chemical kick** — the assist/kick routes.

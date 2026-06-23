@@ -20,7 +20,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 # default control values (must match index.html)
 DEFAULTS = {
     "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
-    "enginekg": 3, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 25, "wkgsolar": 400, "rtg": 40, "rp": 6,
+    "enginekg": 4, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 1000, "rtg": 40, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -151,12 +151,12 @@ def run(page):
     check("efficiency↑ lowers electrical energy", e["E"] < base["E"])
 
     # --- SOLAR CELL EFFICIENCY (sets AREA) / SPECIFIC POWER (sets MASS) ---
-    ce = comp({"cellEff": 30})
+    ce = comp({"cellEff": 34})
     check("cell eff↑ shrinks array AREA", ce["arrayArea"] < base["arrayArea"])
     check("cell eff↑ leaves array MASS unchanged (mass set by W/kg)", rel(ce["arrayMass"], base["arrayMass"], 1e-6))
-    wk = comp({"wkgsolar": 800})
-    check("array W/kg↑ lowers array mass", wk["arrayMass"] < base["arrayMass"])
-    check("array W/kg↑ sets the array specific power directly", abs(wk["arraySpecPower"] - 800) < 1e-6)
+    wk_lo = comp({"wkgsolar": 300}); wk_hi = comp({"wkgsolar": 1200})
+    check("array W/kg↑ lowers array mass", wk_hi["arrayMass"] < wk_lo["arrayMass"])
+    check("array W/kg sets the array specific power directly", abs(wk_hi["arraySpecPower"] - 1200) < 1e-6)
     # whole-vehicle specific power KPI = P / dry_eff
     veh = comp({"isp": 3000}, {"pwr": "nuclear", "ga": "direct"})
     check("vehicle specific power ~ P/dryEff (nuclear closer ~20-30 W/kg)",
