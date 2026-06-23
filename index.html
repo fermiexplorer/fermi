@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 66</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 67</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -268,18 +268,18 @@
       <div class="ctrl" id="solarOpts">
         <label>Solar cell technology</label>
         <select id="soltech">
-          <option value="20|3.0" selected>Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
-          <option value="30|2.8">GaAs triple-junction (~30%, 146 W/kg)</option>
-          <option value="13|1.5">Thin-film CIGS (~13%, 118 W/kg, light)</option>
-          <option value="30|2.7">ROSA / advanced rigid (~30%, 151 W/kg)</option>
-          <option value="18|0.8">Thin-film roadmap (~18%, 306 W/kg, ultralight)</option>
-          <option value="25|0.7">Solar concentrator (~25% net, 486 W/kg)</option>
+          <option value="20|91" selected>Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
+          <option value="30|146">GaAs triple-junction (~30%, 146 W/kg)</option>
+          <option value="13|118">Thin-film CIGS (~13%, 118 W/kg, light)</option>
+          <option value="30|151">ROSA / advanced rigid (~30%, 151 W/kg)</option>
+          <option value="18|306">Thin-film roadmap (~18%, 306 W/kg, ultralight)</option>
+          <option value="25|486">Solar concentrator (~25% net, 486 W/kg)</option>
         </select>
-        <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">20</span> %</b></label>
+        <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">20</span> %</b> <span class="exp">(sets array AREA)</span></label>
         <input type="range" id="cellEff" min="10" max="34" step="1" value="20">
-        <label>Array areal density <b><span id="o_areal">3.0</span> kg/m²</b></label>
-        <input type="range" id="areal" min="0.5" max="6" step="0.1" value="3.0">
-        <div class="hint">Specific power = 1361·η/areal at 1 AU. A <b>concentrator</b> swaps heavy cells for a
+        <label>Array specific power <b><span id="o_wkgsolar">91</span> W/kg</b> <span class="exp">(sets array MASS)</span></label>
+        <input type="range" id="wkgsolar" min="40" max="600" step="1" value="91">
+        <div class="hint">Array mass = P / (W/kg); area = P/(1361·η). A <b>concentrator</b> swaps heavy cells for a
           light reflector (high W/kg) — but, like any array, its power still fades as <b>1/r²</b>, so it raises
           the achievable v∞ only by letting you install more power per kg, not by beating the fade. Watch
           "Power-limited v∞": a big, light array gets closer to (and can clear) the floor.</div>
@@ -536,10 +536,11 @@
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
   power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For the derived ~25 km/s a vehicle is
   ~50–60% xenon at Isp 3000–4000 s (≈600 kg wet on a ~220 kg derived dry mass) — still comfortably feasible today.</p>
-  <p><strong>Subsystem sizing.</strong> The solar array is sized physically rather than by a fixed W/kg:
-  area <code>= P / (S₀·η_cell / r²)</code> with <code>S₀</code> = 1361 W/m², and mass <code>= area · areal density</code>.
-  Defaults are commercial, buy-today <em>silicon</em> (~20% cells, ~3 kg/m² → ~90 W/kg at 1 AU; Starlink-class,
-  not GaAs); the dropdown and sliders let you vary cell type, efficiency, and areal density. The ion engine + PPU
+  <p><strong>Subsystem sizing.</strong> The solar array AREA <code>= P / (S₀·η_cell / r²)</code> with
+  <code>S₀</code> = 1361 W/m² (set by efficiency); its MASS <code>= P / (W/kg)</code>, set directly by the
+  array-specific-power slider. Default is commercial, buy-today <em>silicon</em> (~20% cells, ~91 W/kg at
+  1 AU; Starlink-class, not GaAs); the dropdown and sliders let you vary cell efficiency and W/kg (a
+  concentrator reaches ~486 W/kg). The ion engine + PPU
   scales at ~6 kg/kW and the xenon tank at ~8% of propellant. The tool reports whether array + engine + tank fit
   inside the dry mass, leaving the remainder for bus + payload.</p>
 
@@ -633,7 +634,7 @@
       cruise (Oberth + Earth's 29.8 km/s). Check that 23.8 km/s × 75,000 yr equals AC's distance at arrival
       (~6.0 ly) — Δv budget ≠ cruise speed.</li>
     <li><b>Mass &amp; power.</b> Rocket equation for the xenon fraction; <code>E = ½·m_p·v_e²/η</code> for
-      burn energy; solar area = P/(1361·η_cell) and mass = area × areal density. Confirm the dry-mass budget
+      burn energy; solar area = P/(1361·η_cell) and mass = P/(W/kg). Confirm the dry-mass budget
       closes (array + engine + tank + bus + payload).</li>
     <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~50,000 kWh
       burn — orders of magnitude over a solar array.</li>
@@ -661,7 +662,7 @@
     <li><b>Minimum propellant.</b> <code>Δv, Isp</code> → mass ratio (Tsiolkovsky) → minimum <b>propellant
       fraction</b>; with <code>dry mass</code> → <b>propellant &amp; wet mass</b> — the spacecraft being minimised.</li>
     <li><b>Power &amp; subsystems.</b> <code>power, Isp, efficiency</code> → <b>thrust &amp; burn time</b>;
-      <code>power, cell efficiency, areal density</code> → <b>array area &amp; mass</b>;
+      <code>power, cell efficiency, array W/kg</code> → <b>array area &amp; mass</b>;
       <code>power × engine kg/kW</code> → engine; <code>tank % × propellant</code> → tank.</li>
     <li><b>Mass closure.</b> <code>dry mass − (array + engine + tank)</code> → <b>bus + payload budget</b>.</li>
     <li><b>Optimum.</b> A scan over all arrivals finds the <b>minimum-Δv (least-fuel) point</b> (~73k yr) and
@@ -675,7 +676,7 @@
     <li><code>Isp</code> — higher ⇒ less propellant for the same Δv, but more electrical energy per kg.</li>
     <li><code>Power</code> — thrust, burn time and array size (not Δv or arrival).</li>
     <li><code>Departure Δv</code> — derived from the integrated low-thrust Earth-escape spiral (no penalty knob; the impulsive floor is a reference only).</li>
-    <li><code>Cell efficiency / areal density / engine kg-per-kW / tank %</code> — subsystem masses only.</li>
+    <li><code>Cell efficiency / array W/kg / engine kg-per-kW / tank %</code> — subsystem masses only.</li>
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
   <ul>
@@ -752,7 +753,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 66, SRC_COMMIT = 'HEAD';
+const BUILD = 67, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -811,8 +812,8 @@ function compute(){
   let Topt=tangentialT(), dvMin=Infinity;
   for(let y=58000; y<=100000; y+=250){ const Ts=y*YEAR, n=needAt(Ts); if(n<dvMin){ dvMin=n; Topt=Ts; } }
   // --- power source & engine: propellant-INDEPENDENT active hardware (sized by power) ---
-  const pwrW=val('pwrkw')*1000, effc=val('cellEff')/100, areal=val('areal');
-  const arrayArea=solarArrayArea(pwrW, effc, 1), arrayMass=arrayArea*areal, arraySpecPower=pwrW/arrayMass;
+  const pwrW=val('pwrkw')*1000, effc=val('cellEff')/100, wkgSolar=val('wkgsolar');
+  const arrayArea=solarArrayArea(pwrW, effc, 1), arraySpecPower=wkgSolar, arrayMass=pwrW/wkgSolar;  // mass from W/kg, area from η
   const engineMass=val('enginekg')*pwrW/1000;
   const ft=val('tankfrac')/100, ks=val('kstruct')/100;
   const ech=parseFloat((document.getElementById('reactant')||{value:'8e6'}).value)*0.6;
@@ -909,7 +910,7 @@ function render(){
   const aSemi=rLEO;                          // circular LEO: semi-major axis = orbit radius
   const vc=Math.sqrt(MU_EARTH/aSemi)/1e3;    // √(μ/a) = circular speed at the parking orbit
   const vDepK=r.dep.vDep/1e3, vInfEK=r.dep.vInfE/1e3, vinfK=r.vinfSun/1e3, tiltA=Math.abs(r.tiltDeg);
-  const cE=val('cellEff'), arV=val('areal'), ekw=val('enginekg'), tkf=val('tankfrac');
+  const cE=val('cellEff'), arV=val('wkgsolar'), ekw=val('enginekg'), tkf=val('tankfrac');
   // extra intermediates traced back to the inputs (so each calc is self-contained)
   const rv=requiredVinfVec(r.Tsec), inK=Math.hypot(rv[0],rv[1])/1e3, vzK=rv[2]/1e3;
   const acLy=Math.hypot(R0[0],R0[1],R0[2])/LY, vacK=Math.hypot(VAC[0],VAC[1],VAC[2])/1e3, vRelAcK=r.vRelAc/1e3;
@@ -980,12 +981,12 @@ function render(){
     d:'The arrival time that minimises Δv — and therefore propellant and spacecraft mass. It is found by scanning every arrival and sits near where AC crosses the ecliptic (~73k yr). Aiming here yields the smallest possible spacecraft; the headline tells you how far above it your current aim is.',
     c:`Scan arrivals 58k–100k yr (each via the Departure-Δv chain) for the minimum Δv:\n  optimum at ${fmt(r.minFuelYr)} yr,  Δv_min = ${fmt(r.dvMin/1e3,2)} km/s\nm_wet,min = m_dry+pay · e^(Δv_min/v_e) = ${fmt(r.dryEff)} · e^(${fmt(r.dvMin,0)}/${fmt(ve,0)}) = ${fmt(r.minWet)} kg (smallest spacecraft)\nYour aim costs +${fmt((r.dvDesign-r.dvMin)/1e3,2)} km/s above this.`});
   if(r.pwr==='solar'){
-    K.push({l:'Solar array', v:fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg', i:inl('pwr','cell','areal'), s:'A_arr, m_arr — array area & mass',
-      d:'The photovoltaic array that powers the ion engine. Its area is the electrical power needed divided by the sunlight a cell converts at 1 AU; its mass is the area times the array’s areal density (kg per m²).',
-      c:`A_arr = P / (S₀ · η_cell) = ${fmt(r.pwrW)} W / (1361 W/m² · ${fmt(cE/100,2)}) = ${fmt(r.arrayArea,1)} m²\nm_arr = A_arr · areal density = ${fmt(r.arrayArea,1)} · ${fmt(arV,1)} kg/m² = ${fmt(r.arrayMass)} kg`});
-    K.push({l:'Array specific power', v:fmt(r.arraySpecPower)+' W/kg', i:inl('pwr','cell','areal'), s:'P / m_arr — power per kg of array',
-      d:'Watts of power delivered per kilogram of array — a figure of merit for the solar technology (higher is lighter for the same power). ~90 W/kg is representative of today’s commercial silicon arrays.',
-      c:`m_arr = A_arr·areal = (P/(S₀·η_cell))·areal = ${fmt(r.arrayArea,1)}·${fmt(arV,1)} = ${fmt(r.arrayMass)} kg\nP / m_arr = ${fmt(r.pwrW)} / ${fmt(r.arrayMass)} = ${fmt(r.arraySpecPower)} W/kg`});
+    K.push({l:'Solar array', v:fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg', i:inl('pwr','cell','wkgsolar'), s:'A_arr, m_arr — array area & mass',
+      d:'The photovoltaic array that powers the ion engine. Its AREA is the power needed divided by the sunlight a cell converts at 1 AU (set by efficiency); its MASS is the power divided by the array specific power (W/kg) — set directly by the slider.',
+      c:`A_arr = P / (S₀ · η_cell) = ${fmt(r.pwrW)} W / (1361 W/m² · ${fmt(cE/100,2)}) = ${fmt(r.arrayArea,1)} m²\nm_arr = P / (W/kg) = ${fmt(r.pwrW)} / ${fmt(arV)} = ${fmt(r.arrayMass)} kg`});
+    K.push({l:'Array specific power', v:fmt(r.arraySpecPower)+' W/kg', i:inl('pwr','wkgsolar'), s:'P / m_arr — power per kg of array (slider input)',
+      d:'Watts of power per kilogram of array — the solar figure of merit, set directly by the slider. ~91 W/kg is today’s commercial silicon; a concentrator can reach ~486 W/kg. (Note: this is the 1-AU value; delivered power still fades as 1/r².)',
+      c:`m_arr = P / (W/kg) = ${fmt(r.pwrW)} / ${fmt(arV)} = ${fmt(r.arrayMass)} kg`});
   } else {
     K.push({l:r.psLabel+' mass', v:fmt(r.psMass)+' kg', i:inl('pwr','isp'), s:'m_ps — power-source mass',
       d:'Mass of the chosen (non-solar) power source. Fuel cells and RTGs are experimental alternatives here — the methodology shows why solar wins for a burn done within a few AU of the Sun.',
@@ -1010,12 +1011,16 @@ function render(){
   K.push({l:'Payload', v:fmt(r.pay,1)+' kg', i:inl('pay'), s:'m_pay — delivered payload mass',
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
     c:`m_pay = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
-  K.push({l:'Dry mass (derived)', v:fmt(r.dry)+' kg', i:inl('kstruct','pwr','cell','areal','ekw','tank','isp'), s:'m_dry — minimal dry bus: power source + engine + tank + structure (no margin)',
+  K.push({l:'Dry mass (derived)', v:fmt(r.dry)+' kg', i:inl('kstruct','pwr','cell','wkgsolar','ekw','tank','isp'), s:'m_dry — minimal dry bus: power source + engine + tank + structure (no margin)',
     d:'The dry mass is DERIVED, not assumed — it is the minimum that must be there, with no extraneous padding: power source + thruster/PPU + tank + a structure fraction (bus frame, harness, mounts). Lower it by raising Isp (less propellant → less tank & structure), a lighter power source, or a smaller structure fraction.',
     c:`m_dry = power-source + engine + tank + structure\n      = ${fmt(r.psMass)} + ${fmt(r.engineMass)} + ${fmt(r.tankMass)} + ${fmt(r.structureMass)} = ${fmt(r.dry)} kg\n(+ payload ${fmt(r.pay,1)} kg ⇒ m_dry+pay = ${fmt(r.dryEff)} kg in the rocket equation)`});
   K.push({l:'Bus structure', v:fmt(r.structureMass)+' kg', i:inl('kstruct','isp','tank'), s:'m_struct = k_struct·(active + (g+1)·m_p) — frame, harness, mounts',
     d:'The structural mass holding the vehicle together, modelled as a physical fraction k_struct of everything it must carry (power source + engine + tank + propellant). This REPLACES the old arbitrary "dry-bus margin" — there is no unallocated mass any more.',
     c:`m_struct = k_struct · (active + tank + propellant)\n        = ${fmt(r.kstruct)}% · (${fmt(r.active)} + ${fmt(r.tankMass)} + ${fmt(r.mp)}) = ${fmt(r.structureMass)} kg`});
+  { const vehWkg=(r.massConverges&&r.dryEff>0)?r.pwrW/r.dryEff:0;
+    K.push({l:'Vehicle specific power', v:(r.massConverges?fmt(vehWkg,1)+' W/kg':'n/a'), i:inl('pwr','kstruct','isp','rtg','wkgsolar','cell','enginekg'), s:'P / m_dry — installed power per kg of dry mass (the EP "α")',
+    d:'The whole-vehicle specific power: installed electrical power ÷ total dry mass — the classic electric-propulsion figure of merit (α). The power source sets the ceiling (solar array ~91 W/kg today, reactor ~40 W/kg), but engine + tank + structure dilute it, so the VEHICLE lands well below — typically ~20–30 W/kg for a closing nuclear-electric design.',
+    c:`P / m_dry+pay = ${fmt(r.pwrW)} W / ${fmt(r.dryEff)} kg = ${fmt(vehWkg,1)} W/kg\n(power source alone: ${fmt(r.pwrW/Math.max(r.psMass,1e-9),0)} W/kg; engine + tank + structure dilute it to the vehicle value)`}); }
   document.getElementById('kpis').innerHTML=K.map(k=>
     `<div class="kpi" data-k="${k.l}" title="${k.s}">`+
       `<div class="v">${k.v}</div><div class="k">${k.l}</div>`+
@@ -1742,7 +1747,7 @@ function syncLabels(){
   document.getElementById('o_eta').textContent=val('eta').toFixed(2);
   document.getElementById('o_pwr').textContent=val('pwrkw').toFixed(1);
   document.getElementById('o_cellEff').textContent=val('cellEff');
-  document.getElementById('o_areal').textContent=val('areal').toFixed(1);
+  document.getElementById('o_wkgsolar').textContent=val('wkgsolar');
   document.getElementById('o_enginekg').textContent=val('enginekg').toFixed(1);
   document.getElementById('o_tankfrac').textContent=val('tankfrac').toFixed(1);
   document.getElementById('o_rtg').textContent=val('rtg');
@@ -1753,7 +1758,7 @@ function setVal(id,v){ document.getElementById(id).value=v; }
 function applyEngineTech(){ const p=document.getElementById('enginetech').value.split('|');
   setVal('isp',p[1]); setVal('eta',p[2]); setVal('enginekg',p[3]); }
 function applySolTech(){ const p=document.getElementById('soltech').value.split('|');
-  setVal('cellEff',p[0]); setVal('areal',p[1]); }
+  setVal('cellEff',p[0]); setVal('wkgsolar',p[1]); }
 function applyProp(){ const p=document.getElementById('propsel').value.split('|'); setVal('tankfrac',p[1]); }
 function toggleOpts(){
   const p=radio('pwr');
@@ -1879,7 +1884,7 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
 });
 
 // ----- shareable URL: every control value is encoded so the link reproduces the state -----
-const URL_KEYS=['T','pay','alt','injerr','gncerr','kstruct','isp','eta','enginekg','tankfrac','pwrkw','cellEff','areal','rtg','rp','tilt'];
+const URL_KEYS=['T','pay','alt','injerr','gncerr','kstruct','isp','eta','enginekg','tankfrac','pwrkw','cellEff','wkgsolar','rtg','rp','tilt'];
 const URL_SELECTS=['propsel'];   // engine/solar presets only set sliders, which are encoded already
 const URL_RADIOS=['pwr','ga'];
 function baseDir(){ return location.pathname.replace(/[^/]*$/, ''); }   // directory of the current page

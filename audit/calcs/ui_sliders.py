@@ -20,7 +20,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 # default control values (must match index.html)
 DEFAULTS = {
     "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 1585, "eta": 0.5,
-    "enginekg": 6, "tankfrac": 2.5, "pwrkw": 5, "cellEff": 20, "areal": 3, "rtg": 40, "rp": 6,
+    "enginekg": 6, "tankfrac": 2.5, "pwrkw": 5, "cellEff": 20, "wkgsolar": 91, "rtg": 40, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -40,7 +40,8 @@ RESET_AND_COMPUTE = """
           arrayMass:r.arrayMass, engineMass:r.engineMass, tankMass:r.tankMass,
           busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp,
           achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason,
-          dry:r.dry, structureMass:r.structureMass, massConverges:r.massConverges, active:r.active};
+          dry:r.dry, structureMass:r.structureMass, massConverges:r.massConverges, active:r.active,
+          pwrW:r.pwrW, arraySpecPower:r.arraySpecPower};
 }
 """
 
@@ -147,11 +148,17 @@ def run(page):
     check("efficiency↑ raises thrust", e["thrust"] > base["thrust"])
     check("efficiency↑ lowers electrical energy", e["E"] < base["E"])
 
-    # --- SOLAR CELL EFFICIENCY / AREAL DENSITY ---
+    # --- SOLAR CELL EFFICIENCY (sets AREA) / SPECIFIC POWER (sets MASS) ---
     ce = comp({"cellEff": 30})
-    check("cell eff↑ shrinks array area & mass", ce["arrayArea"] < base["arrayArea"] and ce["arrayMass"] < base["arrayMass"])
-    ar = comp({"areal": 5})
-    check("areal density↑ raises array mass", ar["arrayMass"] > base["arrayMass"])
+    check("cell eff↑ shrinks array AREA", ce["arrayArea"] < base["arrayArea"])
+    check("cell eff↑ leaves array MASS unchanged (mass set by W/kg)", rel(ce["arrayMass"], base["arrayMass"], 1e-6))
+    wk = comp({"wkgsolar": 300})
+    check("array W/kg↑ lowers array mass", wk["arrayMass"] < base["arrayMass"])
+    check("array W/kg↑ sets the array specific power directly", abs(wk["arraySpecPower"] - 300) < 1e-6)
+    # whole-vehicle specific power KPI = P / dry_eff
+    veh = comp({"isp": 3000}, {"pwr": "nuclear", "ga": "direct"})
+    check("vehicle specific power ~ P/dryEff (nuclear closer ~20-30 W/kg)",
+          18 < veh["pwrW"]/veh["dryEff"] < 30, f"{veh['pwrW']/veh['dryEff']:.1f} W/kg")
 
     # --- ENGINE kg/kW and TANK % feed the derived dry mass ---
     en = comp({"enginekg": 12})
@@ -188,7 +195,7 @@ def run(page):
     # A big, LIGHT (concentrator) array raises achievable v∞ but still does NOT close: reaching the
     # floor under 1/r² fade needs ~30-80 kW, and the thruster/PPU (6 kg/kW) + propellant mass at that
     # power break the dry-bus budget. The array's specific power is not the binding constraint.
-    conc = comp({"cellEff": 25, "areal": 0.7, "pwrkw": 60})  # concentrator (~486 W/kg), 60 kW
+    conc = comp({"cellEff": 25, "wkgsolar": 486, "pwrkw": 60})  # concentrator (~486 W/kg), 60 kW
     check("concentrator + 60 kW still does not close solar (engine+propellant mass)", conc["feasible"] is False,
           f"achV={conc['achievableVinf']/1e3:.1f} km/s, bus={conc['busPayload']:.0f} kg, feasible={conc['feasible']}")
 
