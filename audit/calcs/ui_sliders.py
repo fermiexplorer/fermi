@@ -19,8 +19,8 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 1585, "eta": 0.5,
-    "enginekg": 6, "tankfrac": 2.5, "pwrkw": 5, "cellEff": 20, "wkgsolar": 91, "rtg": 40, "rp": 6,
+    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
+    "enginekg": 3, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 25, "wkgsolar": 400, "rtg": 40, "rp": 6,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -58,22 +58,24 @@ def run(page):
         return page.evaluate(RESET_AND_COMPUTE, [DEFAULTS, RADIO_DEFAULTS, over or {}, radio or {}])
 
     base = comp()
-    # sanity on the default design — CONSERVATIVE: pure solar-electric is power-limited (1/r² fade)
-    # and does NOT close; this is the intended headline, not a bug.
-    check("default pure-SEP is NOT feasible (power-limited)", base["feasible"] is False)
-    check("default infeasibility is the power-fade reason", "power-limited" in base["infeasReason"])
-    check("default achievable v∞ saturates below the floor", base["achievableVinf"] < base["vinf"],
-          f"{base['achievableVinf']/1e3:.1f} < {base['vinf']/1e3:.1f} km/s")
+    # The DEFAULT is now the high-α solar feasible design (build 68): 400 W/kg array + 3 kg/kW thruster
+    # + Isp 3000 → vehicle α ≈ 118 W/kg → pure solar CLOSES with a ~3-4 km/s margin.
+    check("default high-α solar IS feasible", base["feasible"] is True, base["infeasReason"])
+    check("default is pure solar-electric (power-feasible)", base["powerFeasible"] is True)
+    check("default achievable v∞ clears the floor", base["achievableVinf"] >= base["vinf"],
+          f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
+    check("default vehicle α is in the closing corner (~100-130 W/kg)",
+          100 < base["pwrW"]/base["dryEff"] < 135, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
+    # Drop α below the threshold (heavy conservative array + thruster) → solar no longer closes.
+    lowalpha = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 5})
+    check("conservative low-α solar (91 W/kg, 6 kg/kW) does NOT close", lowalpha["feasible"] is False,
+          f"α={lowalpha['pwrW']/lowalpha['dryEff']:.0f} W/kg")
+    check("low-α infeasibility is the power-fade reason", "power-limited" in lowalpha["infeasReason"])
     check("solar-Oberth (Jupiter) departure DOES close", comp(radio={"ga": "oberth"})["feasible"] is True)
-    # EP-ONLY closure: nuclear-electric is CONSTANT power (no 1/r² fade), so the spiral reaches the
-    # floor where solar cannot. The closing pure-electric design is ~5 kW reactor + gridded ion.
-    nep = comp({"isp": 3000, "rtg": 40}, {"pwr": "nuclear", "ga": "direct"})
-    check("pure-EP nuclear-electric (5 kW, gridded ion) DOES close — the EP-only path", nep["feasible"] is True,
-          f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s, feasible={nep['feasible']}")
-    check("nuclear-electric reaches the floor (constant power, no fade)", nep["powerFeasible"] is True,
-          f"{nep['achievableVinf']/1e3:.1f} >= {nep['vinf']/1e3:.1f}")
-    check("solar at the same Isp/power still does NOT close (1/r² fade)",
-          comp({"isp": 3000}, {"pwr": "solar", "ga": "direct"})["feasible"] is False)
+    # EP-ONLY closure: nuclear-electric is CONSTANT power (no 1/r² fade) — closes at low α too.
+    nep = comp({"isp": 3000, "rtg": 40, "wkgsolar": 91, "enginekg": 6, "pwrkw": 5}, {"pwr": "nuclear", "ga": "direct"})
+    check("nuclear-electric (constant power) DOES close — the low-α EP path", nep["feasible"] is True,
+          f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s")
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
     check("default arrival sits at the fuel optimum", abs(base["arrivalYr"] - base["minFuelYr"]) < 600, f"{base['arrivalYr']:.0f} vs {base['minFuelYr']:.0f}")
 
@@ -152,9 +154,9 @@ def run(page):
     ce = comp({"cellEff": 30})
     check("cell eff↑ shrinks array AREA", ce["arrayArea"] < base["arrayArea"])
     check("cell eff↑ leaves array MASS unchanged (mass set by W/kg)", rel(ce["arrayMass"], base["arrayMass"], 1e-6))
-    wk = comp({"wkgsolar": 300})
+    wk = comp({"wkgsolar": 800})
     check("array W/kg↑ lowers array mass", wk["arrayMass"] < base["arrayMass"])
-    check("array W/kg↑ sets the array specific power directly", abs(wk["arraySpecPower"] - 300) < 1e-6)
+    check("array W/kg↑ sets the array specific power directly", abs(wk["arraySpecPower"] - 800) < 1e-6)
     # whole-vehicle specific power KPI = P / dry_eff
     veh = comp({"isp": 3000}, {"pwr": "nuclear", "ga": "direct"})
     check("vehicle specific power ~ P/dryEff (nuclear closer ~20-30 W/kg)",
@@ -188,16 +190,19 @@ def run(page):
     check("Isp=1000 → mass diverges (NOT feasible)", lowisp["feasible"] is False and lowisp["massConverges"] is False)
     nuc_opt = comp({"isp": 3000, "rtg": 40}, {"pwr": "nuclear", "ga": "direct"})
     check("derived dry mass is leaner than the old 255 kg bus (nuclear closer)", nuc_opt["dry"] < 255, f"{nuc_opt['dry']:.0f} kg dry")
-    check("reset returns to the conservative (power-limited) default", comp()["feasible"] is False)
-    # the coupled trap: more power → either still below the floor (power) or the array breaks the
-    # mass budget — pure-SEP does not close at any setting on the default bus.
-    check("even 50 kW pure-SEP still does not close (coupled power/mass)", comp({"pwrkw": 50})["feasible"] is False)
-    # A big, LIGHT (concentrator) array raises achievable v∞ but still does NOT close: reaching the
-    # floor under 1/r² fade needs ~30-80 kW, and the thruster/PPU (6 kg/kW) + propellant mass at that
-    # power break the dry-bus budget. The array's specific power is not the binding constraint.
-    conc = comp({"cellEff": 25, "wkgsolar": 486, "pwrkw": 60})  # concentrator (~486 W/kg), 60 kW
-    check("concentrator + 60 kW still does not close solar (engine+propellant mass)", conc["feasible"] is False,
-          f"achV={conc['achievableVinf']/1e3:.1f} km/s, bus={conc['busPayload']:.0f} kg, feasible={conc['feasible']}")
+    check("reset returns to the feasible high-α solar default", comp()["feasible"] is True)
+    # Feasibility is set by vehicle α, NOT power: at the default α the design closes at any power
+    # (power just scales the probe), and drops below the floor only when α falls (heavy components).
+    check("default α closes at 50 kW too (power-independent)", comp({"pwrkw": 50})["feasible"] is True)
+    check("low-α (91 W/kg array, 6 kg/kW) does NOT close even at 50 kW", comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50})["feasible"] is False)
+    # The two levers must move together: a concentrator array with a HEAVY engine still fails (low α),
+    # but with a light engine it closes — α is the binding variable.
+    conc_heavy = comp({"wkgsolar": 486, "enginekg": 8})
+    check("concentrator + heavy 8 kg/kW engine still does NOT close (low α)", conc_heavy["feasible"] is False,
+          f"α={conc_heavy['pwrW']/conc_heavy['dryEff']:.0f} W/kg")
+    conc_light = comp({"wkgsolar": 486, "enginekg": 2})
+    check("concentrator + light 2 kg/kW engine DOES close (high α)", conc_light["feasible"] is True,
+          f"α={conc_light['pwrW']/conc_light['dryEff']:.0f} W/kg")
 
 def main():
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT)],

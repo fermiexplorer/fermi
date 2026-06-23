@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 67</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 68</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -218,26 +218,27 @@
       <div class="ctrl">
         <label>Ion engine technology</label>
         <select id="enginetech">
-          <option value="hall|1585|0.50|5" selected>Hall thruster — conservative (Isp ~1585 s, 50%)</option>
-          <option value="gridded|3000|0.60|6">Gridded ion — optimistic (Isp ~3000 s, 60%)</option>
+          <option value="hall|1585|0.50|5">Hall thruster — conservative (Isp ~1585 s, 50%)</option>
+          <option value="gridded-adv|3000|0.50|3" selected>Advanced gridded — high-α (Isp ~3000 s, 50%, 3 kg/kW)</option>
+          <option value="gridded|3000|0.60|6">Gridded ion (Isp ~3000 s, 60%, 6 kg/kW)</option>
           <option value="gridded-opt|3500|0.62|6">Gridded ion — near-optimum (Isp ~3500 s, 62%)</option>
           <option value="vasimr|10000|0.65|8">VASIMR / high-Isp (Isp ~10,000 s — thrust-starved here)</option>
         </select>
       </div>
       <div class="ctrl">
-        <label>Ion engine Isp <b><span id="o_isp">1585</span> s</b></label>
-        <input type="range" id="isp" min="1000" max="50000" step="50" value="1585">
+        <label>Ion engine Isp <b><span id="o_isp">3000</span> s</b></label>
+        <input type="range" id="isp" min="1000" max="50000" step="50" value="3000">
         <div class="hint">Higher Isp cuts propellant but <b>cuts thrust</b> (F = 2ηP/v_e) — in this power-limited
           regime there is an <b>optimum</b> (~3000–4000 s); pushing toward VASIMR-class 50,000 s starves the
           thrust and the achievable v∞ falls below the floor. See the <b>Optimal Isp</b> KPI / Optimize button.</div>
       </div>
       <div class="ctrl">
-        <label>Thruster efficiency <b><span id="o_eta">0.60</span></b></label>
+        <label>Thruster efficiency <b><span id="o_eta">0.50</span></b></label>
         <input type="range" id="eta" min="0.4" max="0.8" step="0.01" value="0.5">
       </div>
       <div class="ctrl">
-        <label>Engine + PPU mass <b><span id="o_enginekg">6.0</span> kg/kW</b></label>
-        <input type="range" id="enginekg" min="2" max="12" step="0.5" value="6">
+        <label>Engine + PPU mass <b><span id="o_enginekg">3.0</span> kg/kW</b></label>
+        <input type="range" id="enginekg" min="2" max="12" step="0.5" value="3">
       </div>
       <div class="ctrl">
         <label>Propellant</label>
@@ -262,27 +263,29 @@
         <label><input type="radio" name="pwr" value="nuclear"> Nuclear-electric (reactor) <span class="exp">experimental</span> (constant power — no 1/r² fade)</label>
       </div>
       <div class="ctrl" style="margin-top:10px">
-        <label>Power at 1 AU <b><span id="o_pwr">5.0</span> kW</b></label>
-        <input type="range" id="pwrkw" min="1" max="200" step="0.5" value="5">
+        <label>Power at 1 AU <b><span id="o_pwr">2.0</span> kW</b></label>
+        <input type="range" id="pwrkw" min="1" max="200" step="0.5" value="2">
       </div>
       <div class="ctrl" id="solarOpts">
         <label>Solar cell technology</label>
         <select id="soltech">
-          <option value="20|91" selected>Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
+          <option value="20|91">Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
           <option value="30|146">GaAs triple-junction (~30%, 146 W/kg)</option>
           <option value="13|118">Thin-film CIGS (~13%, 118 W/kg, light)</option>
           <option value="30|151">ROSA / advanced rigid (~30%, 151 W/kg)</option>
           <option value="18|306">Thin-film roadmap (~18%, 306 W/kg, ultralight)</option>
+          <option value="25|400" selected>Advanced thin-film (~25%, 400 W/kg — high-α default)</option>
           <option value="25|486">Solar concentrator (~25% net, 486 W/kg)</option>
+          <option value="28|800">Far-term ultralight (~28%, 800 W/kg)</option>
         </select>
-        <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">20</span> %</b> <span class="exp">(sets array AREA)</span></label>
-        <input type="range" id="cellEff" min="10" max="34" step="1" value="20">
-        <label>Array specific power <b><span id="o_wkgsolar">91</span> W/kg</b> <span class="exp">(sets array MASS)</span></label>
-        <input type="range" id="wkgsolar" min="40" max="600" step="1" value="91">
-        <div class="hint">Array mass = P / (W/kg); area = P/(1361·η). A <b>concentrator</b> swaps heavy cells for a
-          light reflector (high W/kg) — but, like any array, its power still fades as <b>1/r²</b>, so it raises
-          the achievable v∞ only by letting you install more power per kg, not by beating the fade. Watch
-          "Power-limited v∞": a big, light array gets closer to (and can clear) the floor.</div>
+        <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">25</span> %</b> <span class="exp">(sets array AREA)</span></label>
+        <input type="range" id="cellEff" min="10" max="34" step="1" value="25">
+        <label>Array specific power <b><span id="o_wkgsolar">400</span> W/kg</b> <span class="exp">(sets array MASS)</span></label>
+        <input type="range" id="wkgsolar" min="40" max="1200" step="5" value="400">
+        <div class="hint">Array mass = P / (W/kg); area = P/(1361·η). A high W/kg makes the whole vehicle light,
+          raising the <b>vehicle specific power α = P/m_dry</b>. Above <b>α ≈ 100 W/kg</b> the burn is short and
+          near 1 AU, so the 1/r² fade barely bites and <b>pure solar closes</b> (the high-α default). It takes
+          BOTH a light array (≥~300 W/kg) AND a light thruster (≤~3 kg/kW) — see "Vehicle specific power".</div>
       </div>
       <div class="ctrl" id="fcOpts" style="display:none">
         <label>Fuel-cell reactant</label>
@@ -753,7 +756,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 67, SRC_COMMIT = 'HEAD';
+const BUILD = 68, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -860,7 +863,7 @@ function compute(){
   // the floor can't be fixed by more tankage). Mass-divergence reported first; then the power gate.
   if(!massConverges){ feasible=false; infeasReason=`mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + structure, so the propellant + structure mass spirals without bound (the rocket-equation wall). Raise Isp, lighten the tank/structure fraction, or cut Δv`; }
   else if(!powerFeasible){ feasible=false; infeasReason = (pwr==='solar')
-      ? `power-limited — solar power fades as 1/r², so the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Pure solar-electric does NOT close; switch to a nuclear-electric reactor (constant power), or enable the solar-Oberth (Jupiter) departure or a chemical boost`
+      ? `power-limited — solar power fades as 1/r², so at this vehicle specific power the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Solar closes only above α ≈ 100 W/kg: raise the array W/kg and lower the engine kg/kW (lighter vehicle → shorter burn near 1 AU). Or switch to a nuclear-electric reactor, the solar-Oberth (Jupiter) departure, or a chemical boost`
       : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the reactor power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
@@ -954,7 +957,7 @@ function render(){
     c:dvSteps});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
-    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out, so thrust starves and the achievable cruise speed SATURATES below the floor — pure solar-electric does NOT close. For NUCLEAR-ELECTRIC the power is CONSTANT (fade exponent 0): the spiral keeps thrusting and DOES reach the floor — this is the only pure-electric (no gravity assist) path that closes. (With the solar-Oberth/Jupiter departure the assist supplies v∞, so this ceiling does not bind.)',
+    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) the burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor. Above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU, the fade barely bites, and PURE SOLAR CLOSES (→ ~37 km/s, the impulsive-from-1-AU limit). NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
     c:(r.ga==='direct'
        ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible (switch to nuclear-electric, or enable Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
        : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the solar-electric ceiling does not bind here.`)});
