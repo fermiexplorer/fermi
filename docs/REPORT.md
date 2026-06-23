@@ -89,11 +89,26 @@ binding as the array W/kg. A worked example (≈50 kg ultralight micro-probe, 78
 thruster, Isp ~2300–3500 s, α ≈ 155) reaches v∞ ≈ 37 km/s with margin. Optimal Isp ≈ 2800–3500 s;
 feasibility is power-independent (2 kW → 50 kg probe, 20 kW → 435 kg, same α and same margin).
 
-This is the optimistic mirror of the nuclear-electric closer: solar closes at a high α (~150 W/kg)
-reached only with far-term array+thruster tech; nuclear closes at a low α (~23 W/kg) with near-term
-specific masses but an optimistic reactor. The conservative *default* (today's silicon ~91 W/kg, Hall
-~6 kg/kW → α ~20–30) does **not** close — that is still the headline; the high-α corner is the path
-to make pure solar work.
+### 2c. Feasibility frontier & the tech-maturity trade
+The two α levers (array W/kg, thruster kg/kW) trade along the closing contour — and crucially you
+**cannot** close with today's ~6 kg/kW thruster (it would need a ~2000 W/kg array); the thruster
+must improve:
+
+| Thruster kg/kW | Array W/kg needed to close | stretch vs today |
+|---|---|---|
+| 2 | 238 | 1.6× array, 3× thruster |
+| **3** | **313** | **2.1× array, 2× thruster** (the default's neighborhood) |
+| 4 | 455 | 3.0× array, 1.5× thruster |
+| 6 (today) | ~2000 | 13× array — impractical |
+
+**Nuclear-vs-solar maturity trade.** High-α solar needs **two ~2–3× stretches** (≈2.7× array over
+ROSA's 150 W/kg, ≈2× lighter thruster than Hall's 6 kg/kW) — both on a continuous commercial roadmap
+(thin-film arrays, advanced gridded thrusters), and **no reactor, no gravity assist**. Nuclear-electric
+needs **one ~7× stretch** (40 W/kg reactor vs Kilopower's ~6) *plus* the programmatic weight of flying a
+fission reactor — a step-change, not a roadmap. On technology maturity the **high-α solar path is the
+more conservative route to "feasible," which is why it is the default**; nuclear-electric remains the
+no-far-term-array fallback. (This is the optimistic mirror: solar at high α ~150 W/kg, nuclear at low
+α ~23 W/kg.) Today's silicon + Hall (α ~20–30) still does **not** close — α ≈ 100 W/kg is the bar.
 
 ## 3. The pure-electric closure — nuclear-electric ion
 
