@@ -1372,24 +1372,28 @@ function chase3dDraw(c, st){
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
-  } else {                                                             // OSCULATING-FRAME chase (true chase cam)
-    // The plane that contains the probe's velocity AND acceleration has normal r×v (orbital angular
-    // momentum) — acceleration is gravity (−r̂) + thrust (∥v), so it lives in span{r,v}. We sit BEHIND the
-    // probe along the (smoothed) tangent f and lift OUT of that plane toward the binormal B by el. Then
-    // camera→probe projects onto the osculating plane exactly ALONG f (the tangent) — the geometric
-    // definition of "behind". B is ~constant for the near-planar escape, so the spiral no longer whirls.
-    _t3.fwd = _t3.fwd ? nz([_t3.fwd[0]+(T[0]-_t3.fwd[0])*0.25, _t3.fwd[1]+(T[1]-_t3.fwd[1])*0.25, _t3.fwd[2]+(T[2]-_t3.fwd[2])*0.25]) : nz(T);
-    const f = _t3.fwd;
+  } else {                                                             // CHASE-CAM LOCK (orientation locked to the path)
+    // The spiral "whirled" because the camera heading tracked the INSTANTANEOUS velocity, which sweeps
+    // through the whole arc. Instead lock the orientation to a FIXED frame derived from the trajectory's
+    // own geometry — the entire escape+cruise path is planar, and the aim/asymptote direction is fixed
+    // across the animation — so the trajectory's 2D projection stays put while the probe flies along it:
+    //   B  = plane normal (from two well-separated path points; sign = the motion's angular momentum) — fixed
+    //   F0 = the cruise asymptote / aim direction c.vhat, projected into that plane — fixed
+    // Camera sits behind the probe along F0, lifted out of the plane by el; up = B. Both axes are constant,
+    // so there is no roll and no whirl — only the probe (recentred to origin) slides along the locked path.
     const cross = (a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
-    let Binst = cross(probe, T);                                       // r×v at the probe (probe = heliocentric r)
-    if(Math.hypot(Binst[0],Binst[1],Binst[2]) < 1e-9) Binst = _t3.bin || [0,0,1];   // radial degeneracy → keep last / ecliptic
-    Binst = nz(Binst);
-    if(_t3.bin && (Binst[0]*_t3.bin[0]+Binst[1]*_t3.bin[1]+Binst[2]*_t3.bin[2]) < 0) Binst=[-Binst[0],-Binst[1],-Binst[2]];  // no sign flips
-    _t3.bin = _t3.bin ? nz([_t3.bin[0]+(Binst[0]-_t3.bin[0])*0.1, _t3.bin[1]+(Binst[1]-_t3.bin[1])*0.1, _t3.bin[2]+(Binst[2]-_t3.bin[2])*0.1]) : Binst;
-    const bd = _t3.bin[0]*f[0]+_t3.bin[1]*f[1]+_t3.bin[2]*f[2];        // re-orthogonalize B ⟂ f (Gram–Schmidt)
-    const B = nz([_t3.bin[0]-bd*f[0], _t3.bin[1]-bd*f[1], _t3.bin[2]-bd*f[2]]);
-    const el=0.42, cl=Math.cos(el), sl=Math.sin(el);                  // ~24° lifted out of the osculating plane
-    _t3.cam.position.set((-f[0]*cl+B[0]*sl)*camDist, (-f[1]*cl+B[1]*sl)*camDist, (-f[2]*cl+B[2]*sl)*camDist);
+    const dot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+    const tj = buildTraj(c.vhat, c.vinfKmS), P = tj.pts;               // full planar path (cached); fixed regardless of progress
+    let B = cross(P[0], tj.last);                                      // plane normal from start (1 AU) & end (~24 AU)
+    if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = cross(probe, T);
+    if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = [0,0,1];
+    B = nz(B);
+    const Lref = cross(P[0], P[Math.min(6, P.length-1)]);             // motion-order ⇒ well-defined +angular-momentum sign
+    if(dot(B, Lref) < 0) B = [-B[0],-B[1],-B[2]];
+    let F0 = c.vhat; const fb = dot(F0, B);                            // aim direction projected into the plane (already ~in it)
+    F0 = nz([F0[0]-fb*B[0], F0[1]-fb*B[1], F0[2]-fb*B[2]]);
+    const el=0.45, cl=Math.cos(el), sl=Math.sin(el);                  // ~26° lifted out of the path plane (stable 3/4 view)
+    _t3.cam.position.set((-F0[0]*cl+B[0]*sl)*camDist, (-F0[1]*cl+B[1]*sl)*camDist, (-F0[2]*cl+B[2]*sl)*camDist);
     _t3.cam.up.set(B[0], B[1], B[2]);
   }
   _t3.cam.near = Math.max(camDist*0.003, 1e-5); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
