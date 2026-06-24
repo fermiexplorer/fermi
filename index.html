@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 75</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 0</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -755,9 +755,10 @@
 
 <script>
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
-//       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
-//       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 75, SRC_COMMIT = 'HEAD';
+//       exact source commit. BUILD and SRC_COMMIT are BOTH injected (and verified) at deploy
+//       time by tools/deploy.py; in source they stay 0 / 'HEAD' as DEV sentinels so an
+//       un-deployed page is unmistakable (this is why a live page must never read "build 0"). -----
+const BUILD = 0, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
