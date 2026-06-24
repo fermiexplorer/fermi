@@ -1281,7 +1281,7 @@ function chase3dInit(){
   el.appendChild(lbl);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x161b22);
   const cam = new THREE.PerspectiveCamera(50, W/H, 1e-3, 1e13); cam.up.set(0,0,1);
-  const grid = new THREE.GridHelper(2, 20, 0x2a3340, 0x1d242d); grid.rotation.x = Math.PI/2;   // ecliptic z=0
+  const grid = new THREE.GridHelper(2, 24, 0x55657a, 0x36414f); grid.rotation.x = Math.PI/2;   // ecliptic z=0 (brighter for depth)
   const mkLine = (color)=>{ const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4096*3), 3));
     const l = new THREE.Line(g, new THREE.LineBasicMaterial({color})); l.frustumCulled = false; return l; };
@@ -1305,9 +1305,31 @@ function chase3dInit(){
     ren.setSize(w,h); cam.aspect = w/h; cam.updateProjectionMatrix(); chase3dRefresh(); });
 }
 function chase3dRefresh(){ if(_t3.ready){ const c = craftState(), st = trajState(c); chase3dDraw(c, st); } }
+// Build a DENSE local trail: walk backward from the probe along the flown path, emitting a point every
+// (maxBehind/48) of arc-length, stopping maxBehind AU behind. Used in CRUISE, where the flown path's last
+// leg is a single straight 20k→probe jump with no intermediate vertices: a THREE.Line segment whose far
+// vertex sits behind the camera is dropped by WebGL clipping, so the trail vanishes. Subdividing it into
+// vertices that all stay IN FRONT of the camera makes the trail render.
+function _t3localTrail(flownPts, probe, maxBehind){
+  const out = [[probe[0], probe[1], probe[2]]]; let acc = 0; const step = maxBehind/48;
+  for(let i=flownPts.length-2; i>=0; i--){
+    const a = flownPts[i+1], b = flownPts[i];
+    const dx=b[0]-a[0], dy=b[1]-a[1], dz=b[2]-a[2], seg=Math.hypot(dx,dy,dz);
+    if(seg<1e-12) continue;
+    let t=0;
+    while(t<seg){ const adv=Math.min(step, seg-t); t+=adv; acc+=adv; const f=t/seg;
+      out.push([a[0]+dx*f, a[1]+dy*f, a[2]+dz*f]); if(acc>=maxBehind) return out; }
+  }
+  return out;
+}
 function _t3setLine(line, pts, ctr){
-  const a = line.geometry.attributes.position.array, n = Math.min(pts.length, 4096);
-  for(let i=0;i<n;i++){ a[3*i]=pts[i][0]-ctr[0]; a[3*i+1]=pts[i][1]-ctr[1]; a[3*i+2]=pts[i][2]-ctr[2]; }
+  // Decimate to the 4096-vertex buffer by EVEN stride, but always keep the LAST point (the probe) —
+  // else a long high-res path (the escape spiral can be ~20k points) truncates to its first 4096 and the
+  // recent trail + the segment joining it to the probe are silently dropped (cruise showed no trail at all).
+  const a = line.geometry.attributes.position.array, CAP = 4096;
+  let src = pts, n = pts.length;
+  if(n > CAP){ const stride = Math.ceil(n/(CAP-1)); src = []; for(let i=0;i<n;i+=stride) src.push(pts[i]); src.push(pts[n-1]); n = src.length; }
+  for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2]; }
   line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
 }
 function chase3dDraw(c, st){
@@ -1315,17 +1337,36 @@ function chase3dDraw(c, st){
   const probe = st.pos, T = st.tan, ctr = probe;                       // recenter on the probe (origin → no float jitter)
   const flownPts = st.cruise ? st.arc.concat([probe]) : st.arc;        // the FLOWN trail — ends at the probe, trails behind
   const nz = v=>{ const n=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/n, v[1]/n, v[2]/n]; };
-  // LOCAL framing: extent of the flown trail around the probe — NOT the Sun. Keeps the chase local so
-  // the trail behind reads at a sensible scale (no thousands-of-AU flat slab, no detached spiral).
-  let Hs = 0.5; for(const q of flownPts){ const d=Math.hypot(q[0]-probe[0], q[1]-probe[1], q[2]-probe[2]); if(d>Hs) Hs=d; }
-  Hs *= 1.25;
-  _t3setLine(_t3.flown, flownPts, ctr); _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
+  // ARC-LENGTH LOCAL framing: size the view to the LAST ~28% of the flown-path length, so the recent
+  // trail right behind the probe fills the frame and the far early arc / Sun stay off-screen behind —
+  // a true tight chase (no whole-system overview, no detached tiny spiral, no flat far slab).
+  let total = 0; const cum = new Array(flownPts.length); cum[0] = 0;
+  for(let i=1;i<flownPts.length;i++){ total += Math.hypot(flownPts[i][0]-flownPts[i-1][0], flownPts[i][1]-flownPts[i-1][1], flownPts[i][2]-flownPts[i-1][2]); cum[i] = total; }
+  const win = total*0.28; let Hs = 0.4;
+  for(let i=flownPts.length-1; i>=0 && (total-cum[i])<=win; i--){ const q=flownPts[i]; const d=Math.hypot(q[0]-probe[0], q[1]-probe[1], q[2]-probe[2]); if(d>Hs) Hs=d; }
+  // also a point `win` arc-length behind (interpolated) so a SPARSE leg (the long straight cruise, two
+  // far-apart points) still frames the recent trail instead of collapsing to an empty window.
+  { let need=win, bx=probe[0], by=probe[1], bz=probe[2];
+    for(let i=flownPts.length-1; i>0; i--){ const seg=cum[i]-cum[i-1];
+      if(seg>=need){ const t=need/seg; bx=flownPts[i][0]+(flownPts[i-1][0]-flownPts[i][0])*t; by=flownPts[i][1]+(flownPts[i-1][1]-flownPts[i][1])*t; bz=flownPts[i][2]+(flownPts[i-1][2]-flownPts[i][2])*t; break; }
+      need-=seg; bx=flownPts[i-1][0]; by=flownPts[i-1][1]; bz=flownPts[i-1][2]; }
+    const db=Math.hypot(bx-probe[0], by-probe[1], bz-probe[2]); if(db>Hs) Hs=db; }
+  Hs = Math.max(Hs, 0.4)*1.3;
+  // In CRUISE, cap the window so the camera distance (~2.8·Hs) stays well INSIDE the probe's
+  // heliocentric distance — otherwise the camera sits farther back than the Sun and the whole escape
+  // arc falls into the foreground as a detached spiral. (In escape we WANT to see the spiral, so no cap.)
+  if(st.cruise) Hs = Math.min(Hs, 0.12*Math.max(c.dist, 1));
+  // zoom3dCh changes ONLY the camera distance → the whole scene zooms UNIFORMLY (grid + trail + markers).
+  const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*1.3*(zoom3dCh||1);
+  // In CRUISE draw a dense LOCAL trail (vertices kept in front of the camera) — the raw flown path's last
+  // leg is a single straight jump whose far vertex is behind the camera and gets clipped away. In ESCAPE
+  // draw the whole spiral (decimated to the buffer cap inside _t3setLine).
+  const linePts = st.cruise ? _t3localTrail(flownPts, probe, camDist*0.82) : flownPts;
+  _t3setLine(_t3.flown, linePts, ctr); _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
   place(_t3.dots.probe,probe,0.03); place(_t3.dots.sun,[0,0,0],0.02); place(_t3.dots.earth,flownPts[0],0.02);
   place(_t3.dots.ac,c.ac,0.03); place(_t3.dots.icpt,c.I,0.025);
   _t3.grid.scale.set(Hs, Hs, 1); _t3.grid.position.set(0, 0, -ctr[2]);  // ecliptic grid, scene-scaled, on world z=0
-  // zoom3dCh changes ONLY the camera distance → the whole scene zooms UNIFORMLY (grid + trail + markers).
-  const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*1.3*(zoom3dCh||1);
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
@@ -1334,8 +1375,12 @@ function chase3dDraw(c, st){
     _t3.fwd = _t3.fwd ? nz([_t3.fwd[0]+(T[0]-_t3.fwd[0])*0.25, _t3.fwd[1]+(T[1]-_t3.fwd[1])*0.25, _t3.fwd[2]+(T[2]-_t3.fwd[2])*0.25]) : nz(T);
     const f = _t3.fwd; let right = nz([f[1], -f[0], 0]); if(right[0]===0 && right[1]===0) right=[1,0,0];
     const u = nz([right[1]*f[2]-right[2]*f[1], right[2]*f[0]-right[0]*f[2], right[0]*f[1]-right[1]*f[0]]);
-    const el=0.35, cl=Math.cos(el), sl=Math.sin(el);
-    _t3.cam.position.set((-f[0]*cl+u[0]*sl)*camDist, (-f[1]*cl+u[1]*sl)*camDist, (-f[2]*cl+u[2]*sl)*camDist);
+    // Sit BEHIND the velocity, swung ~32° to the side (az) and raised ~24° (el). The side-swing is what
+    // makes a dead-straight cruise trail recede DIAGONALLY to a vanishing point (like a road) instead of
+    // collapsing to a vertical radial line; the view still aims generally forward along +v.
+    const el=0.42, az=0.56, cb=Math.cos(el), sb=Math.sin(el), ca=Math.cos(az), sa=Math.sin(az);
+    const hx=-f[0]*ca+right[0]*sa, hy=-f[1]*ca+right[1]*sa, hz=-f[2]*ca+right[2]*sa;   // behind, swung sideways
+    _t3.cam.position.set((hx*cb+u[0]*sb)*camDist, (hy*cb+u[1]*sb)*camDist, (hz*cb+u[2]*sb)*camDist);
     _t3.cam.up.set(u[0], u[1], u[2]);
   }
   _t3.cam.near = Math.max(camDist*0.003, 1e-5); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
