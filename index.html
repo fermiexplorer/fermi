@@ -153,7 +153,7 @@
 </head>
 <body>
 <header>
-  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 74</a></h1>
+  <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 75</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
@@ -757,7 +757,7 @@
 // ----- build identity: each deployed build is a frozen file (b<BUILD>.html) pinned to the
 //       exact source commit in the fermi repo. SRC_COMMIT is replaced with the real SHA at
 //       deploy time; in source it stays 'HEAD' (which GitHub resolves to the latest). -----
-const BUILD = 74, SRC_COMMIT = 'HEAD';
+const BUILD = 75, SRC_COMMIT = 'HEAD';
 (function(){ const a=document.getElementById('buildlink');
   a.textContent='build '+BUILD;
   a.href='https://github.com/fermiexplorer/fermi/tree/'+SRC_COMMIT;
@@ -1274,6 +1274,11 @@ function chase3dInit(){
   const W = el.clientWidth||600, H = el.clientHeight||420;
   const ren = new THREE.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio||1)); ren.setSize(W,H);
   el.appendChild(ren.domElement);
+  el.style.position = 'relative';                                      // unmistakable indicator that the Three.js cam is live
+  const lbl = document.createElement('div');
+  lbl.textContent = 'chase cam · Three.js (r3) — drag to rotate · scroll to zoom · double-click to reset';
+  lbl.style.cssText = 'position:absolute;top:6px;left:8px;font:11px system-ui,sans-serif;color:#7d8896;pointer-events:none;z-index:2';
+  el.appendChild(lbl);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x161b22);
   const cam = new THREE.PerspectiveCamera(50, W/H, 1e-3, 1e13); cam.up.set(0,0,1);
   const grid = new THREE.GridHelper(2, 20, 0x2a3340, 0x1d242d); grid.rotation.x = Math.PI/2;   // ecliptic z=0
@@ -1982,6 +1987,7 @@ function stateToURL(){
   URL_SELECTS.forEach(k=>{ const el=document.getElementById(k); if(el) p.set(k, el.value); });
   URL_KEYS.forEach(k=>{ const el=document.getElementById(k); if(el) p.set(k, el.value); });
   URL_RADIOS.forEach(n=>p.set(n, radio(n)));
+  if(R3) p.set('r3','1');                                              // keep the Three.js-chase flag across rewrites
   history.replaceState(null, '', buildPath()+'?'+p.toString());        // pin the build in the URL path
 }
 function urlToState(){
@@ -1999,7 +2005,7 @@ function resetDefaults(){
     else el.value=el.defaultValue;
   });
   syncLabels(); toggleOpts(); render();
-  history.replaceState(null, '', buildPath());
+  history.replaceState(null, '', buildPath()+(R3?'?r3=1':''));         // preserve the Three.js-chase flag on refresh
 }
 document.getElementById('resetbtn').addEventListener('click', resetDefaults);
 document.getElementById('homebtn').addEventListener('click', ()=>{ location.href=baseDir(); });
