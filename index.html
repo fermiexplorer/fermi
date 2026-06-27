@@ -1336,49 +1336,53 @@ function _t3setLine(line, pts, ctr){
 }
 function chase3dDraw(c, st){
   if(!_t3.ready) return;
-  const probe = st.pos, T = st.tan, ctr = [0,0,0];                     // ANCHOR ON THE SUN (the spiral's fixed centre)
-  // Recentring on the probe made the whole spiral SWING in a circle across the screen as the probe orbited
-  // the Sun — that was the "whirl" (orientation was already locked; the *translation* was the problem).
-  // The Sun is the fixed centre of the escape spiral, so anchoring the scene there keeps the trajectory put.
-  const flownPts = st.cruise ? st.arc.concat([probe]) : st.arc;        // the FLOWN trail (Sun → probe)
+  const probe = st.pos, T = st.tan, ctr = probe;                      // CHASE THE PROBE — probe pinned at the centre
+  const flownPts = st.cruise ? st.arc.concat([probe]) : st.arc;        // the FLOWN trail — ends at the probe, trails behind
   const nz = v=>{ const n=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/n, v[1]/n, v[2]/n]; };
-  // ZOOM-TO-FIT: frame the whole flown journey, from the Sun out to the probe (the outermost flown point).
-  // As the journey grows the view zooms out smoothly — it never rotates and never swings, so the trajectory
-  // stays put on screen (Sun pinned at centre).
-  let Hs = 0.5; for(const q of flownPts){ const d=Math.hypot(q[0],q[1],q[2]); if(d>Hs) Hs=d; }
-  Hs *= 1.45;                                                          // margin so the probe (outermost point) stays in frame
+  const cross = (a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const dot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  // LOCAL framing: the last ~35% of the flown-path length around the probe, so only the recent trail right
+  // behind the probe is in frame (the far early loops would appear to revolve — keep them off-screen).
+  let total = 0; const cum = new Array(flownPts.length); cum[0] = 0;
+  for(let i=1;i<flownPts.length;i++){ total += Math.hypot(flownPts[i][0]-flownPts[i-1][0], flownPts[i][1]-flownPts[i-1][1], flownPts[i][2]-flownPts[i-1][2]); cum[i] = total; }
+  const win = total*0.15; let Hs = 0.4;
+  for(let i=flownPts.length-1; i>=0 && (total-cum[i])<=win; i--){ const q=flownPts[i]; const d=Math.hypot(q[0]-probe[0], q[1]-probe[1], q[2]-probe[2]); if(d>Hs) Hs=d; }
+  { let need=win, bx=probe[0], by=probe[1], bz=probe[2];               // interpolated point `win` behind (sparse cruise leg)
+    for(let i=flownPts.length-1; i>0; i--){ const seg=cum[i]-cum[i-1];
+      if(seg>=need){ const t=need/seg; bx=flownPts[i][0]+(flownPts[i-1][0]-flownPts[i][0])*t; by=flownPts[i][1]+(flownPts[i-1][1]-flownPts[i][1])*t; bz=flownPts[i][2]+(flownPts[i-1][2]-flownPts[i][2])*t; break; }
+      need-=seg; bx=flownPts[i-1][0]; by=flownPts[i-1][1]; bz=flownPts[i-1][2]; }
+    const db=Math.hypot(bx-probe[0], by-probe[1], bz-probe[2]); if(db>Hs) Hs=db; }
+  Hs = Math.max(Hs, 0.4)*1.25;
+  // SPATIAL cap: keep the frame smaller than the probe's heliocentric distance so the Sun (that far away)
+  // and the inner loops stay OFF-SCREEN — only the local trail right behind the probe shows, so there is
+  // nothing in frame that can appear to revolve as the velocity-up camera turns with the orbit.
+  Hs = Math.min(Hs, 0.45*Math.max(c.dist, 1));
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
   _t3setLine(_t3.flown, flownPts, ctr); _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
   place(_t3.dots.probe,probe,0.03); place(_t3.dots.sun,[0,0,0],0.025); place(_t3.dots.earth,flownPts[0],0.02);
   place(_t3.dots.ac,c.ac,0.03); place(_t3.dots.icpt,c.I,0.025);
-  _t3.grid.scale.set(Hs, Hs, 1); _t3.grid.position.set(0, 0, 0);       // (grid hidden by default)
+  _t3.grid.scale.set(Hs, Hs, 1); _t3.grid.position.set(-ctr[0], -ctr[1], -ctr[2]);   // (grid hidden by default)
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
-  } else {                                                             // CHASE-CAM LOCK (orientation locked to the path)
-    // The spiral "whirled" because the camera heading tracked the INSTANTANEOUS velocity, which sweeps
-    // through the whole arc. Instead lock the orientation to a FIXED frame derived from the trajectory's
-    // own geometry — the entire escape+cruise path is planar, and the aim/asymptote direction is fixed
-    // across the animation — so the trajectory's 2D projection stays put while the probe flies along it:
-    //   B  = plane normal (from two well-separated path points; sign = the motion's angular momentum) — fixed
-    //   F0 = the cruise asymptote / aim direction c.vhat, projected into that plane — fixed
-    // Camera sits behind the probe along F0, lifted out of the plane by el; up = B. Both axes are constant,
-    // so there is no roll and no whirl — only the probe (recentred to origin) slides along the locked path.
-    const cross = (a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
-    const dot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-    const tj = buildTraj(c.vhat, c.vinfKmS), P = tj.pts;               // full planar path (cached); fixed regardless of progress
-    let B = cross(P[0], tj.last);                                      // plane normal from start (1 AU) & end (~24 AU)
+  } else {                                                             // VELOCITY-UP chase: trail points straight DOWN
+    // Probe centred; the probe's VELOCITY is mapped to screen-UP, so the green trail (which trails the probe
+    // along −velocity) points straight DOWN. We look at the trajectory's own plane (normal B = r×v) so the
+    // path reads in 2D, then tilt ~28° around the velocity axis for depth — the tilt keeps the velocity
+    // exactly vertical, so the trail keeps pointing down.
+    const f = nz(T);                                                  // velocity → screen up
+    const tj = buildTraj(c.vhat, c.vinfKmS), P = tj.pts;
+    let B = cross(P[0], tj.last);                                     // path-plane normal (≈ r×v): robust + ~constant
     if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = cross(probe, T);
     if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = [0,0,1];
     B = nz(B);
-    const Lref = cross(P[0], P[Math.min(6, P.length-1)]);             // motion-order ⇒ well-defined +angular-momentum sign
-    if(dot(B, Lref) < 0) B = [-B[0],-B[1],-B[2]];
-    let F0 = c.vhat; const fb = dot(F0, B);                            // aim direction projected into the plane (already ~in it)
-    F0 = nz([F0[0]-fb*B[0], F0[1]-fb*B[1], F0[2]-fb*B[2]]);
-    const el=0.45, cl=Math.cos(el), sl=Math.sin(el);                  // ~26° lifted out of the path plane (stable 3/4 view)
-    _t3.cam.position.set((-F0[0]*cl+B[0]*sl)*camDist, (-F0[1]*cl+B[1]*sl)*camDist, (-F0[2]*cl+B[2]*sl)*camDist);
-    _t3.cam.up.set(B[0], B[1], B[2]);
+    const Lref = cross(P[0], P[Math.min(6, P.length-1)]); if(dot(B, Lref) < 0) B = [-B[0],-B[1],-B[2]];
+    const right = nz(cross(B, f));                                    // in-plane, ⟂ velocity (screen left/right)
+    const tilt=0.5, ct=Math.cos(tilt), stt=Math.sin(tilt);           // view from −(B tilted toward `right`) — keeps f vertical
+    const vdir = [B[0]*ct+right[0]*stt, B[1]*ct+right[1]*stt, B[2]*ct+right[2]*stt];
+    _t3.cam.position.set(vdir[0]*camDist, vdir[1]*camDist, vdir[2]*camDist);
+    _t3.cam.up.set(f[0], f[1], f[2]);                                 // velocity is screen-up ⇒ trail is screen-down
   }
   _t3.cam.near = Math.max(camDist*0.003, 1e-5); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
   _t3.cam.lookAt(0, 0, 0);
