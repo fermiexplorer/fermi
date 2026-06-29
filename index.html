@@ -879,6 +879,17 @@ function compute(){
 function fmt(n,d=0){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
 let SIM=null;                                   // last computed sim, used by the trajectory views
 const openKpis=new Set();                        // which KPI calc panels are expanded
+// The integrated "Mission Δv" comes from the heavy buildModel() trajectory integration (~150 ms), so it
+// is computed ASYNCHRONOUSLY (debounced) off the per-drag render path and patched into its KPI in place.
+let _mdvVal=null, _mdvT=0;
+function scheduleModelDv(){ clearTimeout(_mdvT); _mdvT=setTimeout(()=>{
+  try{ const M=buildModel(craftState()); if(!M) return;
+    _mdvVal={dvTotKm:M.dvTotKm, dvEarthKm:M.dvEarthKm, dvHelKm:M.dvHelKm, revsGeo:M.revsGeo, revsHel:M.revsHel, nSeg:M.geoSimp.pts.length+M.helSimp.pts.length};
+    const root=document.querySelector('.kpi[data-k="Mission Δv (modelled)"]');
+    if(root){ const v=root.querySelector('.v'); if(v) v.textContent=fmt(M.dvTotKm,1)+' km/s';
+      const pre=root.querySelector('pre'); if(pre) pre.textContent=
+        `Earth-escape Δv   = ${fmt(M.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(M.dvHelKm,2)} km/s   (1 AU → cruise v∞)\nTotal modelled Δv = ${fmt(M.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(M.revsGeo,0)} around Earth · ${fmt(M.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments`; }
+  }catch(e){} }, 60); }
 function render(){
   const r=compute(); SIM=r;
   // ----- headline mission-profile summary (feasibility-led) -----
@@ -957,6 +968,10 @@ function render(){
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞"), and the impulsive Oberth floor (see "Chemical-boost option") is the kick-stage comparison.',
     c:dvSteps});
+  K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
+    s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the r3 chase cam draws)',
+    d:'The Δv ACTUALLY expended along the integrated trajectory — a restricted three-body (Sun + Earth, point masses) low-thrust integration with the REAL falling mass (mdot = thrust/(g₀·Isp)). It splits into the Earth-escape spiral (≈ the LEO circular speed) and the heliocentric escape to cruise v∞, and is the physical cross-check on the closed-form “Departure Δv (required)” budget (which adds pointing/steering margins on top).',
+    c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (1 AU → cruise v∞)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
     d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) the burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor. Above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU, the fade barely bites, and PURE SOLAR CLOSES (→ ~37 km/s, the impulsive-from-1-AU limit). NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
@@ -1032,6 +1047,7 @@ function render(){
       `<div class="kcalc"><div class="ksymline"><b>Symbol:</b> ${k.s}</div><div class="kdesc">${k.d}</div><div class="khead"><span>How it’s computed (current values)</span><button class="kcopy" type="button">copy</button></div><pre>${k.i}\n\n${k.c}</pre></div>`+
     `</div>`).join('');
   document.querySelectorAll('#kpis .kpi').forEach(el=>{ if(openKpis.has(el.dataset.k)) el.classList.add('open'); });
+  scheduleModelDv();                              // fill the integrated Mission Δv KPI off the render path
   // badges
   const b=[];
   b.push([r.feasible?'ok':'no', r.feasible?`✓ Intercepts AC in ${fmt(r.arrivalYr)} yr`:'✗ No intercept — v∞ below the 23.3 km/s floor']);
@@ -1236,48 +1252,67 @@ function buildTraj(vhat, vinfKmS){
   _trajKey=key; _traj={pts,rad,last:pts[pts.length-1],rLast:rad[rad.length-1]};
   return _traj;
 }
-// ONE continuous restricted-3-body (Sun+Earth) + low-thrust integration of the REAL trajectory:
-// LEO → spiral out of Earth (~hundreds of revs) → spiral out of the Sun (sub-rev) → coast, in the
-// heliocentric inertial ecliptic plane (AU, yr). No stitching: the geocentric and heliocentric phases
-// are a SINGLE integration. The 2D arc is then aim-rotated so its escape asymptote points at the AC
-// intercept and embedded in 3D, then the straight cruise to the intercept is appended — one curve.
-// Returns {pts, rad, time, iSoi, iBurn, revsGeo, revsHel, soi, E0, last, rLast} | null. Cached.
+// Ramer–Douglas–Peucker simplification with a PER-POINT (scale-relative) tolerance: a vertex is kept
+// iff dropping it would move the curve by more than tolFrac × (local scale there). Iterative stack.
+function rdpMask(pts, scale, tolFrac){
+  const n=pts.length, keep=new Uint8Array(n); if(!n) return keep; keep[0]=keep[n-1]=1;
+  const st=[[0,n-1]];
+  while(st.length){ const s=st.pop(), a=s[0], b=s[1]; if(b<=a+1) continue;
+    const A=pts[a], B=pts[b]; let dx=B[0]-A[0],dy=B[1]-A[1],dz=B[2]-A[2]; const L=Math.hypot(dx,dy,dz)||1e-12; dx/=L;dy/=L;dz/=L;
+    let imax=-1, worst=-1;
+    for(let i=a+1;i<b;i++){ const P=pts[i], wx=P[0]-A[0],wy=P[1]-A[1],wz=P[2]-A[2], tt=wx*dx+wy*dy+wz*dz;
+      const ex=wx-tt*dx, ey=wy-tt*dy, ez=wz-tt*dz, d=Math.hypot(ex,ey,ez), ratio=d/(tolFrac*Math.max(scale[i],1e-12));
+      if(ratio>worst){ worst=ratio; imax=i; } }
+    if(worst>1){ keep[imax]=1; st.push([a,imax]); st.push([imax,b]); }
+  }
+  return keep;
+}
+function _simp(pts, t, scale, tolFrac){ const k=rdpMask(pts,scale,tolFrac), P=[], T=[];
+  for(let i=0;i<pts.length;i++) if(k[i]){ P.push(pts[i]); T.push(t[i]); } return {pts:P, t:T}; }
+// EXACT 3D model of the whole system, built ONCE per config (cached). A high-fidelity RK4 integration
+// of the probe under Sun + Earth point-mass gravity + low-thrust with the REAL falling mass
+// (mdot=thrust/(g0·Isp)), in the heliocentric inertial ecliptic plane (AU, yr), LEO→out of Earth→out of
+// the Sun→coast. Stores all four bodies vs time (Sun at 0, Earth circular, AC linear), the accumulated
+// Δv, the revolution counts, and TWO ≤1%-accurate simplified polylines: the geocentric coil in EARTH's
+// frame, the heliocentric+cruise in the SUN's frame (simplifying the inertial coil would need ~10^4×
+// more points because of the 1-AU drift). Returns the model | null.
 let _full=null, _fullKey='';
-function buildFullTraj(c){
+function buildModel(c){
   if(typeof SIM==='undefined' || !SIM) return null;
   const alt=val('alt');
-  const key=c.vhat.map(x=>x.toFixed(4)).join(',')+'|'+c.vinfKmS.toFixed(2)+'|'+alt+'|'+SIM.thrust.toFixed(6)+'|'+SIM.wet.toFixed(2);
+  const key=[c.vhat.map(x=>x.toFixed(4)).join(','),c.vinfKmS.toFixed(2),alt,SIM.thrust.toFixed(6),SIM.wet.toFixed(2),(SIM.dry||0).toFixed(2),(SIM.isp||0).toFixed(1)].join('|');
   if(_fullKey===key && _full) return _full;
-  const MUs=4*Math.PI*Math.PI, MUe=MUs*3.003e-6, AUyr=4.74057;        // GMs (AU^3/yr^2); km/s per AU/yr
-  const rLeo=(R_EARTH+alt*1e3)/AU, soi=earthSoiRadius(1)/AU;          // LEO & sphere-of-influence radii (AU)
-  const aThr=(SIM.thrust/Math.max(SIM.wet,1))*(YEAR*YEAR/AU);         // thrust accel (AU/yr^2) from real thrust/mass
-  const vinf=c.vinfKmS/AUyr, Et=0.5*vinf*vinf;                        // target heliocentric escape energy
+  const G0=9.80665, MU_SUN=V_EARTH*V_EARTH*AU;                       // MU_SUN, G0, R_SUN aren't exported from FERMI → derive
+  const MUs=4*Math.PI*Math.PI, MUe=MUs*(MU_EARTH/MU_SUN), AUyr=4.74057;
+  const rLeo=(R_EARTH+alt*1e3)/AU, soi=earthSoiRadius(1)/AU;
+  const thrust=SIM.thrust, wet=SIM.wet, dry=Math.max(1,SIM.dry||wet*0.5), isp=SIM.isp||3000;
+  const mdot=thrust/(G0*isp), mp=Math.max(0,wet-dry), aSI=YEAR*YEAR/AU;   // mdot kg/s; m/s²→AU/yr²
+  const vinf=c.vinfKmS/AUyr, Et=0.5*vinf*vinf;
   const w=2*Math.PI, Ep=t=>[Math.cos(w*t),Math.sin(w*t)], Ev=t=>[-w*Math.sin(w*t),w*Math.cos(w*t)];
   const vLeo=Math.sqrt(MUe/rLeo);
-  const acc=(r,v,t,burn)=>{                                           // Sun grav + Earth grav + faded prograde thrust
+  const aMag=t=>(thrust/Math.max(dry, wet-mdot*t*YEAR))*aSI;          // thrust accel now (AU/yr²), falling mass
+  const acc=(r,v,t,burn)=>{
     const rs=Math.hypot(r[0],r[1])||1e-12, rs3=rs*rs*rs;
     let ax=-MUs*r[0]/rs3, ay=-MUs*r[1]/rs3;
     const E=Ep(t), dx=r[0]-E[0], dy=r[1]-E[1], de=Math.hypot(dx,dy)||1e-12, de3=de*de*de;
     ax-=MUe*dx/de3; ay-=MUe*dy/de3;
-    if(burn){ const Eu=Ev(t), vgx=v[0]-Eu[0], vgy=v[1]-Eu[1], vg=Math.hypot(vgx,vgy)||1e-12, vh=Math.hypot(v[0],v[1])||1e-12;
-      const bw=de>=soi?1:0;                                           // prograde-to-Earth inside SOI → prograde-to-Sun once past it
-      let px=(1-bw)*vgx/vg+bw*v[0]/vh, py=(1-bw)*vgy/vg+bw*v[1]/vh; const pn=Math.hypot(px,py)||1e-12, f=aThr;   // constant thrust (matches the no-fade rev model)
-      ax+=f*px/pn; ay+=f*py/pn; }
+    if(burn){ const a=aMag(t), Eu=Ev(t), vgx=v[0]-Eu[0], vgy=v[1]-Eu[1], vg=Math.hypot(vgx,vgy)||1e-12, vh=Math.hypot(v[0],v[1])||1e-12;
+      const bw=de>=soi?1:0; let px=(1-bw)*vgx/vg+bw*v[0]/vh, py=(1-bw)*vgy/vg+bw*v[1]/vh, pn=Math.hypot(px,py)||1e-12;
+      ax+=a*px/pn; ay+=a*py/pn; }
     return [ax,ay];
   };
-  let t=0, r=[1+rLeo,0], v=[0,w+vLeo];                                // Earth at [1,0] moving +y; LEO prograde (+y)
+  let t=0, r=[1+rLeo,0], v=[0,w+vLeo];
   const X=[r[0]],Y=[r[1]],TM=[0];
-  const dtBase=2*Math.PI*Math.sqrt(rLeo*rLeo*rLeo/MUe)/40;            // ~T_leo/40 (resolves the tightest orbit)
-  let burn=true, iSoi=-1, iBurn=-1, geoAng=0, helAng=0, pg=null, ph=null, n=0;
+  const dtBase=2*Math.PI*Math.sqrt(rLeo*rLeo*rLeo/MUe)/40;
+  let burn=true, iSoi=-1, iBurn=-1, geoAng=0, helAng=0, pg=null, ph=null, n=0, dvTot=0, dvEarth=0;
   while(n++<500000){
     const E=Ep(t), de=Math.hypot(r[0]-E[0],r[1]-E[1]), rs=Math.hypot(r[0],r[1]);
-    const ga=Math.atan2(r[1]-E[1],r[0]-E[0]);                         // swept angle about (moving) Earth, inside SOI
-    if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
-    const ha=Math.atan2(r[1],r[0]);                                   // swept angle about the Sun, outside SOI
-    if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
-    if(iSoi<0 && de>soi) iSoi=X.length;
-    if(burn && de>soi && 0.5*(v[0]*v[0]+v[1]*v[1])-MUs/rs>=Et){ burn=false; iBurn=X.length; }
-    const inner=iSoi<0, dt=inner?dtBase:dtBase*200;   // fine steps only during the geocentric escape; coarse after SOI exit
+    const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
+    const ha=Math.atan2(r[1],r[0]); if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
+    if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; }
+    if(burn && (mdot*t*YEAR>=mp || (de>soi && 0.5*(v[0]*v[0]+v[1]*v[1])-MUs/rs>=Et))){ burn=false; iBurn=X.length; }
+    const inner=iSoi<0, dt=inner?dtBase:dtBase*200;
+    if(burn) dvTot += aMag(t)*dt;                                     // ∫ a dt  (AU/yr)
     const a1=acc(r,v,t,burn);
     const r2=[r[0]+.5*dt*v[0],r[1]+.5*dt*v[1]], v2=[v[0]+.5*dt*a1[0],v[1]+.5*dt*a1[1]], a2=acc(r2,v2,t+.5*dt,burn);
     const r3=[r[0]+.5*dt*v2[0],r[1]+.5*dt*v2[1]], v3=[v[0]+.5*dt*a2[0],v[1]+.5*dt*a2[1]], a3=acc(r3,v3,t+.5*dt,burn);
@@ -1285,18 +1320,33 @@ function buildFullTraj(c){
     r=[r[0]+dt/6*(v[0]+2*v2[0]+2*v3[0]+v4[0]), r[1]+dt/6*(v[1]+2*v2[1]+2*v3[1]+v4[1])];
     v=[v[0]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), v[1]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])];
     t+=dt;
-    if(!inner || n%4===0){ X.push(r[0]);Y.push(r[1]);TM.push(t); }    // decimate the dense geocentric phase
+    if(!inner || n%4===0){ X.push(r[0]);Y.push(r[1]);TM.push(t); }
     if(!burn && Math.hypot(r[0],r[1])>3) break;
   }
-  // aim-rotate so the final velocity (escape asymptote) → +x → c.vhat, then embed in 3D (same as buildTraj)
   const va=Math.hypot(v[0],v[1])||1, ca=v[0]/va, sa=v[1]/va, u=c.vhat, hn=Math.hypot(u[0],u[1]);
   let wv=hn<1e-6?[1,0,0]:[-u[1]/hn,u[0]/hn,0]; const du=wv[0]*u[0]+wv[1]*u[1]+wv[2]*u[2];
   wv=[wv[0]-du*u[0],wv[1]-du*u[1],wv[2]-du*u[2]]; let wn=Math.hypot(wv[0],wv[1],wv[2]); if(wn<1e-6){wv=[1,0,0];wn=1;} wv=[wv[0]/wn,wv[1]/wn,wv[2]/wn];
   const map3=(x,y)=>{ const Xr=ca*x+sa*y, Yr=-sa*x+ca*y; return [Xr*u[0]+Yr*wv[0], Xr*u[1]+Yr*wv[1], Xr*u[2]+Yr*wv[2]]; };
-  const pts=[], rad=[]; for(let i=0;i<X.length;i++){ const p=map3(X[i],Y[i]); pts.push(p); rad.push(Math.hypot(p[0],p[1],p[2])); }
-  pts.push([c.I[0],c.I[1],c.I[2]]); rad.push(c.Inorm); TM.push(TM[TM.length-1]*2+1);   // append the straight cruise to intercept
-  _fullKey=key; _full={pts, rad, time:TM, iSoi, iBurn, soi, revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
-                       last:pts[pts.length-1], rLast:rad[rad.length-1], E0:map3(Math.cos(0),Math.sin(0))};
+  const Ng=Math.max(0,iSoi);                                          // geocentric sample count
+  const pos=[], rad=[], earth=[], geoF=[], sGeo=[], sHel=[];
+  for(let i=0;i<X.length;i++){ const p=map3(X[i],Y[i]); pos.push(p); rad.push(Math.hypot(p[0],p[1],p[2]));
+    const ex=Math.cos(w*TM[i]), ey=Math.sin(w*TM[i]), e3=map3(ex,ey); earth.push(e3);
+    const g=[p[0]-e3[0],p[1]-e3[1],p[2]-e3[2]]; geoF.push(g);
+    if(i<Ng) sGeo.push(Math.hypot(g[0],g[1],g[2])); else sHel.push(rad[i]); }
+  const acAt=ts=>[(R0[0]+VAC[0]*ts)/AU,(R0[1]+VAC[1]*ts)/AU,(R0[2]+VAC[2]*ts)/AU];
+  // cruise: straight to the intercept (= AC at arrival)
+  const helFineP=pos.slice(Ng).concat([[c.I[0],c.I[1],c.I[2]]]);
+  const helFineT=TM.slice(Ng).concat([SIM.Tsec/YEAR]); sHel.push(c.Inorm);
+  const geoSimp=_simp(geoF.slice(0,Ng), TM.slice(0,Ng), sGeo, 0.01);
+  const helSimp=_simp(helFineP, helFineT, sHel, 0.01);
+  const dvTotKm=dvTot*AUyr, dvEarthKm=dvEarth*AUyr;
+  const planeN=[u[1]*wv[2]-u[2]*wv[1], u[2]*wv[0]-u[0]*wv[2], u[0]*wv[1]-u[1]*wv[0]];   // map3-plane normal (unit)
+  _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN,
+    geoSimp, helSimp, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
+    revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
+    dvTotKm, dvEarthKm, dvHelKm:dvTotKm-dvEarthKm, rEarthAU:R_EARTH/AU, rSunAU:6.957e8/AU,
+    burnoutMassKg:Math.max(dry, wet-mdot*(iBurn>0?TM[Math.min(iBurn,TM.length-1)]:0)*YEAR),
+    I:c.I, Inorm:c.Inorm, vhat:c.vhat };
   return _full;
 }
 // Probe position + unit tangent at the current heliocentric distance, plus the PAST
@@ -1429,48 +1479,53 @@ function chase3dDraw(c, st){
   const nz = v=>{ const n=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/n, v[1]/n, v[2]/n]; };
   const cross = (a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
   const dot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-  const F = buildFullTraj(c);                                         // ONE true integrated curve LEO→intercept | null
-  if(!F){ _t3.flown.geometry.setDrawRange(0,0); _t3.escape.geometry.setDrawRange(0,0); return; }
-  const P = F.pts, n = P.length, lerp=(A,B,t)=>[A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t, A[2]+(B[2]-A[2])*t];
-  // PROBE along the single curve: during log-time's earth stage map by geocentric progress (heliocentric
-  // distance is ~1 AU and useless there); otherwise map by heliocentric distance c.dist (1 AU → intercept).
-  let probe, idx;
-  if(logTimeMode() && phaseOf(animU).stage==='earth'){
-    const x = Math.max(0, Math.min(1, phaseOf(animU).f)) * Math.max(1, F.iSoi);
-    idx = Math.floor(x); probe = lerp(P[idx], P[Math.min(idx+1,n-1)], x-idx);
+  const lerp=(A,B,t)=>[A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t, A[2]+(B[2]-A[2])*t];
+  const M = buildModel(c);
+  if(!M){ _t3.flown.geometry.setDrawRange(0,0); _t3.escape.geometry.setDrawRange(0,0); _t3.actrack.geometry.setDrawRange(0,0); return; }
+  // EARTH stage: render the geocentric coil in EARTH's frame (Earth a true sphere at the origin). After
+  // SOI: render the heliocentric+cruise in the SUN's frame, zoom-to-fit. Both are simplified to ≤1%.
+  const earthStage = logTimeMode() && phaseOf(animU).stage==='earth' && M.geoSimp.pts.length>2;
+  let SRC, probe, idx;
+  if(earthStage){
+    SRC=M.geoSimp.pts; const n=SRC.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1);
+    idx=Math.floor(x); probe=lerp(SRC[idx], SRC[Math.min(idx+1,n-1)], x-idx);
   } else {
-    const d = Math.max(1, c.dist); let lo = Math.max(1, F.iSoi-1), hi = n-1;
-    while(lo<hi){ const mid=(lo+hi)>>1; if(F.rad[mid]<d) lo=mid+1; else hi=mid; }
-    const i0=Math.max(0,lo-1), r0=F.rad[i0], r1=F.rad[lo]||r0+1e-9;
-    probe = lerp(P[i0], P[lo], (r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0); idx=i0;
+    SRC=M.helSimp.pts; const n=SRC.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
+    while(lo<hi){ const mid=(lo+hi)>>1; if(Math.hypot(SRC[mid][0],SRC[mid][1],SRC[mid][2])<d) lo=mid+1; else hi=mid; }
+    const i0=Math.max(0,lo-1), r0=Math.hypot(SRC[i0][0],SRC[i0][1],SRC[i0][2]), r1=Math.hypot(SRC[lo][0],SRC[lo][1],SRC[lo][2])||r0+1e-9;
+    probe=lerp(SRC[i0], SRC[lo], (r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0); idx=i0;
   }
-  const flown = P.slice(0, idx+1); flown.push(probe);                 // one green curve, LEO → probe
-  // WHOLE-JOURNEY framing: bounding sphere of everything flown so far (camera deferred — keep build-82).
-  const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
-  for(const q of flown){ for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; } }
-  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
-  let Hs=1e-5; for(const q of flown){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; }
-  Hs*=1.12;
+  const flown = SRC.slice(0, idx+1); flown.push(probe);
+  let ctr, Hs;
+  if(earthStage){ ctr=[0,0,0]; Hs=M.rEarthAU*1.4; for(const q of flown){ const dd=Math.hypot(q[0],q[1],q[2]); if(dd>Hs)Hs=dd; } Hs*=1.18; }
+  else { const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of flown) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
+    ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2]; Hs=1e-5; for(const q of flown){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.12; }
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
   _t3setLine(_t3.flown, flown, ctr); _t3.escape.geometry.setDrawRange(0,0);
-  _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
-  place(_t3.dots.probe,probe,0.022); place(_t3.dots.sun,[0,0,0],0.018); place(_t3.dots.earth, F.E0, 0.015);
-  place(_t3.dots.ac,c.ac,0.022); place(_t3.dots.icpt,c.I,0.018);
+  const sphereAbs = (m,p,rAU)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); m.scale.set(rAU,rAU,rAU); };
+  place(_t3.dots.probe, probe, 0.02);
+  if(earthStage){
+    sphereAbs(_t3.dots.earth, [0,0,0], M.rEarthAU);                   // Earth drawn as a TRUE sphere of real radius
+    _t3.actrack.geometry.setDrawRange(0,0);
+    _t3.dots.sun.scale.set(0,0,0); _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0);
+  } else {
+    place(_t3.dots.sun,[0,0,0],0.015); place(_t3.dots.earth, M.helSimp.pts[0], 0.012);
+    place(_t3.dots.ac, c.ac, 0.02); place(_t3.dots.icpt, c.I, 0.015);
+    _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
+  }
   _t3.grid.visible = false;
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
-  } else {                                                             // FIXED orientation from the (constant) path plane
-    let B=nz(cross(P[F.iSoi]||P[0], F.last));                          // plane normal from two heliocentric points
-    const Lr=cross(P[F.iSoi]||P[0], P[Math.min(F.iSoi+30,n-2)]); if(dot(B,Lr)<0)B=[-B[0],-B[1],-B[2]];
-    let f=c.vhat; const fb=dot(f,B); const F0=nz([f[0]-fb*B[0],f[1]-fb*B[1],f[2]-fb*B[2]]);
+  } else {                                                             // FIXED orientation from the model's path plane
+    const B=M.planeN; let f=c.vhat; const fb=dot(f,B); const F0=nz([f[0]-fb*B[0],f[1]-fb*B[1],f[2]-fb*B[2]]);
     const e2=nz(cross(B,F0)), tilt=0.35, cb=Math.cos(tilt), sb=Math.sin(tilt);
     const off=[B[0]*cb+e2[0]*sb, B[1]*cb+e2[1]*sb, B[2]*cb+e2[2]*sb];
     _t3.cam.position.set(off[0]*camDist, off[1]*camDist, off[2]*camDist);
     _t3.cam.up.set(F0[0], F0[1], F0[2]);
   }
-  _t3.cam.near = Math.max(camDist*0.002, 1e-6); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
+  _t3.cam.near = Math.max(camDist*0.002, 1e-9); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
   _t3.cam.lookAt(0, 0, 0);
 }
 function chase3dLoop(){ if(_t3.ready) _t3.ren.render(_t3.scene, _t3.cam); requestAnimationFrame(chase3dLoop); }
