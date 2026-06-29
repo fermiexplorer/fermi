@@ -1284,14 +1284,14 @@ function chase3dInit(){
   const cam = new THREE.PerspectiveCamera(50, W/H, 1e-3, 1e13); cam.up.set(0,0,1);
   const grid = new THREE.GridHelper(2, 24, 0x55657a, 0x36414f); grid.rotation.x = Math.PI/2;   // ecliptic z=0
   grid.visible = false;                                                // hidden by default (distracting; goes edge-on at low view angles)
-  const mkLine = (color)=>{ const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4096*3), 3));
+  const mkLine = (color, cap)=>{ const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((cap||4096)*3), 3));
     const l = new THREE.Line(g, new THREE.LineBasicMaterial({color})); l.frustumCulled = false; return l; };
-  const flown = mkLine(0x3fb950), actrack = mkLine(0xf0883e);
+  const flown = mkLine(0x3fb950), actrack = mkLine(0xf0883e), escape = mkLine(0x3fb950, 8192);  // escape = hi-res Earth spiral
   const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
   const dots = {sun:mkDot(0xf5d020), earth:mkDot(0x58a6ff), probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
-  scene.add(grid, flown, actrack, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt);
-  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, dots, theta:1.0, phi:0, userRot:false};
+  scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt);
+  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, theta:1.0, phi:0, userRot:false};
   // ----- mouse: drag to orbit (overrides auto chase), wheel to zoom uniformly, dbl-click reset -----
   const cv = ren.domElement; cv.style.cursor = 'grab'; let drag = false, lx = 0, ly = 0;
   cv.addEventListener('pointerdown', e=>{ drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing';
@@ -1328,63 +1328,93 @@ function _t3setLine(line, pts, ctr){
   // Decimate to the 4096-vertex buffer by EVEN stride, but always keep the LAST point (the probe) —
   // else a long high-res path (the escape spiral can be ~20k points) truncates to its first 4096 and the
   // recent trail + the segment joining it to the probe are silently dropped (cruise showed no trail at all).
-  const a = line.geometry.attributes.position.array, CAP = 4096;
+  const a = line.geometry.attributes.position.array, CAP = a.length/3;
   let src = pts, n = pts.length;
   if(n > CAP){ const stride = Math.ceil(n/(CAP-1)); src = []; for(let i=0;i<n;i+=stride) src.push(pts[i]); src.push(pts[n-1]); n = src.length; }
   for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2]; }
   line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
 }
+// The 3D geocentric Earth-escape spiral (the ~hundreds of revolutions to climb from LEO to Earth's SOI),
+// built ONCE per config and cached. It sits at Earth's heliocentric position (the heliocentric arc start)
+// and lies in the same plane as the heliocentric escape, so the whole journey is one coplanar curve.
+// Returns {pts, B, F0, e2, E, revs} or null when the mission isn't solved / no meaningful escape.
+function _t3escapeSpiral(c){
+  if(typeof SIM==='undefined' || !SIM) return null;
+  const alt = val('alt'), ee = earthEscapeRevs(SIM.thrust, SIM.wet, alt), revs = ee.revs;
+  if(!(revs > 0.2)) return null;
+  const key = c.vhat.map(x=>x.toFixed(4)).join(',')+'|'+c.vinfKmS.toFixed(2)+'|'+alt+'|'+SIM.thrust.toFixed(4)+'|'+SIM.wet.toFixed(1);
+  if(_t3.escCache && _t3.escCache.key===key) return _t3.escCache.val;
+  const nz=v=>{const n=Math.hypot(v[0],v[1],v[2])||1;return [v[0]/n,v[1]/n,v[2]/n];};
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const tj=buildTraj(c.vhat,c.vinfKmS);
+  let B=cross(tj.pts[0],tj.last); if(Math.hypot(B[0],B[1],B[2])<1e-12)B=[0,0,1]; B=nz(B);
+  const Lref=cross(tj.pts[0],tj.pts[Math.min(6,tj.pts.length-1)]); if(dot(B,Lref)<0)B=[-B[0],-B[1],-B[2]];
+  let F0=c.vhat; const fb=dot(F0,B); F0=nz([F0[0]-fb*B[0],F0[1]-fb*B[1],F0[2]-fb*B[2]]);
+  const e2=nz(cross(B,F0)), E=tj.pts[0];                              // in-plane basis {F0,e2}; spiral centred at Earth
+  const rp=(R_EARTH+alt*1e3)/AU, soi=earthSoiRadius(1)/AU;            // LEO → sphere-of-influence radius (AU)
+  const N=Math.max(200, Math.min(8000, Math.round(revs*36)));
+  const pts=new Array(N+1);
+  for(let i=0;i<=N;i++){ const t=i/N, r=rp+t*(soi-rp), th=t*revs*2*Math.PI, cx=Math.cos(th)*r, sy=Math.sin(th)*r;
+    pts[i]=[E[0]+cx*F0[0]+sy*e2[0], E[1]+cx*F0[1]+sy*e2[1], E[2]+cx*F0[2]+sy*e2[2]]; }
+  const out={pts, B, F0, e2, E, revs};
+  _t3.escCache={key, val:out};
+  return out;
+}
 function chase3dDraw(c, st){
   if(!_t3.ready) return;
-  const probe = st.pos, T = st.tan, ctr = probe;                      // CHASE THE PROBE — probe pinned at the centre
-  const flownPts = st.cruise ? st.arc.concat([probe]) : st.arc;        // the FLOWN trail — ends at the probe, trails behind
   const nz = v=>{ const n=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/n, v[1]/n, v[2]/n]; };
   const cross = (a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
   const dot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-  // LOCAL framing: the last ~35% of the flown-path length around the probe, so only the recent trail right
-  // behind the probe is in frame (the far early loops would appear to revolve — keep them off-screen).
-  let total = 0; const cum = new Array(flownPts.length); cum[0] = 0;
-  for(let i=1;i<flownPts.length;i++){ total += Math.hypot(flownPts[i][0]-flownPts[i-1][0], flownPts[i][1]-flownPts[i-1][1], flownPts[i][2]-flownPts[i-1][2]); cum[i] = total; }
-  const win = total*0.15; let Hs = 0.4;
-  for(let i=flownPts.length-1; i>=0 && (total-cum[i])<=win; i--){ const q=flownPts[i]; const d=Math.hypot(q[0]-probe[0], q[1]-probe[1], q[2]-probe[2]); if(d>Hs) Hs=d; }
-  { let need=win, bx=probe[0], by=probe[1], bz=probe[2];               // interpolated point `win` behind (sparse cruise leg)
-    for(let i=flownPts.length-1; i>0; i--){ const seg=cum[i]-cum[i-1];
-      if(seg>=need){ const t=need/seg; bx=flownPts[i][0]+(flownPts[i-1][0]-flownPts[i][0])*t; by=flownPts[i][1]+(flownPts[i-1][1]-flownPts[i][1])*t; bz=flownPts[i][2]+(flownPts[i-1][2]-flownPts[i][2])*t; break; }
-      need-=seg; bx=flownPts[i-1][0]; by=flownPts[i-1][1]; bz=flownPts[i-1][2]; }
-    const db=Math.hypot(bx-probe[0], by-probe[1], bz-probe[2]); if(db>Hs) Hs=db; }
-  Hs = Math.max(Hs, 0.4)*1.25;
-  // SPATIAL cap: keep the frame smaller than the probe's heliocentric distance so the Sun (that far away)
-  // and the inner loops stay OFF-SCREEN — only the local trail right behind the probe shows, so there is
-  // nothing in frame that can appear to revolve as the velocity-up camera turns with the orbit.
-  Hs = Math.min(Hs, 0.45*Math.max(c.dist, 1));
+  const esc = _t3escapeSpiral(c);                                     // full 208-rev Earth-escape spiral (cached) | null
+  const helio = st.cruise ? st.arc.concat([st.pos]) : st.arc;         // heliocentric flown (1 AU → probe)
+  // During log-time's earth stage the probe is still spiralling out of Earth — put it ON the escape spiral
+  // and draw only the part flown so far; otherwise the spiral is fully in the past and the probe is helio.
+  let probe, escCount, helioFlown;
+  if(esc && logTimeMode() && phaseOf(animU).stage==='earth'){
+    const k = Math.max(0, Math.min(esc.pts.length-1, Math.round(phaseOf(animU).f*(esc.pts.length-1))));
+    probe = esc.pts[k]; escCount = k+1; helioFlown = [];
+  } else {
+    probe = st.pos; escCount = esc ? esc.pts.length : 0; helioFlown = helio;
+  }
+  // WHOLE-JOURNEY framing: fit EVERYTHING flown so far (Earth spiral + heliocentric path) in a bounding
+  // sphere. Early that is the tiny Earth spiral (208 revs fill the frame); as the probe flies out the view
+  // zooms out smoothly and the spiral shrinks to a dot. Fixed orientation below ⇒ it grows, never swirls.
+  const all = [];
+  for(let i=0;i<escCount;i++) all.push(esc.pts[i]);
+  for(const q of helioFlown) all.push(q);
+  if(!all.length) all.push(probe);
+  const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
+  for(const q of all){ for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; } }
+  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
+  let Hs=1e-4; for(const q of all){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; }
+  Hs*=1.12;
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
-  _t3setLine(_t3.flown, flownPts, ctr); _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
+  if(esc) _t3setLine(_t3.escape, escCount>=esc.pts.length?esc.pts:esc.pts.slice(0,escCount), ctr);
+  else _t3.escape.geometry.setDrawRange(0,0);
+  _t3setLine(_t3.flown, helioFlown.length?helioFlown:[probe], ctr);
+  _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
-  place(_t3.dots.probe,probe,0.03); place(_t3.dots.sun,[0,0,0],0.025); place(_t3.dots.earth,flownPts[0],0.02);
-  place(_t3.dots.ac,c.ac,0.03); place(_t3.dots.icpt,c.I,0.025);
-  _t3.grid.scale.set(Hs, Hs, 1); _t3.grid.position.set(-ctr[0], -ctr[1], -ctr[2]);   // (grid hidden by default)
+  place(_t3.dots.probe,probe,0.022); place(_t3.dots.sun,[0,0,0],0.018); place(_t3.dots.earth, esc?esc.E:(st.arc[0]||probe),0.015);
+  place(_t3.dots.ac,c.ac,0.022); place(_t3.dots.icpt,c.I,0.018);
+  _t3.grid.visible = false;
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
-  } else {                                                             // VELOCITY-UP chase: trail points straight DOWN
-    // Probe centred; the probe's VELOCITY is mapped to screen-UP, so the green trail (which trails the probe
-    // along −velocity) points straight DOWN. We look at the trajectory's own plane (normal B = r×v) so the
-    // path reads in 2D, then tilt ~28° around the velocity axis for depth — the tilt keeps the velocity
-    // exactly vertical, so the trail keeps pointing down.
-    const f = nz(T);                                                  // velocity → screen up
-    const tj = buildTraj(c.vhat, c.vinfKmS), P = tj.pts;
-    let B = cross(P[0], tj.last);                                     // path-plane normal (≈ r×v): robust + ~constant
-    if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = cross(probe, T);
-    if(Math.hypot(B[0],B[1],B[2]) < 1e-9) B = [0,0,1];
-    B = nz(B);
-    const Lref = cross(P[0], P[Math.min(6, P.length-1)]); if(dot(B, Lref) < 0) B = [-B[0],-B[1],-B[2]];
-    const right = nz(cross(B, f));                                    // in-plane, ⟂ velocity (screen left/right)
-    const tilt=0.5, ct=Math.cos(tilt), stt=Math.sin(tilt);           // view from −(B tilted toward `right`) — keeps f vertical
-    const vdir = [B[0]*ct+right[0]*stt, B[1]*ct+right[1]*stt, B[2]*ct+right[2]*stt];
-    _t3.cam.position.set(vdir[0]*camDist, vdir[1]*camDist, vdir[2]*camDist);
-    _t3.cam.up.set(f[0], f[1], f[2]);                                 // velocity is screen-up ⇒ trail is screen-down
+  } else {                                                             // FIXED orientation from the (constant) path plane
+    // Look ~face-on at the trajectory's own plane (normal B), tilted ~20° around the cruise axis for depth;
+    // up = the cruise asymptote F0. B and F0 are constant for the whole flight, so the view never rotates.
+    let B, F0;
+    if(esc){ B=esc.B; F0=esc.F0; }
+    else { const tj=buildTraj(c.vhat,c.vinfKmS); B=nz(cross(tj.pts[0],tj.last));
+      const Lr=cross(tj.pts[0],tj.pts[Math.min(6,tj.pts.length-1)]); if(dot(B,Lr)<0)B=[-B[0],-B[1],-B[2]];
+      let f=c.vhat; const fb=dot(f,B); F0=nz([f[0]-fb*B[0],f[1]-fb*B[1],f[2]-fb*B[2]]); }
+    const e2=nz(cross(B,F0)), tilt=0.35, cb=Math.cos(tilt), sb=Math.sin(tilt);
+    const off=[B[0]*cb+e2[0]*sb, B[1]*cb+e2[1]*sb, B[2]*cb+e2[2]*sb];
+    _t3.cam.position.set(off[0]*camDist, off[1]*camDist, off[2]*camDist);
+    _t3.cam.up.set(F0[0], F0[1], F0[2]);
   }
-  _t3.cam.near = Math.max(camDist*0.003, 1e-5); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
+  _t3.cam.near = Math.max(camDist*0.002, 1e-6); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
   _t3.cam.lookAt(0, 0, 0);
 }
 function chase3dLoop(){ if(_t3.ready) _t3.ren.render(_t3.scene, _t3.cam); requestAnimationFrame(chase3dLoop); }
