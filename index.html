@@ -1402,7 +1402,7 @@ function cols(a){ return {x:a.map(p=>p[0]), y:a.map(p=>p[1]), z:a.map(p=>p[2])};
 // ===== Three.js chase cam (prototype behind ?r3=1) — option B: clean behind-the-probe chase =====
 // Renderer-only swap: reuse craftState()/trajState() geometry; Three.js does projection + camera.
 // Scene is recentered on the probe (probe at origin) so 32-bit GPU coords stay small at any distance.
-const R3 = new URLSearchParams(location.search).get('r3') === '1';
+const R3 = new URLSearchParams(location.search).get('r3') !== '0';   // high-fidelity Three.js chase cam is the DEFAULT (opt out with ?r3=0)
 let _t3 = {ready:false, loading:false};
 function chase3dEnsure(){
   if(_t3.ready || _t3.loading) return;
@@ -2241,7 +2241,7 @@ function stateToURL(){
   URL_SELECTS.forEach(k=>{ const el=document.getElementById(k); if(el) p.set(k, el.value); });
   URL_KEYS.forEach(k=>{ const el=document.getElementById(k); if(el) p.set(k, el.value); });
   URL_RADIOS.forEach(n=>p.set(n, radio(n)));
-  if(R3) p.set('r3','1');                                              // keep the Three.js-chase flag across rewrites
+  if(!R3) p.set('r3','0');                                             // high-fidelity chase is default; persist only an opt-OUT
   if(animU>0) p.set('pt', animU.toFixed(4));                           // play-sequence position (0..1) — shareable frame
   history.replaceState(null, '', buildPath()+'?'+p.toString());        // pin the build in the URL path
 }
@@ -2262,7 +2262,7 @@ function resetDefaults(){
     else el.value=el.defaultValue;
   });
   syncLabels(); toggleOpts(); render();
-  history.replaceState(null, '', buildPath()+(R3?'?r3=1':''));         // preserve the Three.js-chase flag on refresh
+  history.replaceState(null, '', buildPath()+(R3?'':'?r3=0'));         // high-fidelity chase is default; persist only an opt-OUT
 }
 document.getElementById('resetbtn').addEventListener('click', resetDefaults);
 document.getElementById('homebtn').addEventListener('click', ()=>{ location.href=baseDir(); });
