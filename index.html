@@ -373,7 +373,7 @@
         <button id="stepback" type="button" title="Step one frame back">◀|</button>
         <button id="stepfwd" type="button" title="Step one frame forward">|▶</button>
         <label class="logtime" title="Map time logarithmically (the ~1-yr burn is visible against the multi-10⁴-yr coast). Uncheck for PURE LINEAR time — Play, the scrubber and all views advance uniformly in elapsed time (the burn then occupies the first instant)."><input type="checkbox" id="logtime" checked> Logarithmic time</label>
-        <label class="logtime" title="Loop the animation: when Play reaches the arrival it restarts from launch."><input type="checkbox" id="loop"> Loop</label>
+        <label class="logtime" title="Loop the animation: when Play reaches the arrival it restarts from launch."><input type="checkbox" id="loop" checked> Loop</label>
         <input type="range" id="tscrub" min="0" max="100" step="0.25" value="0">
         <span id="tlabel"></span>
       </div>
@@ -2409,6 +2409,10 @@ urlToState(); syncLabels(); toggleOpts(); render();
     h.appendChild(a);
   });
 })();
+
+// Play + Loop are on by default: auto-start the animation on load (skip only for visitors
+// who have asked their OS for reduced motion). The Loop checkbox is checked in the markup.
+if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) togglePlay();
 </script>
 </body>
 </html>
