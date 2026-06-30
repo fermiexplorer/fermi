@@ -55,6 +55,7 @@ audit/calcs/      independent verification suite (Python + Node parity)
 audit/codex/      Codex independent audit (conclusions + scripts)
 audit/grok/       Grok independent audit (conclusions + scripts)
 audit/gemini/     Gemini independent audit (astropy + scipy solve_ivp)
+audit/gmat/       NASA GMAT cross-validation (mission scripts + install/run/compare + raw outputs)
 audit/AUDIT_PROMPTS.md  adversarial audit prompts
 docs/             REPORT.md (tender report), plans/
 ```
@@ -68,14 +69,17 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (41 checks: astropy ephemeris, conservation laws, optima)
+# independent audits (55 checks: astropy ephemeris, conservation laws, optima)
 .venv/bin/python audit/calcs/run_audits.py
 
-# web<->python parity (Node)
+# web<->python parity (Node, 20 checks)
 node audit/calcs/audit_webjs.mjs
 
-# UI behaviour: every slider drives the right outputs, in the right direction (49 checks)
+# UI behaviour: every slider drives the right outputs, in the right direction (71 checks)
 .venv/bin/python audit/calcs/ui_sliders.py
+
+# NASA GMAT cross-validation of the departure model (downloads GMAT; Linux/WSL)
+cd audit/gmat && ./install_gmat.sh && ./run_gmat.sh
 
 # the interactive calculator (needs internet for the Plotly CDN)
 python3 -m http.server 8000
@@ -91,12 +95,16 @@ The physics is checked **independently** (different method, not self-comparison)
 - departure Δv via **energy conservation**; spiral integrator convergence;
 - rocket equation by **numerical mass-flow integration**;
 - fuel-cell optimum Isp by **independent minimisation**;
-- web JS vs Python **parity** (`audit/calcs/audit_webjs.mjs`).
+- web JS vs Python **parity** (`audit/calcs/audit_webjs.mjs`);
+- departure energetics vs **NASA GMAT** — the General Mission Analysis Tool, an
+  independent flight-proven propagator from NASA Goddard. GMAT reproduces the impulsive
+  departure C3 to 2×10⁻⁶ % and the low-thrust Earth-escape spiral time to 0.007 %
+  (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
-All 41 Python checks + 10 JS-parity checks pass (plus a Playwright UI render test
-and independent Codex, Grok & Gemini re-implementations under `audit/`, which agree
-to ≤0.1% on every headline number). See `audit/AUDIT_PROMPTS.md` for adversarial
-review prompts.
+All 55 Python checks + 20 JS-parity checks pass (plus a Playwright UI render test, the
+NASA GMAT cross-validation, and independent Codex, Grok & Gemini re-implementations
+under `audit/`, which agree to ≤0.1% on every headline number). See
+`audit/AUDIT_PROMPTS.md` for adversarial review prompts.
 
 ## Scope / limitations
 
