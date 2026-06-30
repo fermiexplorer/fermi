@@ -1,0 +1,99 @@
+%  ============================================================================
+%  Fermi independent audit -- GMAT cross-check 2: LOW-THRUST EARTH-ESCAPE SPIRAL
+%  ----------------------------------------------------------------------------
+%  Validates  fermi_sim.departure.spiral_escape_dv  /  earth_escape_revs.
+%
+%  Method (independent of the Fermi engine -- GMAT numerically propagates a
+%  finite burn): constant tangential (prograde) thrust from a circular orbit of
+%  radius 6771 km until Earth escape (C3 = 0). Earth point-mass gravity only,
+%  mu = 398600.4 km^3/s^2, matching fermi_sim.
+%
+%  fermi_sim's spiral_escape_dv integrates a CONSTANT acceleration a = 5e-4 m/s^2.
+%  We reproduce constant acceleration in GMAT with thrust 0.5 N on a 1000 kg
+%  spacecraft and a huge Isp (1e7 s), so propellant draw (~0.07 kg over the whole
+%  spiral) leaves the mass -- hence the acceleration -- essentially constant.
+%
+%  EXPECTED RESULT (fermi_sim, accel 5e-4 m/s^2, escape at C3=0):
+%      escape time  t  = 1.42657e7 s   (delta-v = a*t = 7.133 km/s, ~692 revs)
+%  ============================================================================
+
+Create Spacecraft Probe;
+GMAT Probe.DateFormat = UTCGregorian;
+GMAT Probe.Epoch = '01 Jan 2030 00:00:00.000';
+GMAT Probe.CoordinateSystem = EarthMJ2000Eq;
+% Circular orbit r = 6771 km in Cartesian (avoids the Keplerian singularity at
+% the parabolic escape point, e -> 1). VY = v_circ = sqrt(398600.4/6771) km/s.
+GMAT Probe.DisplayStateType = Cartesian;
+GMAT Probe.X = 6771.0;
+GMAT Probe.Y = 0.0;
+GMAT Probe.Z = 0.0;
+GMAT Probe.VX = 0.0;
+GMAT Probe.VY = 7.672599;
+GMAT Probe.VZ = 0.0;
+GMAT Probe.DryMass = 999.0;
+GMAT Probe.Tanks = {Fuel};
+GMAT Probe.Thrusters = {Ion};
+
+GMAT Earth.Mu = 398600.4;
+
+% TotalMass = DryMass(999) + FuelMass(1) = 1000 kg  ->  a = 0.5 N / 1000 kg = 5e-4 m/s^2.
+Create ChemicalTank Fuel;
+GMAT Fuel.FuelMass = 1.0;
+GMAT Fuel.AllowNegativeFuelMass = false;
+
+Create ChemicalThruster Ion;
+GMAT Ion.CoordinateSystem = Local;
+GMAT Ion.Origin = Earth;
+GMAT Ion.Axes = VNB;
+GMAT Ion.ThrustDirection1 = 1;
+GMAT Ion.ThrustDirection2 = 0;
+GMAT Ion.ThrustDirection3 = 0;
+GMAT Ion.DecrementMass = true;
+GMAT Ion.Tank = {Fuel};
+GMAT Ion.GravitationalAccel = 9.81;
+GMAT Ion.C1 = 0.5;
+GMAT Ion.K1 = 10000000;
+GMAT Ion.ThrustScaleFactor = 1;
+
+Create ForceModel FM;
+GMAT FM.CentralBody = Earth;
+GMAT FM.PointMasses = {Earth};
+GMAT FM.Drag = None;
+GMAT FM.SRP = Off;
+
+Create Propagator Prop;
+GMAT Prop.FM = FM;
+GMAT Prop.Type = PrinceDormand78;
+GMAT Prop.InitialStepSize = 60;
+GMAT Prop.Accuracy = 1e-11;
+GMAT Prop.MaxStep = 1800;
+GMAT Prop.MaxStepAttempts = 50;
+
+Create FiniteBurn FB;
+GMAT FB.Thrusters = {Ion};
+
+Create ReportFile Rpt;
+GMAT Rpt.Filename = out/02_lowthrust.txt;
+GMAT Rpt.WriteHeaders = true;
+GMAT Rpt.Precision = 12;
+
+Create Variable k;
+
+BeginMissionSequence;
+
+% Step the finite burn forward in fixed 20000 s increments, logging the Cartesian
+% state each step. We do NOT stop on C3=0: GMAT computes C3 via the semi-major axis,
+% which is singular exactly at the parabolic escape point (a -> infinity). Instead
+% compare.py computes the specific orbital energy 0.5*v^2 - mu/r from each state row
+% and finds the energy=0 crossing -- the SAME escape definition fermi_sim uses.
+% (GMAT's ElapsedSecs stop condition is per-propagate, so each step is a fixed 20000 s;
+% the REPORTED ElapsedSecs is cumulative from epoch. 775 steps cover ~1.55e7 s.)
+GMAT k = 0;
+Report Rpt Probe.ElapsedSecs Probe.Earth.RMAG Probe.X Probe.Y Probe.Z Probe.VX Probe.VY Probe.VZ Probe.TotalMass;
+BeginFiniteBurn FB(Probe);
+While k < 775
+   Propagate Prop(Probe) {Probe.ElapsedSecs = 20000};
+   GMAT k = k + 1;
+   Report Rpt Probe.ElapsedSecs Probe.Earth.RMAG Probe.X Probe.Y Probe.Z Probe.VX Probe.VY Probe.VZ Probe.TotalMass;
+EndWhile;
+EndFiniteBurn FB(Probe);

@@ -1,0 +1,67 @@
+%  ============================================================================
+%  Fermi independent audit -- GMAT cross-check 1: IMPULSIVE (Oberth) DEPARTURE
+%  ----------------------------------------------------------------------------
+%  Validates  fermi_sim.departure.impulsive_dv_from_leo  and  v_inf_earth_required.
+%
+%  Method (independent of the Fermi engine -- pure Keplerian in GMAT):
+%    Start in a circular orbit of radius 6771 km (= fermi_sim "400 km altitude",
+%    R_earth = 6371 km mean), Earth point-mass gravity mu = 398600.4 km^3/s^2
+%    (= fermi_sim MU_EARTH 3.986004e14 m^3/s^2). Apply the Fermi-computed
+%    departure delta-v of 14.633297 km/s PROGRADE (along velocity). The resulting
+%    hyperbolic C3 must equal the required v_inf,Earth^2.
+%
+%  Mission targeted: min-speed intercept @ 58,138 yr  ->  v_inf,Sun = 23.270 km/s,
+%  tilt = -10 deg  ->  v_inf,Earth = 19.4889 km/s.
+%
+%  EXPECTED RESULT:  post-burn  Probe.Earth.C3Energy = 379.8154 km^2/s^2.
+%  ============================================================================
+
+Create Spacecraft Probe;
+GMAT Probe.DateFormat = UTCGregorian;
+GMAT Probe.Epoch = '01 Jan 2030 00:00:00.000';
+GMAT Probe.CoordinateSystem = EarthMJ2000Eq;
+GMAT Probe.DisplayStateType = Keplerian;
+GMAT Probe.SMA = 6771.0;
+GMAT Probe.ECC = 0.0;
+GMAT Probe.INC = 0.0;
+GMAT Probe.RAAN = 0.0;
+GMAT Probe.AOP = 0.0;
+GMAT Probe.TA = 0.0;
+GMAT Probe.DryMass = 1000.0;
+
+% Match fermi_sim's gravity model exactly: Earth point mass, mu = 398600.4 km^3/s^2.
+GMAT Earth.Mu = 398600.4;
+
+Create ForceModel FM;
+GMAT FM.CentralBody = Earth;
+GMAT FM.PointMasses = {Earth};
+GMAT FM.Drag = None;
+GMAT FM.SRP = Off;
+
+Create Propagator Prop;
+GMAT Prop.FM = FM;
+GMAT Prop.Type = PrinceDormand78;
+GMAT Prop.InitialStepSize = 30;
+GMAT Prop.Accuracy = 1e-12;
+
+% Departure delta-v, prograde (along velocity), in the local VNB frame.
+Create ImpulsiveBurn DV;
+GMAT DV.CoordinateSystem = Local;
+GMAT DV.Origin = Earth;
+GMAT DV.Axes = VNB;
+GMAT DV.Element1 = 14.633297;
+GMAT DV.Element2 = 0.0;
+GMAT DV.Element3 = 0.0;
+
+Create ReportFile Rpt;
+GMAT Rpt.Filename = out/01_impulsive.txt;
+GMAT Rpt.WriteHeaders = true;
+GMAT Rpt.Precision = 12;
+
+BeginMissionSequence;
+
+% pre-burn state (circular LEO): C3 = -mu/a = -58.87 km^2/s^2
+Report Rpt Probe.ElapsedSecs Probe.Earth.RMAG Probe.Earth.C3Energy;
+Maneuver DV(Probe);
+% post-burn: C3 must equal v_inf,Earth^2 = 379.8154 km^2/s^2
+Report Rpt Probe.ElapsedSecs Probe.Earth.RMAG Probe.Earth.C3Energy;
