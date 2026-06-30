@@ -25,23 +25,10 @@
   header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
-  /* collapsible mission-parameters panel: collapse from the "Parameters" button in the
-     control bar (next to Home/Reset); a top-left header button re-opens it when collapsed. */
+  /* collapsible mission-parameters panel — toggled from the persistent toolbar
+     (Home | Reset | Parameters), which sits OUTSIDE the panel so the buttons never hide. */
   body.params-collapsed .layout { grid-template-columns: 1fr; }
   body.params-collapsed #controls { display: none; }
-  header { position: relative; }
-  #paramsShow { display: none; position: absolute; top: 16px; left: 22px; align-items: center;
-    gap: 7px; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; z-index: 5; }
-  #paramsShow:hover { border-color: var(--accent); }
-  #paramsShow svg { width: 17px; height: 17px; }
-  body.params-collapsed #paramsShow { display: inline-flex; }
-  body.params-collapsed header h1 { padding-left: 150px; }
-  @media (max-width: 640px) {
-    #paramsShow { top: 12px; left: 12px; padding: 6px 8px; }
-    #paramsShow .lbl { display: none; }
-    body.params-collapsed header h1 { padding-left: 46px; }
-  }
   /* left controls */
   aside {
     padding: 16px 18px; border-right: 1px solid var(--line);
@@ -89,7 +76,9 @@
   .build { font-size: 11px; color: var(--muted); font-weight: 400; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; vertical-align: middle; text-decoration: none; }
   .build:hover { border-color: var(--accent); color: var(--accent); }
   .brand { width: 1.15em; height: 1.15em; vertical-align: -0.18em; }
-  .ctrlbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .ctrlbar { display: flex; gap: 8px; align-items: center; padding: 9px 22px;
+    background: var(--panel); border-bottom: 1px solid var(--line); }
+  .ctrlbar button.on { border-color: var(--accent); }
   .ctrlbar button { display: inline-flex; align-items: center; gap: 6px; background: #161b22; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
   .ctrlbar button:hover { border-color: var(--accent); }
   .ctrlbar button svg { width: 16px; height: 16px; }
@@ -189,6 +178,7 @@
     header h1 { font-size: 16px; line-height: 1.3; }
     main { padding: 12px 12px; }
     aside { padding: 12px 12px; }
+    .ctrlbar { padding: 9px 14px; }
     .method { padding: 8px 14px 40px; }
     #chartOrbit3d, #follow3d, .prim { min-height: clamp(300px, 56vh, 460px); }
     #chartOrbit2d, #follow2d { min-height: 280px; }
@@ -203,20 +193,21 @@
 </head>
 <body>
 <header>
-  <button id="paramsShow" type="button" title="Show mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Parameters</span></button>
   <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 0</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
 </header>
 
+<!-- persistent toolbar: NOT part of the collapsible parameters panel -->
+<div class="ctrlbar">
+  <button id="homebtn" type="button" title="Home — load the latest build with default parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 11 H18 V20 H14 V14 H10 V20 H6 V11 H3 Z" fill="currentColor"/></svg>Home</button>
+  <button id="resetbtn" type="button" title="Reset all parameters to this build’s defaults">↺ Reset</button>
+  <button id="paramsToggle" type="button" aria-expanded="true" title="Show / hide mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Parameters</button>
+</div>
+
 <div class="layout">
   <aside id="controls">
-    <div class="ctrlbar">
-      <button id="paramsHide" type="button" title="Hide mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Parameters</button>
-      <button id="homebtn" type="button" title="Home — load the latest build with default parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 11 H18 V20 H14 V14 H10 V20 H6 V11 H3 Z" fill="currentColor"/></svg>Home</button>
-      <button id="resetbtn" type="button" title="Reset all parameters to this build’s defaults">↺ Reset</button>
-    </div>
     <div class="group">
       <h3>Mission / trajectory</h3>
       <div class="ctrl">
@@ -2359,25 +2350,25 @@ function resetDefaults(){
 document.getElementById('resetbtn').addEventListener('click', resetDefaults);
 document.getElementById('homebtn').addEventListener('click', ()=>{ location.href=baseDir(); });
 
-// Collapsible mission-parameters panel: collapsed by default on small/mobile, expanded on
-// large screens; a header button toggles it (choice remembered). Charts/chase-cam re-fit
-// after the layout change (Plotly listens to window 'resize'; the chase cam has its own observer).
+// Collapsible mission-parameters panel: one "Parameters" toggle in the PERSISTENT toolbar
+// (Home | Reset | Parameters) shows/hides the slider panel. Collapsed by default on
+// small/mobile, expanded on large; choice remembered. Charts/chase-cam re-fit after the
+// layout change (Plotly listens to window 'resize'; the chase cam has its own observer).
 (function(){
-  const showBtn = document.getElementById('paramsShow'), hideBtn = document.getElementById('paramsHide');
-  if(!showBtn || !hideBtn) return;
+  const tbtn = document.getElementById('paramsToggle');
+  if(!tbtn) return;
   const small = ()=> window.innerWidth < 900;
   const apply = collapsed=>{ document.body.classList.toggle('params-collapsed', collapsed);
-    showBtn.setAttribute('aria-expanded', String(!collapsed)); hideBtn.setAttribute('aria-expanded', String(!collapsed)); };
+    tbtn.setAttribute('aria-expanded', String(!collapsed)); tbtn.classList.toggle('on', !collapsed); };
   let userSet = false, stored = null;
   try{ stored = localStorage.getItem('fermiParams'); userSet = stored !== null; }catch(e){}
   apply(stored === null ? small() : stored === '0');                  // default by screen size until the user chooses
-  const toggle = ()=>{
+  tbtn.addEventListener('click', ()=>{
     const collapsed = !document.body.classList.contains('params-collapsed');
     apply(collapsed); userSet = true;
     try{ localStorage.setItem('fermiParams', collapsed ? '0' : '1'); }catch(e){}
     setTimeout(()=>{ window.dispatchEvent(new Event('resize')); if(typeof drawViz==='function') drawViz(); }, 60);
-  };
-  showBtn.addEventListener('click', toggle); hideBtn.addEventListener('click', toggle);  // in-panel "Parameters" hides; header button re-opens
+  });
   window.addEventListener('resize', ()=>{ if(!userSet) apply(small()); });  // follow the screen until the user chooses
 })();
 
