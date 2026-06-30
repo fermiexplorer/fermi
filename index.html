@@ -88,7 +88,11 @@
   .badge.mid { background: rgba(210,153,34,.15); color: var(--warn); border-color: rgba(210,153,34,.4); }
   .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 1200px) { .charts { grid-template-columns: 1fr; } }
-  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; min-height: 300px; }
+  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; min-height: 300px; overflow: hidden; }
+  /* let grid cells shrink below their content so a px-sized canvas can't force the column wide (chase-cam takeover) */
+  .charts > *, .viz3drow > *, .dualrow > *, .camcell { min-width: 0; }
+  #follow3d { padding: 0; position: relative; }
+  #follow3d canvas { display: block; width: 100%; height: 100%; }   /* WebGL canvas fills the frame; never overflows it */
   .topviz { margin-bottom: 14px; }
   .vizsel { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 10px 0 8px; font-size: 13px; color: var(--muted); }
   .vizsel label { display: flex; gap: 6px; align-items: center; color: var(--ink); cursor: pointer; }
@@ -150,6 +154,34 @@
 .vizlegend .vdot { width: 10px; height: 10px; border-radius: 50%; }
 .vizlegend .vbar { width: 16px; height: 3px; border-radius: 2px; }
 .vizlegend .vlhint { flex-basis: 100%; color: #6e7681; }
+  /* ---- quotable section anchors (added to methodology headings by JS) ---- */
+  .method h2, .method h3, .method h4 { scroll-margin-top: 16px; }
+  .method .anchor { margin-left: 8px; font-weight: 400; color: var(--muted); text-decoration: none;
+    opacity: 0; transition: opacity .12s; }
+  .method h2:hover .anchor, .method h3:hover .anchor, .method h4:hover .anchor,
+  .method .anchor:focus { opacity: .75; }
+  .method .anchor:hover { color: var(--accent); }
+  .method .anchor.copied { opacity: 1; color: var(--good); }
+  /* ---- responsive: stacked sidebar on tablets, phone-friendly below ---- */
+  @media (max-width: 900px) {
+    aside { position: static; height: auto; overflow: visible;
+      border-right: none; border-bottom: 1px solid var(--line); }
+  }
+  @media (max-width: 640px) {
+    header { padding: 12px 14px; }
+    header h1 { font-size: 16px; line-height: 1.3; }
+    main { padding: 12px 12px; }
+    aside { padding: 12px 12px; }
+    .method { padding: 8px 14px 40px; }
+    #chartOrbit3d, #follow3d, .prim { min-height: clamp(300px, 56vh, 460px); }
+    #chartOrbit2d, #follow2d { min-height: 280px; }
+    .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kpi .v { font-size: 18px; }
+    #animctl { flex-wrap: wrap; }
+    #tlabel { min-width: 0; text-align: left; }
+    .method table.chain { display: block; overflow-x: auto; white-space: nowrap; }
+    pre.cmd, .kpi .kcalc pre { font-size: 11px; }
+  }
 </style>
 </head>
 <body>
@@ -1443,7 +1475,7 @@ function chase3dEnsure(){
 function chase3dInit(){
   const el = document.getElementById('follow3d'); el.innerHTML = '';
   const W = el.clientWidth||600, H = el.clientHeight||420;
-  const ren = new THREE.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio||1)); ren.setSize(W,H);
+  const ren = new THREE.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio||1)); ren.setSize(W,H,false);  // updateStyle=false: CSS sizes the canvas (100%), we only set the buffer
   el.appendChild(ren.domElement);
   el.style.position = 'relative';                                      // unmistakable indicator that the Three.js cam is live
   const lbl = document.createElement('div');
@@ -1478,8 +1510,15 @@ function chase3dInit(){
   cv.addEventListener('pointerup', ()=>{ drag = false; cv.style.cursor = 'grab'; });
   cv.addEventListener('wheel', e=>{ e.preventDefault(); zoom3dCh = Math.max(0.05, Math.min(40, zoom3dCh*(e.deltaY>0?1.12:0.89))); chase3dRefresh(); }, {passive:false});
   cv.addEventListener('dblclick', ()=>{ _t3.userRot = false; chase3dRefresh(); });   // back to auto chase
-  window.addEventListener('resize', ()=>{ const w = el.clientWidth||600, h = el.clientHeight||420;
-    ren.setSize(w,h); cam.aspect = w/h; cam.updateProjectionMatrix(); chase3dRefresh(); });
+  // Resize the drawing buffer to MATCH the frame whenever the frame itself changes size (layout reflow,
+  // window resize, sidebar stack). ResizeObserver is reliable where window.resize misses reflows; setSize
+  // with updateStyle=false keeps the canvas CSS-sized at 100% so it can never overflow / take over the page.
+  let _t3rw = 0, _t3rh = 0;
+  const onResize = ()=>{ const w = el.clientWidth||600, h = el.clientHeight||420;
+    if(w<2 || h<2 || (w===_t3rw && h===_t3rh)) return; _t3rw = w; _t3rh = h;
+    ren.setSize(w,h,false); cam.aspect = w/h; cam.updateProjectionMatrix(); chase3dRefresh(); };
+  if(window.ResizeObserver){ const ro = new ResizeObserver(onResize); ro.observe(el); _t3.ro = ro; }
+  window.addEventListener('resize', onResize);
 }
 function chase3dRefresh(){ if(_t3.ready){ const c = craftState(), st = trajState(c); chase3dDraw(c, st); } }
 // Build a DENSE local trail: walk backward from the probe along the flown path, emitting a point every
@@ -2300,6 +2339,33 @@ document.getElementById('resetbtn').addEventListener('click', resetDefaults);
 document.getElementById('homebtn').addEventListener('click', ()=>{ location.href=baseDir(); });
 
 urlToState(); syncLabels(); toggleOpts(); render();
+
+// Quotable section anchors: give every methodology heading a stable id + a "#" link that
+// copies a direct URL to that section, so people can cite chapters independently.
+(function(){
+  const slug = t => (t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64);
+  const used = {};
+  document.querySelectorAll('.method h2, .method h3, .method h4').forEach(h=>{
+    let id = h.id || slug(h.textContent);
+    if(!id) return;
+    if(used[id]){ id = id + '-' + (++used[id]); } else { used[id] = 1; }
+    h.id = id;
+    const a = document.createElement('a');
+    a.className = 'anchor'; a.href = '#' + id; a.textContent = '#';
+    a.title = 'Copy link to this section'; a.setAttribute('aria-label', 'Link to this section');
+    a.addEventListener('click', ev=>{
+      if(!navigator.clipboard) return;                                   // fall back to normal #-navigation
+      ev.preventDefault();
+      const url = location.origin + location.pathname + location.search + '#' + id;
+      navigator.clipboard.writeText(url).then(()=>{
+        history.replaceState(null, '', '#' + id);
+        a.classList.add('copied'); a.textContent = '✓ copied';
+        setTimeout(()=>{ a.classList.remove('copied'); a.textContent = '#'; }, 1200);
+      });
+    });
+    h.appendChild(a);
+  });
+})();
 </script>
 </body>
 </html>
