@@ -185,6 +185,7 @@
     .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
     .kpi .v { font-size: 18px; }
     #animctl { flex-wrap: wrap; }
+    #animctl #tscrub { flex-basis: 100%; }            /* scrubber gets its own full-width row, not squished */
     #tlabel { min-width: 0; text-align: left; }
     .method table.chain { display: block; overflow-x: auto; white-space: nowrap; }
     pre.cmd, .kpi .kcalc pre { font-size: 11px; }
@@ -2357,19 +2358,27 @@ document.getElementById('homebtn').addEventListener('click', ()=>{ location.href
 (function(){
   const tbtn = document.getElementById('paramsToggle');
   if(!tbtn) return;
-  const small = ()=> window.innerWidth < 900;
+  const small = ()=> window.innerWidth < 900;                         // too narrow for the side panel
   const apply = collapsed=>{ document.body.classList.toggle('params-collapsed', collapsed);
     tbtn.setAttribute('aria-expanded', String(!collapsed)); tbtn.classList.toggle('on', !collapsed); };
-  let userSet = false, stored = null;
-  try{ stored = localStorage.getItem('fermiParams'); userSet = stored !== null; }catch(e){}
-  apply(stored === null ? small() : stored === '0');                  // default by screen size until the user chooses
+  const pref = ()=>{ try{ const s = localStorage.getItem('fermiParams'); return s===null ? false : s==='0'; }catch(e){ return false; } };
+  const refit = ()=> setTimeout(()=>{ window.dispatchEvent(new Event('resize')); if(typeof drawViz==='function') drawViz(); }, 60);
+  // narrow viewports are ALWAYS collapsed; wide viewports use the remembered preference (default expanded)
+  apply(small() ? true : pref());
+  let wasSmall = small();
   tbtn.addEventListener('click', ()=>{
     const collapsed = !document.body.classList.contains('params-collapsed');
-    apply(collapsed); userSet = true;
-    try{ localStorage.setItem('fermiParams', collapsed ? '0' : '1'); }catch(e){}
-    setTimeout(()=>{ window.dispatchEvent(new Event('resize')); if(typeof drawViz==='function') drawViz(); }, 60);
+    apply(collapsed);
+    try{ localStorage.setItem('fermiParams', collapsed ? '0' : '1'); }catch(e){}   // remembered for wide screens
+    refit();
   });
-  window.addEventListener('resize', ()=>{ if(!userSet) apply(small()); });  // follow the screen until the user chooses
+  window.addEventListener('resize', ()=>{
+    const s = small();
+    if(s === wasSmall) return;                                        // act only when crossing the width threshold
+    wasSmall = s;
+    apply(s ? true : pref());                                         // narrow → collapse; wide → restore preference
+    refit();
+  });
 })();
 
 urlToState(); syncLabels(); toggleOpts(); render();
