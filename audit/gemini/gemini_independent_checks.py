@@ -4,6 +4,7 @@ Cross-checks the engine with different methods and standard packages:
 * Astropy-based coordinate conversion for Alpha Centauri.
 * solve_ivp for Earth escape spiral integration.
 * scipy.optimize for finding minimum speed arrival time.
+* Detailed vector calculations for the 58 kyr tangential intercept and 73 kyr min-dv.
 """
 
 import json
@@ -12,7 +13,6 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from scipy.integrate import solve_ivp
-from scipy.optimize import minimize_scalar
 
 # --- SI constants ---
 AU = 1.495978707e11
@@ -72,12 +72,12 @@ def departure_v_earth(v_inf_helio_vec):
     v_inf_mag = np.linalg.norm(v_inf_helio_vec)
     v_z = v_inf_helio_vec[2]
     v_in = np.hypot(v_inf_helio_vec[0], v_inf_helio_vec[1])
-    angle = math.atan2(abs(v_z), v_in)
+    angle = math.atan2(v_z, v_in)  # retain sign!
     
     v_dep = math.sqrt(v_inf_mag**2 + V_ESC_SUN_1AU**2)
     # Cosine law: v_inf_earth^2 = v_dep^2 + V_EARTH^2 - 2*v_dep*V_EARTH*cos(beta)
     v_e_sq = v_dep**2 + V_EARTH_ORBITAL**2 - 2 * v_dep * V_EARTH_ORBITAL * math.cos(angle)
-    return math.sqrt(max(v_e_sq, 0.0))
+    return math.sqrt(max(v_e_sq, 0.0)), v_dep, angle
 
 def impulsive_dv(v_inf_e, alt_km=400):
     r = R_EARTH + alt_km * 1e3
@@ -113,44 +113,82 @@ def spiral_dv_solve_ivp(v_inf_e, alt_km=400, accel=5e-4):
     res = solve_ivp(deriv, [0, 200*YEAR], y0, events=event, rtol=1e-8, atol=1e-8)
     return accel * res.t[-1]
 
+def prop_mass(dry_mass, dv, isp):
+    ve = isp * G0
+    return dry_mass * (math.exp(dv / ve) - 1.0)
+
 if __name__ == "__main__":
-    # Import fermi_sim to compare
-    import sys
-    import os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-    from fermi_sim.astro import alpha_centauri_state
-    from fermi_sim.departure import departure_budget
-    from fermi_sim.intercept import solve_intercept
-    
     pos, vel = ac_state_astropy()
-    fs_state = alpha_centauri_state()
     
-    pos_diff = np.linalg.norm(pos - fs_state.r)
-    vel_diff = np.linalg.norm(vel - fs_state.v)
+    # 58,138 yr (Tangential arrival)
+    t_tang_yr = 58138.0
+    vinf_tang = req_vinf(pos, vel, t_tang_yr)
+    v_inf_e_tang, v_dep_tang, angle_tang = departure_v_earth(vinf_tang)
+    imp_dv_tang = impulsive_dv(v_inf_e_tang)
+    sp_dv_tang = spiral_dv_solve_ivp(v_inf_e_tang)
     
-    t_yr = 75000.0
-    vinf = req_vinf(pos, vel, t_yr)
-    v_inf_e = departure_v_earth(vinf)
-    imp_dv = impulsive_dv(v_inf_e)
+    # Propellant masses at Isp 3000s
+    dry_mass = 255.0
+    prop_3000_imp_tang = prop_mass(dry_mass, imp_dv_tang, 3000.0)
+    prop_3000_mid_tang = prop_mass(dry_mass, 20000.0, 3000.0)
+    prop_3000_sp_tang = prop_mass(dry_mass, sp_dv_tang, 3000.0)
     
-    # spiral is slow, just test one
-    sp_dv = spiral_dv_solve_ivp(v_inf_e)
-    
-    sol = solve_intercept(fs_state, t_yr * YEAR)
-    dep = departure_budget(sol.v_inf, sol.plane_angle_deg)
-    
+    # Propellant masses at Isp 4000s
+    prop_4000_imp_tang = prop_mass(dry_mass, imp_dv_tang, 4000.0)
+    prop_4000_mid_tang = prop_mass(dry_mass, 20000.0, 4000.0)
+    prop_4000_sp_tang = prop_mass(dry_mass, sp_dv_tang, 4000.0)
+
+    # 72,800 yr (Min-DV arrival approx)
+    t_mindv_yr = 72800.0
+    vinf_mindv = req_vinf(pos, vel, t_mindv_yr)
+    v_inf_e_mindv, v_dep_mindv, angle_mindv = departure_v_earth(vinf_mindv)
+    imp_dv_mindv = impulsive_dv(v_inf_e_mindv)
+    sp_dv_mindv = spiral_dv_solve_ivp(v_inf_e_mindv)
+    prop_3000_imp_mindv = prop_mass(dry_mass, imp_dv_mindv, 3000.0)
+    prop_3000_sp_mindv = prop_mass(dry_mass, sp_dv_mindv, 3000.0)
+
     out = {
-        "ac_pos_diff_m": pos_diff,
-        "ac_vel_diff_ms": vel_diff,
-        "v_inf_helio_gemini_kms": np.linalg.norm(vinf) / KMS,
-        "v_inf_helio_fermi_kms": sol.v_inf / KMS,
-        "v_inf_earth_gemini_kms": v_inf_e / KMS,
-        "v_inf_earth_fermi_kms": dep.v_inf_earth / KMS,
-        "impulsive_dv_gemini_kms": imp_dv / KMS,
-        "impulsive_dv_fermi_kms": dep.dv_impulsive / KMS,
-        "spiral_dv_gemini_kms": sp_dv / KMS,
-        "spiral_dv_fermi_kms": dep.dv_low_thrust / KMS,
+        "ac_now_distance_au": np.linalg.norm(pos) / AU,
+        "ac_now_distance_ly": np.linalg.norm(pos) / LY,
+        "ac_vel_kms": np.linalg.norm(vel) / KMS,
+        
+        "tangential_58k": {
+            "arrival_yr": t_tang_yr,
+            "v_inf_helio_vec_kms": (vinf_tang / KMS).tolist(),
+            "v_inf_helio_mag_kms": np.linalg.norm(vinf_tang) / KMS,
+            "bare_aim_term_kms": (pos / (t_tang_yr * YEAR) / KMS).tolist(),
+            "bare_aim_term_mag_kms": np.linalg.norm(pos) / (t_tang_yr * YEAR) / KMS,
+            "ac_vel_vec_kms": (vel / KMS).tolist(),
+            "plane_angle_deg": math.degrees(angle_tang),
+            "v_dep_helio_kms": v_dep_tang / KMS,
+            "v_inf_earth_kms": v_inf_e_tang / KMS,
+            "impulsive_dv_kms": imp_dv_tang / KMS,
+            "spiral_dv_kms": sp_dv_tang / KMS,
+            "prop_3000s": {
+                "impulsive_kg": prop_3000_imp_tang,
+                "mid_20km_kg": prop_3000_mid_tang,
+                "spiral_kg": prop_3000_sp_tang
+            },
+            "prop_4000s": {
+                "impulsive_kg": prop_4000_imp_tang,
+                "mid_20km_kg": prop_4000_mid_tang,
+                "spiral_kg": prop_4000_sp_tang
+            }
+        },
+        
+        "mindv_72k": {
+            "arrival_yr": t_mindv_yr,
+            "v_inf_helio_mag_kms": np.linalg.norm(vinf_mindv) / KMS,
+            "plane_angle_deg": math.degrees(angle_mindv),
+            "v_dep_helio_kms": v_dep_mindv / KMS,
+            "v_inf_earth_kms": v_inf_e_mindv / KMS,
+            "impulsive_dv_kms": imp_dv_mindv / KMS,
+            "spiral_dv_kms": sp_dv_mindv / KMS,
+            "prop_3000s_impulsive_kg": prop_3000_imp_mindv,
+            "prop_3000s_spiral_kg": prop_3000_sp_mindv
+        }
     }
-    with open("audit/gemini/gemini_results.json", "w") as f:
+    
+    with open("audit/gemini/gemini_results_v2.json", "w") as f:
         json.dump(out, f, indent=2)
     print("Done")

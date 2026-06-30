@@ -79,3 +79,30 @@ AC state vector in `web/physics.js` equals what `fermi_sim` produces."
 "Find the single biggest error or most optimistic assumption in this model that would
 change the feasibility verdict (currently: direct solar-electric ion, ~20 km/s from LEO,
 ~500 kg, ~75–80 kyr, feasible). Rank the top 5 risks by impact on the conclusion."
+
+## 10. The 58 kyr intercept & the "modest xenon" claim
+"We claim the minimum-**speed** (tangential) intercept at ~58 kyr is achievable with only a
+modest xenon load — which feels surprising for an interstellar-class mission. Engine numbers
+to attack (recompute, don't restate): AC now at 274,719 AU = 4.344 ly, |V_ac| = 32.30 km/s;
+tangential arrival 58,138 yr → v∞ = 23.27 km/s tilted −10.1° out of the ecliptic; departure Δv
+from a 400 km LEO = **14.65 km/s** impulsive (Oberth floor) up to **26.01 km/s** naive low-thrust
+spiral, with a ~20 km/s optimised-SEP budget in between. On a **255 kg** dry+payload bus the
+rocket equation `m_p = m_dry(e^(Δv/v_e) − 1)` gives, at **Isp 3000 s**: ~**165 kg** xenon (39%) at
+the floor, ~**248 kg** (49%) at 20 km/s, ~362 kg (59%) at the spiral bound (Isp 4000 s: 116 / 170 /
+240 kg).
+
+Independently:
+(a) Re-derive v∞(58 kyr) from `V_p(T) = A₀/T + V_ac` and confirm the −10° plane angle — note the
+    bare `|A₀|/T` is only 22.45 km/s, so AC's own motion matters; show your vectors.
+(b) Reproduce the full departure-Δv chain and the xenon mass yourself, and reconcile with the
+    engine's `propellant_mass`.
+(c) Decide whether 'modest' is honest or an artifact: is the impulsive Oberth floor the right
+    sizing budget, or should the 20–26 km/s low-thrust number drive it? Does the mass actually
+    close once the tank (~8% of m_p), thruster+PPU and structure are taken out of the 255 kg dry,
+    and is a 40–60% propellant fraction physically storable in one stage?
+(d) Stress-test the framing that 'long trip ≠ large Δv': confirm the 58 kyr is set by the 2.7×10⁵ AU
+    distance at a Voyager-class speed, and that ion's v_e ≈ Δv (29.4 km/s at Isp 3000) is what holds
+    the mass ratio near 2 — or find where that reasoning fails.
+(e) Confirm 58 kyr is the min-**speed** aim and costs *more* Δv than the ~73 kyr min-**Δv** point
+    (13.88 km/s, ~154 kg xenon at Isp 3000) because of the out-of-plane plane change; flag anywhere
+    the tool or its copy conflates the min-speed and min-Δv arrivals."

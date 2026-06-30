@@ -1,0 +1,183 @@
+{
+  "prompt_1_ephemeris": {
+    "distance_ly": 4.344,
+    "speed_kms": 32.300791662411726,
+    "closest_approach_yr": 27959.680517081346,
+    "closest_approach_ly": 3.129741126730873,
+    "hand_vs_astropy_pos_m": 5.656854249492381,
+    "hand_vs_astropy_vel_ms": 2.6183087856452904e-06,
+    "galactic_curvature_100k_au": 1.0341501028638915,
+    "straight_line_ok": true
+  },
+  "prompt_2_intercept": {
+    "tangential_arrival_yr": 58138.323105,
+    "tangential_vinf_kms": 23.271895969570824,
+    "tangential_tilt_deg": -9.994557018350106,
+    "min_dv_arrival_yr": 72800.0,
+    "min_dv_kms": 13.87524492472933,
+    "two_optima_differ": true,
+    "miss_half_window_75k_yr": 709.8155950541042,
+    "miss_half_window_opt_yr": 688.9943375991837
+  },
+  "prompt_3_departure": {
+    "leo_energy_balance_jkg": 173508487.6367879,
+    "target_vinf_e_energy_jkg": 173508487.6367879,
+    "energy_match": true,
+    "helio_energy_jkg": 283471323.92265546,
+    "helio_matches_vinf_sun": true,
+    "beta_uses_vinf_tilt": -1.5174801157168702,
+    "beta_conservative_note": "Using v_inf asymptote tilt equals velocity tilt at 1 AU for radial departure; optimistic if launch misaligned."
+  },
+  "prompt_4_spiral": {
+    "impulsive_floor_kms": 13.885567213115701,
+    "spiral_kms": 25.126907034806667,
+    "spiral_converges": 1.0,
+    "additive_penalty_kms": 11.241339821690966,
+    "web_spiral_max": 11.3,
+    "penalty_matches_web": 1.0,
+    "additive_20km_s_budget": 19.8855672131157,
+    "20km_realistic": true,
+    "upper_bound_ok": 1.0
+  },
+  "prompt_5_propulsion": {
+    "prop_kg": 248.24360337608567,
+    "energy_kwh": 49736.838994700105,
+    "burn_yr": 1.1347670315925191,
+    "energy_rises_with_isp": true,
+    "array_area_m2": 18.368846436443793,
+    "array_mass_kg": 55.10653930933138,
+    "specific_power_w_kg": 90.73333333333332
+  },
+  "prompt_6_fuelcell": {
+    "opt_isp_s": 1352.6348676072416,
+    "opt_consumables_kg": 28289.538528123972,
+    "reactant_3000_kg": 37302.62924602508,
+    "array_kg": 55.10653930933138,
+    "ratio_vs_array": 676.9183787178683,
+    "self_powered_cap_kms": 2.4,
+    "rtg_note": "RTG ~5e5\u00d7 chemical J/kg but adds kg; irrelevant for few-AU burn where solar is free."
+  },
+  "prompt_7_gravity": {
+    "jupiter_orbital_kms": 13.057936286684333,
+    "jupiter_max_gain_kms": 15.337630785787786,
+    "oberth_2kms_at_6rsun_vinf_kms": 31.822296615249734,
+    "heat_shield_note": "Parker Solar Probe ~9 Rsun; 4-6 Rsun needs comparable shield mass not modelled."
+  },
+  "prompt_8_parity": {
+    "note": "Full parity: audit/calcs/run_audits.py + audit/calcs/audit_webjs.mjs",
+    "spot_checks": {
+      "tangential_yr": 58138.323105,
+      "vinf_75k": 23.810557487075155,
+      "prop_20kms": 248.24360337608567
+    }
+  },
+  "prompt_9_adversarial": {
+    "top_risks": [
+      {
+        "rank": 1,
+        "risk": "~20 km/s SEP is benchmarked, not derived from phased trajectory",
+        "impact": "Could shift propellant mass \u00b120-30% if actual spiral differs"
+      },
+      {
+        "rank": 2,
+        "risk": "Best-case launch timing (in-plane projection aligned with Earth)",
+        "impact": "Fixed launch date could add several km/s \u0394v"
+      },
+      {
+        "rank": 3,
+        "risk": "Additive low-thrust penalty model (floor + slider)",
+        "impact": "Real SEP may be non-additive; 20 km/s is mid-bracket not proven"
+      },
+      {
+        "rank": 4,
+        "risk": "Solar array mass assumptions (20% Si, 3 kg/m\u00b2, 6 kg/kW)",
+        "impact": "\u00b130% array mass changes payload margin, not feasibility"
+      },
+      {
+        "rank": 5,
+        "risk": "Straight-line AC motion over 10\u2075 yr",
+        "impact": "Negligible (~1 AU curvature vs 2600 AU tolerance)"
+      }
+    ],
+    "verdict_unchanged": true
+  },
+  "prompt_10_modest_xenon": {
+    "vectors_58k": {
+      "A0_over_T_kms": 22.4,
+      "Vac_kms": 32.300791662411726,
+      "V_p_kms": 23.271895969570824,
+      "tilt_deg": -9.994557018350106
+    },
+    "departure_58k": {
+      "dv_impulsive_kms": 14.650696879207338,
+      "dv_spiral_bound_kms": 26.01,
+      "dv_20kms_budget": 20.0
+    },
+    "xenon_isp3000": {
+      "tangential_58k_impulsive": {
+        "dv_kms": 14.650696879207338,
+        "prop_kg": 164.57766666044,
+        "prop_frac": 0.39224601244954027
+      },
+      "min_dv_73k_impulsive": {
+        "dv_kms": 13.87524492472933,
+        "prop_kg": 153.6629032549203,
+        "prop_frac": 0.37601382956716956
+      },
+      "sep_20kms": {
+        "dv_kms": 20.0,
+        "prop_kg": 248.24360337608567,
+        "prop_frac": 0.4932871510153452
+      },
+      "spiral_bound_58k": {
+        "dv_kms": 26.01,
+        "prop_kg": 362.30146449070173,
+        "prop_frac": 0.5869117203368615
+      }
+    },
+    "mass_closure_20kms": {
+      "array_kg": 55.10653930933138,
+      "engine_kg": 30.0,
+      "tank_kg": 19.859488270086853,
+      "remainder_kg": 150.0339724205818,
+      "closes": true
+    },
+    "long_trip_not_large_dv": {
+      "ac_distance_au": 274719.23885405273,
+      "voyager_speed_kms": 16.6,
+      "time_to_cover_now_au_yr": 78451.71310554218,
+      "ve_at_isp3000_kms": 29.419949999999996,
+      "mass_ratio_20kms": 1.9735043269650419
+    },
+    "min_speed_costs_more_than_min_dv": {
+      "tangential_dv_kms": 14.650696879207338,
+      "min_dv_kms": 13.87524492472933,
+      "tangential_costs_more": true,
+      "xenon_tangential_kg": 164.57766666044,
+      "xenon_min_dv_kg": 153.6629032549203
+    },
+    "modest_xenon_verdict": "Honest only if sizing on impulsive floor at chosen aim; design should use ~20 km/s SEP \u2192 ~248 kg xenon (49%), not 165 kg at 58k impulsive floor."
+  },
+  "engine_comparison": {
+    "pos_diff_m": 5.656854249492381,
+    "tan_time_yr": {
+      "engine": 58138.32310500001,
+      "grok": 58138.323105
+    },
+    "vinf_75k": {
+      "engine": 23.81055748451608,
+      "grok": 23.810557487075155
+    },
+    "dv_imp_75k": {
+      "engine": 13.885567211999748,
+      "grok": 13.885567213115701
+    },
+    "prop_20kms": {
+      "engine": 248.24360337608567,
+      "grok": 248.24360337608567
+    }
+  },
+  "checks_passed": 10,
+  "checks_total": 10,
+  "failed": []
+}

@@ -1,180 +1,143 @@
-# Grok Conclusions — Independent Audit
+# Grok Conclusions — Independent Audit (v02)
 
-Deep review of Project Fermi (branch `codex/v3-independent-audit`, June 2026).
-Independent simulations live in `audit/grok/`; the parallel Codex session in
-`audit/codex/` was not modified.
+Rerun against `audit/AUDIT_PROMPTS.md` (prompts 1–10), June 2026.
+Parallel Codex/Gemini sessions under `audit/codex/` and `audit/gemini/` left untouched.
 
 ## What Was Run
 
-| Artifact | Purpose |
+| Command | Result |
 |---|---|
-| `audit/grok/grok_independent_checks.py` | Cross-check core physics without importing `fermi_sim` |
-| `audit/grok/grok_sensitivity_sweeps.py` | Design-space sweeps → `sweep_results.json` |
-| `audits/run_audits.py` | Existing 41-check independent suite |
-| `node audits/audit_webjs.mjs` | Python ↔ web JS parity (10 checks) |
-| `.venv/bin/pytest` | Engine smoke tests (8) |
-| `.venv/bin/python run_analysis.py` | Integrated baseline report |
+| `.venv/bin/python audit/calcs/run_audits.py` | **41/41 PASS** |
+| `node audit/calcs/audit_webjs.mjs` | **10/10 PASS** |
+| `.venv/bin/pytest tests/ -q` | **8/8 PASS** |
+| `.venv/bin/python audit/grok/grok_audit_prompts.py` | **10/10 PASS** → `prompt_results.json` |
+| `.venv/bin/python audit/grok/grok_independent_checks.py` | PASS |
+| `.venv/bin/python audit/grok/grok_sensitivity_sweeps.py` | PASS → `sweep_results.json` |
 
-All checks passed.
+## Prompt-by-Prompt Findings
 
-## Independent Simulation Results
+### 1 · Ephemeris & coordinate frame — PASS
 
-`grok_independent_checks.py` uses **different methods** from the Codex v3 script:
+Astropy and hand-built catalog states agree to **5.7 m / 2.6×10⁻⁶ m/s**. Closest approach:
+**27,960 yr @ 3.130 ly**. Galactic tidal curvature over 100k yr ≈ **1.03 AU** — negligible
+vs the 2600 AU miss target. Straight-line AC propagation is acceptable.
 
-- Alpha Centauri state from **astropy** (not hand-built catalog algebra)
-- Departure-Δv minimum via **200-yr grid + parabolic refinement** (not scipy)
-- Earth escape spiral via a **separate RK4 integrator** (not `fermi_sim.departure`)
-- Fuel-cell optimum via **golden-section search** (Codex uses scipy)
+### 2 · Intercept geometry — PASS
 
-Key numbers (astropy-based):
+Two optima are **distinct and correctly separated**:
 
-| Quantity | Value |
-|---|---|
-| AC distance now | 4.344 ly |
-| AC space speed | 32.301 km/s |
-| Closest approach | 27,960 yr @ 3.130 ly |
-| **Exact impulsive Δv floor** | **13.875 km/s @ 72,793 yr** |
-| 75,000-yr benchmark Δv | 13.886 km/s (+10.3 m/s above floor) |
-| 75,000-yr cruise v∞ | 23.811 km/s, tilt −1.5° |
-| 2600 AU miss half-window @ 75k | ±710 yr |
-| 2600 AU miss half-window @ optimum | ±689 yr |
-| Independent spiral Δv @ 75k | 25.06 km/s (engine: 25.13) |
-| Default 5 kW silicon array | 18.37 m², 55.1 kg, 91 W/kg |
-| Dry-mass remainder (bus+payload) | 150 kg |
-| Fuel-cell reactant @ Isp 3000 s | 37.3 t (677× array mass) |
-| Mass-optimal fuel-cell Isp | 1353 s, 28.3 t consumables |
+| Optimum | Arrival | v∞ | Tilt | Impulsive Δv |
+|---|---|---|---|---|
+| Min **speed** (tangential) | 58,138 yr | 23.27 km/s | −10.0° | 14.65 km/s |
+| Min **Δv** (propellant) | 72,800 yr | 23.79 km/s | −2.4° | **13.88 km/s** |
 
-Astropy and hand-built catalog states agree to machine precision (<10⁻⁸ % on speed).
+2600 AU miss maps to ±**710 yr** @ 75k, ±**689 yr** @ optimum — sensible windows.
 
-## Sensitivity Sweep Highlights
+### 3 · Departure energetics — PASS
 
-From `sweep_results.json`:
+LEO impulsive energy balance and heliocentric v_dep→v∞ relation verified independently.
+The β = v∞ tilt assumption is **exact for radial departure at 1 AU** but **optimistic**
+if a fixed launch date misaligns the in-plane projection with Earth's velocity — a
+documented limitation, not a code bug.
 
-1. **Flat Δv region.** Impulsive departure Δv stays between 13.9 and 14.0 km/s for
-   arrival times **66,500 – 81,000 yr** — a 14,500-yr window only 125 m/s wide at
-   the top end. The mission is not sensitive to picking 75k vs 73k vs 78k within
-   this band.
+### 4 · Low-thrust spiral — PASS (with caveat)
 
-2. **100,000-yr deadline headroom.** The minimum cruise speed that still intercepts
-   within 100k yr is the tangential floor **23.30 km/s**, arriving at ~55,300 yr.
-   The baseline 23.8 km/s @ 75k yr uses only ~75% of the allowed timeline.
+`solve_ivp` spiral at 75k: **25.13 km/s** (engine RK4: 25.13 km/s, Δ < 0.6 m/s).
+Additive penalty = spiral − floor = **11.24 km/s**, matching web `SPIRAL_MAX = 11.3`.
+Floor + 6 km/s penalty → **19.9 km/s**, bracketing the ~20 km/s SEP benchmark.
 
-3. **Isp trade (20 km/s, 255 kg dry).** Propellant fraction ranges 40–64% for
-   Isp 4000–2000 s; dry-mass closure stays positive (133–156 kg remainder) across
-   the sweep. Isp 3000 s is a reasonable middle ground.
+**Caveat:** The additive model is a defensible *bracket*, not a derived phased trajectory.
+Real perigee-biased SEP could differ; this is the #1 adversarial risk (see prompt 9).
 
-4. **Power trade.** At 12 kW the array alone is 132 kg, leaving only **31 kg** for
-   bus + payload + margin on a 255 kg dry budget. The 5 kW default is not arbitrary —
-   higher power tightens mass closure sharply without changing the physics conclusion.
+### 5 · Rocket equation, power & energy — PASS
 
-5. **Cell efficiency.** Array mass spans 41 kg (30% cells) to 104 kg (12% cells) at
-   5 kW. The 20%/3 kg/m² default is mid-range and defensible, but the conclusion
-   (solar wins) holds even at pessimistic 12% efficiency.
+255 kg dry, 20 km/s, Isp 3000 s → **248 kg** xenon, **49,737 kWh**, **1.13 yr** burn @ 5 kW.
+Energy rises with Isp at fixed Δv (confirmed). Silicon array: **18.4 m², 55 kg, 91 W/kg** —
+within the 50–150 W/kg plausibility band used in `audit/calcs/`.
 
-## Conclusions — Physics & Architecture
+### 6 · Fuel-cell energy wall — PASS
 
-### 1. The core feasibility claim is robust
+Mass-optimal fuel-cell Isp: **1353 s**, **28.3 t** consumables. At Isp 3000 s, reactants
+are **677×** the 55 kg solar array. Self-powered cap **2.4 km/s**. RTG/reactor does not
+change the conclusion for a burn within a few AU — solar is free there.
 
-Direct LEO → Alpha Centauri on solar-electric ion propulsion satisfies the tender
-criterion (≤2600 AU miss, ≤100,000 yr) with margin. A ~500 kg wet vehicle, ~20 km/s
-realistic low-thrust budget, and ~75k yr arrival is consistent across:
+### 7 · Gravity assists — PASS (bounds only)
 
-- the `fermi_sim` engine,
-- 41 independent `audits/` checks,
-- this Grok re-implementation (astropy + grid search + separate integrator),
-- the Codex v3 re-implementation (hand-built + scipy),
-- web JS parity.
+Jupiter max gain **15.3 km/s** (geometric upper bound). Solar Oberth: **2 km/s burn @ 6 R☉
+→ 31.8 km/s v∞**. Heat-shield mass for 4–6 R☉ perihelion is **not modelled** — correctly
+flagged as out of scope for the first-order model.
 
-No numerical disagreement exceeds rounding tolerance on any headline quantity.
+### 8 · Cross-implementation — PASS
 
-### 2. Departure Δv ≠ cruise speed — and the energy chain closes
+Spot checks match engine exactly. Full suite: 41 Python + 10 JS parity checks pass.
+Embedded AC state vector in `web/physics.js` matches `fermi_sim` (verified by parity audit).
 
-The ~14 km/s impulsive floor is LEO departure budget, not coast speed. Patched-conic
-energy plus Earth's 29.8 km/s in-plane orbital velocity yields ~24 km/s heliocentric
-cruise. The 75k-yr worked example closes exactly: AC is 5.957 ly away, and 23.811 km/s
-× 75,000 yr covers 5.957 ly (closure error <10⁻¹³ %).
+### 9 · Adversarial sweep — verdict unchanged
 
-The realistic ion budget (~20 km/s) sits between the 13.9 km/s impulsive floor and
-the ~25 km/s naive continuous-spiral ceiling. Industry perigee-biased SEP (~20 km/s)
-is therefore a credible design point, not an optimistic fudge.
+Top 5 risks by impact on the feasibility conclusion:
 
-### 3. Solar decisively beats fuel cells — by orders of magnitude
+1. **~20 km/s SEP is benchmarked, not derived** — could shift propellant ±20–30 %
+2. **Best-case launch timing** — fixed date could add several km/s
+3. **Additive low-thrust penalty model** — 20 km/s is mid-bracket, not proven
+4. **Solar subsystem mass assumptions** — affects margin, not go/no-go
+5. **Straight-line AC motion** — negligible (~1 AU vs 2600 AU tolerance)
 
-Electric propulsion needs ~50,000 kWh for 20 km/s. Chemical reactants store ~MJ/kg;
-even the mass-optimal fuel-cell Isp (1353 s) needs **28 tonnes** of consumables vs
-**55 kg** of silicon array. The wall is energy density, not exhaust velocity.
-Hybrid architectures add fuel-cell mass for zero benefit on a Sun-proximate burn.
+None of these overturn the feasibility verdict at Fermi-estimate fidelity.
 
-### 4. Gravity assists are optional, not required
+### 10 · The 58 kyr intercept & "modest xenon" — PASS (with nuance)
 
-Jupiter can donate ~15 km/s in best geometry, but alignment with the AC aim direction
-is rare and adds ~6 yr. Solar Oberth (~1–2 km/s burn near the Sun → ~24 km/s v∞)
-cuts onboard Δv dramatically but needs a heat shield and perihelion-lowering
-maneuver. Direct SEP remains the simplest path that meets the schedule constraint.
+**(a) Vector decomposition @ tangential intercept (58,138 yr):**
 
-### 5. Model fidelity limits are understood and small
+- |A₀|/T = **22.45 km/s** (aim only — would undershoot)
+- V_ac = **32.30 km/s**
+- V_p = **23.27 km/s**, tilt **−10.0°**
 
-- **Straight-line AC motion** over 75k yr: galactic tidal curvature ≈ 1 AU over
-  100k yr — negligible vs 2600 AU tolerance.
-- **2600 AU miss mapping**: ±690 yr at the exact optimum, ±710 yr at the 75k
-  benchmark — both well inside the 100k-yr envelope.
-- **1 AU launch offset** ignored: correct at this scale (~5.5 ly target distance).
+AC's own motion is essential; bare aim term is insufficient.
 
-## Conclusions — Documentation & Product Gaps
+**(b) Xenon masses @ Isp 3000 s, 255 kg dry (independently reproduced):**
 
-These do not undermine the physics but should be fixed before tender-facing use:
+| Budget | Δv | Xenon | Fraction |
+|---|---|---|---|
+| 58k impulsive floor | 14.65 km/s | 165 kg | 39% |
+| 73k min-Δv impulsive | 13.88 km/s | 154 kg | 38% |
+| **SEP design (20 km/s)** | **20 km/s** | **248 kg** | **49%** |
+| 58k spiral bound | 26.01 km/s | 362 kg | 59% |
 
-1. **Stale mass figures.** `README.md` and `docs/REPORT.md` §2 still cite a ~33 kg
-   solar array; the current silicon model reports **55 kg** @ 5 kW. Audit counts in
-   README are also stale (41 Python + 10 JS, not 32 + 8).
+**(c) Is "modest" honest?**
 
-2. **Optimum arrival time wording.** `index.html` methodology says the departure-Δv
-   optimum sits "~75k yr". The exact floor is **~72.8 kyr**; 75k is a defensible
-   near-equivalent (+10 m/s, 0.07 %), not the optimum itself.
+**Partially.** ~165 kg (39%) at the 58k *impulsive floor* is mathematically correct but
+**not the right sizing budget** — ion propulsion cannot capture the Oberth floor. The
+design must use **~20 km/s → ~248 kg (49%)**. Mass closes: 55 kg array + 30 kg engine
++ 20 kg tank → **150 kg** remainder for bus/payload/margin. A 40–60 % xenon fraction in
+a single COPV stage is physically storable.
 
-3. **Third-party names in shipped artifacts.** `index.html`, `run_analysis.py`, and
-   `fermi_sim/spacecraft.py` reference Starlink/SpaceX/ExoTerra despite the repo rule
-   against identifying names in public artifacts.
+**(d) "Long trip ≠ large Δv"** — confirmed. AC at 274,719 AU; Voyager-class 16.6 km/s
+would take ~78k yr just to cover today's distance. Ion Isp 3000 s gives v_e ≈ 29.4 km/s ≈ Δv,
+holding mass ratio near 2.0.
 
-4. **Web propellant selector is cosmetic.** Krypton/Argon change labels and tank
-   fraction but not Isp, thrust, density, or storage volume.
+**(e) Min-speed vs min-Δv conflation** — the tool **does not conflate them**. `index.html`
+methodology table and text explicitly distinguish 58k (min speed, more Δv) from 72.8k
+(min Δv, min propellant). The arrival slider correctly targets the min-propellant optimum.
 
-5. **Web JS impulsive Δv at 75k** shows 13.886 km/s vs Python 13.890 km/s — within
-   parity tolerance but worth noting the slider uses a slightly different departure
-   path than the analysis script's full `departure_budget()`.
+## Overall Conclusion
 
-6. **Power headroom.** The sensitivity sweep shows array mass scales linearly with
-   power; pushing beyond ~8 kW on a 255 kg dry budget erodes payload margin quickly.
-   If higher thrust is desired, wet mass must grow or dry mass budget must be reallocated.
+**PASS.** All 10 adversarial prompts satisfied. Physics is numerically robust across
+four independent re-implementations (calcs suite, Codex, Grok, Gemini) agreeing to ≤0.1 %.
 
-## Agreement With Codex v3 Audit
+The feasibility verdict holds: direct solar-electric ion from LEO, ~500 kg wet, ~20 km/s
+SEP budget, ~73–75k yr arrival, well inside 100k yr / 2600 AU.
 
-The Grok and Codex independent scripts agree on every headline quantity to ≤0.1 %.
-Methodological differences (astropy vs hand-built, grid vs scipy, golden-section vs
-scipy) produce no material divergence. Both audits independently confirm:
+The single largest open item — already scoped in `docs/plans/01-phased-low-thrust-trajectory.md`
+— is replacing the benchmarked ~20 km/s SEP figure with a derived phased low-thrust trajectory.
 
-- optimum ≈ 72,792 yr / 13.875 km/s,
-- 75k penalty ≈ 10 m/s,
-- miss window ≈ ±710 yr @ 75k,
-- array mass ≈ 55 kg,
-- fuel-cell penalty ≈ 677× solar array mass.
-
-## Recommended Next Steps
-
-1. Update `README.md` and `docs/REPORT.md` solar-array mass and audit counts.
-2. Fix `index.html` optimum wording (72.8 kyr exact, 75 kyr benchmark).
-3. Scrub or anonymise vendor names in shipped artifacts per repo rule.
-4. Promote the exact-optimum and 75k energy-chain checks from `audit/codex/` and
-   `audit/grok/` into `audits/` once the v3 review is accepted.
-5. Either make the propellant selector physically meaningful or label it as a
-   tankage/display sensitivity only.
-
-## Files Produced
+## Files
 
 ```
 audit/grok/
-  grok_independent_checks.py   # astropy + grid + independent spiral
-  grok_sensitivity_sweeps.py   # parameter sweeps
-  sweep_results.json           # sweep output data
-  grok-conclusions.md          # this document
+  grok_audit_prompts.py       # prompts 1–10 → prompt_results.json
+  grok_independent_checks.py
+  grok_sensitivity_sweeps.py
+  sweep_results.json
+  prompt_results.json
+  grok-conclusions.md         # this document
 ```
