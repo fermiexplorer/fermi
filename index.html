@@ -67,6 +67,7 @@
   .kpi .kcalc .kdesc { font-size: 12.5px; color: #c9d4de; line-height: 1.55; margin: 2px 0 8px; max-width: 70ch; }
   .kpi .kcalc .khead { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
   .kpi .kcalc pre { margin: 6px 0 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; line-height: 1.55; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
+  pre.cmd { margin: 8px 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   .kpi .kcopy { font-size: 10px; padding: 2px 8px; border: 1px solid var(--line); background: #161b22; color: var(--muted); border-radius: 4px; cursor: pointer; }
   .build { font-size: 11px; color: var(--muted); font-weight: 400; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; vertical-align: middle; text-decoration: none; }
   .build:hover { border-color: var(--accent); color: var(--accent); }
@@ -624,7 +625,37 @@
       (<code>audit/codex/</code>, <code>audit/grok/</code>) rebuilt the physics from scratch — hand-built vs
       astropy, scipy vs grid/golden-section, separate integrators — and agree on every headline quantity to
       ≤0.1%.</li>
+    <li><b>NASA GMAT cross-validation.</b> The departure energetics are independently reproduced by NASA's
+      flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; see the GMAT section below).</li>
   </ul>
+
+  <h4>GMAT cross-validation (NASA)</h4>
+  <p><a href="https://gmat.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer"><b>GMAT</b></a> (the
+  General Mission Analysis Tool) is NASA's free, open-source mission-design and astrodynamics software,
+  developed at <b>Goddard Space Flight Center</b> with industry and academic partners and used for
+  operational mission design and analysis (e.g. LCROSS, ARTEMIS). Because it is an entirely separate,
+  professionally maintained, flight-proven propagator, reproducing our numbers in GMAT is a genuine
+  <em>external</em> cross-check — not the engine re-checking itself.</p>
+  <p>Two GMAT mission scripts re-fly two pillars of the departure model from a circular orbit (radius
+  6771 km, Earth point-mass μ = 398600.4 km³/s², matching the engine) and agree to better than 0.01 %:</p>
+  <table class="chain">
+    <tr><th>Check</th><th>Quantity compared</th><th class="v">Fermi engine</th><th class="v">GMAT</th><th class="v">Diff</th></tr>
+    <tr><td><b>Impulsive (Oberth) departure</b><br>apply 14.633 km/s prograde from LEO</td><td>resulting hyperbolic C3 = required v∞,Earth²</td><td class="v">379.8154 km²/s²</td><td class="v">379.8154 km²/s²</td><td class="v">2×10⁻⁶ %</td></tr>
+    <tr><td><b>Low-thrust Earth-escape spiral</b><br>constant tangential thrust, ~692 revs</td><td>time to escape (specific energy = 0)</td><td class="v">1.4266×10⁷ s</td><td class="v">1.4265×10⁷ s</td><td class="v">0.007 %</td></tr>
+  </table>
+  <p>To reproduce it yourself (Linux or WSL — GMAT R2020a is the last NASA build with a Linux binary; on
+  Windows/macOS run the current R2026a GUI on the same scripts):</p>
+  <pre class="cmd">cd audit/gmat
+./install_gmat.sh     # downloads + extracts GMAT (~338 MB, git-ignored)
+./run_gmat.sh         # runs both scripts headless, then compares to fermi_sim
+# expected tail:  RESULT: ALL CHECKS PASS -- GMAT confirms the Fermi engine</pre>
+  <p>The exact GMAT scripts, the comparison script, and the <em>raw GMAT output reports</em> are all
+  published under <code>audit/gmat/</code> (inputs in <code>scripts/</code>, GMAT outputs and the
+  engine-vs-GMAT comparison in <code>out/</code>) so anyone can inspect the inputs and the actual results
+  without running anything. <code>compare.py</code> computes the engine's reference numbers live and locates
+  GMAT's escape point as the specific-orbital-energy (½v² − μ/r) zero crossing — the exact definition the
+  engine uses (we avoid GMAT's <code>C3Energy</code> stop condition because it is singular at the parabolic
+  escape point). Full method and Windows/macOS notes: <code>audit/gmat/README.md</code>.</p>
 
   <h4>Guide for an independent (human) auditor</h4>
   <p>To check the calculations yourself — and to surface anything the model omits — work through the steps
