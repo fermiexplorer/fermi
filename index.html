@@ -1271,15 +1271,21 @@ function rdpMask(pts, scale, tolFrac){
 }
 function _simp(pts, t, scale, tolFrac){ const k=rdpMask(pts,scale,tolFrac), P=[], T=[];
   for(let i=0;i<pts.length;i++) if(k[i]){ P.push(pts[i]); T.push(t[i]); } return {pts:P, t:T}; }
-// Stitch a smooth Catmull-Rom spline THROUGH the (RDP) knots and tessellate each knot-interval into
-// `sub` sub-segments — turns the faceted polyline into a smooth curve while keeping the dynamic
-// (curvature-adaptive) knot spacing the RDP chose. Endpoints are clamped (P0=P1, P3=P2).
+// Stitch a smooth CENTRIPETAL Catmull-Rom spline (α=0.5) through the (RDP) knots, tessellating each
+// knot-interval into `sub` sub-segments. Centripetal parametrisation (knot spacing ∝ √distance) is the
+// variant that PROVABLY never cusps or self-intersects — uniform Catmull-Rom overshoots into a loop when
+// knots are unevenly spaced (e.g. a tiny escape bend next to the huge jump to the AC intercept).
 function catmullRom(K, sub){
   const n=K.length; if(n<3 || sub<2) return K.slice();
+  const lt=(P,Q,tp,tq,t)=>{ const w=(tq<=tp)?0:(t-tp)/(tq-tp); return [P[0]+(Q[0]-P[0])*w, P[1]+(Q[1]-P[1])*w, P[2]+(Q[2]-P[2])*w]; };
+  const nx=(ti,Pi,Pj)=>ti + Math.sqrt(Math.hypot(Pj[0]-Pi[0],Pj[1]-Pi[1],Pj[2]-Pi[2]) || 1e-30);   // √distance (α=0.5)
   const out=[K[0]];
-  for(let i=0;i<n-1;i++){ const p0=K[Math.max(0,i-1)], p1=K[i], p2=K[i+1], p3=K[Math.min(n-1,i+2)];
-    for(let s=1;s<=sub;s++){ const t=s/sub, t2=t*t, t3=t2*t, c=d=>0.5*((2*p1[d])+(-p0[d]+p2[d])*t+(2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*t2+(-p0[d]+3*p1[d]-3*p2[d]+p3[d])*t3);
-      out.push([c(0),c(1),c(2)]); } }
+  for(let i=0;i<n-1;i++){ const P0=K[Math.max(0,i-1)], P1=K[i], P2=K[i+1], P3=K[Math.min(n-1,i+2)];
+    const t0=0, t1=nx(t0,P0,P1), t2=nx(t1,P1,P2), t3=nx(t2,P2,P3);
+    for(let s=1;s<=sub;s++){ const t=t1+(t2-t1)*s/sub;
+      const A1=lt(P0,P1,t0,t1,t), A2=lt(P1,P2,t1,t2,t), A3=lt(P2,P3,t2,t3,t);
+      const B1=lt(A1,A2,t0,t2,t), B2=lt(A2,A3,t1,t3,t);
+      out.push(lt(B1,B2,t1,t2,t)); } }
   return out;
 }
 // EXACT 3D model of the whole system, built ONCE per config (cached). A high-fidelity RK4 integration
