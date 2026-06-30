@@ -1216,11 +1216,14 @@ function craftState(){
 const TRAJ_ACC=1.6;                          // tangential accel (AU/yr^2), design-class SEP
 let _traj=null, _trajKey='';
 function buildTraj(vhat, vinfKmS){
-  const key=vhat.map(x=>x.toFixed(4)).join(',')+'|'+vinfKmS.toFixed(2);
+  const G0=9.80665, _S=(typeof SIM!=='undefined'&&SIM)?SIM:null;
+  const simT=_S?_S.thrust:0, simW=_S?_S.wet:1, simD=_S?Math.max(1,_S.dry||simW*0.5):1, simI=_S?(_S.isp||3000):3000;
+  const key=vhat.map(x=>x.toFixed(4)).join(',')+'|'+vinfKmS.toFixed(2)+'|'+simT.toFixed(5)+'|'+simW.toFixed(2)+'|'+simD.toFixed(2)+'|'+simI.toFixed(0);
   if(_trajKey===key && _traj) return _traj;
   const MU=4*Math.PI*Math.PI, AUyr=4.74057, vinf=vinfKmS/AUyr, Et=0.5*vinf*vinf;
-  const at=TRAJ_ACC, dt=0.001;
-  let r=[1,0], v=[0,Math.sqrt(MU)], burning=true, n=0;
+  const dt=0.001, mdot=simT/(G0*simI), aSI=YEAR*YEAR/AU;
+  const aMag=t=> simT>0 ? (simT/Math.max(simD, simW-mdot*t*YEAR))*aSI : TRAJ_ACC;   // real accel + FALLING mass, no 1/r² fade (matches buildModel)
+  let r=[1,0], v=[0,Math.sqrt(MU)], burning=true, n=0, t=0;
   const acc=(r,v,th)=>{ const rr=Math.hypot(r[0],r[1]), vv=Math.hypot(v[0],v[1])||1;
     const g=-MU/(rr*rr*rr); return [g*r[0]+th*v[0]/vv, g*r[1]+th*v[1]/vv]; };
   const X=[r[0]], Y=[r[1]];
@@ -1228,14 +1231,15 @@ function buildTraj(vhat, vinfKmS){
     const rr=Math.hypot(r[0],r[1]);
     if(burning && 0.5*(v[0]*v[0]+v[1]*v[1])-MU/rr>=Et) burning=false;
     if(burning && rr>30) burning=false;            // power has faded out — coast (safety cap)
-    const th=burning?at/(rr*rr):0;                 // thrust FADES as 1/r² with solar power (Plan 09)
+    const th=burning?aMag(t):0;                    // real thrust accel with falling mass (no 1/r² fade)
     const a1=acc(r,v,th);
     const r2=[r[0]+0.5*dt*v[0],r[1]+0.5*dt*v[1]], v2=[v[0]+0.5*dt*a1[0],v[1]+0.5*dt*a1[1]], a2=acc(r2,v2,th);
     const r3=[r[0]+0.5*dt*v2[0],r[1]+0.5*dt*v2[1]], v3=[v[0]+0.5*dt*a2[0],v[1]+0.5*dt*a2[1]], a3=acc(r3,v3,th);
     const r4=[r[0]+dt*v3[0],r[1]+dt*v3[1]], v4=[v[0]+dt*a3[0],v[1]+dt*a3[1]], a4=acc(r4,v4,th);
     r=[r[0]+dt/6*(v[0]+2*v2[0]+2*v3[0]+v4[0]), r[1]+dt/6*(v[1]+2*v2[1]+2*v3[1]+v4[1])];
     v=[v[0]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), v[1]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])];
-    if(n%6===0){ X.push(r[0]); Y.push(r[1]); }
+    t+=dt;
+    if(n%3===0){ X.push(r[0]); Y.push(r[1]); }
     if(!burning && Math.hypot(r[0],r[1])>24){ X.push(r[0]); Y.push(r[1]); break; }
   }
   // asymptote = final velocity; rotate the 2D plane so it -> +x, then embed in 3D with
