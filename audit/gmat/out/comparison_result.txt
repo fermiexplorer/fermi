@@ -1,0 +1,21 @@
+Output of:  python3 audit/gmat/compare.py
+(engine-vs-GMAT comparison; regenerate any time with run_gmat.sh)
+GMAT build: R2020a (Ubuntu x64 console, GmatConsole)
+
+========================================================================
+GMAT  vs  fermi_sim   --   independent cross-validation
+========================================================================
+
+CHECK 1 -- impulsive (Oberth) departure from LEO
+  fermi_sim: dv = 14.6333 km/s prograde  ->  required C3 = v_inf,E^2 = 379.8154 km^2/s^2
+  GMAT:      post-burn C3 = 379.8154 km^2/s^2
+  -> diff 2.156e-06%   [PASS]  (tol 0.05%)
+
+CHECK 2 -- low-thrust Earth-escape spiral (constant accel 5e-4 m/s^2, to energy=0)
+  fermi_sim: escape t = 1.4266e+07 s (dv = a*t = 7.1328 km/s, ~692 revs)
+  GMAT:      escape t = 1.4265e+07 s (dv = a*t = 7.1323 km/s)
+  -> diff 0.007276%   [PASS]  (tol 1.5%)
+
+========================================================================
+RESULT: ALL CHECKS PASS -- GMAT confirms the Fermi engine
+========================================================================

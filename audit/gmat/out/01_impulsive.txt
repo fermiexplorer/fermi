@@ -1,0 +1,4 @@
+Probe.ElapsedSecs         Probe.Earth.RMAG          Probe.Earth.C3Energy      
+0                         6771                      -58.8687638458            
+Probe.ElapsedSecs         Probe.Earth.RMAG          Probe.Earth.C3Energy      
+0                         6771                      379.815435038             

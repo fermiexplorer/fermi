@@ -73,10 +73,13 @@ Then `python3 compare.py`.
 ## Files
 
 ```
-scripts/01_impulsive_departure.script   GMAT check 1 (impulsive departure)
-scripts/02_lowthrust_escape.script      GMAT check 2 (low-thrust escape spiral)
+scripts/01_impulsive_departure.script   INPUT: GMAT check 1 (impulsive departure)
+scripts/02_lowthrust_escape.script      INPUT: GMAT check 2 (low-thrust escape spiral)
 install_gmat.sh                         download + extract GMAT (Linux/WSL)
 run_gmat.sh                             run both scripts headless + compare
-compare.py                              parse GMAT output, compare to fermi_sim, PASS/FAIL
-out/*.txt                               GMAT report files (regenerated each run)
+compare.py                              comparison script: GMAT output vs fermi_sim, PASS/FAIL
+out/01_impulsive.txt                    OUTPUT: raw GMAT report, check 1   (committed for inspection)
+out/02_lowthrust.txt                    OUTPUT: raw GMAT state log, check 2 (committed for inspection)
+out/comparison_result.txt              OUTPUT: the engine-vs-GMAT comparison (committed for inspection)
+out/README.md                           describes the output files
 ```
