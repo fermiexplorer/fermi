@@ -25,20 +25,22 @@
   header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
-  /* collapsible mission-parameters panel */
-  .layout.collapsed { grid-template-columns: 1fr; }
-  .layout.collapsed > aside { display: none; }
+  /* collapsible mission-parameters panel: collapse from the "Parameters" button in the
+     control bar (next to Home/Reset); a top-left header button re-opens it when collapsed. */
+  body.params-collapsed .layout { grid-template-columns: 1fr; }
+  body.params-collapsed #controls { display: none; }
   header { position: relative; }
-  header h1 { padding-right: 150px; }
-  .paramtoggle { position: absolute; top: 16px; right: 22px; display: inline-flex; align-items: center;
+  #paramsShow { display: none; position: absolute; top: 16px; left: 22px; align-items: center;
     gap: 7px; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
     border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; z-index: 5; }
-  .paramtoggle:hover, .paramtoggle.on { border-color: var(--accent); }
-  .paramtoggle svg { width: 17px; height: 17px; }
+  #paramsShow:hover { border-color: var(--accent); }
+  #paramsShow svg { width: 17px; height: 17px; }
+  body.params-collapsed #paramsShow { display: inline-flex; }
+  body.params-collapsed header h1 { padding-left: 150px; }
   @media (max-width: 640px) {
-    header h1 { padding-right: 48px; }
-    .paramtoggle { top: 12px; right: 12px; padding: 6px 8px; }
-    .paramtoggle .lbl { display: none; }
+    #paramsShow { top: 12px; left: 12px; padding: 6px 8px; }
+    #paramsShow .lbl { display: none; }
+    body.params-collapsed header h1 { padding-left: 46px; }
   }
   /* left controls */
   aside {
@@ -201,7 +203,7 @@
 </head>
 <body>
 <header>
-  <button id="toggleParams" class="paramtoggle" type="button" aria-expanded="true" title="Show / hide mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Parameters</span></button>
+  <button id="paramsShow" type="button" title="Show mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Parameters</span></button>
   <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 0</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
@@ -211,6 +213,7 @@
 <div class="layout">
   <aside id="controls">
     <div class="ctrlbar">
+      <button id="paramsHide" type="button" title="Hide mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Parameters</button>
       <button id="homebtn" type="button" title="Home — load the latest build with default parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 11 H18 V20 H14 V14 H10 V20 H6 V11 H3 Z" fill="currentColor"/></svg>Home</button>
       <button id="resetbtn" type="button" title="Reset all parameters to this build’s defaults">↺ Reset</button>
     </div>
@@ -2360,20 +2363,21 @@ document.getElementById('homebtn').addEventListener('click', ()=>{ location.href
 // large screens; a header button toggles it (choice remembered). Charts/chase-cam re-fit
 // after the layout change (Plotly listens to window 'resize'; the chase cam has its own observer).
 (function(){
-  const layout = document.querySelector('.layout'), tbtn = document.getElementById('toggleParams');
-  if(!layout || !tbtn) return;
+  const showBtn = document.getElementById('paramsShow'), hideBtn = document.getElementById('paramsHide');
+  if(!showBtn || !hideBtn) return;
   const small = ()=> window.innerWidth < 900;
-  const apply = collapsed=>{ layout.classList.toggle('collapsed', collapsed);
-    tbtn.setAttribute('aria-expanded', String(!collapsed)); tbtn.classList.toggle('on', !collapsed); };
+  const apply = collapsed=>{ document.body.classList.toggle('params-collapsed', collapsed);
+    showBtn.setAttribute('aria-expanded', String(!collapsed)); hideBtn.setAttribute('aria-expanded', String(!collapsed)); };
   let userSet = false, stored = null;
   try{ stored = localStorage.getItem('fermiParams'); userSet = stored !== null; }catch(e){}
   apply(stored === null ? small() : stored === '0');                  // default by screen size until the user chooses
-  tbtn.addEventListener('click', ()=>{
-    const collapsed = !layout.classList.contains('collapsed');
+  const toggle = ()=>{
+    const collapsed = !document.body.classList.contains('params-collapsed');
     apply(collapsed); userSet = true;
     try{ localStorage.setItem('fermiParams', collapsed ? '0' : '1'); }catch(e){}
     setTimeout(()=>{ window.dispatchEvent(new Event('resize')); if(typeof drawViz==='function') drawViz(); }, 60);
-  });
+  };
+  showBtn.addEventListener('click', toggle); hideBtn.addEventListener('click', toggle);  // in-panel "Parameters" hides; header button re-opens
   window.addEventListener('resize', ()=>{ if(!userSet) apply(small()); });  // follow the screen until the user chooses
 })();
 
