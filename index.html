@@ -1427,6 +1427,8 @@ function chase3dInit(){
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((cap||4096)*3), 3));
     const l = new THREE.Line(g, new THREE.LineBasicMaterial({color})); l.frustumCulled = false; return l; };
   const flown = mkLine(0x3fb950, 32768), actrack = mkLine(0xf0883e), escape = mkLine(0x3fb950, 8192);  // flown buffer holds the smooth (Catmull-Rom) coil
+  flown.material.color.set(0xffffff); flown.material.vertexColors = true;                              // per-vertex green→black fade
+  flown.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(32768*3), 3));
   const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
   // Earth: a high-res sphere with a LIT (Lambert) material → a real day/night terminator from the Sun.
   const earthSphere = new THREE.Mesh(new THREE.SphereGeometry(1,48,32), new THREE.MeshLambertMaterial({color:0x3470c8}));
@@ -1475,6 +1477,18 @@ function _t3setLine(line, pts, ctr){
   if(n > CAP){ const stride = Math.ceil(n/(CAP-1)); src = []; for(let i=0;i<n;i+=stride) src.push(pts[i]); src.push(pts[n-1]); n = src.length; }
   for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2]; }
   line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
+}
+// Like _t3setLine, but also writes a per-vertex GREEN→BLACK fade along `pts`: black at the oldest end,
+// full green at the last point (the probe). Used so only the recent trail glows and the rest fades out.
+const _GRN=[0x3f/255, 0xb9/255, 0x50/255];
+function _t3setFadeLine(line, pts, ctr){
+  const a=line.geometry.attributes.position.array, col=line.geometry.attributes.color.array, CAP=a.length/3;
+  let src=pts, n=pts.length;
+  if(n>CAP){ const stride=Math.ceil(n/(CAP-1)); src=[]; for(let i=0;i<n;i+=stride) src.push(pts[i]); src.push(pts[n-1]); n=src.length; }
+  for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2];
+    const f=(n>1)?i/(n-1):1, g=f*f;                                  // f² ⇒ a softer fade, bright only near the probe
+    col[3*i]=_GRN[0]*g; col[3*i+1]=_GRN[1]*g; col[3*i+2]=_GRN[2]*g; }
+  line.geometry.setDrawRange(0,n); line.geometry.attributes.position.needsUpdate=true; line.geometry.attributes.color.needsUpdate=true;
 }
 // The 3D geocentric Earth-escape spiral (the ~hundreds of revolutions to climb from LEO to Earth's SOI),
 // built ONCE per config and cached. It sits at Earth's heliocentric position (the heliocentric arc start)
@@ -1539,11 +1553,16 @@ function chase3dDraw(c, st){
   sunFacing=nz([-earthNow[0],-earthNow[1],-earthNow[2]]);             // Sun direction from Earth (for the terminator light)
   const earthR=[(1-blend)*earthNow[0],(1-blend)*earthNow[1],(1-blend)*earthNow[2]];   // Earth marker pos (origin → inertial)
   const sunR=[-blend*earthNow[0],-blend*earthNow[1],-blend*earthNow[2]];              // Sun marker pos (off-screen → origin)
-  const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of flown) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
+  // VISIBLE TRAIL = the recent ~15% of the flown path BY ARC LENGTH (so the dense coil doesn't dominate and
+  // the cruise tail still shows). Frame to it (comet chase) and fade it green→black behind the probe.
+  let tot=0; for(let i=1;i<flown.length;i++) tot+=Math.hypot(flown[i][0]-flown[i-1][0],flown[i][1]-flown[i-1][1],flown[i][2]-flown[i-1][2]);
+  let acc=0, s0=0; for(let i=flown.length-1;i>0;i--){ acc+=Math.hypot(flown[i][0]-flown[i-1][0],flown[i][1]-flown[i-1][1],flown[i][2]-flown[i-1][2]); if(acc>=tot*0.15){ s0=i-1; break; } }
+  const vis=flown.slice(s0);
+  const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of vis) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
   const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
-  let Hs=M.rEarthAU*1.3; for(const q of flown){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.15;
+  let Hs=M.rEarthAU*1.3; for(const q of vis){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.15;
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
-  _t3setLine(_t3.flown, flown, ctr); _t3.escape.geometry.setDrawRange(0,0);
+  _t3setFadeLine(_t3.flown, vis, ctr); _t3.escape.geometry.setDrawRange(0,0);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
   place(_t3.dots.probe, probe, 0.02);
   // Earth: true sphere when zoomed in, never below ~1% of the view so it stays visible when zoomed out
