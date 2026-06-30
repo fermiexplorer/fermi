@@ -25,6 +25,21 @@
   header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; align-items: start; }
   @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  /* collapsible mission-parameters panel */
+  .layout.collapsed { grid-template-columns: 1fr; }
+  .layout.collapsed > aside { display: none; }
+  header { position: relative; }
+  header h1 { padding-right: 150px; }
+  .paramtoggle { position: absolute; top: 16px; right: 22px; display: inline-flex; align-items: center;
+    gap: 7px; background: var(--panel2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; z-index: 5; }
+  .paramtoggle:hover, .paramtoggle.on { border-color: var(--accent); }
+  .paramtoggle svg { width: 17px; height: 17px; }
+  @media (max-width: 640px) {
+    header h1 { padding-right: 48px; }
+    .paramtoggle { top: 12px; right: 12px; padding: 6px 8px; }
+    .paramtoggle .lbl { display: none; }
+  }
   /* left controls */
   aside {
     padding: 16px 18px; border-right: 1px solid var(--line);
@@ -186,6 +201,7 @@
 </head>
 <body>
 <header>
+  <button id="toggleParams" class="paramtoggle" type="button" aria-expanded="true" title="Show / hide mission parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span class="lbl">Parameters</span></button>
   <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 0</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
@@ -2337,6 +2353,27 @@ function resetDefaults(){
 }
 document.getElementById('resetbtn').addEventListener('click', resetDefaults);
 document.getElementById('homebtn').addEventListener('click', ()=>{ location.href=baseDir(); });
+
+// Collapsible mission-parameters panel: collapsed by default on small/mobile, expanded on
+// large screens; a header button toggles it (choice remembered). Charts/chase-cam re-fit
+// after the layout change (Plotly listens to window 'resize'; the chase cam has its own observer).
+(function(){
+  const layout = document.querySelector('.layout'), tbtn = document.getElementById('toggleParams');
+  if(!layout || !tbtn) return;
+  const small = ()=> window.innerWidth < 900;
+  const apply = collapsed=>{ layout.classList.toggle('collapsed', collapsed);
+    tbtn.setAttribute('aria-expanded', String(!collapsed)); tbtn.classList.toggle('on', !collapsed); };
+  let userSet = false, stored = null;
+  try{ stored = localStorage.getItem('fermiParams'); userSet = stored !== null; }catch(e){}
+  apply(stored === null ? small() : stored === '0');                  // default by screen size until the user chooses
+  tbtn.addEventListener('click', ()=>{
+    const collapsed = !layout.classList.contains('collapsed');
+    apply(collapsed); userSet = true;
+    try{ localStorage.setItem('fermiParams', collapsed ? '0' : '1'); }catch(e){}
+    setTimeout(()=>{ window.dispatchEvent(new Event('resize')); if(typeof drawViz==='function') drawViz(); }, 60);
+  });
+  window.addEventListener('resize', ()=>{ if(!userSet) apply(small()); });  // follow the screen until the user chooses
+})();
 
 urlToState(); syncLabels(); toggleOpts(); render();
 
