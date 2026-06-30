@@ -1536,7 +1536,6 @@ function chase3dDraw(c, st){
   // blend=0 → Sun's frame (inertial, AU zoom). Smoothstep across the SOI hand-off ⇒ one continuous dolly.
   const ss=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
   const blend = 1 - ss(0.30, 0.42, animU);   // coil un-centers Earth-frame → Sun-frame across the SOI hand-off
-  const zoom_sun = ss(0.15, 0.31, animU);    // SEPARATE camera dolly: zoom out to pull the Sun into frame BEFORE escape (~0.333), coil stays centered
   const GS=M.geoSmooth, EG=M.earthGeoSmooth, HS=M.helSmooth, EH=M.earthHelSmooth;
   const coilR=i=>[GS[i][0]+(1-blend)*EG[i][0], GS[i][1]+(1-blend)*EG[i][1], GS[i][2]+(1-blend)*EG[i][2]];   // coil, blended to inertial
   const helR =i=>[HS[i][0]-blend*EH[i][0], HS[i][1]-blend*EH[i][1], HS[i][2]-blend*EH[i][2]];               // helio, blended to Earth-frame
@@ -1566,22 +1565,15 @@ function chase3dDraw(c, st){
   const vis=flown.slice(s0);
   const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of vis) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
   const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
-  // Dolly OUT so the Sun reaches the frame edge as zo→1 — the probe/coil stays CENTERED (chase cam), the
-  // Sun enters from the edge BEFORE escape (~0.333) instead of the subject being shoved aside. zo=0 →
-  // tight coil (see the revs); zo=1 → Sun at the edge.
-  const zo=zoom_sun;
-  let Hs=M.rEarthAU*1.3; for(const q of vis){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; }
-  const dSun=Math.hypot(sunR[0]-ctr[0],sunR[1]-ctr[1],sunR[2]-ctr[2]);
-  Hs=Math.max(Hs, zo*dSun)*1.12;
+  let Hs=M.rEarthAU*1.3; for(const q of vis){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.15;
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
   _t3setFadeLine(_t3.flown, vis, ctr); _t3.escape.geometry.setDrawRange(0,0);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
   place(_t3.dots.probe, probe, 0.02);
   // Earth: true sphere when zoomed in, never below ~1% of the view so it stays visible when zoomed out
   const eR=Math.max(M.rEarthAU, Hs*0.012); _t3.dots.earth.position.set(earthR[0]-ctr[0], earthR[1]-ctr[1], earthR[2]-ctr[2]); _t3.dots.earth.scale.set(eR,eR,eR);
-  if(zo>0.12) place(_t3.dots.sun, sunR, 0.015); else _t3.dots.sun.scale.set(0,0,0);   // Sun shows as soon as the zoom-out pulls it into frame (before escape)
-  if(blend>0.5){ _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0); _t3.actrack.geometry.setDrawRange(0,0); }
-  else { place(_t3.dots.ac, [c.ac[0]-blend*earthNow[0],c.ac[1]-blend*earthNow[1],c.ac[2]-blend*earthNow[2]], 0.02);
+  if(blend>0.5){ _t3.dots.sun.scale.set(0,0,0); _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0); _t3.actrack.geometry.setDrawRange(0,0); }
+  else { place(_t3.dots.sun, sunR, 0.015); place(_t3.dots.ac, [c.ac[0]-blend*earthNow[0],c.ac[1]-blend*earthNow[1],c.ac[2]-blend*earthNow[2]], 0.02);
     place(_t3.dots.icpt, [c.I[0]-blend*earthNow[0],c.I[1]-blend*earthNow[1],c.I[2]-blend*earthNow[2]], 0.015);
     _t3setLine(_t3.actrack, [[c.acNow[0]-blend*earthNow[0],c.acNow[1]-blend*earthNow[1],c.acNow[2]-blend*earthNow[2]],[c.acEnd[0]-blend*earthNow[0],c.acEnd[1]-blend*earthNow[1],c.acEnd[2]-blend*earthNow[2]]], ctr); }
   _t3.grid.visible = false;
