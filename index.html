@@ -1478,16 +1478,17 @@ function _t3setLine(line, pts, ctr){
   for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2]; }
   line.geometry.setDrawRange(0, n); line.geometry.attributes.position.needsUpdate = true;
 }
-// Like _t3setLine, but also writes a per-vertex GREEN→BLACK fade along `pts`: black at the oldest end,
-// full green at the last point (the probe). Used so only the recent trail glows and the rest fades out.
-const _GRN=[0x3f/255, 0xb9/255, 0x50/255];
+// Like _t3setLine, but also writes a per-vertex fade from the canvas BACKGROUND colour (oldest end) to
+// full green (the probe), so the tail dissolves seamlessly into the page instead of darkening to black
+// (green→black went BELOW the bg luminance and read as a dark ring).
+const _GRN=[0x3f/255, 0xb9/255, 0x50/255], _BG=[0x16/255, 0x1b/255, 0x22/255];
 function _t3setFadeLine(line, pts, ctr){
   const a=line.geometry.attributes.position.array, col=line.geometry.attributes.color.array, CAP=a.length/3;
   let src=pts, n=pts.length;
   if(n>CAP){ const stride=Math.ceil(n/(CAP-1)); src=[]; for(let i=0;i<n;i+=stride) src.push(pts[i]); src.push(pts[n-1]); n=src.length; }
   for(let i=0;i<n;i++){ a[3*i]=src[i][0]-ctr[0]; a[3*i+1]=src[i][1]-ctr[1]; a[3*i+2]=src[i][2]-ctr[2];
     const f=(n>1)?i/(n-1):1, g=f*f;                                  // f² ⇒ a softer fade, bright only near the probe
-    col[3*i]=_GRN[0]*g; col[3*i+1]=_GRN[1]*g; col[3*i+2]=_GRN[2]*g; }
+    col[3*i]=_BG[0]+(_GRN[0]-_BG[0])*g; col[3*i+1]=_BG[1]+(_GRN[1]-_BG[1])*g; col[3*i+2]=_BG[2]+(_GRN[2]-_BG[2])*g; }
   line.geometry.setDrawRange(0,n); line.geometry.attributes.position.needsUpdate=true; line.geometry.attributes.color.needsUpdate=true;
 }
 // The 3D geocentric Earth-escape spiral (the ~hundreds of revolutions to climb from LEO to Earth's SOI),
