@@ -326,6 +326,8 @@
     <div class="topviz">
       <div id="animctl">
         <button id="playbtn" type="button">▶ Play</button>
+        <button id="stepback" type="button" title="Step one frame back">◀|</button>
+        <button id="stepfwd" type="button" title="Step one frame forward">|▶</button>
         <label class="logtime" title="Map time logarithmically (the ~1-yr burn is visible against the multi-10⁴-yr coast). Uncheck for PURE LINEAR time — Play, the scrubber and all views advance uniformly in elapsed time (the burn then occupies the first instant)."><input type="checkbox" id="logtime" checked> Logarithmic time</label>
         <label class="logtime" title="Loop the animation: when Play reaches the arrival it restarts from launch."><input type="checkbox" id="loop"> Loop</label>
         <input type="range" id="tscrub" min="0" max="100" step="0.25" value="0">
@@ -1269,6 +1271,17 @@ function rdpMask(pts, scale, tolFrac){
 }
 function _simp(pts, t, scale, tolFrac){ const k=rdpMask(pts,scale,tolFrac), P=[], T=[];
   for(let i=0;i<pts.length;i++) if(k[i]){ P.push(pts[i]); T.push(t[i]); } return {pts:P, t:T}; }
+// Stitch a smooth Catmull-Rom spline THROUGH the (RDP) knots and tessellate each knot-interval into
+// `sub` sub-segments — turns the faceted polyline into a smooth curve while keeping the dynamic
+// (curvature-adaptive) knot spacing the RDP chose. Endpoints are clamped (P0=P1, P3=P2).
+function catmullRom(K, sub){
+  const n=K.length; if(n<3 || sub<2) return K.slice();
+  const out=[K[0]];
+  for(let i=0;i<n-1;i++){ const p0=K[Math.max(0,i-1)], p1=K[i], p2=K[i+1], p3=K[Math.min(n-1,i+2)];
+    for(let s=1;s<=sub;s++){ const t=s/sub, t2=t*t, t3=t2*t, c=d=>0.5*((2*p1[d])+(-p0[d]+p2[d])*t+(2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*t2+(-p0[d]+3*p1[d]-3*p2[d]+p3[d])*t3);
+      out.push([c(0),c(1),c(2)]); } }
+  return out;
+}
 // EXACT 3D model of the whole system, built ONCE per config (cached). A high-fidelity RK4 integration
 // of the probe under Sun + Earth point-mass gravity + low-thrust with the REAL falling mass
 // (mdot=thrust/(g0·Isp)), in the heliocentric inertial ecliptic plane (AU, yr), LEO→out of Earth→out of
@@ -1339,10 +1352,12 @@ function buildModel(c){
   const helFineT=TM.slice(Ng).concat([SIM.Tsec/YEAR]); sHel.push(c.Inorm);
   const geoSimp=_simp(geoF.slice(0,Ng), TM.slice(0,Ng), sGeo, 0.01);
   const helSimp=_simp(helFineP, helFineT, sHel, 0.01);
+  const geoSmooth=catmullRom(geoSimp.pts, 6);                         // smooth the coil (curves stitched through the knots)
+  const helSmooth=catmullRom(helSimp.pts, 16);                        // smooth the heliocentric escape + cruise
   const dvTotKm=dvTot*AUyr, dvEarthKm=dvEarth*AUyr;
   const planeN=[u[1]*wv[2]-u[2]*wv[1], u[2]*wv[0]-u[0]*wv[2], u[0]*wv[1]-u[1]*wv[0]];   // map3-plane normal (unit)
   _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN,
-    geoSimp, helSimp, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
+    geoSimp, helSimp, geoSmooth, helSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
     revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
     dvTotKm, dvEarthKm, dvHelKm:dvTotKm-dvEarthKm, rEarthAU:R_EARTH/AU, rSunAU:6.957e8/AU,
     burnoutMassKg:Math.max(dry, wet-mdot*(iBurn>0?TM[Math.min(iBurn,TM.length-1)]:0)*YEAR),
@@ -1400,11 +1415,14 @@ function chase3dInit(){
   const mkLine = (color, cap)=>{ const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((cap||4096)*3), 3));
     const l = new THREE.Line(g, new THREE.LineBasicMaterial({color})); l.frustumCulled = false; return l; };
-  const flown = mkLine(0x3fb950), actrack = mkLine(0xf0883e), escape = mkLine(0x3fb950, 8192);  // escape = hi-res Earth spiral
+  const flown = mkLine(0x3fb950, 32768), actrack = mkLine(0xf0883e), escape = mkLine(0x3fb950, 8192);  // flown buffer holds the smooth (Catmull-Rom) coil
   const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
-  const dots = {sun:mkDot(0xf5d020), earth:mkDot(0x58a6ff), probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
-  scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt);
-  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, theta:1.0, phi:0, userRot:false};
+  // Earth: a high-res sphere with a LIT (Lambert) material → a real day/night terminator from the Sun.
+  const earthSphere = new THREE.Mesh(new THREE.SphereGeometry(1,48,32), new THREE.MeshLambertMaterial({color:0x3470c8}));
+  const dots = {sun:mkDot(0xf5d020), earth:earthSphere, probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
+  const sunLight = new THREE.DirectionalLight(0xfff4e2, 1.7), amb = new THREE.AmbientLight(0x2b3756, 0.85);  // Sun + dim night fill
+  scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt, sunLight, sunLight.target, amb);
+  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, sunLight, theta:1.0, phi:0, userRot:false};
   // ----- mouse: drag to orbit (overrides auto chase), wheel to zoom uniformly, dbl-click reset -----
   const cv = ren.domElement; cv.style.cursor = 'grab'; let drag = false, lx = 0, ly = 0;
   cv.addEventListener('pointerdown', e=>{ drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing';
@@ -1484,13 +1502,13 @@ function chase3dDraw(c, st){
   if(!M){ _t3.flown.geometry.setDrawRange(0,0); _t3.escape.geometry.setDrawRange(0,0); _t3.actrack.geometry.setDrawRange(0,0); return; }
   // EARTH stage: render the geocentric coil in EARTH's frame (Earth a true sphere at the origin). After
   // SOI: render the heliocentric+cruise in the SUN's frame, zoom-to-fit. Both are simplified to ≤1%.
-  const earthStage = logTimeMode() && phaseOf(animU).stage==='earth' && M.geoSimp.pts.length>2;
+  const earthStage = logTimeMode() && phaseOf(animU).stage==='earth' && M.geoSmooth.length>2;
   let SRC, probe, idx;
   if(earthStage){
-    SRC=M.geoSimp.pts; const n=SRC.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1);
+    SRC=M.geoSmooth; const n=SRC.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1);
     idx=Math.floor(x); probe=lerp(SRC[idx], SRC[Math.min(idx+1,n-1)], x-idx);
   } else {
-    SRC=M.helSimp.pts; const n=SRC.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
+    SRC=M.helSmooth; const n=SRC.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
     while(lo<hi){ const mid=(lo+hi)>>1; if(Math.hypot(SRC[mid][0],SRC[mid][1],SRC[mid][2])<d) lo=mid+1; else hi=mid; }
     const i0=Math.max(0,lo-1), r0=Math.hypot(SRC[i0][0],SRC[i0][1],SRC[i0][2]), r1=Math.hypot(SRC[lo][0],SRC[lo][1],SRC[lo][2])||r0+1e-9;
     probe=lerp(SRC[i0], SRC[lo], (r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0); idx=i0;
@@ -1510,11 +1528,14 @@ function chase3dDraw(c, st){
     _t3.actrack.geometry.setDrawRange(0,0);
     _t3.dots.sun.scale.set(0,0,0); _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0);
   } else {
-    place(_t3.dots.sun,[0,0,0],0.015); place(_t3.dots.earth, M.helSimp.pts[0], 0.012);
+    place(_t3.dots.sun,[0,0,0],0.015); place(_t3.dots.earth, M.helSmooth[0], 0.012);
     place(_t3.dots.ac, c.ac, 0.02); place(_t3.dots.icpt, c.I, 0.015);
     _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
   }
   _t3.grid.visible = false;
+  { // point the Sun-light from the Sun toward Earth so the lit hemisphere faces the Sun (day/night terminator)
+    let EP; if(earthStage){ const ei=Math.min(M.earth.length-1, Math.max(0, Math.round(Math.max(0,Math.min(1,phaseOf(animU).f))*M.Ng))); EP=M.earth[ei]; } else EP=M.helSmooth[0];
+    const sd=nz([-EP[0],-EP[1],-EP[2]]); _t3.sunLight.position.set(sd[0],sd[1],sd[2]); }
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
@@ -2001,7 +2022,7 @@ function setupCamSync(){
 let dragging3d=false;         // true while the user is dragging a 3D figure (pause redraws so the drag is smooth)
 function togglePlay(){
   const btn=document.getElementById('playbtn');
-  if(animTimer){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; return; }
+  if(animTimer){ clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; stateToURL(); return; }   // pin time on pause
   if(animU>=1) animU=0;
   btn.textContent='⏸ Pause';
   animTimer=setInterval(()=>{
@@ -2009,7 +2030,7 @@ function togglePlay(){
     animU=animU+0.004;
     if(animU>=1){
       if(document.getElementById('loop').checked){ animU=0; }   // Loop: restart from launch
-      else { animU=1; clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; }
+      else { animU=1; clearInterval(animTimer); animTimer=null; btn.textContent='▶ Play'; stateToURL(); }   // pin time at the end
     }
     drawViz();                             // the burn timeline's "now" marker advances with animU
   },40);
@@ -2081,7 +2102,11 @@ document.querySelectorAll('input,select').forEach(el=>{
     syncLabels(); toggleOpts(); render(); stateToURL();   // everything recomputes live + updates the shareable URL
   });
 });
-document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); });
+document.getElementById('tscrub').addEventListener('input',()=>{ stopPlay(); animU=val('tscrub')/100; drawViz(); stateToURL(); });
+// frame-by-frame stepping: nudge animU by one Play increment, pause, redraw, and pin the time in the URL
+function stepFrame(d){ stopPlay(); animU=Math.max(0,Math.min(1, animU+d)); const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; drawViz(); stateToURL(); }
+document.getElementById('stepfwd').addEventListener('click',()=>stepFrame(0.004));
+document.getElementById('stepback').addEventListener('click',()=>stepFrame(-0.004));
 document.getElementById('playbtn').addEventListener('click', togglePlay);
 // ----- the burn timeline IS the scrubber: drag along it to set the current time -----
 // Map a click x (years, log axis) back to the animation parameter u, the inverse of the
@@ -2175,6 +2200,7 @@ function stateToURL(){
   URL_KEYS.forEach(k=>{ const el=document.getElementById(k); if(el) p.set(k, el.value); });
   URL_RADIOS.forEach(n=>p.set(n, radio(n)));
   if(R3) p.set('r3','1');                                              // keep the Three.js-chase flag across rewrites
+  if(animU>0) p.set('pt', animU.toFixed(4));                           // play-sequence position (0..1) — shareable frame
   history.replaceState(null, '', buildPath()+'?'+p.toString());        // pin the build in the URL path
 }
 function urlToState(){
@@ -2183,6 +2209,8 @@ function urlToState(){
     if(el && [...el.options].some(o=>o.value===p.get(k))) el.value=p.get(k); } });
   URL_KEYS.forEach(k=>{ if(p.has(k)){ const el=document.getElementById(k); if(el) el.value=p.get(k); } });
   URL_RADIOS.forEach(n=>{ if(p.has(n)){ const el=document.querySelector(`input[name=${n}][value="${p.get(n)}"]`); if(el) el.checked=true; } });
+  if(p.has('pt')){ const u=parseFloat(p.get('pt'));                    // restore the shared play-sequence position
+    if(isFinite(u)){ animU=Math.max(0,Math.min(1,u)); const ts=document.getElementById('tscrub'); if(ts) ts.value=animU*100; } }
 }
 // Reset → this build’s defaults (clean URL); Home → the directory’s latest build with defaults.
 function resetDefaults(){
