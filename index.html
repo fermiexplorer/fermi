@@ -1354,10 +1354,15 @@ function buildModel(c){
   const helSimp=_simp(helFineP, helFineT, sHel, 0.01);
   const geoSmooth=catmullRom(geoSimp.pts, 6);                         // smooth the coil (curves stitched through the knots)
   const helSmooth=catmullRom(helSimp.pts, 16);                        // smooth the heliocentric escape + cruise
+  // Earth's inertial position sampled ALONG each smooth curve — lets the render blend frame: the geocentric
+  // coil view (Earth at origin) → the heliocentric view (Sun at origin) is one continuous dolly, no switch.
+  const earthAtT=t=>{ const tm=t-Math.floor(t); return map3(Math.cos(w*tm), Math.sin(w*tm)); };   // periodic ⇒ no huge-arg float error
+  const earthGeoSmooth=catmullRom(geoSimp.t.map(earthAtT), 6);
+  const earthHelSmooth=catmullRom(helSimp.t.map(earthAtT), 16);
   const dvTotKm=dvTot*AUyr, dvEarthKm=dvEarth*AUyr;
   const planeN=[u[1]*wv[2]-u[2]*wv[1], u[2]*wv[0]-u[0]*wv[2], u[0]*wv[1]-u[1]*wv[0]];   // map3-plane normal (unit)
   _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN,
-    geoSimp, helSimp, geoSmooth, helSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
+    geoSimp, helSimp, geoSmooth, helSmooth, earthGeoSmooth, earthHelSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
     revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
     dvTotKm, dvEarthKm, dvHelKm:dvTotKm-dvEarthKm, rEarthAU:R_EARTH/AU, rSunAU:6.957e8/AU,
     burnoutMassKg:Math.max(dry, wet-mdot*(iBurn>0?TM[Math.min(iBurn,TM.length-1)]:0)*YEAR),
@@ -1502,40 +1507,47 @@ function chase3dDraw(c, st){
   if(!M){ _t3.flown.geometry.setDrawRange(0,0); _t3.escape.geometry.setDrawRange(0,0); _t3.actrack.geometry.setDrawRange(0,0); return; }
   // EARTH stage: render the geocentric coil in EARTH's frame (Earth a true sphere at the origin). After
   // SOI: render the heliocentric+cruise in the SUN's frame, zoom-to-fit. Both are simplified to ≤1%.
-  const earthStage = logTimeMode() && phaseOf(animU).stage==='earth' && M.geoSmooth.length>2;
-  let SRC, probe, idx;
+  // FRAME BLEND: render = inertial − blend·Earth(t). blend=1 → Earth's frame (coil at origin, SOI zoom);
+  // blend=0 → Sun's frame (inertial, AU zoom). Smoothstep across the SOI hand-off ⇒ one continuous dolly.
+  const ss=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
+  const blend = 1 - ss(0.30, 0.42, animU);
+  const GS=M.geoSmooth, EG=M.earthGeoSmooth, HS=M.helSmooth, EH=M.earthHelSmooth;
+  const coilR=i=>[GS[i][0]+(1-blend)*EG[i][0], GS[i][1]+(1-blend)*EG[i][1], GS[i][2]+(1-blend)*EG[i][2]];   // coil, blended to inertial
+  const helR =i=>[HS[i][0]-blend*EH[i][0], HS[i][1]-blend*EH[i][1], HS[i][2]-blend*EH[i][2]];               // helio, blended to Earth-frame
+  const earthStage = logTimeMode() && phaseOf(animU).stage==='earth';
+  const flown=[]; let probe, earthNow, sunFacing;
   if(earthStage){
-    SRC=M.geoSmooth; const n=SRC.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1);
-    idx=Math.floor(x); probe=lerp(SRC[idx], SRC[Math.min(idx+1,n-1)], x-idx);
+    const n=GS.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1), i0=Math.floor(x), fr=x-i0, i1=Math.min(i0+1,n-1);
+    for(let i=0;i<=i0;i++) flown.push(coilR(i));
+    probe=lerp(coilR(i0), coilR(i1), fr); flown.push(probe);
+    earthNow=lerp(EG[i0], EG[i1], fr);
   } else {
-    SRC=M.helSmooth; const n=SRC.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
-    while(lo<hi){ const mid=(lo+hi)>>1; if(Math.hypot(SRC[mid][0],SRC[mid][1],SRC[mid][2])<d) lo=mid+1; else hi=mid; }
-    const i0=Math.max(0,lo-1), r0=Math.hypot(SRC[i0][0],SRC[i0][1],SRC[i0][2]), r1=Math.hypot(SRC[lo][0],SRC[lo][1],SRC[lo][2])||r0+1e-9;
-    probe=lerp(SRC[i0], SRC[lo], (r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0); idx=i0;
+    if(blend>0.002) for(let i=0;i<GS.length;i++) flown.push(coilR(i));   // full coil (skipped once it's sub-pixel in cruise)
+    const n=HS.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
+    while(lo<hi){ const mid=(lo+hi)>>1; if(Math.hypot(HS[mid][0],HS[mid][1],HS[mid][2])<d) lo=mid+1; else hi=mid; }
+    const i0=Math.max(0,lo-1), r0=Math.hypot(HS[i0][0],HS[i0][1],HS[i0][2]), r1=Math.hypot(HS[lo][0],HS[lo][1],HS[lo][2])||r0+1e-9, fr=(r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0;
+    for(let i=0;i<=i0;i++) flown.push(helR(i));
+    probe=lerp(helR(i0), helR(lo), fr); flown.push(probe);
+    earthNow=lerp(EH[i0], EH[lo], fr);
   }
-  const flown = SRC.slice(0, idx+1); flown.push(probe);
-  let ctr, Hs;
-  if(earthStage){ ctr=[0,0,0]; Hs=M.rEarthAU*1.4; for(const q of flown){ const dd=Math.hypot(q[0],q[1],q[2]); if(dd>Hs)Hs=dd; } Hs*=1.18; }
-  else { const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of flown) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
-    ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2]; Hs=1e-5; for(const q of flown){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.12; }
+  sunFacing=nz([-earthNow[0],-earthNow[1],-earthNow[2]]);             // Sun direction from Earth (for the terminator light)
+  const earthR=[(1-blend)*earthNow[0],(1-blend)*earthNow[1],(1-blend)*earthNow[2]];   // Earth marker pos (origin → inertial)
+  const sunR=[-blend*earthNow[0],-blend*earthNow[1],-blend*earthNow[2]];              // Sun marker pos (off-screen → origin)
+  const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30]; for(const q of flown) for(let d=0;d<3;d++){ if(q[d]<mn[d])mn[d]=q[d]; if(q[d]>mx[d])mx[d]=q[d]; }
+  const ctr=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2];
+  let Hs=M.rEarthAU*1.3; for(const q of flown){ const dd=Math.hypot(q[0]-ctr[0],q[1]-ctr[1],q[2]-ctr[2]); if(dd>Hs)Hs=dd; } Hs*=1.15;
   const fov = 50*Math.PI/180, camDist = Hs/Math.tan(fov/2)*(zoom3dCh||1);
   _t3setLine(_t3.flown, flown, ctr); _t3.escape.geometry.setDrawRange(0,0);
   const place = (m,p,scl)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); const s=Hs*scl; m.scale.set(s,s,s); };
-  const sphereAbs = (m,p,rAU)=>{ m.position.set(p[0]-ctr[0], p[1]-ctr[1], p[2]-ctr[2]); m.scale.set(rAU,rAU,rAU); };
   place(_t3.dots.probe, probe, 0.02);
-  if(earthStage){
-    sphereAbs(_t3.dots.earth, [0,0,0], M.rEarthAU);                   // Earth drawn as a TRUE sphere of real radius
-    _t3.actrack.geometry.setDrawRange(0,0);
-    _t3.dots.sun.scale.set(0,0,0); _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0);
-  } else {
-    place(_t3.dots.sun,[0,0,0],0.015); place(_t3.dots.earth, M.helSmooth[0], 0.012);
-    place(_t3.dots.ac, c.ac, 0.02); place(_t3.dots.icpt, c.I, 0.015);
-    _t3setLine(_t3.actrack, [c.acNow, c.acEnd], ctr);
-  }
+  // Earth: true sphere when zoomed in, never below ~1% of the view so it stays visible when zoomed out
+  const eR=Math.max(M.rEarthAU, Hs*0.012); _t3.dots.earth.position.set(earthR[0]-ctr[0], earthR[1]-ctr[1], earthR[2]-ctr[2]); _t3.dots.earth.scale.set(eR,eR,eR);
+  if(blend>0.5){ _t3.dots.sun.scale.set(0,0,0); _t3.dots.ac.scale.set(0,0,0); _t3.dots.icpt.scale.set(0,0,0); _t3.actrack.geometry.setDrawRange(0,0); }
+  else { place(_t3.dots.sun, sunR, 0.015); place(_t3.dots.ac, [c.ac[0]-blend*earthNow[0],c.ac[1]-blend*earthNow[1],c.ac[2]-blend*earthNow[2]], 0.02);
+    place(_t3.dots.icpt, [c.I[0]-blend*earthNow[0],c.I[1]-blend*earthNow[1],c.I[2]-blend*earthNow[2]], 0.015);
+    _t3setLine(_t3.actrack, [[c.acNow[0]-blend*earthNow[0],c.acNow[1]-blend*earthNow[1],c.acNow[2]-blend*earthNow[2]],[c.acEnd[0]-blend*earthNow[0],c.acEnd[1]-blend*earthNow[1],c.acEnd[2]-blend*earthNow[2]]], ctr); }
   _t3.grid.visible = false;
-  { // point the Sun-light from the Sun toward Earth so the lit hemisphere faces the Sun (day/night terminator)
-    let EP; if(earthStage){ const ei=Math.min(M.earth.length-1, Math.max(0, Math.round(Math.max(0,Math.min(1,phaseOf(animU).f))*M.Ng))); EP=M.earth[ei]; } else EP=M.helSmooth[0];
-    const sd=nz([-EP[0],-EP[1],-EP[2]]); _t3.sunLight.position.set(sd[0],sd[1],sd[2]); }
+  _t3.sunLight.position.set(sunFacing[0], sunFacing[1], sunFacing[2]);   // light from the Sun → day/night terminator
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
     _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
