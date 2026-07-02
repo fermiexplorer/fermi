@@ -760,14 +760,17 @@
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
   <ul>
-    <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. Pure solar-electric
-      always fails this (1/r² fade); nuclear-electric clears it at the right power. See "Power-limited v∞".</li>
+    <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. What decides it is the
+      whole-vehicle specific power α = power ÷ dry-mass, <em>not</em> the kilowatts: a heavy, low-α vehicle
+      (today's silicon + Hall thruster, α ≈ 20–30) fails it because the 1/r² fade drags the burn far from the Sun,
+      while the light, high-α <b>default</b> (thin-film array + light thruster, α ≈ 130) <b>clears it as pure
+      solar</b> — no reactor, no assist — as does nuclear-electric (constant power, no fade). See "Power-limited v∞".</li>
     <li><b>Mass diverges</b> — with the <em>derived</em> minimal dry mass, every kg of propellant drags a fixed
       mass of tank + structure; if that times the mass ratio exceeds 1, the propellant + structure spiral has no
       finite solution (the rocket-equation wall). Reproduce it by dropping <code>Isp</code> toward ~1000 s.</li>
   </ul>
-  <p>In the default ~73k-yr, 5 kW, Isp-3000 s configuration the margins are comfortable, so it reads feasible —
-  push those sliders to the edges to see the limits bite.</p>
+  <p>In the default ~73k-yr, 2 kW, Isp-3000 s high-α configuration the margins are comfortable, so it reads
+  feasible as pure solar — push those sliders toward heavier/low-α hardware to see the power gate bite.</p>
 
   <h4>Repository structure</h4>
   <p>Everything is open-source (MIT) at

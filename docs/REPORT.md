@@ -57,7 +57,7 @@ question is entirely about how you build the 24 km/s.*
 > orbital velocity. The check closes: AC recedes to ~6.0 ly by 75,000 yr, and
 > 23.8 km/s × 75,000 yr ≈ 6.0 ly — exactly AC's distance then.
 
-## 2. The conservative power gate — why pure solar-electric does NOT close
+## 2. The conservative power gate — pure solar closes only as a light (high-α) vehicle
 
 Electric propulsion converts electrical power to thrust: `F = 2ηP/v_e`. For **solar**
 EP, the array power scales as **1/r²**, so as the probe climbs away from the Sun its
