@@ -202,6 +202,29 @@ latest = max(candidates, key=os.path.getmtime) if candidates else None
 - **Remote**: `/tmp/screenshots/ss-tower-{timestamp}.png`
 - Each screenshot has a unique timestamped filename (never overwrites).
 
+## RAM hygiene — WSL has ~8 GB (do NOT let tools pile up)
+
+This box has ~8 GB RAM and the Cursor server already holds ~1.5 GB. It has **OOM-crashed**
+from accumulated helper processes. A leaked headless Chromium is ~300–500 MB; a GMAT
+console or a stray `http.server` add more. Treat RAM as scarce:
+
+- **One heavy process at a time.** NEVER `run_in_background` a Playwright/screenshot or
+  GMAT run, and never run two heavy tools at once — strictly sequential.
+- **Always `timeout` heavy scripts** (`timeout 180 .venv/bin/python tmp/ro/shot_x.py`) so a
+  hung script can't hold a browser/console open indefinitely.
+- **Playwright scripts must guarantee teardown:** launch inside `with sync_playwright() as p:`
+  AND close the browser in a `finally:` (`try: … finally: browser.close()`), so it dies on
+  exception/assert too. Launch lean:
+  `p.chromium.launch(args=['--no-sandbox','--disable-dev-shm-usage','--disable-gpu'])`.
+- **One `http.server` per script**, started with `subprocess.Popen` and `.terminate()`d in the
+  same `finally:`. NEVER leave a background `http.server` running — kill it when done.
+- **A `timeout`/interrupt does NOT run `finally`/`with` cleanup** (SIGTERM), so it orphans the
+  browser. After ANY interrupted/timed-out Playwright or GMAT run — or whenever RAM feels
+  tight — run **`bash tools/ram_sweep.sh`**. It kills ONLY orphaned Playwright browsers
+  (`ms-playwright`), screenshot/test `http.server`s, and `GmatConsole` — never Cursor/system,
+  and it does **not** delete any disk cache. Inspect current usage with `free -h`.
+- Don't hold large arrays in memory or run unbounded integrations; cap loop counts.
+
 ## Plans
 
 All plans MUST be saved in `docs/plans/` as `NN-slug.md`. Every plan must include:
