@@ -55,6 +55,7 @@ audit/calcs/      independent verification suite (Python + Node parity)
 audit/codex/      Codex independent audit (conclusions + scripts)
 audit/grok/       Grok independent audit (conclusions + scripts)
 audit/gemini/     Gemini independent audit (astropy + scipy solve_ivp)
+audit/fable/      Fable 5 independent audit (finite-difference ephemeris, RK45 re-integrations)
 audit/gmat/       NASA GMAT cross-validation (mission scripts + install/run/compare + raw outputs)
 audit/AUDIT_PROMPTS.md  adversarial audit prompts
 docs/             REPORT.md (tender report), plans/
@@ -102,8 +103,8 @@ The physics is checked **independently** (different method, not self-comparison)
   (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
 All 55 Python checks + 20 JS-parity checks pass (plus a Playwright UI render test, the
-NASA GMAT cross-validation, and independent Codex, Grok & Gemini re-implementations
-under `audit/`, which agree to ≤0.1% on every headline number). See
+NASA GMAT cross-validation, and independent Codex, Grok, Gemini & Fable re-implementations
+under `audit/`, which agree to ≤0.2% on every headline number). See
 `audit/AUDIT_PROMPTS.md` for adversarial review prompts.
 
 ## Scope / limitations

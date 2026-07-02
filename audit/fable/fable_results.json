@@ -1,0 +1,102 @@
+{
+  "AC space speed (km/s)": {
+    "fable": 32.300791656122875,
+    "engine": 32.3007916605253,
+    "diff_pct": 1.3629459491442628e-08
+  },
+  "AC distance now (AU)": {
+    "fable": 274719.23885405273,
+    "engine": 274719.23885405273,
+    "diff_pct": 0.0
+  },
+  "closest approach time (kyr)": {
+    "fable": 27.959633292268286,
+    "engine": 27.959680520347142,
+    "diff_pct": 0.0001689149445800736
+  },
+  "closest approach dist (ly)": {
+    "fable": 3.1297411264726804,
+    "engine": 3.1297411265615307,
+    "diff_pct": 2.8389012665704503e-09
+  },
+  "state vector v[0] (km/s)": {
+    "fable": -9.22215382868152,
+    "engine": -9.222153827911658,
+    "diff_pct": 8.347967410009753e-09
+  },
+  "state vector v[1] (km/s)": {
+    "fable": 28.889554940228454,
+    "engine": 28.889554946491312,
+    "diff_pct": 2.1678626367589484e-08
+  },
+  "state vector v[2] (km/s)": {
+    "fable": 11.12144935374495,
+    "engine": 11.121449350900907,
+    "diff_pct": 2.5572595202429648e-08
+  },
+  "min-speed arrival (yr)": {
+    "fable": 58138.34511076666,
+    "engine": 58138.0,
+    "diff_pct": 0.0005936061898627424
+  },
+  "min-speed v_inf (km/s)": {
+    "fable": 23.2718959630908,
+    "engine": 23.27,
+    "diff_pct": 0.008147671210998337
+  },
+  "aim tilt at min-speed (deg)": {
+    "fable": -9.994542667390071,
+    "engine": -10.0,
+    "diff_pct": 0.054573326099287556
+  },
+  "v_inf,Earth (km/s)": {
+    "fable": 19.48852179121538,
+    "engine": 19.488521791215376,
+    "diff_pct": 1.822977502789318e-14
+  },
+  "propagated v_inf after Oberth burn (km/s)": {
+    "fable": 19.488521786898662,
+    "engine": 19.48852179121538,
+    "diff_pct": 2.2150051688091545e-08
+  },
+  "impulsive dv (km/s)": {
+    "fable": 14.633006513660595,
+    "engine": 14.633,
+    "diff_pct": 4.451350096211347e-05
+  },
+  "spiral escape time to C3=0 (Ms)": {
+    "fable": 14.26516546549329,
+    "engine": 14.265670737595972,
+    "diff_pct": 0.003541874139507087
+  },
+  "spiral revs to escape": {
+    "fable": 691.9807336668841,
+    "engine": 691.8664704102478,
+    "diff_pct": 0.016515218112625685
+  },
+  "low-thrust departure dv: engine fit vs my spiral (km/s)": {
+    "fable": 25.98706070932455,
+    "engine": 25.987570974035012,
+    "diff_pct": 0.001963495206894791
+  },
+  "propellant burned to reach dv (kg)": {
+    "fable": 363.51251446400835,
+    "engine": 363.51164339998763,
+    "diff_pct": 0.0002396247923634347
+  },
+  "gate v_inf: high-alpha default (43/15 kg, 2 kW, solar) (km/s)": {
+    "fable": 30.343029635296247,
+    "engine": 30.298651491039493,
+    "diff_pct": 0.14646904094024943
+  },
+  "gate v_inf: low-alpha (710/256 kg, 20 kW, solar) (km/s)": {
+    "fable": 14.452369629230718,
+    "engine": 14.42484275524246,
+    "diff_pct": 0.19082962951712965
+  },
+  "gate v_inf: nuclear 5 kW (710/256 kg, constant) (km/s)": {
+    "fable": 25.25036400349539,
+    "engine": 25.238486145664748,
+    "diff_pct": 0.04706248133143562
+  }
+}

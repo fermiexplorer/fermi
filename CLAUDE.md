@@ -42,8 +42,9 @@
   references (e.g. NASA missions, commercial cell/thruster vendors) ARE allowed and are
   listed in the page's References section.
 - **`audit/` holds independent audits.** `audit/calcs/` is the project's own suite;
-  `audit/codex/` and `audit/grok/` hold parallel third-party-model re-implementations and
-  their conclusions. Keep all three independent of each other.
+  `audit/codex|grok|gemini|fable/` hold parallel independent-model re-implementations and
+  their conclusions; `audit/gmat/` is the NASA GMAT cross-validation. Keep them all
+  independent of each other.
 - **Don't silently change embedded constants.** The Alpha Centauri state vector in
   `web/physics.js` is copied from `fermi_sim`; if `fermi_sim/astro.py` changes, re-dump and
   re-run the parity audit.
@@ -82,7 +83,7 @@ node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 - `run_analysis.py` — integrated analysis report (stdout).
 - `index.html` + `web/physics.js` — interactive calculator (sliders/charts/methodology).
 - `audit/calcs/` — independent verification suite (Python + a Node parity check).
-- `audit/codex|grok|gemini/` — third-party-model re-implementations + conclusions;
+- `audit/codex|grok|gemini|fable/` — independent model re-implementations + conclusions;
   `audit/AUDIT_PROMPTS.md` — adversarial review prompts.
 - `docs/` — `REPORT.md` (tender feasibility report), `plans/`.
 - `tests/` — pytest smoke tests. `tmp/ro/` — throwaway check scripts.

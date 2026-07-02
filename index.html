@@ -666,10 +666,11 @@
       sizing from first principles.</li>
     <li><b>UI render test.</b> Playwright loads the page in a real browser and exercises the controls
       (<code>audit/calcs/ui_playwright.py</code>).</li>
-    <li><b>Third-party model re-implementations.</b> Parallel <b>Codex</b> and <b>Grok</b> audits
-      (<code>audit/codex/</code>, <code>audit/grok/</code>) rebuilt the physics from scratch — hand-built vs
-      astropy, scipy vs grid/golden-section, separate integrators — and agree on every headline quantity to
-      ≤0.1%.</li>
+    <li><b>Independent model re-implementations.</b> Parallel <b>Codex</b>, <b>Grok</b>, <b>Gemini</b> and
+      <b>Fable</b> audits (<code>audit/codex/</code>, <code>audit/grok/</code>, <code>audit/gemini/</code>,
+      <code>audit/fable/</code>) rebuilt the physics from scratch by different methods — hand-built vs astropy
+      ephemeris, finite-difference vs analytic velocities, scipy vs grid/golden-section optima, adaptive RK45
+      vs fixed-step integrators — and agree on every headline quantity to ≤0.2%.</li>
     <li><b>NASA GMAT cross-validation.</b> The departure energetics are independently reproduced by NASA's
       flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; see the GMAT section below).</li>
   </ul>
@@ -792,7 +793,7 @@
       <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (55 Python checks + a Node JS↔Python parity check),
       a <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/gmat" target="_blank" rel="noopener noreferrer"><code>gmat/</code></a>
       cross-validation of the departure model against <b>NASA's GMAT</b> propagator (scripts, comparison &amp; raw outputs),
-      and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>.</li>
+      and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>, <code>fable/</code>.</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/docs" target="_blank" rel="noopener noreferrer"><code>docs/</code></a>
       — <code>REPORT.md</code> (tender feasibility report), engineering <code>plans/</code>, and the adversarial audit prompts.</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/tests" target="_blank" rel="noopener noreferrer"><code>tests/</code></a>
