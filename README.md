@@ -57,6 +57,7 @@ audit/grok/       Grok independent audit (conclusions + scripts)
 audit/gemini/     Gemini independent audit (astropy + scipy solve_ivp)
 audit/fable/      Fable 5 independent audit (finite-difference ephemeris, RK45 re-integrations)
 audit/gmat/       NASA GMAT cross-validation (mission scripts + install/run/compare + raw outputs)
+audit/stk/        Ansys STK/Astrogator cross-validation (prep — driver + comparator; needs a Windows STK trial to run)
 audit/AUDIT_PROMPTS.md  adversarial audit prompts
 docs/             REPORT.md (tender report), plans/
 ```
