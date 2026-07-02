@@ -1,9 +1,11 @@
 # Project Fermi — feasibility report
 
 *A first-order analysis for the Alpha Centauri precursor tender. All numbers are
-produced by `run_analysis.py` and independently cross-checked in `audit/` — including a
-[NASA GMAT](https://gmat.gsfc.nasa.gov/) cross-validation of the departure energetics
-(`audit/gmat/`), which reproduces the impulsive-departure C3 and the low-thrust
+produced by `run_analysis.py` and independently cross-checked in `audit/`: four parallel
+model re-implementations — **Codex, Grok, Gemini and Fable**
+(`audit/codex|grok|gemini|fable/`) — agree with the engine on every headline quantity to
+≤0.2 %, and a [NASA GMAT](https://gmat.gsfc.nasa.gov/) cross-validation of the departure
+energetics (`audit/gmat/`) reproduces the impulsive-departure C3 and the low-thrust
 Earth-escape spiral time to within 0.01 %.*
 
 ## The question

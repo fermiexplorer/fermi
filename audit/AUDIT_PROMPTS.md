@@ -1,9 +1,14 @@
-# Codex audit prompts — Project Fermi
+# Adversarial audit prompts — Project Fermi
 
-Paste these into an independent coding agent (Codex/Claude/etc.) pointed at this
-repo. Each is scoped to one risk area and asks for an **independent** re-derivation
+Paste these into an independent coding agent (Codex/Claude/Grok/Gemini/etc.) pointed at
+this repo. Each is scoped to one risk area and asks for an **independent** re-derivation
 plus a numeric counter-check, not a restatement. Run them in a fresh session so the
 reviewer doesn't inherit our assumptions.
+
+**Status:** four independent models have executed these audits — **Codex, Grok, Gemini
+and Fable** (scripts + conclusions in `audit/codex|grok|gemini|fable/`); all agree with
+the engine on every headline quantity to ≤0.2%. The departure energetics are additionally
+cross-validated against **NASA GMAT** (`audit/gmat/`, ≤0.01%).
 
 > Setup line to prepend to any prompt:
 > "This repo (`fermi_sim/`, `web/physics.js`, `audits/`) models an ion-propulsion probe
