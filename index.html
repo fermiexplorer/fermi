@@ -7,6 +7,7 @@
 <title>Fermi Explorer — Alpha Centauri Mission Calculator</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <script src="web/physics.js"></script>
+<script src="web/stars.js"></script>
 <style>
   :root {
     --bg: #0e1116; --panel: #161b22; --panel2: #1c232d; --ink: #e6edf3;
@@ -73,6 +74,10 @@
   .kpi .kcalc .khead { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
   .kpi .kcalc pre { margin: 6px 0 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; line-height: 1.55; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   pre.cmd { margin: 8px 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
+  #starmap { min-height: clamp(420px, 52vh, 640px); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  #starctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
+  #starT { flex: 1; accent-color: var(--accent); }
+  #starTlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 150px; text-align: right; }
   .kpi .kcopy { font-size: 10px; padding: 2px 8px; border: 1px solid var(--line); background: #161b22; color: var(--muted); border-radius: 4px; cursor: pointer; }
   .build { font-size: 11px; color: var(--muted); font-weight: 400; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; vertical-align: middle; text-decoration: none; }
   .build:hover { border-color: var(--accent); color: var(--accent); }
@@ -774,6 +779,49 @@
   </ul>
   <p>In the default ~73k-yr, 2 kW, Isp-3000 s high-α configuration the margins are comfortable, so it reads
   feasible as pure solar — push those sliders toward heavier/low-α hardware to see the power gate bite.</p>
+
+  <h4>Beyond Alpha Centauri — nearby-star encounters over the next million years</h4>
+  <p>Alpha Centauri is the target <em>because</em> of the 100,000-year requirement — it is the nearest system
+  today. Relax the clock and the answer changes, because the stars move: some are inbound, and the cheapest
+  mission is to <b>drift to where a star will be</b> rather than chase where one is. The map below plays the
+  solar neighbourhood forward: every star is propagated linearly from its catalogued 6-D state (SIMBAD
+  position + proper motion + radial velocity, transformed to the ecliptic frame with astropy — the same
+  method and approximation the engine uses for AC, and cross-checked against it: this pipeline reproduces
+  AC's 3.13 ly closest approach at 28 kyr exactly).</p>
+  <div id="starctl">
+    <input type="range" id="starT" min="0" max="1500" step="5" value="0">
+    <span id="starTlabel"></span>
+  </div>
+  <div id="starmap"></div>
+  <p class="src">Drag to rotate, scroll to zoom. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
+  colours = spectral class (blue-white A/F → yellow G → orange K → red M); dotted trails = the headline
+  approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 20 mas with full 6-D kinematics
+  (~4,000 stars, complete to ~86 ly; entries with spurious radial velocities |v| &gt; 150 km/s removed);
+  the 160 shown are the naked-eye stars within 55 ly plus the 40 closest future approaches.</p>
+
+  <p><b>Is there a better candidate than AC?</b> Yes — two classes:</p>
+  <table class="chain">
+    <tr><th>Target</th><th>Type / V mag</th><th class="v">Now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Min cruise</th><th>Note</th></tr>
+    <tr><td><b>Alpha Centauri</b> (baseline)</td><td>G2V+K1V · −0.1</td><td class="v">4.3 ly</td><td class="v">3.13 ly</td><td class="v">28 kyr</td><td class="v">23.3 km/s</td><td>the mission as specified (≤100 kyr forces it)</td></tr>
+    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62 ly</td><td class="v"><b>0.17 ly</b> (~10,700 AU)</td><td class="v">1.29 Myr</td><td class="v"><b>~0.05 km/s</b></td><td>the record-holder: it nearly hits us — any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
+    <tr><td><b>ξ Boötis</b></td><td>G7V+K5V · 4.6</td><td class="v">22 ly</td><td class="v">5.35 ly</td><td class="v">290 kyr</td><td class="v"><b>5.4 km/s</b></td><td>the best “nice star”: naked-eye Sun-like binary, Δv collapses vs AC</td></tr>
+    <tr><td><b>c UMa</b></td><td>G0V · 5.2</td><td class="v">66 ly</td><td class="v">5.24 ly</td><td class="v">509 kyr</td><td class="v">3.1 km/s</td><td>Sun-like; almost free, if you can wait half a million years</td></tr>
+    <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39 ly</td><td class="v">7.6 ly</td><td class="v">169 kyr</td><td class="v">13.2 km/s</td><td>bright Sun-like, sooner</td></tr>
+    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7 ly</td><td class="v">8.65 ly</td><td class="v">138 kyr</td><td class="v">16.1 km/s</td><td>a first-magnitude star, still cheaper than AC</td></tr>
+  </table>
+  <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
+  toward the encounter point and coast; the star does the closing. ξ Boötis at 5.4 km/s needs a propellant
+  fraction of a few percent (vs ~64% for AC's 23.3 km/s + escape) — the entire vehicle problem relaxes.
+  Red-dwarf record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr) and
+  Gliese 445 (~3.4 ly @ 46 kyr) — closer than AC ever gets, but M dwarfs.</p>
+  <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
+  50 ly of the Sun in the next 1 Myr</b> (e.g. Lalande 21185 crosses at just 5.3 ly in 13 kyr) — so
+  in-plane departure geometry (borrowing Earth's 29.8 km/s with no plane change) is never in short supply,
+  whatever the target era.</p>
+  <p class="src">Caveats: straight-line motion (galactic-orbit curvature is negligible over ≤2 Myr at this
+  fidelity); catalogue completeness ~86 ly — encounters arriving from farther within 1.5 Myr are possible
+  but Gaia-era encounter surveys (Bailer-Jones et al.) confirm Gliese 710 remains the record-holder within
+  ±1 Myr; binary components listed separately by SIMBAD appear separately here.</p>
 
   <h4>Repository structure</h4>
   <p>Everything is open-source (MIT) at
@@ -2397,6 +2445,62 @@ document.getElementById('homebtn').addEventListener('click', ()=>{ location.href
 })();
 
 urlToState(); syncLabels(); toggleOpts(); render();
+
+// ===== Beyond-AC encounter map: the solar neighbourhood played forward 1.5 Myr =====
+// Stars from web/stars.js (SIMBAD 6-D kinematics, ecliptic frame, ly & ly/Myr, Sun at
+// origin); linear motion — position(t) = p + v·t. The slider re-renders; uirevision
+// keeps the user's camera.
+function spCol(sp){ const ch=(sp||'?')[0].toUpperCase();
+  return (ch==='A'||ch==='B'||ch==='O')?'#a8c4ff': ch==='F'?'#e8ecff': ch==='G'?'#ffd96b':
+         ch==='K'?'#ffab5e': (ch==='M'||ch==='L')?'#ff6b4a': '#9aa7b4'; }
+const STAR_TRAILS=['HD 168442','ksi Boo','c UMa','alf Aql','lam Ser','alf Cen'];
+function drawStarMap(tMyr){
+  if(typeof NEARBY_STARS==='undefined' || !document.getElementById('starmap')) return;
+  const xs=[],ys=[],zs=[],cols=[],sizes=[],txts=[];
+  for(const s of NEARBY_STARS){
+    const x=s.p[0]+s.v[0]*tMyr, y=s.p[1]+s.v[1]*tMyr, z=s.p[2]+s.v[2]*tMyr;
+    xs.push(x); ys.push(y); zs.push(z);
+    cols.push(spCol(s.sp));
+    sizes.push(s.V==null?2.5:Math.max(2.5,Math.min(9,8.5-0.9*s.V)));
+    const d=Math.hypot(x,y,z);
+    txts.push(`${s.n} (${s.sp}${s.V!=null?', V '+s.V:''})<br>d = ${d.toFixed(1)} ly`+
+      (s.dc!=null?`<br>closest ${s.dc} ly @ ${(s.tc*1000).toFixed(0)} kyr`:''));
+  }
+  // ecliptic disc, 50 ly radius (triangle fan about the origin)
+  const dn=64, dx=[0],dy=[0],dz=[0], di=[],dj=[],dk=[];
+  for(let i=0;i<dn;i++){ const a=i/dn*2*Math.PI;
+    dx.push(50*Math.cos(a)); dy.push(50*Math.sin(a)); dz.push(0);
+    di.push(0); dj.push(1+i); dk.push(1+(i+1)%dn); }
+  const traces=[
+    {type:'mesh3d',x:dx,y:dy,z:dz,i:di,j:dj,k:dk,color:'#586273',opacity:0.10,hoverinfo:'skip',name:'ecliptic (50 ly)'},
+    {type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:7,symbol:'diamond'},hovertext:'Sun',hoverinfo:'text',name:'Sun'},
+    {type:'scatter3d',mode:'markers',x:xs,y:ys,z:zs,marker:{color:cols,size:sizes,opacity:0.95},hovertext:txts,hoverinfo:'text',name:'stars'},
+  ];
+  for(const nm of STAR_TRAILS){ const s=NEARBY_STARS.find(q=>q.n===nm); if(!s) continue;
+    const tx=[],ty=[],tz2=[];
+    for(let k=0;k<=30;k++){ const t=k/30*1.5;
+      tx.push(s.p[0]+s.v[0]*t); ty.push(s.p[1]+s.v[1]*t); tz2.push(s.p[2]+s.v[2]*t); }
+    traces.push({type:'scatter3d',mode:'lines',x:tx,y:ty,z:tz2,
+      line:{color:spCol(s.sp),width:2,dash:'dot'},opacity:0.6,hoverinfo:'skip',showlegend:false});
+  }
+  const R=72, ax={range:[-R,R],color:'#9aa7b4',gridcolor:'#1d242d',tickfont:{size:9}};
+  Plotly.react('starmap',traces,{
+    title:{text:`Solar neighbourhood at t = +${(tMyr*1000).toFixed(0)} kyr — drag to rotate`,font:{size:13,color:'#e6edf3'}},
+    paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,
+    margin:{l:0,r:0,t:34,b:0},uirevision:'starmap',
+    scene:{aspectmode:'cube',bgcolor:'#161b22',
+      xaxis:{...ax,title:{text:'x (ly)',font:{size:10}}},
+      yaxis:{...ax,title:{text:'y (ly)',font:{size:10}}},
+      zaxis:{...ax,title:{text:'z (ly)',font:{size:10}}}}},CFG);
+}
+(function(){
+  const sl=document.getElementById('starT'), lb=document.getElementById('starTlabel');
+  if(!sl) return;
+  const upd=()=>{ const kyr=parseFloat(sl.value); lb.textContent=`t = +${fmt(kyr,0)} kyr`;
+    drawStarMap(kyr/1000); };
+  sl.addEventListener('input',upd);
+  upd();
+})();
 
 // Quotable section anchors: give every methodology heading a stable id + a "#" link that
 // copies a direct URL to that section, so people can cite chapters independently.
