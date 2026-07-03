@@ -822,13 +822,18 @@
   no plane change) is never in short supply, whatever the target era. The complete list of crossings
   <b>within 20 ly</b>, ranked by crossing time, with the Sun-distance at the moment of crossing:</p>
   <div class="crosswrap"><table class="chain" id="crosstable">
-    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th></tr>
+    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th><th class="v">Tangential intercept</th><th class="v">Δt</th><th class="v">Min cruise</th></tr>
   </table></div>
   <p class="src">All 86 catalogued crossings ≤20 ly / ≤1 Myr (spurious-RV entries removed; SIMBAD lists
-  binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). Naked-eye highlights: τ Ceti
-  crosses at 50 kyr just 10.7 ly out; α Cen B at 76 kyr (6.2 ly); 70 Oph at 93 kyr; λ Ser at 145 kyr
-  (9.3 ly); ξ Boo's crossing (303 kyr, 5.4 ly) nearly coincides with its closest approach — the best
-  candidate arrives in-plane.</p>
+  binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). <b>Tangential intercept</b> is the
+  arrival time that minimises the required cruise speed for that star (the analogue of AC's 58 kyr optimum);
+  <b>Δt</b> = crossing − tangential. The smaller |Δt|, the better: the star crosses the ecliptic in the same
+  era as its cheapest intercept, so the in-plane departure (full 29.8 km/s Earth borrow, no plane change)
+  coincides with the minimum-Δv mission. Rows tinted green have |Δt| ≤ 25 kyr. Naked-eye highlights: τ Ceti
+  crosses at 50 kyr (10.7 ly) but its tangential optimum is 215 kyr — poorly aligned; α Cen B crosses at
+  76 kyr vs its 58 kyr optimum (Δ +18); <b>ξ Boo is the standout — crossing 303 kyr vs tangential 308 kyr
+  (Δ −5 kyr) at 5.4 km/s min cruise</b>: the best "nice star" candidate arrives in-plane exactly when it is
+  cheapest to meet.</p>
   <p class="src">Caveats: straight-line motion (galactic-orbit curvature is negligible over ≤2 Myr at this
   fidelity); catalogue completeness ~86 ly — encounters arriving from farther within 1.5 Myr are possible
   but Gaia-era encounter surveys (Bailer-Jones et al.) confirm Gliese 710 remains the record-holder within
@@ -2517,12 +2522,18 @@ function drawStarMap(tMyr){
   const tb=document.getElementById('crosstable');
   if(!tb || typeof ECLIPTIC_CROSSINGS_20LY==='undefined') return;
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  tb.insertAdjacentHTML('beforeend', ECLIPTIC_CROSSINGS_20LY.map((c,k)=>
-    `<tr><td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+  tb.insertAdjacentHTML('beforeend', ECLIPTIC_CROSSINGS_20LY.map((c,k)=>{
+    const dt = c.ttan==null ? null : c.tkyr - c.ttan;
+    const aligned = dt!=null && Math.abs(dt)<=25;                       // crossing ~coincides with the cheap era
+    return `<tr${aligned?' style="background:rgba(63,185,80,.07)"':''}>`+
+    `<td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
     `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
     `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
     `<td class="v">${fmt(c.tkyr,0)} kyr</td>`+
-    `<td class="v">${c.dcross.toFixed(1)} ly</td></tr>`).join(''));
+    `<td class="v">${c.dcross.toFixed(1)} ly</td>`+
+    `<td class="v">${c.ttan==null?'&gt;1,500 kyr':fmt(c.ttan,0)+' kyr'}</td>`+
+    `<td class="v">${dt==null?'—':(dt>0?'+':'')+fmt(dt,0)+' kyr'}</td>`+
+    `<td class="v">${c.vmin.toFixed(1)} km/s</td></tr>`;}).join(''));
 })();
 
 // Quotable section anchors: give every methodology heading a stable id + a "#" link that
