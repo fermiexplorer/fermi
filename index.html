@@ -79,6 +79,16 @@
   .crosswrap table.chain { margin: 0; }
   .crosswrap table.chain th { position: sticky; top: 0; background: #1c232d; }
   .method table.chain th { cursor: pointer; user-select: none; }
+  /* compact candidates table: headers may wrap and numeric cells stay tight, so the
+     prose Note column keeps most of the width instead of being crammed */
+  .method table.chain.cand { table-layout: fixed; }                 /* deterministic: remainder goes to Note */
+  .method table.chain.cand th { white-space: normal; font-size: 11px; padding: 4px 6px; line-height: 1.25; }
+  .method table.chain.cand td { padding: 4px 7px; font-size: 12px; overflow-wrap: break-word; }
+  .method table.chain.cand td.v { white-space: nowrap; }
+  .method table.chain.cand th:first-child { width: 9%; }
+  .method table.chain.cand th:nth-child(2) { width: 8.5%; }
+  .method table.chain.cand th.v { width: 5.4%; white-space: normal; }  /* 9 numeric cols ≈ 49% — Note keeps ~33%; headers wrap */
+  .method table.chain.cand td:last-child, .method table.chain.cand th:last-child { white-space: normal; }
   .method table.chain th:hover { color: var(--ink); }
   .sortind { color: var(--ink); font-size: 10px; margin-left: 3px; }
   #starctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
@@ -809,14 +819,14 @@
   the 160 shown are the naked-eye stars within 55 ly plus the 40 closest future approaches.</p>
 
   <p><b>Is there a better candidate than AC?</b> Yes — two classes:</p>
-  <table class="chain">
-    <tr><th>Target</th><th>Type / V mag</th><th class="v">Now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Min cruise</th><th class="v">Aim tilt @ optimum</th><th class="v">Δv budget</th><th class="v">Propellant</th><th class="v">Min solar α</th><th class="v">Luminosity</th><th>Note</th></tr>
-    <tr><td><b>Alpha Centauri</b> (baseline)</td><td>G2V+K1V · −0.1</td><td class="v">4.3 ly</td><td class="v">3.13 ly</td><td class="v">28 kyr</td><td class="v">23.3 km/s</td><td class="v">−10.1°</td><td class="v">26.0 km/s</td><td class="v">59%</td><td class="v">~100 W/kg</td><td class="v">6.7e26 W</td><td>the mission as specified (≤100 kyr forces it)</td></tr>
-    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62 ly</td><td class="v"><b>0.17 ly</b> (~10,700 AU)</td><td class="v">1.29 Myr</td><td class="v"><b>~0.05 km/s</b></td><td class="v">−11.6°</td><td class="v">20.8 km/s</td><td class="v">51%</td><td class="v">~36 W/kg</td><td class="v">3.7e25 W</td><td>the record-holder: it nearly hits us — any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
-    <tr><td><b>ξ Boötis</b></td><td>G7V+K5V · 4.6</td><td class="v">22 ly</td><td class="v">5.35 ly</td><td class="v">290 kyr</td><td class="v"><b>5.4 km/s</b></td><td class="v"><b>−2.2°</b></td><td class="v"><b>19.3 km/s</b></td><td class="v"><b>48%</b></td><td class="v"><b>~43 W/kg</b></td><td class="v">2.3e26 W</td><td>the best “nice star”: naked-eye Sun-like binary, nearly in-plane at its own optimum — lowest total Δv of any bright target</td></tr>
-    <tr><td><b>c UMa</b></td><td>G0V · 5.2</td><td class="v">66 ly</td><td class="v">5.24 ly</td><td class="v">509 kyr</td><td class="v">3.1 km/s</td><td class="v">−46.3°</td><td class="v">37.0 km/s</td><td class="v">72%</td><td class="v">~40 W/kg</td><td class="v">1.2e27 W</td><td>the tilt trap: cheap cruise but a 46° out-of-plane aim — arrive at its ecliptic crossing (473 kyr, +1.4 km/s cruise) and the Δv drops to 19.1 (48% propellant). Its ~3 L☉ makes it the most luminous cheap target</td></tr>
-    <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39 ly</td><td class="v">7.6 ly</td><td class="v">169 kyr</td><td class="v">13.2 km/s</td><td class="v">−27.8°</td><td class="v">29.1 km/s</td><td class="v">63%</td><td class="v">~56 W/kg</td><td class="v">8.4e26 W</td><td>bright Sun-like, sooner — but pays a plane change</td></tr>
-    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7 ly</td><td class="v">8.65 ly</td><td class="v">138 kyr</td><td class="v">16.1 km/s</td><td class="v">+20.3°</td><td class="v">26.5 km/s</td><td class="v">59%</td><td class="v">~61 W/kg</td><td class="v">5.0e27 W</td><td>doesn't cross the ecliptic inside 20 ly — the +20° tilt is priced in, and it lands ≈ AC's budget (26.5 vs 26.0) with a farther flyby: evaluable, but not a win on Δv — though at ~13 L☉ it is by far the biggest energy prize of the cheap set</td></tr>
+  <table class="chain cand">
+    <tr><th>Target</th><th>Type · V</th><th class="v">Now (ly)</th><th class="v">Closest (ly)</th><th class="v">When (kyr)</th><th class="v">Cruise (km/s)</th><th class="v">Tilt</th><th class="v">Δv (km/s)</th><th class="v">Prop %</th><th class="v">Min α (W/kg)</th><th class="v">Lum (W)</th><th>Note</th></tr>
+    <tr><td><b>Alpha Centauri</b></td><td>G2V+K1V · −0.1</td><td class="v">4.3</td><td class="v">3.13</td><td class="v">28</td><td class="v">23.3</td><td class="v">−10.1°</td><td class="v">26.0</td><td class="v">59</td><td class="v">~100</td><td class="v">6.7e26</td><td>the baseline — the mission as specified (≤100 kyr forces it)</td></tr>
+    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62</td><td class="v"><b>0.17</b></td><td class="v">1,290</td><td class="v"><b>~0.05</b></td><td class="v">−11.6°</td><td class="v">20.8</td><td class="v">51</td><td class="v">~36</td><td class="v">3.7e25</td><td>the record-holder: passes ~10,700 AU — it nearly hits us; any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
+    <tr><td><b>ξ Boötis</b></td><td>G7V+K5V · 4.6</td><td class="v">22</td><td class="v">5.35</td><td class="v">290</td><td class="v"><b>5.4</b></td><td class="v"><b>−2.2°</b></td><td class="v"><b>19.3</b></td><td class="v"><b>48</b></td><td class="v"><b>~43</b></td><td class="v">2.3e26</td><td>the best “nice star”: naked-eye Sun-like binary, nearly in-plane at its own optimum — lowest total Δv of any bright target</td></tr>
+    <tr><td><b>c UMa</b></td><td>G0V · 5.2</td><td class="v">66</td><td class="v">5.24</td><td class="v">509</td><td class="v">3.1</td><td class="v">−46.3°</td><td class="v">37.0</td><td class="v">72</td><td class="v">~40</td><td class="v">1.2e27</td><td>the tilt trap: cheap cruise but a 46° out-of-plane aim — arrive at its ecliptic crossing (473 kyr, +1.4 km/s cruise) and the Δv drops to 19.1 (48% propellant). At ~3 L☉ the most luminous cheap target</td></tr>
+    <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39</td><td class="v">7.6</td><td class="v">169</td><td class="v">13.2</td><td class="v">−27.8°</td><td class="v">29.1</td><td class="v">63</td><td class="v">~56</td><td class="v">8.4e26</td><td>bright Sun-like, sooner — but pays a plane change</td></tr>
+    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~61</td><td class="v">5.0e27</td><td>no ecliptic crossing inside 20 ly — the +20° tilt is priced in; ≈ AC's budget with a farther flyby, but at ~13 L☉ the biggest energy prize of the cheap set</td></tr>
   </table>
   <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
   toward the encounter point and coast; the star does the closing. But cruise is only half the budget: the
