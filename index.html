@@ -85,6 +85,9 @@
   #starT { flex: 1; accent-color: var(--accent); }
   #starTlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 150px; text-align: right; }
   .kpi .kcopy { font-size: 10px; padding: 2px 8px; border: 1px solid var(--line); background: #161b22; color: var(--muted); border-radius: 4px; cursor: pointer; }
+  .kpi .kanchor { font-size: 10px; padding: 2px 7px; border: 1px solid var(--line); background: #161b22; color: var(--muted); border-radius: 4px; text-decoration: none; margin-right: 6px; }
+  .kpi .kanchor:hover { border-color: var(--accent); color: var(--accent); }
+  .kpi { scroll-margin-top: 12px; }
   .build { font-size: 11px; color: var(--muted); font-weight: 400; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; vertical-align: middle; text-decoration: none; }
   .build:hover { border-color: var(--accent); color: var(--accent); }
   .brand { width: 1.15em; height: 1.15em; vertical-align: -0.18em; }
@@ -1127,6 +1130,7 @@ function compute(){
 function fmt(n,d=0){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
 let SIM=null;                                   // last computed sim, used by the trajectory views
 const openKpis=new Set();                        // which KPI calc panels are expanded
+const kpiSlug=s=>'kpi-'+s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');   // stable per-KPI anchor id
 // The integrated "Mission Δv" comes from the heavy buildModel() trajectory integration (~150 ms), so it
 // is computed ASYNCHRONOUSLY (debounced) off the per-drag render path and patched into its KPI in place.
 let _mdvVal=null, _mdvT=0;
@@ -1286,9 +1290,9 @@ function render(){
     d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.4 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, and the high-α pure-solar default reaches ~130.',
     c:`P / m_dry+pay = ${fmt(r.pwrW)} W / ${fmt(r.dryEff)} kg = ${fmt(vehWkg,1)} W/kg\nminimum α to close:  pure solar ≳ 100 W/kg   ·   nuclear-electric ≳ ~23 W/kg (constant power, no fade)\n(power source alone: ${fmt(r.pwrW/Math.max(r.psMass,1e-9),0)} W/kg; engine + tank + structure dilute it to the vehicle value)`}); }
   document.getElementById('kpis').innerHTML=K.map(k=>
-    `<div class="kpi" data-k="${k.l}" title="${k.s}">`+
+    `<div class="kpi" id="${kpiSlug(k.l)}" data-k="${k.l}" title="${k.s}">`+
       `<div class="v">${k.v}</div><div class="k">${k.l}</div>`+
-      `<div class="kcalc"><div class="ksymline"><b>Symbol:</b> ${k.s}</div><div class="kdesc">${k.d}</div><div class="khead"><span>How it’s computed (current values)</span><button class="kcopy" type="button">copy</button></div><pre>${k.i}\n\n${k.c}</pre></div>`+
+      `<div class="kcalc"><div class="ksymline"><b>Symbol:</b> ${k.s}</div><div class="kdesc">${k.d}</div><div class="khead"><span>How it’s computed (current values)</span><span><a class="kanchor" href="#${kpiSlug(k.l)}" title="Copy link to this calculation">#</a><button class="kcopy" type="button">copy</button></span></div><pre>${k.i}\n\n${k.c}</pre></div>`+
     `</div>`).join('');
   document.querySelectorAll('#kpis .kpi').forEach(el=>{ if(openKpis.has(el.dataset.k)) el.classList.add('open'); });
   scheduleModelDv();                              // fill the integrated Mission Δv KPI off the render path
@@ -2489,6 +2493,13 @@ document.getElementById('kpis').addEventListener('click',(e)=>{
   if(btn){ const txt=kpi.querySelector('pre').textContent;
     if(navigator.clipboard) navigator.clipboard.writeText(txt);
     const o=btn.textContent; btn.textContent='copied ✓'; setTimeout(()=>{ btn.textContent=o; },1200); return; }
+  const an=e.target.closest('.kanchor');
+  if(an){ e.preventDefault();                                          // copy a link straight to this expanded KPI
+    const url=location.origin+location.pathname+location.search+'#'+kpi.id;
+    if(navigator.clipboard) navigator.clipboard.writeText(url);
+    history.replaceState(null,'','#'+kpi.id);
+    openKpis.add(kpi.dataset.k); kpi.classList.add('open');
+    const o=an.textContent; an.textContent='✓'; setTimeout(()=>{ an.textContent=o; },1200); return; }
   const k=kpi.dataset.k; if(openKpis.has(k)) openKpis.delete(k); else openKpis.add(k);
   kpi.classList.toggle('open');
 });
@@ -2506,7 +2517,7 @@ function stateToURL(){
   URL_RADIOS.forEach(n=>p.set(n, radio(n)));
   if(!R3) p.set('r3','0');                                             // high-fidelity chase is default; persist only an opt-OUT
   if(animU>0) p.set('pt', animU.toFixed(4));                           // play-sequence position (0..1) — shareable frame
-  history.replaceState(null, '', buildPath()+'?'+p.toString());        // pin the build in the URL path
+  history.replaceState(null, '', buildPath()+'?'+p.toString()+location.hash);  // pin the build; keep any #kpi-/#section anchor
 }
 function urlToState(){
   const p=new URLSearchParams(location.search); if(![...p.keys()].length) return;
@@ -2561,6 +2572,15 @@ document.getElementById('homebtn').addEventListener('click', ()=>{ location.href
 })();
 
 urlToState(); syncLabels(); toggleOpts(); render();
+
+// deep link: a #kpi-<slug> hash opens that KPI's calculation on load (must run after render())
+(function(){
+  if(!location.hash.startsWith('#kpi-')) return;
+  const el=document.getElementById(location.hash.slice(1));
+  if(!el || !el.dataset.k) return;
+  openKpis.add(el.dataset.k); el.classList.add('open');
+  setTimeout(()=>el.scrollIntoView({block:'start'}), 150);
+})();
 
 // ===== Beyond-AC encounter map: the solar neighbourhood played forward 1.5 Myr =====
 // Stars from web/stars.js (SIMBAD 6-D kinematics, ecliptic frame, ly & ly/Myr, Sun at
