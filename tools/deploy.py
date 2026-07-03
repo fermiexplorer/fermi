@@ -25,8 +25,9 @@ import os, re, sys, shutil, subprocess
 SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLONES = ["/home/adi/src/tmp/fermi-pages-2", "/home/adi/src/tmp/fermi-root"]
 TAG = '<script src="web/physics.js"></script>'
-COPY = ["web/physics.js", "web/three.min.js", "favicon.svg"]   # kept fresh for older non-inlined builds
-SHIPPED = ["index.html", "web/physics.js"]                     # must be committed before we pin a SHA
+TAG_STARS = '<script src="web/stars.js"></script>'             # inlined too — a cached stale stars.js once hid the crossing table
+COPY = ["web/physics.js", "web/stars.js", "web/three.min.js", "favicon.svg"]  # kept fresh for older non-inlined builds
+SHIPPED = ["index.html", "web/physics.js", "web/stars.js"]     # must be committed before we pin a SHA
 
 
 def die(msg):
@@ -64,8 +65,10 @@ def build_artifact(build, sha):
         html = f.read()
     with open(os.path.join(SRC, "web", "physics.js"), encoding="utf-8") as f:
         physjs = f.read()
+    with open(os.path.join(SRC, "web", "stars.js"), encoding="utf-8") as f:
+        starsjs = f.read()
     # every marker we rewrite must appear EXACTLY once, or our regex would silently mis-edit
-    for marker in (TAG, "SRC_COMMIT = 'HEAD'"):
+    for marker in (TAG, TAG_STARS, "SRC_COMMIT = 'HEAD'"):
         if html.count(marker) != 1:
             die(f"marker {marker!r} found {html.count(marker)}x in source (expected 1)")
     for pat in (r"const BUILD = \d+", r">build \d+</a>"):
@@ -73,6 +76,7 @@ def build_artifact(build, sha):
         if n != 1:
             die(f"pattern /{pat}/ found {n}x in source (expected 1)")
     art = html.replace(TAG, "<script>\n" + physjs + "\n</script>")          # self-contained
+    art = art.replace(TAG_STARS, "<script>\n" + starsjs + "\n</script>")
     art = art.replace("SRC_COMMIT = 'HEAD'", f"SRC_COMMIT = '{sha}'")
     art = re.sub(r"const BUILD = \d+", f"const BUILD = {build}", art)
     art = re.sub(r">build \d+</a>", f">build {build}</a>", art)
@@ -93,6 +97,8 @@ def verify(text, build, sha, label):
         problems.append("SRC_COMMIT still pinned to HEAD")
     if TAG in text:
         problems.append("physics.js still external (not inlined)")
+    if TAG_STARS in text:
+        problems.append("stars.js still external (not inlined) — stale-cache risk")
     if re.search(r">build 0</a>", text) or re.search(r"const BUILD = 0\b", text):
         problems.append("dev sentinel build 0 leaked into the artifact")
     if problems:

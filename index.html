@@ -78,6 +78,9 @@
   .crosswrap { max-height: 430px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
   .crosswrap table.chain { margin: 0; }
   .crosswrap table.chain th { position: sticky; top: 0; background: #1c232d; }
+  .method table.chain th { cursor: pointer; user-select: none; }
+  .method table.chain th:hover { color: var(--ink); }
+  .sortind { color: var(--ink); font-size: 10px; margin-left: 3px; }
   #starctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #starT { flex: 1; accent-color: var(--accent); }
   #starTlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 150px; text-align: right; }
@@ -804,36 +807,59 @@
 
   <p><b>Is there a better candidate than AC?</b> Yes — two classes:</p>
   <table class="chain">
-    <tr><th>Target</th><th>Type / V mag</th><th class="v">Now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Min cruise</th><th>Note</th></tr>
-    <tr><td><b>Alpha Centauri</b> (baseline)</td><td>G2V+K1V · −0.1</td><td class="v">4.3 ly</td><td class="v">3.13 ly</td><td class="v">28 kyr</td><td class="v">23.3 km/s</td><td>the mission as specified (≤100 kyr forces it)</td></tr>
-    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62 ly</td><td class="v"><b>0.17 ly</b> (~10,700 AU)</td><td class="v">1.29 Myr</td><td class="v"><b>~0.05 km/s</b></td><td>the record-holder: it nearly hits us — any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
-    <tr><td><b>ξ Boötis</b></td><td>G7V+K5V · 4.6</td><td class="v">22 ly</td><td class="v">5.35 ly</td><td class="v">290 kyr</td><td class="v"><b>5.4 km/s</b></td><td>the best “nice star”: naked-eye Sun-like binary, Δv collapses vs AC</td></tr>
-    <tr><td><b>c UMa</b></td><td>G0V · 5.2</td><td class="v">66 ly</td><td class="v">5.24 ly</td><td class="v">509 kyr</td><td class="v">3.1 km/s</td><td>Sun-like; almost free, if you can wait half a million years</td></tr>
-    <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39 ly</td><td class="v">7.6 ly</td><td class="v">169 kyr</td><td class="v">13.2 km/s</td><td>bright Sun-like, sooner</td></tr>
-    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7 ly</td><td class="v">8.65 ly</td><td class="v">138 kyr</td><td class="v">16.1 km/s</td><td>a first-magnitude star, still cheaper than AC</td></tr>
+    <tr><th>Target</th><th>Type / V mag</th><th class="v">Now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Min cruise</th><th class="v">Aim tilt @ optimum</th><th class="v">Δv budget</th><th>Note</th></tr>
+    <tr><td><b>Alpha Centauri</b> (baseline)</td><td>G2V+K1V · −0.1</td><td class="v">4.3 ly</td><td class="v">3.13 ly</td><td class="v">28 kyr</td><td class="v">23.3 km/s</td><td class="v">−10.1°</td><td class="v">26.0 km/s</td><td>the mission as specified (≤100 kyr forces it)</td></tr>
+    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62 ly</td><td class="v"><b>0.17 ly</b> (~10,700 AU)</td><td class="v">1.29 Myr</td><td class="v"><b>~0.05 km/s</b></td><td class="v">−11.6°</td><td class="v">20.8 km/s</td><td>the record-holder: it nearly hits us — any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
+    <tr><td><b>ξ Boötis</b></td><td>G7V+K5V · 4.6</td><td class="v">22 ly</td><td class="v">5.35 ly</td><td class="v">290 kyr</td><td class="v"><b>5.4 km/s</b></td><td class="v"><b>−2.2°</b></td><td class="v"><b>19.3 km/s</b></td><td>the best “nice star”: naked-eye Sun-like binary, nearly in-plane at its own optimum — lowest total Δv of any bright target</td></tr>
+    <tr><td><b>c UMa</b></td><td>G0V · 5.2</td><td class="v">66 ly</td><td class="v">5.24 ly</td><td class="v">509 kyr</td><td class="v">3.1 km/s</td><td class="v">−46.3°</td><td class="v">37.0 km/s</td><td>the tilt trap: cheap cruise but a 46° out-of-plane aim — arrive at its ecliptic crossing (473 kyr, +1.4 km/s cruise) and the Δv drops to 19.1</td></tr>
+    <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39 ly</td><td class="v">7.6 ly</td><td class="v">169 kyr</td><td class="v">13.2 km/s</td><td class="v">−27.8°</td><td class="v">29.1 km/s</td><td>bright Sun-like, sooner — but pays a plane change</td></tr>
+    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7 ly</td><td class="v">8.65 ly</td><td class="v">138 kyr</td><td class="v">16.1 km/s</td><td class="v">+20.3°</td><td class="v">26.5 km/s</td><td>doesn't cross the ecliptic inside 20 ly — the +20° tilt is priced in, and it lands ≈ AC's budget (26.5 vs 26.0) with a farther flyby: evaluable, but not a win</td></tr>
   </table>
   <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
-  toward the encounter point and coast; the star does the closing. ξ Boötis at 5.4 km/s needs a propellant
-  fraction of a few percent (vs ~64% for AC's 23.3 km/s + escape) — the entire vehicle problem relaxes.
-  Red-dwarf record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr) and
+  toward the encounter point and coast; the star does the closing. But cruise is only half the budget: the
+  <b>aim tilt</b> out of the ecliptic sets how much of Earth's 29.8 km/s you can borrow, and the <b>Δv
+  budget</b> column (the engine's full LEO low-thrust departure model at each star's optimum, true tilt
+  included) is the honest ranking. Stars that never cross the ecliptic nearby are still perfectly
+  evaluable — they just pay the tilt (Altair: +20°, ≈ AC's budget) — while a large tilt can wipe out a
+  cheap cruise (c UMa, τ Ceti at 44°). ξ Boötis wins on both axes at once. Note the escape floor: even a
+  ~0 km/s cruise costs ~19 km/s from LEO (Earth spiral + solar escape at 1 AU), so the spread between good
+  targets is modest in Δv — but a small required cruise means the <em>power gate</em> passes with huge
+  margin: a ξ Boo mission closes as pure solar even at today's α ≈ 20–30 W/kg hardware, no far-term array
+  needed. Red-dwarf record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr) and
   Gliese 445 (~3.4 ly @ 46 kyr) — closer than AC ever gets, but M dwarfs.</p>
   <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
   50 ly of the Sun in the next 1 Myr</b> — so in-plane departure geometry (borrowing Earth's 29.8 km/s with
   no plane change) is never in short supply, whatever the target era. The complete list of crossings
   <b>within 20 ly</b>, ranked by crossing time, with the Sun-distance at the moment of crossing:</p>
+  <p style="margin:6px 0 2px"><button id="csvbtn" type="button" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 12px;font-size:12.5px;cursor:pointer">⬇ Download table as CSV</button>
+  <span class="src" style="margin-left:8px">…or grab the raw data: <a href="https://github.com/fermiexplorer/fermi/blob/main/web/stars.js" target="_blank" rel="noopener noreferrer"><code>web/stars.js</code></a></span></p>
   <div class="crosswrap"><table class="chain" id="crosstable">
-    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th><th class="v">Tangential intercept</th><th class="v">Δt</th><th class="v">Min cruise</th></tr>
+    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Naked eye</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th><th class="v">Tangential intercept</th><th class="v">Δt</th><th class="v">Cruise @ crossing</th><th class="v">Δv budget</th></tr>
   </table></div>
   <p class="src">All 86 catalogued crossings ≤20 ly / ≤1 Myr (spurious-RV entries removed; SIMBAD lists
-  binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). <b>Tangential intercept</b> is the
-  arrival time that minimises the required cruise speed for that star (the analogue of AC's 58 kyr optimum);
-  <b>Δt</b> = crossing − tangential. The smaller |Δt|, the better: the star crosses the ecliptic in the same
-  era as its cheapest intercept, so the in-plane departure (full 29.8 km/s Earth borrow, no plane change)
-  coincides with the minimum-Δv mission. Rows tinted green have |Δt| ≤ 25 kyr. Naked-eye highlights: τ Ceti
-  crosses at 50 kyr (10.7 ly) but its tangential optimum is 215 kyr — poorly aligned; α Cen B crosses at
-  76 kyr vs its 58 kyr optimum (Δ +18); <b>ξ Boo is the standout — crossing 303 kyr vs tangential 308 kyr
-  (Δ −5 kyr) at 5.4 km/s min cruise</b>: the best "nice star" candidate arrives in-plane exactly when it is
-  cheapest to meet.</p>
+  binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). <b>Naked eye</b>: V ≤ 6.
+  <b>Tangential intercept</b> is the arrival time that minimises the required cruise speed for that star
+  (the analogue of AC's 58 kyr optimum); <b>Δt</b> = crossing − tangential — the smaller |Δt|, the better
+  (rows tinted green have |Δt| ≤ 25 kyr). <b>Cruise @ crossing</b> and <b>Δv budget</b> assume arrival AT
+  the crossing time: the target point is then in the ecliptic plane, so the aim has <em>zero</em> tilt
+  (full 29.8 km/s Earth borrow, no plane change), and the Δv budget is the engine's full low-thrust
+  LEO-departure model at that cruise — one number that combines "low cruise" and "good alignment"
+  (misalignment inflates the cruise above the star's own minimum). Click any column header to sort.</p>
+
+  <h4>Top-20 candidates (Δv budget + brightness)</h4>
+  <p>Ranked by <code>score = Δv budget + 2·max(0, V − 6)</code> — the engine's spacecraft Δv for an
+  in-plane arrival at the crossing, plus a 2 km/s-per-magnitude penalty below naked-eye visibility
+  (uncatalogued V treated as 15). Transparent Fermi-style weights; click the headers to re-rank by any
+  single column.</p>
+  <div class="crosswrap" style="max-height:none"><table class="chain" id="top20table">
+    <tr><th>Rank</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Naked eye</th><th class="v">Arrival</th><th class="v">Δt</th><th class="v">Cruise</th><th class="v">Δv budget</th><th class="v">Score</th></tr>
+  </table></div>
+  <p class="src"><b>ξ Boötis and c UMa top the list at ~19 km/s total Δv — 6 km/s below Alpha Centauri's
+  25–26 —</b> and ξ Boo is the naked-eye Sun-like binary. A cautionary tale hides in the tilt: at its
+  <em>own</em> tangential optimum c UMa's aim is 46° out of the ecliptic (Δv 37 km/s); arriving at its
+  crossing instead costs only 1.4 km/s more cruise and zeroes the tilt — alignment is worth more than raw
+  minimum cruise. Kinematically ideal but faint: LSPM J2146+3813 (M5V, crossing 78 kyr, Δ −5 kyr, passes
+  1.86 ly) — a "perfect candidate in speed and direction, sadly not bright in the night sky."</p>
   <p class="src">Caveats: straight-line motion (galactic-orbit curvature is negligible over ≤2 Myr at this
   fidelity); catalogue completeness ~86 ly — encounters arriving from farther within 1.5 Myr are possible
   but Gaia-era encounter surveys (Bailer-Jones et al.) confirm Gliese 710 remains the record-holder within
@@ -2528,12 +2554,44 @@ function drawStarMap(tMyr){
     return `<tr${aligned?' style="background:rgba(63,185,80,.07)"':''}>`+
     `<td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
     `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
+    `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
     `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
     `<td class="v">${fmt(c.tkyr,0)} kyr</td>`+
     `<td class="v">${c.dcross.toFixed(1)} ly</td>`+
     `<td class="v">${c.ttan==null?'&gt;1,500 kyr':fmt(c.ttan,0)+' kyr'}</td>`+
     `<td class="v">${dt==null?'—':(dt>0?'+':'')+fmt(dt,0)+' kyr'}</td>`+
-    `<td class="v">${c.vmin.toFixed(1)} km/s</td></tr>`;}).join(''));
+    `<td class="v">${c.vcr==null?'—':c.vcr.toFixed(1)+' km/s'}</td>`+
+    `<td class="v">${c.dvb==null?'—':c.dvb.toFixed(1)+' km/s'}</td></tr>`;}).join(''));
+  // top-20 candidate ranking: engine Δv budget at the crossing (cruise + alignment
+  // combined, tilt = 0 by construction) + a brightness penalty
+  const t20=document.getElementById('top20table');
+  if(t20){
+    const score=c=>c.dvb==null ? 1e9 : c.dvb + 2*Math.max(0,(c.V==null?15:c.V)-6);
+    const top=[...ECLIPTIC_CROSSINGS_20LY].sort((a,b)=>score(a)-score(b)).slice(0,20);
+    t20.insertAdjacentHTML('beforeend', top.map((c,k)=>{
+      const dt=c.ttan==null?'—':((c.tkyr-c.ttan>0?'+':'')+fmt(c.tkyr-c.ttan,0)+' kyr');
+      return `<tr><td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+      `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
+      `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
+      `<td class="v">${fmt(c.tkyr,0)} kyr</td>`+
+      `<td class="v">${dt}</td>`+
+      `<td class="v">${c.vcr==null?'—':c.vcr.toFixed(1)+' km/s'}</td>`+
+      `<td class="v">${c.dvb==null?'—':c.dvb.toFixed(1)+' km/s'}</td>`+
+      `<td class="v">${score(c).toFixed(1)}</td></tr>`;}).join(''));
+  }
+  // CSV download (client-side; full table incl. derived columns)
+  const btn=document.getElementById('csvbtn');
+  if(btn) btn.addEventListener('click',()=>{
+    const hdr='rank,star,type,Vmag,naked_eye,d_now_ly,crossing_kyr,d_at_crossing_ly,tangential_kyr,delta_t_kyr,cruise_at_crossing_kms,dv_budget_kms';
+    const lines=ECLIPTIC_CROSSINGS_20LY.map((c,k)=>[k+1,`"${c.n}"`,`"${c.sp}"`,
+      c.V==null?'':c.V, c.V!=null&&c.V<=6?1:0, c.dnow, c.tkyr, c.dcross,
+      c.ttan==null?'':c.ttan, c.ttan==null?'':c.tkyr-c.ttan,
+      c.vcr==null?'':c.vcr, c.dvb==null?'':c.dvb].join(','));
+    const blob=new Blob([hdr+'\n'+lines.join('\n')+'\n'],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='fermi-ecliptic-crossings-20ly.csv';
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  });
 })();
 
 // Quotable section anchors: give every methodology heading a stable id + a "#" link that
@@ -2560,6 +2618,37 @@ function drawStarMap(tMyr){
       });
     });
     h.appendChild(a);
+  });
+})();
+
+// Sortable tables: every methodology table header is clickable — sorts rows by that column
+// (numeric-aware; "—"/non-numeric rows sink to the bottom), toggling asc/desc with a ▲/▼
+// indicator. Data cells are untouched, so re-sorting is lossless.
+(function(){
+  document.querySelectorAll('.method table.chain').forEach(tb=>{
+    const hdr=tb.rows[0]; if(!hdr) return;
+    [...hdr.cells].forEach((th,ci)=>{
+      th.title='Click to sort';
+      th.addEventListener('click',()=>{
+        const asc = th.dataset.dir!=='asc';
+        [...hdr.cells].forEach(h=>{ delete h.dataset.dir; const s=h.querySelector('.sortind'); if(s)s.remove(); });
+        th.dataset.dir = asc?'asc':'desc';
+        th.insertAdjacentHTML('beforeend', `<span class="sortind">${asc?'▲':'▼'}</span>`);
+        const rows=[...tb.rows].slice(1), body=rows[0].parentNode;
+        const txt=r=>(r.cells[ci]?r.cells[ci].textContent:'').trim();
+        const num=t=>{ const m=t.replace(/[,\s]/g,'').match(/^[+\-−>≥]?\d+(\.\d+)?/);
+          return m?parseFloat(m[0].replace(/[>≥]/,'').replace('−','-')):null; };
+        const numeric = rows.filter(r=>txt(r)).filter(r=>num(txt(r))!=null).length
+                        >= 0.6*Math.max(1,rows.filter(r=>txt(r)).length);
+        rows.sort((a,b)=>{
+          if(numeric){ const va=num(txt(a)), vb=num(txt(b));
+            if(va==null&&vb==null) return 0; if(va==null) return 1; if(vb==null) return -1;
+            return asc?va-vb:vb-va; }
+          return asc?txt(a).localeCompare(txt(b)):txt(b).localeCompare(txt(a));
+        });
+        rows.forEach(r=>body.appendChild(r));
+      });
+    });
   });
 })();
 
