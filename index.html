@@ -75,6 +75,9 @@
   .kpi .kcalc pre { margin: 6px 0 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; line-height: 1.55; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   pre.cmd { margin: 8px 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   #starmap { min-height: clamp(420px, 52vh, 640px); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .crosswrap { max-height: 430px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+  .crosswrap table.chain { margin: 0; }
+  .crosswrap table.chain th { position: sticky; top: 0; background: #1c232d; }
   #starctl { display: flex; gap: 10px; align-items: center; margin: 8px 0 4px; }
   #starT { flex: 1; accent-color: var(--accent); }
   #starTlabel { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; min-width: 150px; text-align: right; }
@@ -815,9 +818,17 @@
   Red-dwarf record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr) and
   Gliese 445 (~3.4 ly @ 46 kyr) — closer than AC ever gets, but M dwarfs.</p>
   <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
-  50 ly of the Sun in the next 1 Myr</b> (e.g. Lalande 21185 crosses at just 5.3 ly in 13 kyr) — so
-  in-plane departure geometry (borrowing Earth's 29.8 km/s with no plane change) is never in short supply,
-  whatever the target era.</p>
+  50 ly of the Sun in the next 1 Myr</b> — so in-plane departure geometry (borrowing Earth's 29.8 km/s with
+  no plane change) is never in short supply, whatever the target era. The complete list of crossings
+  <b>within 20 ly</b>, ranked by crossing time, with the Sun-distance at the moment of crossing:</p>
+  <div class="crosswrap"><table class="chain" id="crosstable">
+    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th></tr>
+  </table></div>
+  <p class="src">All 86 catalogued crossings ≤20 ly / ≤1 Myr (spurious-RV entries removed; SIMBAD lists
+  binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). Naked-eye highlights: τ Ceti
+  crosses at 50 kyr just 10.7 ly out; α Cen B at 76 kyr (6.2 ly); 70 Oph at 93 kyr; λ Ser at 145 kyr
+  (9.3 ly); ξ Boo's crossing (303 kyr, 5.4 ly) nearly coincides with its closest approach — the best
+  candidate arrives in-plane.</p>
   <p class="src">Caveats: straight-line motion (galactic-orbit curvature is negligible over ≤2 Myr at this
   fidelity); catalogue completeness ~86 ly — encounters arriving from farther within 1.5 Myr are possible
   but Gaia-era encounter surveys (Bailer-Jones et al.) confirm Gliese 710 remains the record-holder within
@@ -2500,6 +2511,18 @@ function drawStarMap(tMyr){
     drawStarMap(kyr/1000); };
   sl.addEventListener('input',upd);
   upd();
+})();
+// Ecliptic-crossing table (from web/stars.js; already ranked by crossing time)
+(function(){
+  const tb=document.getElementById('crosstable');
+  if(!tb || typeof ECLIPTIC_CROSSINGS_20LY==='undefined') return;
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  tb.insertAdjacentHTML('beforeend', ECLIPTIC_CROSSINGS_20LY.map((c,k)=>
+    `<tr><td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+    `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
+    `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
+    `<td class="v">${fmt(c.tkyr,0)} kyr</td>`+
+    `<td class="v">${c.dcross.toFixed(1)} ly</td></tr>`).join(''));
 })();
 
 // Quotable section anchors: give every methodology heading a stable id + a "#" link that
