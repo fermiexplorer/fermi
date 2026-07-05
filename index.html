@@ -799,6 +799,36 @@
   <p>In the default ~73k-yr, 2 kW, Isp-3000 s high-α configuration the margins are comfortable, so it reads
   feasible as pure solar — push those sliders toward heavier/low-α hardware to see the power gate bite.</p>
 
+  <h4>What is α? — specific power, the number that decides electric flight</h4>
+  <p><b>Definition.</b> In this project α is the <em>whole-vehicle specific power</em>: installed
+  electrical power ÷ total dry mass, in W/kg (see the "Vehicle specific power" KPI). It is the single
+  parameter that decides whether an electrically propelled mission closes, because thrust is bought with
+  power (<code>F = 2ηP/v_e</code>), so the vehicle's acceleration is proportional to <code>P/m = α</code>:
+  a high-α vehicle finishes its burn quickly and near the Sun; a low-α vehicle drags its burn out into
+  the dark.</p>
+  <p><b>Where the term comes from.</b> The notation is <b>Ernst Stuhlinger's</b>, from the founding
+  literature of electric propulsion (his 1954 IAC paper and the field's first textbook, <em>Ion Propulsion
+  for Space Flight</em>, 1964). Stuhlinger wrote the powerplant mass as a linear coefficient,
+  <code>M<sub>powerplant</sub> = α·P</code> — just the first Greek letter on a proportionality constant —
+  and then derived the field's most famous result from it: for a burn of duration <code>t</code> the
+  natural velocity scale of a power-limited rocket is the <b>Stuhlinger (characteristic) velocity</b>
+  <code>v<sub>ch</sub> = √(2t/α)</code>. Because every optimisation in electric propulsion runs through
+  that coefficient, the letter stuck; Jahn's <em>Physics of Electric Propulsion</em> (1968) canonised it,
+  and "low-alpha reactor" remains standard mission-study jargon. <span class="src">Convention note: the
+  classical α is the powerplant specific <em>mass</em> (kg/kW); this page uses the reciprocal — specific
+  <em>power</em> in W/kg, the modern solar-array figure of merit — applied to the whole vehicle, since
+  tanks and structure ride along too.</span></p>
+  <p><b>Why it gates the mission.</b> Stuhlinger's <code>v_ch = √(2t/α)</code> says attainable velocity is
+  set by α and burn time. For <em>solar</em>-electric flight the twist is that burn time is not free: array
+  power fades as 1/r² as the probe recedes, so useful thrust time is itself capped by α (a slow vehicle
+  drifts out of the light before finishing). The engine's 1/r² gate integrates this exactly, and the
+  result is that achievable cruise v∞ is a function of α alone — which inverts into the <b>"Min solar α"
+  column</b> in every table below: the smallest α at which a pure solar-electric vehicle reaches that
+  star's required cruise. Landmarks: below <b>~40 W/kg</b> a solar vehicle never escapes the Sun at all;
+  ~4 km/s cruises need ~41; λ Ser's 19.2 needs ~68; AC-class ~24 km/s needs ~100–115; above ~27 km/s no α
+  suffices (the fade always wins). A nuclear-electric vehicle (constant power, no fade) escapes this
+  ceiling and closes AC-class missions from ~23 W/kg — at the programmatic price of flying a reactor.</p>
+
   <h4>Beyond Alpha Centauri — nearby-star encounters over the next million years</h4>
   <p>Alpha Centauri is the target <em>because</em> of the 100,000-year requirement — it is the nearest system
   today. Relax the clock and the answer changes, because the stars move: some are inbound, and the cheapest
