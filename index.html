@@ -926,10 +926,11 @@
   (V ≤ 2.5). This table ranks every star whose closest approach lies ahead (within 1 Myr, closing to
   &lt;85% of its current distance) by <b>luminosity</b> — the energy-first view of target selection:</p>
   <div class="crosswrap" style="max-height:none"><table class="chain" id="lumtable">
-    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Luminosity</th><th class="v">d now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Tilt</th><th class="v">Cruise</th><th class="v">Δv budget</th><th class="v">Propellant</th></tr>
+    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Luminosity</th><th class="v">d now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Tilt</th><th class="v">Cruise</th><th class="v">Δv budget</th><th class="v">Propellant</th><th class="v">Min solar α</th></tr>
   </table></div>
   <p class="src">Cruise/Δv are the best arrival strategy (crossing when cheaper; tilt shows the chosen
-  aim); ⚠ = unverified kinematics. <b>The physics that cuts against "aim for the biggest star": stellar
+  aim); Min solar α as in the tables above ("—" = the required cruise exceeds what pure solar reaches at
+  any α); ⚠ = unverified kinematics. <b>The physics that cuts against "aim for the biggest star": stellar
   lifetime is a steep inverse function of luminosity.</b> A ~25 L☉ A-star (Sirius-class) lives ~1 Gyr;
   a ~100+ L☉ giant is already near the end of its life; supergiants (Betelgeuse-class — none inbound in
   this sweep) live only ~10 Myr and end as supernovae. For a civilization buying energy <em>forever</em>,
@@ -955,7 +956,8 @@
   <table class="chain">
     <tr><th>Factor</th><th>LSPM J2146+3813 (M5V)</th><th>λ Serpentis (G0V)</th></tr>
     <tr><td>Arrival (crossing)</td><td class="v"><b>78 kyr</b> — ~2× sooner</td><td class="v">145 kyr</td></tr>
-    <tr><td>Δv budget / cruise @ crossing</td><td class="v">~19.5 km/s / 6.7 km/s</td><td class="v">23.0 km/s / 19.2 km/s</td></tr>
+    <tr><td>Δv budget / cruise @ crossing</td><td class="v">~19.7 km/s / 8.7 km/s</td><td class="v">23.0 km/s / 19.2 km/s</td></tr>
+    <tr><td>Min solar α (power gate)</td><td class="v"><b>~48 W/kg</b> — near-term</td><td class="v">~68 W/kg</td></tr>
     <tr><td>Comms range at arrival</td><td class="v"><b>~1.9 ly</b> (much easier link)</td><td class="v">~9 ly</td></tr>
     <tr><td>Captureable luminosity</td><td class="v">~0.002–0.005 L☉</td><td class="v"><b>~2 L☉ (~500×)</b></td></tr>
     <tr><td>Stellar lifetime</td><td class="v">~trillions of yr</td><td class="v">~8–10 Gyr</td></tr>
@@ -2780,7 +2782,8 @@ function drawStarMap(tMyr){
         `<td class="v">${c.tilt>0?'+':''}${c.tilt.toFixed(1)}°</td>`+
         `<td class="v">${c.vmin.toFixed(1)} km/s</td>`+
         `<td class="v">${c.dvb.toFixed(1)} km/s</td>`+
-        `<td class="v">${c.pf}%</td></tr>`).join(''));
+        `<td class="v">${c.pf}%</td>`+
+        `<td class="v">${c.amin==null?'—':c.amin+' W/kg'}</td></tr>`).join(''));
     }
     const b2=document.getElementById('csvbtn2');
     if(b2) b2.addEventListener('click',()=>{
