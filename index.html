@@ -835,7 +835,7 @@
     <tr><td><b>Alpha Centauri</b></td><td>G2V+K1V · −0.1</td><td class="v">4.3</td><td class="v">3.13</td><td class="v">28</td><td class="v">23.3</td><td class="v">−10.1°</td><td class="v">26.0</td><td class="v">59</td><td class="v">~100</td><td class="v">6.7e26</td><td>the baseline — the mission as specified (≤100 kyr forces it)</td></tr>
     <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62</td><td class="v"><b>0.17</b></td><td class="v">1,290</td><td class="v"><b>~0.05</b></td><td class="v">−11.6°</td><td class="v">20.8</td><td class="v">51</td><td class="v">~36</td><td class="v">3.7e25</td><td>the record-holder: passes ~10,700 AU — it nearly hits us; any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
     <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39</td><td class="v">7.6</td><td class="v">169</td><td class="v"><b>13.2</b></td><td class="v">−27.8°</td><td class="v">29.1</td><td class="v">63</td><td class="v">~56</td><td class="v">8.4e26</td><td><b>the best validated bright candidate</b>: naked-eye Sun-like star, ~2 L☉, corroborated by published Gaia encounter surveys — arrive at its ecliptic crossing (145 kyr, cruise 19.2, tilt 0) and the <b>Δv is 23.0 km/s (54% propellant)</b>, ~2 below AC with a brighter future flyby</td></tr>
-    <tr><td><b>HD 176051A</b></td><td>F9V · 5.3</td><td class="v">49</td><td class="v">—</td><td class="v">288</td><td class="v">16.9</td><td class="v">0° @ crossing</td><td class="v">22.1</td><td class="v">54</td><td class="v">~62</td><td class="v">—</td><td>naked-eye F9V binary; crossing arrival at 288 kyr — the cheapest naked-eye Δv in the validated set (22.1)</td></tr>
+    <tr><td>⚠ <b>HD 176051A</b></td><td>F9V · 5.3</td><td class="v">49</td><td class="v">—</td><td class="v">288</td><td class="v">16.9</td><td class="v">0° @ crossing</td><td class="v">22.1</td><td class="v">54</td><td class="v">~62</td><td class="v">—</td><td>would be the cheapest naked-eye Δv (22.1 @ 288 kyr) — but its component RV is <b>single-source</b>: flagged unverified by the deep data audit, needs corroboration before promotion</td></tr>
     <tr><td><b>c UMa</b> (corrected)</td><td>G0V · 5.2</td><td class="v">66</td><td class="v">~13</td><td class="v">~1,240</td><td class="v">3.1</td><td class="v">−46.3°</td><td class="v">37.0</td><td class="v">72</td><td class="v">~40</td><td class="v">1.2e27</td><td>with the validated RV (−15.4, Gaia; a 2023 catalogue error said −38.6) its approach is later and farther than first computed — and it remains the tilt-trap example: cheap cruise, ruinous 46° aim</td></tr>
     <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~61</td><td class="v">5.0e27</td><td>no ecliptic crossing inside 20 ly — the +20° tilt is priced in; ≈ AC's budget with a farther flyby, but at ~13 L☉ the biggest energy prize of the cheap set</td></tr>
   </table>
@@ -877,7 +877,9 @@
   ~100, and "—" means pure solar never reaches it at any α). <b>Luminosity</b> is bolometric, in watts,
   derived from V + distance + a spectral-type bolometric correction (Sun = 3.8e26 W; late-M values are
   order-of-magnitude; SIMBAD's combined V for unresolved binaries gives the pair's total — the relevant
-  number for energy capture). Click any column header to sort.</p>
+  number for energy capture). <b>⚠</b> marks stars whose kinematics the deep data audit could not
+  corroborate (&lt;2 published RVs, or non-Gaia RV scatter &gt; 10 km/s MAD) — shown for completeness but
+  excluded from the top-20 ranking. Click any column header to sort.</p>
 
   <h4>Top-20 candidates (Δv budget + brightness)</h4>
   <p>Ranked by <code>score = Δv budget + 2·max(0, V − 6)</code> — the engine's spacecraft Δv for an
@@ -888,12 +890,14 @@
     <tr><th>Rank</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Naked eye</th><th class="v">Arrival</th><th class="v">Δt</th><th class="v">Cruise</th><th class="v">Δv budget</th><th class="v">Propellant</th><th class="v">Min solar α</th><th class="v">Luminosity</th><th class="v">Score</th></tr>
   </table></div>
   <p class="src"><b>With validated RVs, HD 7924 (19.0 km/s @ 737 kyr) and HD 204521 (19.4 @ 332 kyr) lead
-  on pure Δv — ~6 km/s below Alpha Centauri's 25–26 — but both are binocular stars.</b> Among the
-  naked-eye set, <b>HD 176051A (22.1 km/s @ 288 kyr)</b> and <b>λ Ser (23.0 @ 145 kyr, ~2 L☉,
-  survey-corroborated)</b> are the winners, only ~2–3 km/s under AC — and α Cen itself (25.2 @ 80 kyr,
-  in-plane arrival) holds up remarkably well after the data cleanup. Kinematically ideal but faint:
-  LSPM J2146+3813 (M5V, crossing 78 kyr, Δ −5 kyr, passes 1.86 ly, RV confirmed by 4 measurements) — a
-  "perfect candidate in speed and direction, sadly not bright in the night sky."</p>
+  on pure Δv — ~6 km/s below Alpha Centauri's 25–26 — but both are binocular stars.</b> The naked-eye
+  winner is <b>λ Ser (23.0 @ 145 kyr, ~2 L☉, survey-corroborated)</b>, ~2 km/s under AC — and α Cen itself
+  (25.2 @ 80 kyr, in-plane arrival) holds up remarkably well after the data cleanup. The shortlist admits
+  only stars whose kinematics are corroborated (≥2 published RVs, low scatter); ⚠ rows in the tables are
+  single-source or high-scatter and stay out of the ranking — that gate demoted HD 176051A (22.1 @ 288 kyr
+  on one RV) and the UCAC4 0.8-ly crossing claim. Kinematically ideal but faint: LSPM J2146+3813 (M5V,
+  crossing 78 kyr, Δ −5 kyr, passes 1.86 ly, RV confirmed by 4 measurements) — a "perfect candidate in
+  speed and direction, sadly not bright in the night sky."</p>
 
   <h4>The 100 closest passes in the next 1 Myr — crossers and non-crossers alike</h4>
   <p>The crossing table only lists stars that pierce the ecliptic plane nearby. This one ranks the
@@ -2670,7 +2674,7 @@ function drawStarMap(tMyr){
     const dt = c.ttan==null ? null : c.tkyr - c.ttan;
     const aligned = dt!=null && Math.abs(dt)<=25;                       // crossing ~coincides with the cheap era
     return `<tr${aligned?' style="background:rgba(63,185,80,.07)"':''}>`+
-    `<td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+    `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs or high scatter">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
     `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
     `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
     `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
@@ -2687,7 +2691,7 @@ function drawStarMap(tMyr){
   // combined, tilt = 0 by construction) + a brightness penalty
   const t20=document.getElementById('top20table');
   if(t20){
-    const score=c=>c.dvb==null ? 1e9 : c.dvb + 2*Math.max(0,(c.V==null?15:c.V)-6);
+    const score=c=>(c.dvb==null||c.u) ? 1e9 : c.dvb + 2*Math.max(0,(c.V==null?15:c.V)-6);   // unverified kinematics can't make the shortlist
     const top=[...ECLIPTIC_CROSSINGS_20LY].sort((a,b)=>score(a)-score(b)).slice(0,20);
     t20.insertAdjacentHTML('beforeend', top.map((c,k)=>{
       const dt=c.ttan==null?'—':((c.tkyr-c.ttan>0?'+':'')+fmt(c.tkyr-c.ttan,0)+' kyr');
@@ -2706,12 +2710,12 @@ function drawStarMap(tMyr){
   // CSV download (client-side; full table incl. derived columns)
   const btn=document.getElementById('csvbtn');
   if(btn) btn.addEventListener('click',()=>{
-    const hdr='rank,star,type,Vmag,naked_eye,d_now_ly,crossing_kyr,d_at_crossing_ly,tangential_kyr,delta_t_kyr,cruise_at_crossing_kms,dv_budget_kms,propellant_pct,min_solar_alpha_wkg,luminosity_w';
+    const hdr='rank,star,type,Vmag,naked_eye,d_now_ly,crossing_kyr,d_at_crossing_ly,tangential_kyr,delta_t_kyr,cruise_at_crossing_kms,dv_budget_kms,propellant_pct,min_solar_alpha_wkg,luminosity_w,unverified_kinematics';
     const lines=ECLIPTIC_CROSSINGS_20LY.map((c,k)=>[k+1,`"${c.n}"`,`"${c.sp}"`,
       c.V==null?'':c.V, c.V!=null&&c.V<=6?1:0, c.dnow, c.tkyr, c.dcross,
       c.ttan==null?'':c.ttan, c.ttan==null?'':c.tkyr-c.ttan,
       c.vcr==null?'':c.vcr, c.dvb==null?'':c.dvb,
-      c.pf==null?'':c.pf, c.amin==null?'':c.amin, c.lw==null?'':c.lw].join(','));
+      c.pf==null?'':c.pf, c.amin==null?'':c.amin, c.lw==null?'':c.lw, c.u?1:0].join(','));
     const blob=new Blob([hdr+'\n'+lines.join('\n')+'\n'],{type:'text/csv'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='fermi-ecliptic-crossings-20ly.csv';
@@ -2724,7 +2728,7 @@ function drawStarMap(tMyr){
       const dt=(c.tcross==null||c.ttan==null)?null:c.tcross-c.ttan;
       const nearplane=Math.abs(c.tilt)<=10;                             // "a few degrees off the ecliptic"
       return `<tr${nearplane?' style="background:rgba(63,185,80,.07)"':''}>`+
-      `<td>${k+1}</td><td>${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+      `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs or high scatter">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
       `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
       `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
       `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
@@ -2741,12 +2745,12 @@ function drawStarMap(tMyr){
       `<td class="v">${lwf(c.lw)}</td></tr>`;}).join(''));
     const b2=document.getElementById('csvbtn2');
     if(b2) b2.addEventListener('click',()=>{
-      const h2='rank,star,type,Vmag,naked_eye,d_now_ly,closest_pass_ly,pass_kyr,tangential_kyr,crossing_kyr,delta_t_kyr,tilt_deg,cruise_kms,dv_budget_kms,propellant_pct,min_solar_alpha_wkg,luminosity_w';
+      const h2='rank,star,type,Vmag,naked_eye,d_now_ly,closest_pass_ly,pass_kyr,tangential_kyr,crossing_kyr,delta_t_kyr,tilt_deg,cruise_kms,dv_budget_kms,propellant_pct,min_solar_alpha_wkg,luminosity_w,unverified_kinematics';
       const l2=CLOSEST_PASSES_100.map((c,k)=>[k+1,`"${c.n}"`,`"${c.sp}"`,
         c.V==null?'':c.V, c.V!=null&&c.V<=6?1:0, c.dnow, c.dpass, c.tpass,
         c.ttan==null?'':c.ttan, c.tcross==null?'':c.tcross,
         (c.tcross==null||c.ttan==null)?'':c.tcross-c.ttan,
-        c.tilt, c.vmin, c.dvb, c.pf, c.amin==null?'':c.amin, c.lw==null?'':c.lw].join(','));
+        c.tilt, c.vmin, c.dvb, c.pf, c.amin==null?'':c.amin, c.lw==null?'':c.lw, c.u?1:0].join(','));
       const bl=new Blob([h2+'\n'+l2.join('\n')+'\n'],{type:'text/csv'});
       const a2=document.createElement('a');
       a2.href=URL.createObjectURL(bl); a2.download='fermi-closest-passes-100.csv';
