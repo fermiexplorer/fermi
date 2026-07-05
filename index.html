@@ -814,11 +814,12 @@
   <div id="starmap"></div>
   <p class="src">Drag to rotate, scroll to zoom. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
   colours = spectral class (blue-white A/F → yellow G → orange K → red M); dotted trails = the headline
-  approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 20 mas with full 6-D kinematics
-  (~4,000 stars, complete to ~86 ly; radial velocities <b>validated</b> — Gaia DR2/DR3 quality A/B where
-  available, else the median of all published measurements, 501 adopted values overridden — and entries
-  with residual spurious |v| &gt; 150 km/s removed);
-  the 160 shown are the naked-eye stars within 55 ly plus the 40 closest future approaches.</p>
+  approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 10 mas with full 6-D kinematics
+  (~120,000 stars, complete to ~315 ly, plus the region's giants — V ≤ 2.5 — out to ~1,000 ly; radial
+  velocities <b>validated</b> — Gaia DR2/DR3 quality A/B where available, else the median of all published
+  measurements, ~5,600 adopted values overridden — and unverified entries with |v| &gt; 150 km/s removed,
+  while <em>verified</em> fast movers up to galactic-escape speed are kept);
+  the ~170 shown are the naked-eye stars within 55 ly plus the closest future approaches.</p>
 
   <div class="prelim"><b>⚠ Correction (data provenance).</b> Earlier revisions of this section named
   <b>ξ Boötis</b> the best bright candidate (5.35 ly in 290 kyr) and showed c UMa approaching to 5.24 ly.
@@ -862,7 +863,7 @@
   <div class="crosswrap"><table class="chain" id="crosstable">
     <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Naked eye</th><th class="v">d now</th><th class="v">Crossing time</th><th class="v">d @ crossing</th><th class="v">Tangential intercept</th><th class="v">Δt</th><th class="v">Cruise @ crossing</th><th class="v">Δv budget</th><th class="v">Propellant</th><th class="v">Min solar α</th><th class="v">Luminosity</th></tr>
   </table></div>
-  <p class="src">All 86 catalogued crossings ≤20 ly / ≤1 Myr (spurious-RV entries removed; SIMBAD lists
+  <p class="src">All catalogued crossings ≤20 ly / ≤1 Myr (spurious-RV entries removed; SIMBAD lists
   binary components separately, e.g. α Cen A/B, 61 Cyg A/B, 70 Oph A/B). <b>Naked eye</b>: V ≤ 6.
   <b>Tangential intercept</b> is the arrival time that minimises the required cruise speed for that star
   (the analogue of AC's 58 kyr optimum); <b>Δt</b> = crossing − tangential — the smaller |Δt|, the better
@@ -917,6 +918,24 @@
   (0° = crossing arrival won; e.g. LSPM J2146+3813 is 19.7 km/s via its crossing, not 33 via its −38°
   optimum). "&gt;1,500 kyr" tangential optima are evaluated at the 1.5 Myr ceiling. Sorting by Δv budget
   or Tilt answers "what's within reach even without an ecliptic crossing".</p>
+
+  <h4>The biggest energy prizes inbound — luminous approachers, wide-volume sweep</h4>
+  <p>Could we be missing a huge star inbound from farther out? The catalogue behind the tables above now
+  sweeps <b>~315 ly</b> (plx ≥ 10 mas with full 6-D kinematics — anything reaching us within 1 Myr from
+  beyond that would need &gt;150 km/s, above disk-star speeds), plus <b>the region's giants to ~1,000 ly</b>
+  (V ≤ 2.5). This table ranks every star whose closest approach lies ahead (within 1 Myr, closing to
+  &lt;85% of its current distance) by <b>luminosity</b> — the energy-first view of target selection:</p>
+  <div class="crosswrap" style="max-height:none"><table class="chain" id="lumtable">
+    <tr><th>#</th><th>Star</th><th>Type</th><th class="v">V mag</th><th class="v">Luminosity</th><th class="v">d now</th><th class="v">Closest</th><th class="v">When</th><th class="v">Tilt</th><th class="v">Cruise</th><th class="v">Δv budget</th><th class="v">Propellant</th></tr>
+  </table></div>
+  <p class="src">Cruise/Δv are the best arrival strategy (crossing when cheaper; tilt shows the chosen
+  aim); ⚠ = unverified kinematics. <b>The physics that cuts against "aim for the biggest star": stellar
+  lifetime is a steep inverse function of luminosity.</b> A ~25 L☉ A-star (Sirius-class) lives ~1 Gyr;
+  a ~100+ L☉ giant is already near the end of its life; supergiants (Betelgeuse-class — none inbound in
+  this sweep) live only ~10 Myr and end as supernovae. For a civilization buying energy <em>forever</em>,
+  the sweet spot is the luminous end of the long-lived range — F/G stars at ~1–5 L☉ with ~3–10 Gyr
+  remaining — which is exactly where λ Ser (~2 L☉, ~9 Gyr) sits. The table shows what "bigger" costs in
+  Δv and what it forfeits in lifetime.</p>
 
   <h4>Red dwarf or bright star? — target-selection strategy</h4>
   <p>The top of the list poses a clean strategic choice: a <b>close red dwarf arriving sooner</b>
@@ -2673,7 +2692,7 @@ function drawStarMap(tMyr){
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const lwf=v=>{ if(v==null) return '—';                                // "2.3e26 W (60%)" — watts + % of Sun, sortable by the leading number
     const p=100*v/3.828e26;
-    const ps=p>=10?p.toFixed(0):(p>=1?p.toFixed(1):p.toFixed(2));
+    const ps=p>=10?Math.round(p).toLocaleString('en-US'):(p>=1?p.toFixed(1):p.toFixed(2));
     return v.toExponential(1).replace('e+','e')+' W ('+ps+'%)'; };
   tb.insertAdjacentHTML('beforeend', ECLIPTIC_CROSSINGS_20LY.map((c,k)=>{
     const dt = c.ttan==null ? null : c.tkyr - c.ttan;
@@ -2748,6 +2767,21 @@ function drawStarMap(tMyr){
       `<td class="v">${c.pf}%</td>`+
       `<td class="v">${c.amin==null?'—':c.amin+' W/kg'}</td>`+
       `<td class="v">${lwf(c.lw)}</td></tr>`;}).join(''));
+    // luminous approachers (wide-volume energy-first ranking)
+    const lt=document.getElementById('lumtable');
+    if(lt && typeof LUMINOUS_APPROACHERS!=='undefined'){
+      lt.insertAdjacentHTML('beforeend', LUMINOUS_APPROACHERS.map((c,k)=>
+        `<tr><td>${k+1}</td><td>${c.u?'<span title="unverified kinematics">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+        `<td class="v">${c.V.toFixed(1)}</td>`+
+        `<td class="v">${lwf(c.lw)}</td>`+
+        `<td class="v">${c.dnow.toFixed(0)} ly</td>`+
+        `<td class="v">${c.dpass.toFixed(0)} ly</td>`+
+        `<td class="v">${fmt(c.tpass,0)} kyr</td>`+
+        `<td class="v">${c.tilt>0?'+':''}${c.tilt.toFixed(1)}°</td>`+
+        `<td class="v">${c.vmin.toFixed(1)} km/s</td>`+
+        `<td class="v">${c.dvb.toFixed(1)} km/s</td>`+
+        `<td class="v">${c.pf}%</td></tr>`).join(''));
+    }
     const b2=document.getElementById('csvbtn2');
     if(b2) b2.addEventListener('click',()=>{
       const h2='rank,star,type,Vmag,naked_eye,d_now_ly,closest_pass_ly,pass_kyr,tangential_kyr,crossing_kyr,delta_t_kyr,tilt_deg,cruise_kms,dv_budget_kms,propellant_pct,min_solar_alpha_wkg,luminosity_w,unverified_kinematics';
