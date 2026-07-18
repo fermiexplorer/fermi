@@ -286,7 +286,8 @@ def main() -> None:
     # ---------------------------------------------------------------
     header("7d. PERIHELION SYNCHROTRON -- the 'lasso idea' (external EM station)")
     from fermi_sim.departure import synchrotron_escape
-    print("One or more fixed, externally powered EM stations at perihelion accelerate a PASSIVE probe")
+    print("One or more externally powered EM stations -- themselves Sun-orbiting, circular at the")
+    print("probe's perihelion radius -- accelerate a PASSIVE probe")
     print("in flight -- an impulsive prograde kick as it transits the station's field aperture, no")
     print("capture; continuing the synchrotron analogy, the Sun's gravity stands in for the bending")
     print("magnets, curving the path back for the next pass. No onboard propellant/power --")

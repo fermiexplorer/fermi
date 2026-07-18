@@ -288,9 +288,10 @@ def perihelion_pumped_vinf(
 def synchrotron_escape(
     rp_rsun: float, dv_pass: float, v_inf_target: float, max_passes: int = 10000,
 ) -> dict:
-    """PERIHELION SYNCHROTRON — an externally powered recirculating accelerator. A fixed
-    station at perihelion radius ``rp_rsun`` (solar radii) applies one impulsive prograde
-    kick of ``dv_pass`` (m/s) per pass; between kicks the probe flies an EXACT Kepler
+    """PERIHELION SYNCHROTRON — an externally powered recirculating accelerator. A station
+    (itself Sun-orbiting, circular at radius ``rp_rsun`` solar radii — it cannot hover)
+    applies one impulsive prograde kick of ``dv_pass`` (m/s) per probe pass through
+    perihelion; between kicks the probe flies an EXACT Kepler
     ellipse (the probe itself is passive — no onboard propellant or power; continuing the
     synchrotron analogy, the Sun's gravity stands in for the bending magnets that curve the
     path back to the accelerating station). It is not a true synchrotron even by analogy:

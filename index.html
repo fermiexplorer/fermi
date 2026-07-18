@@ -252,7 +252,7 @@
       <div class="ctrl">
         <label>Circular LEO altitude <b><span id="o_alt">590</span> km</b></label>
         <input type="range" id="alt" min="200" max="2000" step="10" value="590">
-        <div class="hint">Circular low-Earth parking orbit (the conservative baseline). The ion engine spirals out from here under continuous tangential thrust; the departure Δv is set by the orbit energy √(μ⊕/a) plus the heliocentric v∞.</div>
+        <div class="hint">Circular low-Earth parking orbit (the conservative baseline). The ion engine spirals out from here under continuous tangential thrust; the departure Δv is set by the circular orbital speed √(μ⊕/a) plus the hyperbolic excess relative to Earth, v∞,E (minus a 1.17 km/s fit constant).</div>
       </div>
       <div class="ctrl">
         <label>Injection pointing error <b><span id="o_injerr">0.5</span>°</b></label>
@@ -280,7 +280,7 @@
       <div class="ctrl">
         <label>Bus structure fraction <b><span id="o_kstruct">10</span> %</b> <span class="exp">of (subsystems + propellant)</span></label>
         <input type="range" id="kstruct" min="5" max="25" step="1" value="10">
-        <div class="hint">Dry mass is now <b>derived</b> — no extraneous margin. It is the minimum that must
+        <div class="hint">Dry mass is <b>derived</b> — no extraneous margin. It is the minimum that must
           be there: power source + engine + tank + this structure fraction (bus frame, harness, mounts) +
           payload. See the derived <b>Dry mass</b> KPI.</div>
       </div>
@@ -299,7 +299,7 @@
         <input type="range" id="isp" min="1000" max="50000" step="50" value="3000">
         <div class="hint">Higher Isp cuts propellant but <b>cuts thrust</b> (F = 2ηP/v_e) — in this power-limited
           regime there is an <b>optimum</b> (~3000–4000 s); pushing toward VASIMR-class 50,000 s starves the
-          thrust and the achievable v∞ falls below the floor. See the <b>Optimal Isp</b> KPI / Optimize button.</div>
+          thrust and the achievable v∞ falls below the floor. The <b>⚙ Optimize system</b> button finds this sweet spot.</div>
       </div>
       <div class="ctrl">
         <label>Thruster efficiency <b><span id="o_eta">0.50</span></b></label>
@@ -369,7 +369,8 @@
         <label>Reactor specific power <b><span id="o_rtg">40</span> W/kg</b></label>
         <input type="range" id="rtg" min="2" max="50" step="1" value="40">
         <div class="hint">RTG ≈ 5 W/kg; fission NEP (Kilopower→JIMO class) ≈ 25–50 W/kg. Constant power
-          removes the 1/r² fade — the only pure-electric path that reaches the cruise floor.</div>
+          removes the 1/r² fade — it closes the direct outward spiral from ~23 W/kg vehicle α, with no
+          ultralight array or perihelion pumping needed.</div>
       </div>
     </div>
 
@@ -385,9 +386,9 @@
       <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
         drop perihelion to 0.42 AU, then prograde burns at perihelion (4× array power + max Oberth
         leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
-        See the "Perihelion pumping" section.</div>
+        <a href="#pumping">See the "Perihelion pumping" section</a>.</div>
       <div class="ctrl" id="synOpts" style="display:none; margin-top:10px">
-        <label>Station perihelion <b><span id="o_srp">10</span> R<sub>sun</sub></b></label>
+        <label>Station perihelion <b><span id="o_srp">10</span> R<sub>☉</sub></b></label>
         <input type="range" id="srp" min="4" max="215" step="1" value="10">
         <label>Kick per pass <b><span id="o_skick">5.0</span> km/s</b></label>
         <input type="range" id="skick" min="0.5" max="10" step="0.5" value="5">
@@ -397,12 +398,12 @@
           gravity curves the path back for the next pass (the synchrotron's “bending magnet”, by
           analogy). Escape terminates
           recirculation — the final kick must land ≥ the target perihelion speed or the probe is gone too
-          slow. See the "Perihelion synchrotron" section. (215 R<sub>sun</sub> ≈ 1 AU.)</div>
+          slow. <a href="#synchrotron">See the "Perihelion synchrotron" section</a>. (215 R<sub>☉</sub> ≈ 1 AU.)</div>
       </div>
       <div class="ctrl" id="obOpts" style="display:none; margin-top:10px">
-        <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>sun</sub></b></label>
+        <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>☉</sub></b></label>
         <input type="range" id="rp" min="3" max="30" step="1" value="6">
-        <div class="hint">Needs a heat shield (Parker Solar Probe reaches ~9 R<sub>sun</sub>).</div>
+        <div class="hint">Needs a heat shield (Parker Solar Probe reaches ~9 R<sub>☉</sub>).</div>
       </div>
     </div>
   </aside>
@@ -434,7 +435,7 @@
       </div>
       <div class="viz3drow">
         <div class="camcell">
-          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velSpeed"> lock to cam view</label><span class="vinfo" title="Speeds — where the craft is going. The velocity vectors add to V(t): Earth lends its 29.8 km/s in-plane, the bought excess v∞,E tilts out of plane by β. After the ~1-yr burn, gravity bleeds |V| from ≈ v_dep down to v∞ with the engine off. Z is exaggerated (read the axis ticks) so the small out-of-plane tilt is visible; hover a vector's tip for its values.">?</span></div>
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_velSpeed"> lock to cam view</label><span class="vinfo" title="Speeds — where the craft is going. The velocity vectors add to V(t): Earth lends its 29.8 km/s in-plane; the bought excess v∞,E carries all of the out-of-plane component, tilting the total by β. After the ~1-yr burn, gravity bleeds |V| from ≈ v_dep down to v∞ with the engine off. Z is exaggerated (read the axis ticks) so the small out-of-plane tilt is visible; hover a vector's tip for its values.">?</span></div>
           <div class="chart prim" id="velSpeed"></div>
         </div>
         <div class="camcell">
@@ -463,12 +464,13 @@
         <span><i class="vbar" style="background:#6e7681"></i>coast (engine OFF)</span>
       </div>
       <div class="espiralcap" style="margin-top:14px">
-        <b>The many-revolution Earth departure.</b> Spiraling out of Earth's gravity well at ~milli-g
-        takes <b>hundreds of revolutions</b> (geocentric, within Earth's Hill sphere) — this is where the
-        ion "spiral tax" (~11 km/s of gravity loss above the impulsive floor) is paid, and it's far below
-        the scale of the solar-system views above. The rev count <code>N = μ/(8π·a·r_p²)</code> scales with
-        the real thrust-to-weight (a = thrust ÷ wet mass): more power or a lighter craft → fewer loops.
-        The ~0.7-yr departure is a single instant on the 75,000-yr timeline, so in <b>log time</b> the chase
+        <b>The many-revolution Earth departure.</b> Spiralling out of Earth's gravity well at a fraction
+        of a milli-g takes <b>hundreds of revolutions</b> (geocentric, within Earth's Hill sphere) — this
+        is where the ion "spiral tax" (~11 km/s of gravity loss above the impulsive floor) is paid, and
+        it's far below the scale of the solar-system views above. The rev count
+        <code>N = μ/(8π·a·r_p²)</code> scales inversely with the thrust acceleration
+        (a = thrust ÷ wet mass): more power or a lighter craft → fewer loops.
+        The sub-year departure burn is a single instant on the 75,000-yr timeline, so in <b>log time</b> the chase
         cam opens top-down on the orbit-raising spiral/disk and zooms out into the escape arc (the
         revolutions accelerate as the slow high-altitude end is compressed); in linear time it's skipped.
       </div>
@@ -503,19 +505,19 @@
   ≈72.8k yr</strong> (13.875 km/s); the round <strong>75k yr</strong> used elsewhere is a near-equivalent
   benchmark, only ~10 m/s (0.07%) above that floor.</p>
   <table class="chain">
-    <tr><th>Arrival (aim point)</th><th class="v">Out-of-plane tilt</th><th class="v">Impulsive Δv floor</th><th class="v">Cruise v∞</th><th>What it is</th></tr>
+    <tr><th>Arrival (aim point)</th><th class="v">Out-of-plane tilt</th><th class="v">Impulsive Δv floor (400 km LEO)</th><th class="v">Cruise v∞</th><th>What it is</th></tr>
     <tr><td>58,000 yr</td><td class="v">−10.1°</td><td class="v">14.65 km/s</td><td class="v">23.27 km/s</td><td>minimum cruise <em>speed</em> (tangential) — but most out-of-plane, so not cheapest</td></tr>
-    <tr><td><b>72,800 yr</b></td><td class="v"><b>−2.4°</b></td><td class="v tot"><b>13.88 km/s</b></td><td class="v">23.79 km/s</td><td><b>minimum Δv → minimum propellant → smallest spacecraft</b></td></tr>
-    <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.0 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
+    <tr><td><b>72,800 yr</b></td><td class="v"><b>−2.4°</b></td><td class="v tot"><b>13.88 km/s</b></td><td class="v">23.71 km/s</td><td><b>minimum Δv → minimum propellant → smallest spacecraft</b></td></tr>
+    <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.02 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
     <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
   </table>
-  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral, ≈ 25 km/s at the optimum. The ion engine has no impulsive kick, so it cannot capture the Oberth floor.)</p>
+  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s. The ion engine has no impulsive kick, so it cannot capture the Oberth floor. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
   <p><strong>Why does an out-of-plane aim raise Δv only <em>modestly</em>?</strong> A fair worry: a 10° tilt on
   a ~48 km/s departure vector is an ~8 km/s out-of-plane "plane change" — shouldn't that be huge? It isn't,
   because it adds in <em>quadrature</em> to an already-large in-plane excess, not on top of it. At 1 AU the
-  probe needs heliocentric speed <code>v_dep</code> ≈ 48 km/s; subtracting Earth's in-plane 29.8 km/s leaves a
-  <strong>~18 km/s in-plane excess relative to Earth before any tilt</strong>. Adding the ~8 km/s out-of-plane
-  component combines as <code>√(18² + 8²) ≈ 19.4 km/s</code> — only ~1.2 km/s more, which becomes ~0.8 km/s of
+  probe needs heliocentric speed <code>v_dep</code> ≈ 48 km/s; the tilt rotates part of that excess out of plane, leaving a
+  <strong>~17.6 km/s in-plane excess relative to Earth</strong>. Adding the ~8.4 km/s out-of-plane
+  component combines as <code>√(17.6² + 8.4²) ≈ 19.5 km/s</code> — only ~1.2 km/s more, which becomes ~1.0 km/s of
   extra LEO Δv. So the tilt <em>does</em> cost Δv (precisely why the optimum sits near in-plane), but because the
   excess vs Earth is already large, even 10° is a few-percent effect, not a doubling — and Δv changes <em>least</em>
   exactly where the curve is flattest, between the min-Δv point (~73k) and the ecliptic crossing (~79k). (This
@@ -541,10 +543,12 @@
   orbital speed, the perigee Oberth effect, and Earth's 29.8 km/s it produces a heliocentric cruise of
   <code>v∞</code> ≈ 24 km/s (so 24 km/s × ~70,000 yr ≈ 5.5 ly, matching where AC is at arrival).
   Low-thrust ion spreads thrust over many revolutions, losing the perigee Oberth benefit and paying a
-  spiral tax. The calculator now uses the <strong>derived</strong> naïve continuous spiral (constant tangential
+  spiral tax. The calculator uses the <strong>derived</strong> naïve continuous spiral (constant tangential
   thrust, integrated by RK4 and reduced to the closed form <code>Δv = v_circ + v∞,E − 1.17 km/s</code>, matched
   to the integration within 0.5 m/s — see <code>tools/fit_spiral.py</code> and <code>audit/calcs/audit_departure.py</code>):
-  ≈ <strong>25 km/s</strong> at the optimum. This sits in the physical bracket between the ~14 km/s impulsive
+  ≈ <strong>25 km/s</strong> at the optimum, plus a conservative <strong>+5 km/s heliocentric-leg
+  offset</strong> (no full Earth-velocity borrow) and small pointing margins — ≈ <strong>30 km/s
+  displayed</strong>. This sits in the physical bracket between the ~14 km/s impulsive
   floor (a theoretical lower bound, unreachable by an ion engine) and the spiral itself. We also checked
   <em>perigee-biased</em> thrusting (plan 02 Phase B, audited): at this vehicle's ~milli-g thrust it is
   <strong>time-divergent</strong> — escape would take centuries, because perigee-thrusting raises apogee until
@@ -561,9 +565,9 @@
     <table class="chain">
       <tr><th>Step</th><th>How</th><th class="v">Speed</th></tr>
       <tr><td>LEO circular speed (already orbiting)</td><td><code>√(μ⊕/r)</code></td><td class="v">7.7 km/s</td></tr>
-      <tr><td>after the 14 km/s burn at perigee</td><td><code>v_circ + Δv</code></td><td class="v">21.6 km/s</td></tr>
-      <tr><td>hyperbolic excess leaving Earth</td><td><code>√(v_peri² − v_esc,⊕²)</code></td><td class="v">18.6 km/s</td></tr>
-      <tr><td>+ Earth's orbital velocity (heliocentric, at 1 AU)</td><td><code>v_E + v∞,⊕</code></td><td class="v">48.4 km/s</td></tr>
+      <tr><td>after the 13.9 km/s (≈14) burn at perigee</td><td><code>v_circ + Δv</code></td><td class="v">21.6 km/s</td></tr>
+      <tr><td>hyperbolic excess leaving Earth (v∞,E)</td><td><code>√(v_peri² − v_esc,⊕²)</code></td><td class="v">18.6 km/s</td></tr>
+      <tr><td>+ Earth's orbital velocity (heliocentric, at 1 AU)</td><td><code>v_E + v∞,E</code></td><td class="v">48.4 km/s</td></tr>
       <tr><td>− climb out of the Sun's well → <b>cruise speed v∞</b></td><td><code>√(v_dep² − v_esc,☉²)</code></td><td class="v tot">23.8 km/s</td></tr>
     </table>
     <p>So 14 km/s of onboard Δv buys a ~24 km/s heliocentric cruise — the gain comes from the 7.7 km/s you
@@ -575,54 +579,58 @@
   </div>
 
   <h4>Concept of operations (CONOPS)</h4>
-  <p>Baseline architecture: <strong>direct solar-electric ion from LEO</strong>, Isp 3000 s, ~500 kg wet.
-  The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then thrusting
-  heliocentrically to build the escape velocity — then shuts off for the long coast. All burning happens
-  within a few AU of the Sun, where solar power is strongest.</p>
+  <p>Baseline architecture: <strong>direct solar-electric ion from LEO</strong>, Isp 3000 s, ~600 kg wet.
+  (The static numbers in this section describe one illustrative <em>conservative, buy-today</em>
+  reference configuration — 5 kW silicon array, η 0.50, at the derived ~25 km/s spiral budget; the live
+  card below always tracks your current slider settings, which default to a much lighter high-α
+  design.) The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then
+  thrusting heliocentrically to build the escape velocity — then shuts off for the long coast. All
+  burning happens within a few AU of the Sun, where solar power is strongest.</p>
 
   <div id="burnspec" class="speccard"></div>
 
   <table class="chain">
     <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
     <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
-    <tr><td>1 · Earth-escape spiral</td><td>Continuous (always-on, tangential) ion thrust, spiralling out of Earth to C₃≈0 (geocentric escape). This is where the low-thrust "spiral tax" is paid. (Perigee-biasing would cut the Δv but is time-divergent at this thrust — see below.)</td><td class="v">~1 yr</td></tr>
-    <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1 yr total burn</td></tr>
-    <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~248 kg xenon spent</td><td class="v">—</td></tr>
+    <tr><td>1 · Earth-escape spiral</td><td>Continuous (always-on, tangential) ion thrust, spiralling out of Earth to C3 ≈ 0 (geocentric escape). This is where the low-thrust "spiral tax" is paid. (Perigee-biasing would cut the Δv but is time-divergent at this thrust — see below.)</td><td class="v">~0.5 yr</td></tr>
+    <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1.9 yr total burn</td></tr>
+    <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~344 kg xenon spent</td><td class="v">—</td></tr>
     <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
     <tr><td>5 · Arrival</td><td>Pass within ≤ 2600 AU of AC (99% of the way); science/flyby</td><td class="v">—</td></tr>
   </table>
-  <p><strong>Propulsion &amp; power (baseline Isp 3000 s).</strong> Thruster input power <strong>~5 kW</strong>
-  (electrical); thrust <strong>~0.20 N (204 mN)</strong>; <strong>firing time ~1.1 yr continuous</strong>
-  (0.9 yr at Isp 2000 s rising to 1.4 yr at 4000 s). Power comes from a <strong>~18 m² / ~55 kg commercial
+  <p><strong>Propulsion &amp; power (baseline Isp 3000 s, η 0.50).</strong> Thruster input power <strong>~5 kW</strong>
+  (electrical); thrust <strong>~0.17 N (170 mN)</strong>; <strong>firing time ~1.9 yr continuous</strong>
+  (longer at higher Isp for the same thrust power). Power comes from a <strong>~18 m² / ~55 kg commercial
   silicon array</strong> (20% cells, ~3 kg/m², Starlink-class) delivering the 5 kW at 1 AU. Δv from LEO is
   the <strong>derived naïve low-thrust spiral ≈ 25 km/s</strong> (~14 km/s is the impulsive floor, a
-  reference an ion engine can't reach; perigee-biasing is time-divergent at this thrust — plan 02 Phase B), for a wet mass of
+  reference an ion engine can't reach; perigee-biasing is time-divergent at this thrust — plan 02 Phase B; the live
+  calculator adds a conservative +5 km/s heliocentric-leg offset on top), for a wet mass of
   <strong>~600 kg</strong> (~344 kg xenon, ~57% at Isp 3000 s).</p>
   <p><strong>This is slow, gentle thrust — not a fast burn.</strong> The acceleration is only
-  ~0.04–0.08 milli-<em>g</em> (0.2 N on a ~500 kg craft), sustained for <strong>~1 year</strong> to reach
-  terminal velocity <code>v∞</code> ≈ 24 km/s — <em>not</em> a few months. Over that year the probe makes
+  ~0.03–0.07 milli-<em>g</em> (0.17 N on a ~600 kg craft), sustained for <strong>~2 years</strong> to reach
+  terminal velocity <code>v∞</code> ≈ 24 km/s — <em>not</em> a few months. Over those years the probe makes
   many tight loops around <em>Earth</em> (the geocentric escape, weeks–months, &lt;0.01 AU) and then roughly
   <em>one</em> loop around the <em>Sun</em>. It is precisely <em>because</em> the acceleration is so gentle and
-  spread over ~1 year that the power (~5 kW) and propellant (~250 kg xenon) stay modest; reaching v∞ in weeks
+  spread over ~2 years that the power (~5 kW) and propellant (~344 kg xenon) stay modest; reaching v∞ in weeks
   instead would demand megawatt-class power or a chemical stage with far more propellant — neither of which this
   design needs, since there is no schedule pressure against the 75,000-yr coast.</p>
   <p><strong>Is the thrust "enough to leave at the right time of year rather than aimlessly spiralling out"?</strong>
-  Electric propulsion is inherently low-thrust — thrust-to-weight here is ~4×10⁻⁵, so departure <em>is</em> a
-  ~1-yr spiral, not an impulsive kick. But for a <em>direct</em> interstellar departure there is <strong>no tight
+  Electric propulsion is inherently low-thrust — thrust-to-weight here is ~3×10⁻⁵, so departure <em>is</em> a
+  ~2-yr spiral, not an impulsive kick. But for a <em>direct</em> interstellar departure there is <strong>no tight
   launch window</strong> to miss: the aim is a fixed <em>inertial</em> direction (where AC will be in ~75,000 yr),
-  and AC's bearing drifts negligibly over a 1-yr spiral, so launch date is essentially free. The spiral is also
+  and AC's bearing drifts negligibly over a 2-yr spiral, so launch date is essentially free. The spiral is also
   not "aimless" — thrust is steered (continuous, tangential) to build <code>v∞</code> in the chosen escape direction; the
-  ~1 yr it adds is negligible against the ~75,000-yr coast. Launch <em>timing</em> only becomes a hard constraint
+  ~2 yr it adds is negligible against the ~75,000-yr coast. Launch <em>timing</em> only becomes a hard constraint
   for the optional architectures below (a Jupiter flyby needs alignment; a solar Oberth needs a perihelion drop).</p>
 
   <h4>Architecture comparison — direct vs solar Oberth vs gravity assist</h4>
   <table class="chain">
     <tr><th>Architecture</th><th class="v">Onboard Δv from LEO</th><th>Extra hardware / complexity</th><th>Launch-timing window</th><th>When to choose it</th></tr>
-    <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
+    <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s spiral (+5 km/s conservative offset ⇒ ~30 in the calculator)</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
-    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~31 km/s total (7.6 escape + ~24 helio)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. See the perihelion-pumping section.</td></tr>
-    <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R☉); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td>Probe bypasses the rocket equation entirely; escape terminates recirculation, so the strong form is a <b>one-kick gateway reused across a fleet</b>. See the synchrotron section.</td></tr>
+    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~31–34 km/s total (7.6 escape + ~24 helio; +2 pumping tax with the bang-bang policy)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
+    <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R<sub>☉</sub>); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td>Probe bypasses the rocket equation entirely; escape terminates recirculation, so the strong form is a <b>one-kick gateway reused across a fleet</b>. <a href="#synchrotron">See the synchrotron section</a>.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
   hardware or a timing constraint. Direct SEP carries the most Δv but is the only option with no alignment
@@ -632,14 +640,17 @@
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
   power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For the derived ~25 km/s a vehicle is
-  ~50–60% xenon at Isp 3000–4000 s (≈600 kg wet on a ~220 kg derived dry mass) — still comfortably feasible today.</p>
+  ~45–60% xenon at Isp 3000–4000 s (≈600 kg wet on a ~256 kg derived dry mass at Isp 3000 s — the same
+  ~57% example as the CONOPS timeline above) — still comfortably feasible today.</p>
   <p><strong>Subsystem sizing.</strong> The solar array AREA <code>= P / (S₀·η_cell / r²)</code> with
   <code>S₀</code> = 1361 W/m² (set by efficiency); its MASS <code>= P / (W/kg)</code>, set directly by the
-  array-specific-power slider. Default is commercial, buy-today <em>silicon</em> (~20% cells, ~91 W/kg at
-  1 AU; Starlink-class, not GaAs); the dropdown and sliders let you vary cell efficiency and W/kg (a
-  concentrator reaches ~486 W/kg). The ion engine + PPU
-  scales at ~6 kg/kW and the xenon tank at ~8% of propellant. The tool reports whether array + engine + tank fit
-  inside the dry mass, leaving the remainder for bus + payload.</p>
+  array-specific-power slider. The page default is ultra-thin <em>GaAs</em> (~30% cells, ~1000 W/kg at
+  1 AU — the high-α default); commercial buy-today silicon (~20%, ~91 W/kg, Starlink-class) is the
+  conservative option in the dropdown, and the sliders let you vary cell efficiency and W/kg freely (a
+  concentrator reaches ~486 W/kg). The ion engine + PPU scales at ~4 kg/kW (6 kg/kW for the
+  conservative gridded option) and the xenon tank at ~2.5% of propellant (~8% for classic COPV
+  tanks). Dry mass is <em>derived</em> from these pieces — array + engine + tank + structure + payload —
+  with nothing left unallocated (see the Dry-mass KPI).</p>
 
   <h4>4 · The fuel-cell energy wall</h4>
   <p>Because EP energy scales with <code>v_e</code>, the power source is decisive. Chemical reactants store
@@ -658,24 +669,26 @@
   <code>v∞ = √((v_peri+Δv)² − v_esc²)</code> — so ~1–2 km/s yields the full 24 km/s, but needs a heat shield and
   a way to drop perihelion. Direct solar-electric remains the simplest route.</p>
 
-  <h4>5b · Solar-Oberth, in depth</h4>
+  <h4 id="solar-oberth">5b · Solar-Oberth, in depth</h4>
   <p>Diving to a small perihelion makes the spacecraft enormously fast; a burn applied there buys
   disproportionate energy (Oberth: Δv at high speed adds <code>≈ v·Δv</code> of specific energy). At each
-  perihelion the burn needed to reach the 23.4 km/s cruise floor is:</p>
+  perihelion the burn needed to reach the 23.3 km/s cruise floor is (all rows assume the same
+  just-escaping, parabolic approach orbit):</p>
   <table class="chain">
-    <tr><th>Perihelion</th><th class="v">Speed at perihelion</th><th class="v">Burn to reach 23.4 km/s</th><th>Sunward-face temp (≈)</th></tr>
-    <tr><td>30 R<sub>☉</sub></td><td class="v">113 km/s</td><td class="v">2.40 km/s</td><td>~1060 K</td></tr>
-    <tr><td>20 R<sub>☉</sub></td><td class="v">138 km/s</td><td class="v">1.97 km/s</td><td>~1300 K</td></tr>
-    <tr><td><b>10 R<sub>☉</sub></b> (Parker-class)</td><td class="v"><b>195 km/s</b></td><td class="v"><b>1.40 km/s</b></td><td><b>~1830 K</b></td></tr>
-    <tr><td>5 R<sub>☉</sub></td><td class="v">276 km/s</td><td class="v">0.99 km/s</td><td>~2600 K</td></tr>
-    <tr><td>3 R<sub>☉</sub></td><td class="v">357 km/s</td><td class="v">0.77 km/s</td><td>~3350 K</td></tr>
+    <tr><th>Perihelion</th><th class="v">Speed at perihelion</th><th class="v">Burn to reach 23.3 km/s</th><th>Sunward-face temp (≈)</th></tr>
+    <tr><td>30 R<sub>☉</sub></td><td class="v">113 km/s</td><td class="v">2.37 km/s</td><td>~1060 K</td></tr>
+    <tr><td>20 R<sub>☉</sub></td><td class="v">138 km/s</td><td class="v">1.95 km/s</td><td>~1300 K</td></tr>
+    <tr><td><b>10 R<sub>☉</sub></b> (Parker-class)</td><td class="v"><b>195 km/s</b></td><td class="v"><b>1.39 km/s</b></td><td><b>~1830 K</b></td></tr>
+    <tr><td>5 R<sub>☉</sub></td><td class="v">276 km/s</td><td class="v">0.98 km/s</td><td>~2600 K</td></tr>
+    <tr><td>3 R<sub>☉</sub></td><td class="v">357 km/s</td><td class="v">0.76 km/s</td><td>~3350 K</td></tr>
   </table>
-  <p>Buying the same 23.4 km/s at 1 AU (no dive) costs ~6 km/s, so <strong>10 R<sub>☉</sub> gives ~4.3× leverage</strong>
+  <p>Buying the same 23.3 km/s with a burn at 1 AU (no dive), from the same parabolic orbit, costs
+  ~6 km/s, so <strong>10 R<sub>☉</sub> gives ~4.3× leverage</strong>
   and the headline burn falls to ~1.4 km/s. That leverage is real — but three caveats make solar-Oberth an
   <em>assist-staged, heat-shielded, chemical-at-perihelion</em> architecture rather than a cheap pure-ion shortcut:</p>
   <ol>
     <li><b>The perihelion burn must be high-thrust (chemical), not ion.</b> The Oberth benefit exists only during
-      the brief perihelion pass (hours). A ~0.2 N ion thruster would need ~58 days to deliver 1.4 km/s, so it cannot
+      the brief perihelion pass (hours). A ~0.17 N ion thruster would need ~58 days to deliver 1.4 km/s, so it cannot
       capture the effect — a small storable-chemical or solid kick stage is required at perihelion. So this path is
       <em>not</em> pure electric propulsion.</li>
     <li><b>Thermal limit sets the floor at ~10 R<sub>☉</sub>.</b> ~1830 K demands a Parker Solar Probe-class carbon
@@ -713,7 +726,7 @@
       sizing from first principles; and the perihelion-pumping manoeuvre by an independent re-integration of
       the published policy (4× finer steps, step-convergence proven), the work–energy theorem, exact
       rocket-equation mass closure, the 0.42 AU thermal floor and 4× power cap as invariants, Oberth
-      localisation of the energy gain, and a bisection of the a₀ failure threshold (2.25×10⁻⁴ m/s²
+      localisation of the energy gain, and a bisection of the a₀ failure threshold (2.24×10⁻⁴ m/s²
       recovered independently); and the perihelion synchrotron by numerical two-body propagation of the
       between-kick ellipses (scipy adaptive RK45), station-energy conservation, the escape-termination
       invariant, Δv<sub>final,min</sub> algebra, and an externally documented worked example reproduced
@@ -726,10 +739,10 @@
       ephemeris, finite-difference vs analytic velocities, scipy vs grid/golden-section optima, adaptive RK45
       vs fixed-step integrators — and agree on every headline quantity to ≤0.2%.</li>
     <li><b>NASA GMAT cross-validation.</b> The departure energetics are independently reproduced by NASA's
-      flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; see the GMAT section below).</li>
+      flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; <a href="#gmat">see the GMAT section below</a>).</li>
   </ul>
 
-  <h4>GMAT cross-validation (NASA)</h4>
+  <h4 id="gmat">GMAT cross-validation (NASA)</h4>
   <p><a href="https://gmat.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer"><b>GMAT</b></a> (the
   General Mission Analysis Tool) is NASA's free, open-source mission-design and astrodynamics software,
   developed at <b>Goddard Space Flight Center</b> with industry and academic partners and used for
@@ -740,7 +753,7 @@
   6771 km, Earth point-mass μ = 398600.4 km³/s², matching the engine) and agree to better than 0.01 %:</p>
   <table class="chain">
     <tr><th>Check</th><th>Quantity compared</th><th class="v">Fermi engine</th><th class="v">GMAT</th><th class="v">Diff</th></tr>
-    <tr><td><b>Impulsive (Oberth) departure</b><br>apply 14.633 km/s prograde from LEO</td><td>resulting hyperbolic C3 = required v∞,Earth²</td><td class="v">379.8154 km²/s²</td><td class="v">379.8154 km²/s²</td><td class="v">2×10⁻⁶ %</td></tr>
+    <tr><td><b>Impulsive (Oberth) departure</b><br>apply 14.633 km/s prograde from LEO</td><td>resulting hyperbolic C3 = required v∞,E²</td><td class="v">379.8154 km²/s²</td><td class="v">379.8154 km²/s²</td><td class="v">2×10⁻⁶ %</td></tr>
     <tr><td><b>Low-thrust Earth-escape spiral</b><br>constant tangential thrust, ~692 revs</td><td>time to escape (specific energy = 0)</td><td class="v">1.4266×10⁷ s</td><td class="v">1.4265×10⁷ s</td><td class="v">0.007 %</td></tr>
   </table>
   <p>To reproduce it yourself (Linux or WSL — GMAT R2020a is the last NASA build with a Linux binary; on
@@ -773,11 +786,11 @@
     <li><b>Mass &amp; power.</b> Rocket equation for the xenon fraction; <code>E = ½·m_p·v_e²/η</code> for
       burn energy; solar area = P/(1361·η_cell) and mass = P/(W/kg). Confirm the dry-mass budget
       closes (array + engine + tank + bus + payload).</li>
-    <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~50,000 kWh
-      burn — orders of magnitude over a solar array.</li>
+    <li><b>Fuel-cell wall.</b> Confirm chemical reactants (~MJ/kg) need tens of tonnes for the ~83,000 kWh
+      burn (5 kW × ~1.9 yr, the CONOPS reference configuration) — orders of magnitude over a solar array.</li>
     <li><b>Probe for what's missing.</b> This is a first-order model; a rigorous audit should push on:
-      (a) <em>phased low-thrust</em> at higher thrust-to-weight — the departure Δv is now the <em>derived</em>
-      naïve spiral (~25 km/s); perigee-biasing was found time-divergent at this milli-g thrust (plan 02 Phase B),
+      (a) <em>phased low-thrust</em> at higher thrust-to-weight — the departure Δv is the <em>derived</em>
+      naïve spiral (~25 km/s, +5 km/s conservative offset in the calculator); perigee-biasing was found time-divergent at this sub-milli-g thrust (plan 02 Phase B),
       so a lower budget needs a higher-T/W stage, and a full
       finite-burn solution is still future work; (b) launch-window and calendar phasing (best-case timing is assumed);
       (c) gravity-assist phasing (the Jupiter/Oberth numbers are geometric bounds); (d) navigation, comms and
@@ -793,8 +806,9 @@
     <li><b>Aim geometry.</b> <code>Arrival time</code> → where AC is (and how fast) at that time → the required
       heliocentric velocity <code>V_p</code> → <b>cruise v∞</b> and <b>out-of-plane tilt</b>.</li>
     <li><b>Required Δv.</b> <code>v∞, tilt, LEO altitude</code> + <code>architecture</code>
-      (direct / Jupiter / Oberth) → <b>departure Δv from LEO</b>, derived from the integrated low-thrust
-      Earth-escape spiral (<code>Δv = v_circ + v∞,E − 1.17 km/s</code>); the impulsive Oberth floor is a
+      (direct / pumped / synchrotron / Jupiter / Oberth) → <b>departure Δv from LEO</b>. For direct SEP: the integrated low-thrust
+      Earth-escape spiral (<code>Δv = v_circ + v∞,E − 1.17 km/s</code>) plus a conservative +5 km/s
+      heliocentric-leg offset; the impulsive Oberth floor is a
       reference lower bound only.</li>
     <li><b>Minimum propellant.</b> <code>Δv, Isp</code> → mass ratio (Tsiolkovsky) → minimum <b>propellant
       fraction</b>; with <code>dry mass</code> → <b>propellant &amp; wet mass</b> — the spacecraft being minimised.</li>
@@ -808,17 +822,17 @@
   <p><b>Which slider moves what:</b></p>
   <ul>
     <li><code>Arrival time</code> — the whole trajectory: tilt → Δv → fuel. <em>The main optimisation knob.</em></li>
-    <li><code>Dry mass</code> — scales the vehicle in absolute kg; does <em>not</em> change the arrival or the
-      propellant <em>fraction</em> (only the absolute kg of propellant, array, etc.).</li>
+    <li><code>Payload</code> &amp; <code>Bus structure %</code> — scale the derived dry mass (and so the vehicle) in
+      absolute kg; neither changes the arrival or the propellant <em>fraction</em> (only the absolute kg of
+      propellant, array, etc.).</li>
     <li><code>Isp</code> — higher ⇒ less propellant for the same Δv, but more electrical energy per kg.</li>
     <li><code>Power</code> — thrust, burn time and array size (not Δv or arrival).</li>
-    <li><code>Departure Δv</code> — derived from the integrated low-thrust Earth-escape spiral (no penalty knob; the impulsive floor is a reference only).</li>
     <li><code>Cell efficiency / array W/kg / engine kg-per-kW / tank %</code> — subsystem masses only.</li>
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
   <ul>
     <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. What decides it is the
-      whole-vehicle specific power α = power ÷ dry-mass, <em>not</em> the kilowatts: a heavy, low-α vehicle
+      whole-vehicle specific power α = power ÷ (dry + payload) mass, <em>not</em> the kilowatts: a heavy, low-α vehicle
       (today's silicon + Hall thruster, α ≈ 20–30) fails it because the 1/r² fade drags the burn far from the Sun,
       while the light, high-α <b>default</b> (thin-film array + light thruster, α ≈ 130) <b>clears it as pure
       solar</b> — no reactor, no assist — as does nuclear-electric (constant power, no fade). See "Power-limited v∞".</li>
@@ -829,9 +843,10 @@
   <p>In the default ~73k-yr, 2 kW, Isp-3000 s high-α configuration the margins are comfortable, so it reads
   feasible as pure solar — push those sliders toward heavier/low-α hardware to see the power gate bite.</p>
 
-  <h4>What is α? — specific power, the number that decides electric flight</h4>
+  <h4 id="what-is-alpha">What is α? — specific power, the number that decides electric flight</h4>
   <p><b>Definition.</b> In this project α is the <em>whole-vehicle specific power</em>: installed
-  electrical power ÷ total dry mass, in W/kg (see the "Vehicle specific power" KPI). It is the single
+  electrical power ÷ total dry mass (bus + payload), in W/kg (<a href="#kpi-vehicle-specific-power">see the "Vehicle
+  specific power" KPI</a>). It is the single
   parameter that decides whether an electrically propelled mission closes, because thrust is bought with
   power (<code>F = 2ηP/v_e</code>), so the vehicle's acceleration is proportional to <code>P/m = α</code>:
   a high-α vehicle finishes its burn quickly and near the Sun; a low-α vehicle drags its burn out into
@@ -854,21 +869,24 @@
   drifts out of the light before finishing). The engine's 1/r² gate integrates this exactly, and the
   result is that achievable cruise v∞ is a function of α alone — which inverts into the <b>"Min solar α"
   column</b> in every table below: the smallest α at which a pure solar-electric vehicle reaches that
-  star's required cruise. Landmarks: below <b>~40 W/kg</b> a solar vehicle never escapes the Sun at all;
+  star's required cruise. Landmarks: below the <b>mid-30s W/kg</b> (~36) a solar vehicle never escapes the Sun at all;
   ~4 km/s cruises need ~41; λ Ser's 19.2 needs ~68; AC-class ~24 km/s needs ~100–115; above ~27 km/s no α
-  suffices (the fade always wins). A nuclear-electric vehicle (constant power, no fade) escapes this
+  suffices <em>at this page's default sizing</em> (the ceiling there is the fixed propellant budget
+  behind these tables — its impulsive limit from 1 AU — not the fade itself; a heavier propellant load
+  pushes it higher, which is how the table's brightest entries carry finite α values at 27 km/s). A nuclear-electric vehicle (constant power, no fade) escapes this
   ceiling and closes AC-class missions from ~23 W/kg — at the programmatic price of flying a reactor.
-  These thresholds apply to the <em>outward-spiral</em> trajectory class; <b>perihelion pumping</b>
-  (next section) defeats the ceiling within pure solar at today's α ≈ 15–21 W/kg.</p>
+  These thresholds apply to the <em>outward-spiral</em> trajectory class; <b><a href="#pumping">perihelion
+  pumping</a></b> (next section) defeats the ceiling within pure solar at today's α ≈ 15–21 W/kg.</p>
 
-  <h4>Perihelion pumping — a multi-revolution escape that defeats the power wall</h4>
+  <h4 id="pumping">Perihelion pumping — a multi-revolution escape that defeats the power wall</h4>
   <p>The power gate above shows that an <em>outward</em> low-thrust spiral saturates below the cruise
   floor at every flyable thrust level (v∞ ≈ 0, 3.1, 16.7 km/s at a₀ = 1.5, 5, 10×10⁻⁴ m/s²) — on that
   trajectory, pure solar needs α ≳ 100 W/kg. <b>That saturation is a property of the trajectory class, not
   of solar power</b>: <em>perihelion pumping</em> — retrograde thrust arcs near apoapsis that drop
   perihelion to 0.42 AU (the thermal cap), then prograde arcs concentrated at perihelion where array
   power is up to 4× its 1-AU rating and Oberth leverage is maximal — staircases the orbit energy up over
-  a few revolutions and <b>reaches the full 23.64 km/s cruise at a₀ = 2.5×10⁻⁴ m/s², i.e. today's
+  a few revolutions and <b>reaches the full ~23.6 km/s design cruise (23.64, the v∞ for a ~71 kyr
+  arrival) at a₀ = 2.5×10⁻⁴ m/s², i.e. today's
   hardware (vehicle α ≈ 15–21 W/kg at the mass ratios the manoeuvre itself allows)</b>, with ~98% of
   the mission still ballistic coast. It is the
   multi-revolution form of the electric perihelion burn: a <em>single</em> low-thrust pass cannot buy
@@ -880,8 +898,8 @@
   P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against an independent optimised-schedule integration:</p>
   <table class="chain">
     <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (independent, optimised)</th><th>Verdict</th></tr>
-    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">contiguous closure above ~2.25×10⁻⁴</td><td>edge agrees</td></tr>
-    <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">≈0 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>cruise floor reached — power wall defeated</b></td></tr>
+    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">contiguous closure above ~2.24×10⁻⁴</td><td>edge agrees</td></tr>
+    <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">≈0 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>design cruise reached — power wall defeated</b></td></tr>
     <tr><td>5×10⁻⁴</td><td class="v">3.1 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>agrees</td></tr>
   </table>
   <p class="src">The bang-bang policy's success is <em>not monotonic</em> in a₀: the contiguous working
@@ -893,10 +911,11 @@
   performance.</p>
   <p>The <b>α ≳ 100 W/kg pure-solar threshold — and the "Min solar α" columns in the tables below — are
   outward-spiral requirements</b>; with pumping, pure solar closes at today's α, roughly wherever the
-  vehicle's a₀ clears the ≈ 2.25×10⁻⁴ m/s² line. The target <em>rankings</em> do not move:
-  LSPM J2146+3813 stays the cheapest destination (floor ~9.3 km/s, cruise ~7.7 — low enough that it
-  needs <em>no pumping at all</em>), with λ Ser the best solar-type second. A complete SEP budget from
-  LEO for an AC-class cruise totals <b>~30–32 km/s</b> (7.6 km/s Earth escape + ~23–24 heliocentric);
+  vehicle's a₀ clears the ≈ 2.24×10⁻⁴ m/s² line. The target <em>rankings</em> do not move:
+  LSPM J2146+3813 stays the cheapest destination (Δv ~19.7 km/s, cruise 8.7 km/s at its crossing — low
+  enough that it needs <em>no pumping at all</em>), with λ Ser the best solar-type second. A complete SEP budget from
+  LEO for an AC-class cruise totals <b>~31–34 km/s</b> (7.6 km/s Earth escape + ~23–24 heliocentric,
+  plus ~2 km/s pumping tax under the bang-bang policy);
   the closed-form low-thrust budget behind the tables (~25–26 km/s for AC-class) underprices the
   heliocentric leg by ~5 km/s and conversely overprices low-cruise targets, so read the tables' Δv as a
   ranking metric rather than an absolute budget.</p>
@@ -918,22 +937,24 @@
   pure Δv, the pumped campaign costs more than a hypothetical impulsive kick (which this vehicle cannot
   perform).</p>
 
-  <h4>The perihelion synchrotron — the “lasso idea” (externally powered recirculating accelerator)</h4>
-  <p>Perihelion pumping (above) still spends onboard propellant. The <b>perihelion synchrotron</b> — the
-  <em>“lasso idea”</em> — removes even that: <b>one or more fixed, externally powered electromagnetic
-  stations</b> on an orbit of perihelion radius r<sub>p</sub> accelerate a <b>passive</b> probe in flight —
-  the probe threads the station's field tunnel as it sweeps through perihelion and leaves with an
-  impulsive prograde kick; nothing is captured or docked, the “lasso” is the travelling field's brief
-  grip on the probe's armature; and — to continue the synchrotron analogy — the Sun's gravity stands
-  in for the machine's bending magnets, curving the probe's path back to the station for the next
-  kick (gravitationally, of course; the Sun is not being treated as a magnet). The probe carries no propellant and no power for departure — only the payload and a
+  <h4 id="synchrotron">The perihelion synchrotron — the “lasso idea” (externally powered recirculating accelerator)</h4>
+  <p><a href="#pumping">Perihelion pumping</a> (above) still spends onboard propellant. The <b>perihelion synchrotron</b> — the
+  <em>“lasso idea”</em> — removes even that. <b>One or more externally powered electromagnetic
+  stations, themselves Sun-orbiting on a circular orbit of radius r<sub>p</sub></b> (“stationary” only in
+  the sense that the infrastructure stays put in the inner system, reused pass after pass — nothing
+  hovers), accelerate a <b>passive</b> probe in flight: it threads a station's field tunnel as it sweeps
+  through perihelion and leaves with an impulsive prograde kick. Nothing is captured or docked — the
+  “lasso” is the travelling field's brief grip on the probe's armature. And, to continue the synchrotron
+  analogy, the Sun's gravity stands in for the machine's bending magnets, curving the probe's path back
+  to the station for the next kick (gravitationally, of course; the Sun is not being treated as a
+  magnet). The probe carries no propellant and no power for departure — only the payload and a
   small conductive armature the station's fields can grip — so it bypasses the rocket equation entirely,
   and the accelerator is <em>reused</em> for the next probe. Each kick lands where the Oberth leverage is
   greatest (perihelion, max v), like a particle gaining energy each lap through a synchrotron's
   accelerating gap.</p>
   <p>It is <b>not a true synchrotron</b>, and that is the whole difficulty: unlike a particle in a ring,
   the probe's apoapsis and period <b>grow after every kick</b>, so it is really a recirculating
-  “linac” whose return path balloons without bound. Two corrections kill the naive equal-kick arithmetic, and
+  “linac” whose return path balloons without bound. Two corrections kill the naïve equal-kick arithmetic, and
   both are enforced in the engine (<code>synchrotron_escape</code>) and the calculator option:</p>
   <ul>
     <li><b>Periods sum, and diverge.</b> The wait between kicks is the exact Kepler period of each new
@@ -944,7 +965,7 @@
       v<sub>p,target</sub> = √(v∞² + v<sub>esc</sub>²). A kick that clears escape but lands <em>below</em>
       that is fatal: the probe is flung away too slow, with no second chance. The minimum possible
       final kick is Δv<sub>final,min</sub> = v<sub>p,target</sub> − v<sub>esc</sub> — ~6.4 km/s at 1 AU
-      but only ~1.4 km/s at 10 R☉, for the ~24 km/s cruise floor (deep stations make the endgame
+      but only ~1.4 km/s at 10 R<sub>☉</sub>, for the ~23.6 km/s design cruise (deep stations make the endgame
       easy). Unless a single kick of Δv<sub>final,min</sub> is feasible in one aperture transit, the
       final leg therefore <b>needs a staged chain of Sun-orbiting stations posted progressively along
       the departure trajectory</b>, each providing a further push as the now-hyperbolic probe passes —
@@ -954,17 +975,17 @@
       the deep-solar flux), and every added station is one more hypervelocity aperture transit that
       must be phased to a one-shot hyperbolic flyby.</li>
   </ul>
-  <p>Engine results for the 23.6 km/s AC cruise floor (fixed equal kicks, circular start at the
+  <p>Engine results for the ~23.6 km/s design cruise (fixed equal kicks, circular start at the
   station; the calculator's <b>Perihelion synchrotron</b> option recomputes this live from the station
   and kick sliders):</p>
   <table class="chain">
     <tr><th>Station r<sub>p</sub></th><th class="v">Kick/pass</th><th class="v">Passes</th><th class="v">Accel phase</th><th class="v">Longest orbit</th><th>Verdict</th></tr>
-    <tr><td>10 R☉</td><td class="v">5 km/s</td><td class="v">12</td><td class="v">1.5 yr</td><td class="v">1.1 yr</td><td><b>leaves at v∞ 33 km/s — feasible</b></td></tr>
-    <tr><td>20 R☉</td><td class="v">5 km/s</td><td class="v">9</td><td class="v">~20 yr</td><td class="v">~19 yr</td><td>feasible, schedule dominated by the last orbit</td></tr>
-    <tr><td>10 R☉</td><td class="v">2 km/s</td><td class="v">29</td><td class="v">4.5 yr</td><td class="v">2.6 yr</td><td>✗ escapes at 17.6 km/s — gone too slow</td></tr>
+    <tr><td>10 R<sub>☉</sub></td><td class="v">5 km/s</td><td class="v">12</td><td class="v">1.5 yr</td><td class="v">1.1 yr</td><td><b>leaves at v∞ 33 km/s — feasible</b></td></tr>
+    <tr><td>20 R<sub>☉</sub></td><td class="v">5 km/s</td><td class="v">9</td><td class="v">~20 yr</td><td class="v">~19 yr</td><td>feasible, schedule dominated by the last orbit</td></tr>
+    <tr><td>10 R<sub>☉</sub></td><td class="v">2 km/s</td><td class="v">29</td><td class="v">4.5 yr</td><td class="v">2.6 yr</td><td>✗ escapes at 17.6 km/s — gone too slow</td></tr>
     <tr><td>1 AU</td><td class="v">5 km/s</td><td class="v">3</td><td class="v">12 yr</td><td class="v">10 yr</td><td>✗ escapes at 15.2 km/s — gone too slow</td></tr>
   </table>
-  <p><b>Why the naive version loses to its own engineering.</b> A compact station cannot hover at
+  <p><b>Why the naïve version loses to its own engineering.</b> A compact station cannot hover at
   perihelion — it must orbit, and since the probe's period changes after every kick, rendezvous is
   preserved only on a discrete ladder of integer-resonant ellipses, not a free Δv slider. The
   accelerator need not be a <em>single</em> station: a constellation of k stations spaced around the
@@ -972,14 +993,14 @@
   resonance ladder into a much denser grid (the limit — a full circumsolar ring of stations — removes
   the phasing constraint entirely, at megastructure cost); a swarm also shares the kick recoil and the
   per-station pulsed-power load, at the price of k copies of the deep-solar hardware. The station's
-  magnets and electronics face <em>continuous</em> deep-solar exposure (~460× Earth flux at 10 R☉) where
+  magnets and electronics face <em>continuous</em> deep-solar exposure (~460× Earth flux at 10 R<sub>☉</sub>) where
   a one-pass probe hides behind an ablative shield. The station must field-grip a probe transiting its aperture
-  at the near-parabolic rendezvous speed ≈ (√2−1)·v<sub>circ</sub> — <b>57 km/s at 10 R☉</b> — where a
+  at the near-parabolic rendezvous speed ≈ (√2−1)·v<sub>circ</sub> — <b>57 km/s at 10 R<sub>☉</sub></b> — where a
   missed aperture is a destructive collision, and it absorbs the opposite momentum impulse of every kick.
   Insertion onto the station-grazing orbit is itself a Jupiter/Venus-tour-class job.</p>
   <p><b>The strong form is a gateway, not a merry-go-round.</b> Because escape terminates recirculation
   and deep stations make Δv<sub>final,min</sub> small, the architecture is at its best delivering
-  <em>one terminal kick per probe</em> — a reusable powered solar-Oberth gateway at ~4–10 R☉ through
+  <em>one terminal kick per probe</em> — a reusable powered solar-Oberth gateway at ~4–10 R<sub>☉</sub> through
   which a whole fleet of passive probes is dispatched, each on a single pass (with the terminal push
   split, if need be, across a short staged chain of stations along the departure line). Recirculating one probe
   for dozens of equal kicks is mostly a mathematical curiosity: equal kicks usually escape below target,
@@ -1018,33 +1039,36 @@
   recent" — and which contradicts <em>a century of measurements</em>: 17 published RVs put ξ Boo at
   <b>+3 km/s (receding — its closest pass was ~520 kyr ago at ~19 ly)</b>, and 16 put c UMa at −14.6, not
   −38.6 (its approach is ~13 ly at ~1.2 Myr). Every number below now uses <b>validated RVs</b> (Gaia
-  DR2/DR3 quality A/B where available, else the median of all published measurements — 501 catalogue
-  values overridden). λ Serpentis' approach, by contrast, is corroborated by the published Gaia encounter
+  DR2/DR3 quality A/B where available, else the median of all published measurements — 501 values overridden in the original ~86-ly
+  catalogue at the time of this correction; ~5,600 across the current ~315-ly sweep). λ Serpentis' approach, by contrast, is corroborated by the published Gaia encounter
   surveys. Credit: an external reader's cross-check caught this.</div>
   <p><b>Is there a better candidate than AC?</b> Yes — two classes:</p>
   <table class="chain cand">
-    <tr><th>Target</th><th>Type · V</th><th class="v">Now (ly)</th><th class="v">Closest (ly)</th><th class="v">When (kyr)</th><th class="v">Cruise (km/s)</th><th class="v">Tilt</th><th class="v">Δv (km/s)</th><th class="v">Prop %</th><th class="v">Min α (W/kg)</th><th class="v">Lum (W)</th><th>Note</th></tr>
+    <tr><th>Target</th><th>Type · V</th><th class="v">Now (ly)</th><th class="v">Closest (ly)</th><th class="v">When (kyr)</th><th class="v">Cruise (km/s)</th><th class="v">Tilt</th><th class="v">Δv (km/s)</th><th class="v">Prop %</th><th class="v">Min solar α (W/kg)</th><th class="v">Lum (W)</th><th>Note</th></tr>
     <tr><td><b>Alpha Centauri</b></td><td>G2V+K1V · −0.1</td><td class="v">4.3</td><td class="v">3.13</td><td class="v">28</td><td class="v">23.3</td><td class="v">−10.1°</td><td class="v">26.0</td><td class="v">59</td><td class="v">~100</td><td class="v">6.7e26 (176%)</td><td>the baseline — the mission as specified (≤100 kyr forces it)</td></tr>
-    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62</td><td class="v"><b>0.17</b></td><td class="v">1,290</td><td class="v"><b>~0.05</b></td><td class="v">−11.6°</td><td class="v">20.8</td><td class="v">51</td><td class="v">~36</td><td class="v">3.7e25 (9.7%)</td><td>the record-holder: passes ~10,700 AU — it nearly hits us; any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
+    <tr><td><b>Gliese 710</b> (HD 168442)</td><td>K7V · 9.7</td><td class="v">62</td><td class="v"><b>0.17</b></td><td class="v">1,280</td><td class="v"><b>~0.05</b></td><td class="v">−11.6°</td><td class="v">20.8</td><td class="v">51</td><td class="v">~36</td><td class="v">3.7e25 (9.7%)</td><td>the record-holder: passes ~10,700 AU — it nearly hits us; any propulsion reaches its flyby; will outshine Sirius at approach</td></tr>
     <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39</td><td class="v">7.6</td><td class="v">169</td><td class="v"><b>13.2</b></td><td class="v">−27.8°</td><td class="v">29.1</td><td class="v">63</td><td class="v">~56</td><td class="v">8.4e26 (219%)</td><td><b>the best validated bright candidate</b>: naked-eye Sun-like star, ~2 L☉, corroborated by published Gaia encounter surveys — arrive at its ecliptic crossing (145 kyr, cruise 19.2, tilt 0) and the <b>Δv is 23.0 km/s (54% propellant)</b>, ~2 below AC with a brighter future flyby</td></tr>
-    <tr><td>⚠ <b>HD 176051A</b></td><td>F9V · 5.3</td><td class="v">49</td><td class="v">—</td><td class="v">288</td><td class="v">16.9</td><td class="v">0° @ crossing</td><td class="v">22.1</td><td class="v">54</td><td class="v">~62</td><td class="v">—</td><td>would be the cheapest naked-eye Δv (22.1 @ 288 kyr) — but its component RV is <b>single-source</b>: flagged unverified by the deep data audit, needs corroboration before promotion</td></tr>
+    <tr><td>⚠ <b>HD 176051A</b></td><td>F9V · 5.3</td><td class="v">49</td><td class="v">—</td><td class="v">288</td><td class="v">16.9</td><td class="v">0° @ crossing</td><td class="v">22.1</td><td class="v">53</td><td class="v">~63</td><td class="v">—</td><td>would be the cheapest naked-eye Δv (22.1 @ 288 kyr) — but its component RV is <b>single-source</b>: flagged unverified by the deep data audit, needs corroboration before promotion</td></tr>
     <tr><td><b>c UMa</b> (corrected)</td><td>G0V · 5.2</td><td class="v">66</td><td class="v">~13</td><td class="v">~1,240</td><td class="v">3.1</td><td class="v">−46.3°</td><td class="v">37.0</td><td class="v">72</td><td class="v">~40</td><td class="v">1.2e27 (313%)</td><td>with the validated RV (−15.4, Gaia; a 2023 catalogue error said −38.6) its approach is later and farther than first computed — and it remains the tilt-trap example: cheap cruise, ruinous 46° aim</td></tr>
-    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~61</td><td class="v">5.0e27 (1,306%)</td><td>no ecliptic crossing inside 20 ly — the +20° tilt is priced in; ≈ AC's budget with a farther flyby, but at ~13 L☉ the biggest energy prize of the cheap set</td></tr>
+    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~61</td><td class="v">5.0e27 (1,296%)</td><td>no ecliptic crossing inside 20 ly — at this 138-kyr optimum the +20° tilt is priced in (≈ AC's budget); a tilt-free crossing arrival exists just outside, at ~22 ly / 330 kyr, dropping the Δv to 23.2 (see the passes table). At ~13 L☉ the biggest energy prize of the cheap set</td></tr>
   </table>
   <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
   toward the encounter point and coast; the star does the closing. But cruise is only half the budget: the
   <b>aim tilt</b> out of the ecliptic sets how much of Earth's 29.8 km/s you can borrow, and the <b>Δv
   budget</b> column (the engine's full LEO low-thrust departure model at each star's optimum, true tilt
   included) is the honest ranking. Stars that never cross the ecliptic nearby are still perfectly
-  evaluable — they just pay the tilt (Altair: +20°, ≈ AC's budget) — while a large tilt can wipe out a
+  evaluable — they just pay the tilt (Altair: +20° at its 138-kyr optimum; a tilt-free arrival exists
+  farther out) — while a large tilt can wipe out a
   cheap cruise (c UMa at −46°, τ Ceti at 44°). Note the escape floor: even a
-  ~0 km/s cruise costs ~19 km/s from LEO (Earth spiral + solar escape at 1 AU), so the spread between good
-  targets is modest in Δv — but a small required cruise slashes the <em>power-gate</em> bar: the engine's
+  ~0 km/s cruise costs ~19 km/s from LEO (Earth spiral + solar escape at 1 AU − the 1.2 km/s spiral-fit
+  constant), so the spread between good targets is modest in Δv. A small required cruise, however,
+  slashes the <em>power-gate</em> bar: the engine's
   1/r² curve puts pure-solar closure for the patient cheap targets (HD 7924's 3.9 km/s cruise) at
-  <b>α ≳ ~41 W/kg</b> (vs ~100 for AC) — the solar-escape threshold itself is ~40, below which no vehicle
-  escapes the Sun at all. That is near-term hardware
-  (ROSA-class array + today's thruster), not the far-term thin-film array AC demands. Red-dwarf record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr) and
-  Gliese 445 (~3.4 ly @ 46 kyr) — closer than AC ever gets, but M dwarfs.</p>
+  <b>α ≳ ~41 W/kg</b> (vs ~100 for AC) — the solar-escape threshold itself is in the mid-30s W/kg,
+  below which no vehicle escapes the Sun at all. That is near-term hardware
+  (ROSA-class array + today's thruster), not the far-term thin-film array AC demands. Red-dwarf
+  record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr — closer than AC ever
+  gets) and Gliese 445 (~3.4 ly @ 46 kyr) — but both are M dwarfs.</p>
   <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
   50 ly of the Sun in the next 1 Myr</b> — so in-plane departure geometry (borrowing Earth's 29.8 km/s with
   no plane change) is never in short supply, whatever the target era. The complete list of crossings
@@ -1066,8 +1090,8 @@
   rocket-equation fraction for that budget at Isp 3000 s. <b>Min solar α</b> is the smallest whole-vehicle
   specific power at which the engine's 1/r² power gate reaches that cruise via an <em>outward spiral</em>
   (page-default sizing: 2 kW, Isp 3000, tank 2.5%, struct 10%; the solar-escape threshold itself is
-  ~40 W/kg, AC-class cruises need ~100, and "—" means the outward spiral never reaches it at any α —
-  perihelion pumping relaxes all of these to today's α; see that section). <b>Luminosity</b> is bolometric, in watts and as % of the Sun,
+  in the mid-30s W/kg, AC-class cruises need ~100, and "—" means the outward spiral never reaches it at any α —
+  perihelion pumping relaxes all of these to today's α; <a href="#pumping">see that section</a>). <b>Luminosity</b> is bolometric, in watts and as % of the Sun,
   derived from V + distance + a spectral-type bolometric correction (Sun = 3.828e26 W = 100%; late-M values are
   order-of-magnitude; SIMBAD's combined V for unresolved binaries gives the pair's total — the relevant
   number for energy capture). <b>⚠</b> marks stars whose kinematics the deep data audit could not
@@ -1089,8 +1113,8 @@
   only stars whose kinematics are corroborated (≥2 published RVs, low scatter); ⚠ rows in the tables are
   single-source or high-scatter and stay out of the ranking — that gate demoted HD 176051A (22.1 @ 288 kyr
   on one RV) and the UCAC4 0.8-ly crossing claim. Kinematically ideal but faint: LSPM J2146+3813 (M5V,
-  crossing 78 kyr, Δ −5 kyr, passes 1.86 ly, RV confirmed by 4 measurements) — a "perfect candidate in
-  speed and direction, sadly not bright in the night sky."</p>
+  crossing 78 kyr, Δ −5 kyr, passes 1.86 ly, RV confirmed by 4 measurements) — a perfect candidate in
+  speed and direction, sadly not bright in the night sky.</p>
 
   <h4>The 100 closest passes in the next 1 Myr — crossers and non-crossers alike</h4>
   <p>The crossing table only lists stars that pierce the ecliptic plane nearby. This one ranks the
@@ -1112,9 +1136,9 @@
   or Tilt answers "what's within reach even without an ecliptic crossing".</p>
 
   <h4>The biggest energy prizes inbound — luminous approachers, wide-volume sweep</h4>
-  <p>Could we be missing a huge star inbound from farther out? The catalogue behind the tables above now
+  <p>Could we be missing a huge star inbound from farther out? The catalogue behind the tables above
   sweeps <b>~315 ly</b> (plx ≥ 10 mas with full 6-D kinematics — anything reaching us within 1 Myr from
-  beyond that would need &gt;150 km/s, above disk-star speeds), plus <b>the region's giants to ~1,000 ly</b>
+  beyond that would need &gt;~95 km/s — faster than all but rare thick-disk and halo stars), plus <b>the region's giants to ~1,000 ly</b>
   (V ≤ 2.5). This table ranks every star whose closest approach lies ahead (within 1 Myr, closing to
   &lt;85% of its current distance) by <b>luminosity</b> — the energy-first view of target selection:</p>
   <div class="crosswrap" style="max-height:none"><table class="chain" id="lumtable">
@@ -1125,22 +1149,22 @@
   any α); ⚠ = unverified kinematics. <b>The physics that cuts against "aim for the biggest star": stellar
   lifetime is a steep inverse function of luminosity.</b> A ~25 L☉ A-star (Sirius-class) lives ~1 Gyr;
   a ~100+ L☉ giant is already near the end of its life; supergiants (Betelgeuse-class — none inbound in
-  this sweep) live only ~10 Myr and end as supernovae. For a civilization buying energy <em>forever</em>,
+  this sweep) live only ~10 Myr and end as supernovae. For a civilisation buying energy <em>forever</em>,
   the sweet spot is the luminous end of the long-lived range — F/G stars at ~1–5 L☉ with ~3–10 Gyr
-  remaining — which is exactly where λ Ser (~2 L☉, ~9 Gyr) sits. The table shows what "bigger" costs in
+  remaining — which is exactly where λ Ser (~2 L☉, ~3–5 Gyr remaining of its ~9 Gyr life) sits. The table shows what "bigger" costs in
   Δv and what it forfeits in lifetime.</p>
   <p><b>A note on α² Librae</b> (row "alf02 Lib") — this is <b>Zubenelgenubi</b>, the southern claw of
   Libra (the constellation's stars were once the claws of Scorpius), and it is sometimes confused with
   <b>Vega, which is a different star (α Lyrae)</b> — both are bright A-type stars and both appear in
-  this table. α Librae is a <em>multiple system</em> ~76 ly away: a wide common-proper-motion pair in
-  which α² (the naked-eye component, V 2.8, an Am metallic-line star of type kA2hA5mA4 — hence the odd
-  spectral code — and itself a spectroscopic binary) orbits with the fainter F-type pair α¹, four-plus
-  stars in all; despite the α label it is only Libra's <em>second</em> brightest — β Lib
+  this table. α Librae is a <em>multiple system</em> ~76 ly away — a wide common-proper-motion pair.
+  The naked-eye component α² (V 2.8) is an Am metallic-line star of type kA2hA5mA4 — hence the odd
+  spectral code — and itself a spectroscopic binary; it orbits with the fainter F-type pair α¹,
+  four-plus stars in all. Despite the α label it is only Libra's <em>second</em> brightest: β Lib
   (Zubeneschamali, the northern claw) outshines it and tops this very table, so both of Libra's claws
   are inbound. Our sweep prices the system's combined light at ~50 L☉ and its kinematics are clean
   (verified RV, no ⚠ flag): it closes from 75.8 ly to <b>59.4 ly at +798 kyr</b>, brightening only
   ~half a magnitude to V ≈ 2.2 — a slow sky event, not a flyby: even at closest approach it remains
-  ~35× farther than Alpha Centauri is today, which is why it never ranks as a probe target despite its
+  ~14× farther than Alpha Centauri is today, which is why it never ranks as a probe target despite its
   luminosity (best-arrival Δv 39.1 km/s at a −47° aim, cruise floor 14.5 km/s, outward-spiral min
   solar α ~58 W/kg — the price of a generic 60–76 ly A-star trip). <b>Vega itself</b> is the far more
   interesting approacher of the two: row "alf Lyr" — 25.0 ly today, closest <b>16.9 ly at
@@ -1149,7 +1173,7 @@
 
   <h4>Red dwarf or bright star? — target-selection strategy</h4>
   <p>The top of the list poses a clean strategic choice: a <b>close red dwarf arriving sooner</b>
-  (LSPM J2146+3813 — M5V, crossing 78 kyr, passes 1.86 ly, ~6.7 km/s cruise, RV confirmed by 4
+  (LSPM J2146+3813 — M5V, crossing 78 kyr, passes 1.86 ly, 8.7 km/s cruise, RV confirmed by 4
   measurements) versus the <b>best validated naked-eye star arriving later</b> (λ Ser — G0V, V 4.4,
   crossing 145 kyr, flyby ~7.6 ly, Δv 23.0). Which is the better target?</p>
   <p><b>First, the supernova worry dissolves.</b> Supernovae need ≥8 M<sub>☉</sub> progenitors — nothing in
@@ -1159,7 +1183,7 @@
   not a probe-targeting one. On any planning horizon that matters here (10⁵–10⁷ yr), <em>both targets
   are effectively eternal</em>.</p>
   <p><b>The energy argument is decisive for the bright star.</b> An M5V emits ~0.002–0.005 L<sub>☉</sub>;
-  λ Ser emits ~2 L<sub>☉</sub> — <b>~500× more captureable power</b>. As a long-term energy asset (the
+  λ Ser emits ~2 L<sub>☉</sub> — <b>~500× more capturable power</b>. As a long-term energy asset (the
   Dyson-swarm view of expansion), one λ Ser is worth hundreds of late-M dwarfs — a categorical
   difference, not a marginal one. And it is a star you can point at in the night sky.</p>
   <table class="chain">
@@ -1168,7 +1192,7 @@
     <tr><td>Δv budget / cruise @ crossing</td><td class="v">~19.7 km/s / 8.7 km/s</td><td class="v">23.0 km/s / 19.2 km/s</td></tr>
     <tr><td>Min solar α (power gate)</td><td class="v"><b>~48 W/kg</b> — near-term</td><td class="v">~68 W/kg</td></tr>
     <tr><td>Comms range at arrival</td><td class="v"><b>~1.9 ly</b> (much easier link)</td><td class="v">~9 ly</td></tr>
-    <tr><td>Captureable luminosity</td><td class="v">~0.002–0.005 L☉</td><td class="v"><b>~2 L☉ (~500×)</b></td></tr>
+    <tr><td>Capturable luminosity</td><td class="v">~0.002–0.005 L☉</td><td class="v"><b>~2 L☉ (~500×)</b></td></tr>
     <tr><td>Stellar lifetime</td><td class="v">~trillions of yr</td><td class="v">~8–10 Gyr</td></tr>
     <tr><td>Supernova risk</td><td class="v">none</td><td class="v">none</td></tr>
     <tr><td>Visible / narrative value</td><td class="v">faint (flare-star M dwarf)</td><td class="v"><b>naked-eye, V 4.4</b></td></tr>
@@ -1177,18 +1201,19 @@
   </table>
   <p><b>Verdict:</b> forced to pick one, <b>λ Ser</b> — the ~500× energy differential overwhelms the red
   dwarf's advantages, and the longevity argument is void at these masses. The red dwarf's genuine edges
-  (~2× sooner arrival — probe survival over deep time is the biggest unmodeled risk — a much shorter comms
-  leg, and ~3.5 km/s less Δv) make it the better <em>engineering mission</em>, not the better
-  <em>destination</em>. <b>But the honest answer is the portfolio</b>: these budgets (19.5–23 km/s,
-  Isp 3000 s) carry ~48–54% propellant vs ~59–64% for AC-class, with identical architecture, so the
+  (~2× sooner arrival — probe survival over deep time is the biggest unmodelled risk — a much shorter comms
+  leg, and ~3.3 km/s less Δv) make it the better <em>engineering mission</em>, not the better
+  <em>destination</em>. <b>But the honest answer is the portfolio</b>: these budgets (19.7–23 km/s,
+  Isp 3000 s) carry ~48–54% propellant vs ~57–59% for AC-class (≈64% under the conservative ~30 km/s
+  calculator budget), with identical architecture, so the
   marginal cost of a second spacecraft is small. Launch the red dwarf pathfinder (78 kyr), the λ Ser
   flagship (145 kyr), and a cheap rider toward Gliese 710 — at ~1.28 Myr the galaxy delivers a star to
-  within ~10,700 AU of us, the cheapest stellar hop that will ever exist. A civilization thinking in
+  within ~10,700 AU of us, the cheapest stellar hop that will ever exist. A civilisation thinking in
   Dyson swarms launches all three.</p>
   <p><b>Why do a 5 km/s cruise and a 24 km/s cruise cost almost the same Δv?</b> Because the budget is
   dominated by climbing out of two gravity wells, and cruise speed enters <em>in quadrature</em> with
-  solar escape: Δv ≈ 7.7 (LEO→Earth escape) + √(v∞² + 42.1²) − 29.8 (1 AU→v∞, borrowing Earth's
-  29.8 km/s). At v∞ = 0 that is already ≈19 km/s — the floor. Buying 5 km/s of excess on top of the
+  solar escape: Δv ≈ 7.7 (LEO→Earth escape) − 1.2 (spiral-fit constant) + √(v∞² + 42.1²) − 29.8
+  (1 AU→v∞, borrowing Earth's 29.8 km/s). At v∞ = 0 that is already ≈19 km/s — the floor. Buying 5 km/s of excess on top of the
   42.1 km/s escape speed adds just 0.3 km/s (+1.4% in energy); buying AC's ~24 km/s adds ~6.3 km/s
   (+32%). Energy, not speed, is what the engine purchases — so cheap targets cluster just above the
   ~19 km/s floor, and the real discriminators become alignment (tilt), arrival era, and what awaits
@@ -1197,9 +1222,10 @@
   measurements (median −82.7 km/s) — solid, but worth a dedicated re-observation before naming a
   mission after it. The ξ Boo episode is the cautionary tale: always check RV provenance.</p>
   <p class="src">Caveats: straight-line motion (galactic-orbit curvature is negligible over ≤2 Myr at this
-  fidelity); catalogue completeness ~86 ly — encounters arriving from farther within 1.5 Myr are possible
+  fidelity); catalogue completeness ~315 ly for full 6-D kinematics (V ≤ 2.5 giants to ~1,000 ly) —
+  encounters arriving from farther within 1.5 Myr are possible
   but Gaia-era encounter surveys (Bailer-Jones et al.) confirm Gliese 710 remains the record-holder within
-  ±1 Myr; binary components listed separately by SIMBAD appear separately here.</p>
+  ±1.5 Myr; binary components listed separately by SIMBAD appear separately here.</p>
 
   <h4>Repository structure</h4>
   <p>Everything is open-source (MIT) at
@@ -1216,7 +1242,7 @@
       — this interactive calculator and its shared physics (value-by-value parity-checked against Python).</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/audit" target="_blank" rel="noopener noreferrer"><code>audit/</code></a>
       — independent verification:
-      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (55 Python checks + a Node JS↔Python parity check),
+      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (90 Python checks + a Node JS↔Python parity check),
       a <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/gmat" target="_blank" rel="noopener noreferrer"><code>gmat/</code></a>
       cross-validation of the departure model against <b>NASA's GMAT</b> propagator (scripts, comparison &amp; raw outputs),
       and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>, <code>fable/</code>.</li>
@@ -1381,7 +1407,7 @@ function compute(){
   const fadeExp = (pwr==='solar') ? 2 : 0;
   // PUMPED gate: the binding test is whether the pumping staircase at THIS vehicle's initial thrust
   // acceleration a₀ = F/m_wet actually reaches the cruise floor (integrated policy, cached; args
-  // rounded so slider drags reuse the cache). Fails below a₀ ≈ 2.25×10⁻⁴ m/s². For a non-solar
+  // rounded so slider drags reuse the cache). Contiguous working region: a₀ ≳ 2.24×10⁻⁴ m/s². For a non-solar
   // source pumping adds nothing (no 1/r² boost to harvest) — gate as the constant-power spiral.
   let achievableVinf, pumpInfo=null, syn=null;
   if(ga==='direct'){
@@ -1412,12 +1438,14 @@ function compute(){
   // Two binding tests: (1) the mass must CONVERGE (propellant + tank + structure can't spiral past the
   // rocket-equation wall), and (2) the conservative power gate (a pure-electric v∞ that saturates below
   // the floor can't be fixed by more tankage). Mass-divergence reported first; then the power gate.
-  if(!massConverges){ feasible=false; infeasReason=`mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + structure, so the propellant + structure mass spirals without bound (the rocket-equation wall). Raise Isp, lighten the tank/structure fraction, or cut Δv`; }
+  if(!massConverges){ feasible=false; infeasReason = (pwr==='fuelcell')
+      ? `mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + reactant + structure (mostly fuel-cell reactant), so the mass spirals without bound (the rocket-equation wall). Reactant mass scales as v_e², so raising Isp makes this worse — switch power source, or cut Δv`
+      : `mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + structure, so the propellant + structure mass spirals without bound (the rocket-equation wall). Raise Isp, lighten the tank/structure fraction, or cut Δv`; }
   else if(!powerFeasible){ feasible=false; infeasReason = pumpInfo
-      ? `pump-limited — at this vehicle's initial thrust acceleration a₀ = ${(thrust/wet).toExponential(2)} m/s² the bang-bang pumping staircase stalls at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required (the escaping pass strands below target; the contiguous working region starts at a₀ ≈ 2.25×10⁻⁴ m/s², and success below/around it is phasing-sensitive — the gate integrates YOUR design rather than applying a threshold). Raise power or lower the engine kg/kW (more thrust per wet kg), or aim later (lower cruise floor)`
+      ? `pump-limited — at this vehicle's initial thrust acceleration a₀ = ${(thrust/wet).toExponential(2)} m/s² the bang-bang pumping staircase stalls at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required (the escaping pass strands the probe below target; the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s², and success below/around it is phasing-sensitive — the gate integrates YOUR design rather than applying a threshold). Raise power or lower the engine kg/kW (more thrust per wet kg), or aim later (lower cruise floor)`
       : (pwr==='solar')
       ? `power-limited — solar power fades as 1/r², so at this vehicle specific power the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. An outward spiral closes only above α ≈ 100 W/kg: raise the array W/kg and lower the engine kg/kW (lighter vehicle → shorter burn near 1 AU). Or switch to the perihelion-pumped architecture (closes at today's α), a nuclear-electric reactor, the solar-Oberth (Jupiter) departure, or a chemical boost`
-      : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the reactor power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
+      : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the ${pwr==='nuclear'?'reactor':'fuel-cell'} power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
   else if(syn && !syn.reached){ feasible=false; infeasReason = syn.escapedBelow
       ? `flung away too slow — the kick that clears solar escape lands at v∞ ${fmt(syn.vInfFinal/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required, and an escaped probe never returns for another kick (escape terminates recirculation). The final kick must jump from bound to ≥ v_p,target: raise the kick per pass (need the last kick ≥ Δv_final,min = ${fmt(syn.dvFinalMin/1e3,2)} km/s landing on target) or move the station deeper`
       : `synchrotron did not reach the target within ${fmt(syn.passes,0)} passes — raise the kick per pass or move the station deeper`; }
@@ -1456,7 +1484,11 @@ function render(){
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine +
     `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+
-    `<div class="sline"><b style="color:#3fb950">Fuel optimum at ~${fmt(r.minFuelYr)} yr</b> — AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
+    `<div class="sline"><b style="color:#3fb950">Fuel optimum at ~${fmt(r.minFuelYr)} yr</b> — ${
+      r.ga==='synchro' ? `the probe's Δv is flat in arrival time (external station energy), so the optimum is simply your chosen aim` :
+      r.ga==='oberth' ? `the Oberth burn grows with v∞, so the optimum is the minimum-v∞ (tangential) aim; the burn buys energy from the Sun's well, not Earth's orbital velocity` :
+      r.ga==='pumped' ? `the pumped budget prices v∞ + plane change with no Earth-velocity borrow, so the optimum favours low-v∞, low-tilt aims` :
+      `AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully`}: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
     `<div class="sline"><b>The trade (why ~73k yr):</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). The minimum-<em>Δv</em> point sits between, near the crossing — out-of-plane velocity can't be borrowed from Earth, it must be bought with propellant. Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
     `<div class="sline"><b>Profile:</b> Isp-${fmt(r.isp)} s ion, ~${fmt(r.burnYr,1)} yr burn at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then heliocentric escape), then coast ~${fmt(r.arrivalYr)} yr. Distance check: ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — where AC is at arrival.</div>`;
   document.getElementById('summary').innerHTML=summ;
@@ -1464,17 +1496,17 @@ function render(){
   // ----- "how much power & fuel & what array?" spec card (live) -----
   const a0=(r.thrust/r.wet)/9.80665*1000, a1=(r.thrust/r.dry)/9.80665*1000;  // milli-g, start->end
   const psVal=r.pwr==='solar'?`${fmt(r.arrayArea,0)} m² · ${fmt(r.arrayMass)} kg`:`${fmt(r.psMass)} kg`;
-  const psLab=r.pwr==='solar'?'silicon solar array @ 1 AU':`${r.psLabel} (experimental)`;
+  const psLab=r.pwr==='solar'?'solar array @ 1 AU':`${r.psLabel} (experimental)`;
   document.getElementById('burnspec').innerHTML=
-    `<div class="sc-h">To reach cruise speed v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (heliocentric — relative to the Sun)${r.feasible?` · arrival ~${fmt(r.arrivalYr)} yr`:` — below the 23.3 km/s floor: no intercept`}, the departure burn needs:</div>`+
+    `<div class="sc-h">To reach cruise speed v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (heliocentric — relative to the Sun)${r.feasible?` · arrival ~${fmt(r.arrivalYr)} yr`:(!r.massConverges?' — NOT FEASIBLE: mass diverges (rocket-equation wall)':!r.powerFeasible?' — NOT FEASIBLE: achievable v∞ falls below the required cruise':' — NOT FEASIBLE: the escaping kick lands below target')}, the departure burn needs:</div>`+
     `<div class="sc-grid">`+
       `<div class="sc-i"><span class="sc-v">${fmt(r.pwrW/1000,1)} kW</span><span class="sc-l">electrical power (from the array)</span></div>`+
       `<div class="sc-i"><span class="sc-v">${psVal}</span><span class="sc-l">${psLab}</span></div>`+
       `<div class="sc-i"><span class="sc-v">${fmt(r.mp)} kg</span><span class="sc-l">${r.propName} propellant — ${fmt(100*r.mp/r.wet)}% of ${fmt(r.wet)} kg wet</span></div>`+
       `<div class="sc-i"><span class="sc-v">${fmt(r.thrust*1e3)} mN</span><span class="sc-l">thrust — only ~${fmt(a0,2)}–${fmt(a1,2)} milli-g</span></div>`+
-      `<div class="sc-i"><span class="sc-v">~${fmt(r.burnYr,1)} yr</span><span class="sc-l">continuous firing ≈ one revolution around the Sun</span></div>`+
+      `<div class="sc-i"><span class="sc-v">~${fmt(r.burnYr,1)} yr</span><span class="sc-l">continuous firing — a fraction of one revolution around the Sun</span></div>`+
     `</div>`+
-    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} year is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
+    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} yr is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   // ----- KPI tiles, each click-to-expand with the exact calculation (copy-pasteable) -----
   const g0=9.80665, ve=r.isp*g0, altKm=val('alt');
   const rLEO=R_EARTH+altKm*1e3, veL=Math.sqrt(2*MU_EARTH/rLEO)/1e3;
@@ -1490,8 +1522,9 @@ function render(){
   const IN={ T:`arrival T=${fmt(r.arrivalYr)} yr`, pay:`payload=${fmt(r.pay,1)} kg`, alt:`circular LEO=${altKm} km`,
     dry:`dry-bus=${fmt(r.dry)} kg`, isp:`Isp(base)=${fmt(r.ispBase)} s`,
     eta:`thruster η=${fmt(r.eta,2)}`, ekw:`engine=${fmt(ekw,1)} kg/kW`, tank:`tank=${fmt(tkf)}%`, prop:`propellant=${r.propName}`,
-    pwr:`power=${fmt(r.pwrW/1000,1)} kW`, cell:`cell eff=${fmt(cE)}%`, areal:`areal=${fmt(arV,1)} kg/m²`,
-    ga:`architecture=${radio('ga')}`, rtg:`RTG=${fmt(val('rtg'),1)} W/kg`, rp:`perihelion=${fmt(val('rp'))} R☉` };
+    pwr:`power=${fmt(r.pwrW/1000,1)} kW`, cell:`cell eff=${fmt(cE)}%`,
+    ga:`architecture=${radio('ga')}`, rtg:`reactor=${fmt(val('rtg'),1)} W/kg`, rp:`perihelion=${fmt(val('rp'))} R☉`,
+    kstruct:`structure=${fmt(val('kstruct'))}%`, wkgsolar:`array=${fmt(val('wkgsolar'))} W/kg` };
   const inl=(...ks)=>'INPUTS — '+ks.map(k=>IN[k]).join(' · ');
   const ispScale=`Isp scales with propellant (lighter ion → faster exhaust at fixed voltage): Isp = Isp_base·√(m_Xe/m) = ${fmt(r.ispBase)}·√(131.3/${fmt(r.ionM,1)}) = ${fmt(r.isp)} s  (${r.propName}, ${fmt(r.ionM,1)} amu)`;
   // departure-Δv derivation (depends on architecture)
@@ -1499,7 +1532,7 @@ function render(){
   if(radio('ga')==='oberth'){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
       `Step 2 — solar-Oberth burn at perihelion ${fmt(val('rp'))} R☉ (powered close pass of the Sun; speeds vs Sun):\n`+
-      `  Δv = oberthBurn(${fmt(val('rp'))} R☉, v∞=${fmt(vinfK,2)}) + 2.0 km/s margin = ${fmt(r.dvDesign/1e3,2)} km/s   (see methodology §5)`;
+      `  Δv = oberthBurn(${fmt(val('rp'))} R☉, v∞=${fmt(vinfK,2)}) + 2.0 km/s margin = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see methodology §5)`;
   } else if(radio('ga')==='synchro'){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
       `Step 2 — the departure energy is EXTERNAL: the perihelion station's EM kicks supply it (see the\n  Synchrotron campaign KPI). The probe's own engine carries only a trim/navigation budget:\n  Δv_trim = 0.5 km/s (+ margins) = ${fmt(r.dvDesign/1e3,2)} km/s\n`+
@@ -1509,13 +1542,13 @@ function render(){
       `Step 2 — low-thrust Earth escape to C3 ≈ 0 (no Earth-velocity borrow; cost = orbit-energy speed):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
       `Step 3 — heliocentric pumping campaign (retrograde arcs to 0.42 AU, then perihelion burns; in-plane):\n  Δv_pump = v∞ + 2.0 km/s tax = ${fmt(vinfK,2)} + 2.0 = ${fmt(vinfK+2,2)} km/s   (tax calibrated on the integrated bang-bang policy at this corridor)\n`+
       `Step 4 — out-of-plane aim (the campaign is in-plane, so the tilt is bought separately):\n  Δv_plane = v∞·|sin β| = ${fmt(vinfK,2)}·|sin ${fmt(tiltA,2)}°| = ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} km/s\n`+
-      `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+2,2)} + ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} = ${fmt(r.dvDesign/1e3,2)} km/s   (with margins; see "Power-limited v∞" for the a₀ feasibility gate)`;
+      `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+2,2)} + ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see "Power-limited v∞" for the a₀ feasibility gate)`;
   } else {
     dvSteps=`Reference frames: v∞, v_dep, v_esc,☉ and v_E are HELIOCENTRIC (vs the Sun); v∞,E, v_circ and v_esc,LEO are vs EARTH; Δv is what the engine supplies.\n\n`+
       `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
       `Step 2 — heliocentric speed needed at 1 AU to leave on that hyperbola (vs Sun):\n  v_dep = √(v∞² + v_esc,☉²) = √(${fmt(vinfK,2)}² + 42.12²) = ${fmt(vDepK,2)} km/s   [v_esc,☉ = 42.12 = Sun's escape speed at 1 AU, vs Sun]\n`+
       `Step 3 — excess relative to EARTH (Earth lends its v_E = 29.78 km/s orbital speed, in-plane only):\n  v∞,E = √(v_dep² + v_E² − 2·v_dep·v_E·cos β) = √(${fmt(vDepK,2)}² + 29.78² − 2·${fmt(vDepK,2)}·29.78·cos ${fmt(tiltA,2)}°) = ${fmt(vInfEK,2)} km/s   [hyperbolic excess vs Earth]\n`+
-      `Step 4 — DERIVED low-thrust Earth-escape Δv from the ${altKm} km circular LEO (vs Earth):\n  The ion engine has no impulsive kick — it spirals out under continuous tangential thrust. The cost is set by the orbit ENERGY (semi-major axis a = orbit radius for a circular start).\n  √(μ⊕/a) = ${fmt(vc,2)} km/s (circular speed at the parking orbit)\n  Δv_spiral = √(μ⊕/a) + v∞,E − 1.173 = ${fmt(vc,2)} + ${fmt(vInfEK,2)} − 1.173 = ${fmt((r.dvDesign+ (gainK?gainK*1e3:0))/1e3,2)} km/s${gainK?` − ${fmt(gainK,1)} (Jupiter) = ${fmt(r.dvDesign/1e3,2)} km/s`:''}\n  (closed-form fit of the integrated spiral — tools/fit_spiral.py — matched to ~25 m/s; the Δv the propulsion actually provides)\n`+
+      `Step 4 — DERIVED low-thrust Earth-escape Δv from the ${altKm} km circular LEO (vs Earth):\n  The ion engine has no impulsive kick — it spirals out under continuous tangential thrust. The cost is set by the orbit ENERGY (semi-major axis a = orbit radius for a circular start).\n  √(μ⊕/a) = ${fmt(vc,2)} km/s (circular speed at the parking orbit)\n  Δv_spiral = √(μ⊕/a) + v∞,E − 1.173 = ${fmt(vc,2)} + ${fmt(vInfEK,2)} − 1.173 = ${fmt(vc+vInfEK-1.173,2)} km/s\n  (closed-form fit of the integrated spiral — tools/fit_spiral.py — matched to 0.5 m/s)\n${gainK?`  − ${fmt(gainK,1)} km/s Jupiter-assist gain\n`:`  + 5.00 km/s conservative heliocentric-leg offset (the conservative model builds v∞ on the heliocentric spiral — no full Earth-velocity borrow)\n`}  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s (the Δv the propulsion actually provides)\n`+
       `Reference only — impulsive Oberth floor (NOT this vehicle; needs a high-thrust kick stage):\n  floor = √(v∞,E² + v_esc,peri²) − v_peri,orbit = ${fmt(r.dvFloor/1e3,2)} km/s   (theoretical lower bound from the starting orbit)`;
   }
   const dvRef=`Δv = ${fmt(r.dvDesign/1e3,2)} km/s — the velocity change the engine provides from LEO (see “Departure Δv”)`;
@@ -1533,21 +1566,27 @@ function render(){
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:(radio('ga')==='pumped'
       ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + 2 km/s tax). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
-      : 'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'),
+      : radio('ga')==='direct'
+      ? 'Conservative pure-EP budget: the closed-form Earth-escape spiral + a +5 km/s heliocentric-leg offset (the conservative model does not grant the full Earth-velocity borrow) + pointing margins. Sizes the propellant. NOTE: this is NOT the feasibility test — whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'
+      : radio('ga')==='jupiter'
+      ? 'Earth-borrow spiral budget minus the Jupiter-assist gain (plus pointing margins); sizes the propellant.'
+      : radio('ga')==='synchro'
+      ? 'Trim/navigation budget only — the departure energy is external (station kicks); see the Synchrotron campaign KPI for feasibility.'
+      : 'Oberth-burn budget at the chosen perihelion (plus a 2 km/s margin and pointing margins); sizes the propellant.'),
     c:dvSteps});
   K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
-    s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the r3 chase cam draws)',
-    d:'The Δv ACTUALLY expended along the integrated trajectory — a restricted three-body (Sun + Earth, point masses) low-thrust integration with the REAL falling mass (mdot = thrust/(g₀·Isp)). It splits into the Earth-escape spiral (≈ the LEO circular speed) and the heliocentric escape to cruise v∞, and is the physical cross-check on the closed-form “Departure Δv (required)” budget (which adds pointing/steering margins on top).',
-    c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (1 AU → cruise v∞)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
-  K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? fmt(r.achievableVinf/1e3,1)+' km/s' : (r.ga==='synchro'?'n/a (external)':'n/a (assist)')),
+    s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the chase-cam view draws)',
+    d:'The Δv ACTUALLY expended along the integrated DIRECT trajectory — a restricted three-body (Sun + Earth, point masses) low-thrust integration with the REAL falling mass (mdot = thrust/(g₀·Isp)). It splits into the Earth-escape spiral (≈ the LEO circular speed) and the heliocentric escape to cruise v∞, and is the physical cross-check on the closed-form “Departure Δv (required)” budget (which, for the direct architecture, adds a +5 km/s conservative heliocentric-leg offset plus pointing/steering margins on top; for other architectures the budget follows its own accounting and this modelled trajectory is the direct-SEP reference).',
+    c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (1 AU → cruise v∞)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget = modelled spiral + 5.0 km/s conservative offset + margins = ${fmt(r.dvDesign/1e3,1)} km/s (direct)`:'integrating the trajectory…')});
+  K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? (r.massConverges?fmt(r.achievableVinf/1e3,1)+' km/s':'n/a (mass diverges)') : (r.ga==='synchro'?'n/a (external)':'n/a (assist)')),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
-    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to 4× the 1-AU power + Oberth leverage) and closes at today’s α — its gate is the integrated pumping staircase at the vehicle’s a₀ = F/m_wet, which fails below a₀ ≈ 2.25×10⁻⁴ m/s². NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
+    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to 4× the 1-AU power + Oberth leverage) and closes at today’s α — its gate is the integrated pumping staircase at the vehicle’s a₀ = F/m_wet, whose contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s². NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
     c:(r.pumpInfo
-       ? `pumped achievable v∞ (bang-bang policy, RK4, ${r.pumpInfo.throttled?`THROTTLED to a₀ = 2.5×10⁻⁴ m/s² — the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} hits a policy stall window, and a stronger vehicle can always fly a weaker profile`:`a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²`}) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.25×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
+       ? `pumped achievable v∞ (bang-bang policy, RK4, ${r.pumpInfo.throttled?`THROTTLED to a₀ = 2.5×10⁻⁴ m/s² — the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} hits a policy stall window, and a stronger vehicle can always fly a weaker profile`:`a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²`}) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
        : r.ga==='pumped' && r.pwr==='solar'
        ? `mass diverges at this Δv/Isp, so the pumping gate was not evaluated (the 0 shown is a sentinel, not a computed v∞) — fix the mass closure first`
        : r.ga==='direct'
-       ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible via the outward spiral (switch to perihelion pumping, nuclear-electric, or Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
+       ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':`constant ${r.pwr==='nuclear'?'nuclear':'(non-solar)'} power`}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible via the outward spiral (switch to perihelion pumping, nuclear-electric, or Oberth/Jupiter/chemical boost)':`below the floor → raise the ${r.pwr==='nuclear'?'reactor':'fuel-cell'} power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)`)}`
        : r.ga==='pumped'
        ? `constant-power spiral (non-solar source; pumping adds nothing without the 1/r² boost) = ${fmt(r.achievableVinf/1e3,2)} km/s vs required ${fmt(r.vinfSun/1e3,2)} km/s`
        : r.ga==='synchro'
@@ -1573,9 +1612,11 @@ function render(){
   K.push({l:r.propName+' propellant', v:fmt(r.mp)+' kg', i:inl('dry','pay','isp','prop'), s:'m_p — propellant mass',
     d:'The mass of working fluid the ion engine expels to produce the Δv. It scales with the dry+payload mass through the rocket equation, so a heavier bus or payload needs proportionally more of it.',
     c:`${veRef}  (Δv ${fmt(r.dvDesign/1e3,2)} km/s — see Departure Δv)\nm_dry+pay = dry bus + payload = ${fmt(r.dry)} + ${fmt(r.pay,1)} = ${fmt(r.dryEff)} kg\nm_p = m_dry+pay · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (${fmt(100*r.mp/r.wet)}% of m_wet)`});
-  K.push({l:'Fuel optimum', v:fmt(r.minFuelYr)+' yr', i:inl('alt','pen','ga','dry','pay','isp','prop'), s:'T_opt — arrival that minimises Δv (→ smallest m_wet)',
+  K.push({l:'Fuel optimum', v:fmt(r.minFuelYr)+' yr', i:inl('alt','ga','dry','pay','isp','prop'), s:'T_opt — arrival that minimises Δv (→ smallest m_wet)',
     d:'The arrival time that minimises Δv — and therefore propellant and spacecraft mass. It is found by scanning every arrival and sits near where AC crosses the ecliptic (~73k yr). Aiming here yields the smallest possible spacecraft; the headline tells you how far above it your current aim is.',
-    c:`Scan arrivals 58k–100k yr (each via the Departure-Δv chain) for the minimum Δv:\n  optimum at ${fmt(r.minFuelYr)} yr,  Δv_min = ${fmt(r.dvMin/1e3,2)} km/s\nm_wet,min = m_dry+pay · e^(Δv_min/v_e) = ${fmt(r.dryEff)} · e^(${fmt(r.dvMin,0)}/${fmt(ve,0)}) = ${fmt(r.minWet)} kg (smallest spacecraft)\nYour aim costs +${fmt((r.dvDesign-r.dvMin)/1e3,2)} km/s above this.`});
+    c:(r.ga==='synchro'
+      ? `External station energy: the probe's Δv is flat in arrival time, so the "optimum" is simply the chosen aim (${fmt(r.minFuelYr)} yr) — no scan runs.`
+      : `Scan arrivals 58k–100k yr (each via the Departure-Δv chain) for the minimum Δv:\n  optimum at ${fmt(r.minFuelYr)} yr,  Δv_min = ${fmt(r.dvMin/1e3,2)} km/s\nm_wet,min = m_dry+pay(Δv_min) · e^(Δv_min/v_e) = ${fmt(r.minWet/Math.exp(r.dvMin/ve))} · e^(${fmt(r.dvMin,0)}/${fmt(ve,0)}) = ${fmt(r.minWet)} kg (smallest spacecraft; the dry mass is re-derived at Δv_min, so it differs slightly from the current design's)\nYour aim costs +${fmt((r.dvDesign-r.dvMin)/1e3,2)} km/s above this.`)});
   if(r.pwr==='solar'){
     K.push({l:'Solar array', v:fmt(r.arrayArea,1)+' m² · '+fmt(r.arrayMass)+' kg', i:inl('pwr','cell','wkgsolar'), s:'A_arr, m_arr — array area & mass',
       d:'The photovoltaic array that powers the ion engine. Its AREA is the power needed divided by the sunlight a cell converts at 1 AU (set by efficiency); its MASS is the power divided by the array specific power (W/kg) — set directly by the slider.',
@@ -1585,7 +1626,7 @@ function render(){
       c:`m_arr = P / (W/kg) = ${fmt(r.pwrW)} / ${fmt(arV)} = ${fmt(r.arrayMass)} kg`});
   } else {
     K.push({l:r.psLabel+' mass', v:fmt(r.psMass)+' kg', i:inl('pwr','isp'), s:'m_ps — power-source mass',
-      d:'Mass of the chosen (non-solar) power source. Fuel cells and RTGs are experimental alternatives here — the methodology shows why solar wins for a burn done within a few AU of the Sun.',
+      d:'Mass of the chosen (non-solar) power source. Fuel cells and reactors are experimental alternatives here — the methodology shows why solar wins for a burn done within a few AU of the Sun.',
       c:`m_ps = ${fmt(r.psMass)} kg  (see the methodology for the energy/mass model)`});
   }
   K.push({l:'Engine + PPU', v:fmt(r.engineMass)+' kg', i:inl('pwr','ekw'), s:'m_eng — ion thruster + power-processing unit mass',
@@ -1595,7 +1636,7 @@ function render(){
     d:'Mass of the tank that stores the propellant, taken as a fixed fraction of the propellant it must hold (denser propellants such as xenon need a smaller fraction).',
     c:`m_p = m_dry+pay · (MR − 1) = ${fmt(r.dryEff)} · (${fmt(r.MR,3)} − 1) = ${fmt(r.mp)} kg  (see propellant)\nm_tank = tank fraction · m_p = ${fmt(tkf)}% · ${fmt(r.mp)} kg = ${fmt(r.tankMass)} kg`});
   K.push({l:'Burn duration', v:fmt(r.burnYr,1)+' yr', i:inl('pwr','eta','isp','dry','pay','prop'), s:'t_burn — continuous firing time',
-    d:'How long the ion engine fires continuously to build the Δv — gentle thrust (a few hundredths of a g) sustained for months to a couple of years, after which it coasts. Set by the propellant, the exhaust velocity and the thrust.',
+    d:'How long the ion engine fires continuously to build the Δv — gentle thrust (a fraction of a milli-g) sustained for months to a couple of years, after which it coasts. Set by the propellant, the exhaust velocity and the thrust.',
     c:`v_e = Isp·g₀ = ${fmt(ve,0)} m/s  (exhaust velocity, relative to the spacecraft)\nF = 2·η·P / v_e = 2·${fmt(r.eta,2)}·${fmt(r.pwrW)} / ${fmt(ve,0)} = ${fmt(r.thrust*1e3,0)} mN  (thrust)\nm_p = ${fmt(r.mp)} kg  (see propellant)\nt_burn = m_p·v_e / F = ${fmt(r.mp)}·${fmt(ve,0)} / ${fmt(r.thrust,3)} = ${fmt(r.burnYr,2)} yr`});
   { const aAcc=r.thrust/r.wet, eRev=earthEscapeRevs(r.thrust,r.wet,val('alt')), sRev=sunEscapeRevs(r.thrust,r.wet,1).revs, rpKm=(R_EARTH+val('alt')*1e3)/1e3;
   K.push({l:'Revolutions ⟳ Earth', v:fmt(eRev.revs), i:inl('pwr','eta','isp','dry','pay','prop','alt'), s:'N⊕ — orbit-raising revolutions to escape Earth',
@@ -1614,8 +1655,8 @@ function render(){
     d:'The structural mass holding the vehicle together, modelled as a physical fraction k_struct of everything it must carry (power source + engine + tank + propellant). This REPLACES the old arbitrary "dry-bus margin" — there is no unallocated mass any more.',
     c:`m_struct = k_struct · (active + tank + propellant)\n        = ${fmt(r.kstruct)}% · (${fmt(r.active)} + ${fmt(r.tankMass)} + ${fmt(r.mp)}) = ${fmt(r.structureMass)} kg`});
   { const vehWkg=(r.massConverges&&r.dryEff>0)?r.pwrW/r.dryEff:0;
-    K.push({l:'Vehicle specific power', v:(r.massConverges?fmt(vehWkg,1)+' W/kg':'n/a'), i:inl('pwr','kstruct','isp','rtg','wkgsolar','cell','enginekg'), s:'P / m_dry — installed power per kg of dry mass (the EP "α")',
-    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.4 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, and the high-α pure-solar default reaches ~130.',
+    K.push({l:'Vehicle specific power', v:(r.massConverges?fmt(vehWkg,1)+' W/kg':'n/a'), i:inl('pwr','kstruct','isp','rtg','wkgsolar','cell','ekw'), s:'P / (m_dry + m_pay) — installed power per kg of total dry mass, payload included (the EP "α")',
+    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.3 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, and the high-α pure-solar default reaches ~130.',
     c:`P / m_dry+pay = ${fmt(r.pwrW)} W / ${fmt(r.dryEff)} kg = ${fmt(vehWkg,1)} W/kg\nminimum α to close:  pure solar ≳ 100 W/kg   ·   nuclear-electric ≳ ~23 W/kg (constant power, no fade)\n(power source alone: ${fmt(r.pwrW/Math.max(r.psMass,1e-9),0)} W/kg; engine + tank + structure dilute it to the vehicle value)`}); }
   document.getElementById('kpis').innerHTML=K.map(k=>
     `<div class="kpi" id="${kpiSlug(k.l)}" data-k="${k.l}" title="${k.s}">`+
@@ -1626,7 +1667,10 @@ function render(){
   scheduleModelDv();                              // fill the integrated Mission Δv KPI off the render path
   // badges
   const b=[];
-  b.push([r.feasible?'ok':'no', r.feasible?`✓ Intercepts AC in ${fmt(r.arrivalYr)} yr`:'✗ No intercept — v∞ below the 23.3 km/s floor']);
+  b.push([r.feasible?'ok':'no', r.feasible?`✓ Intercepts AC in ${fmt(r.arrivalYr)} yr`
+      : !r.massConverges ? '✗ Not feasible — mass diverges (rocket-equation wall)'
+      : !r.powerFeasible ? `✗ Not feasible — achievable v∞ ${fmt(r.achievableVinf/1e3,1)} km/s < required ${fmt(r.vinfSun/1e3,1)}`
+      : '✗ Not feasible — escaping kick lands below target']);
   const pay=val('pay');
   b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
   const xf=r.mp/r.wet;
@@ -1636,7 +1680,7 @@ function render(){
       : '✗ Lasso: escaping kick lands below target — gone too slow (escape terminates recirculation)']);
   if(r.pwr==='solar' && !r.syn) b.push([r.powerFeasible?'ok':'no', r.powerFeasible
       ? (r.ga==='pumped'?'✓ Solar + pumping: closes at today’s α (burns at 0.42 AU, 4× power)':'✓ Solar: ~tens of kg, energy free near Sun')
-      : (r.ga==='pumped'?'✗ Solar + pumping: staircase stalls — a₀ below ~2.25×10⁻⁴ m/s²':'✗ Solar: 1/r² fade — v∞ saturates below the floor')]);
+      : (r.ga==='pumped'?'✗ Solar + pumping: staircase stalls — a₀ outside the working region (contiguous above ~2.24×10⁻⁴ m/s²)':'✗ Solar: 1/r² fade — v∞ saturates below the floor')]);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
   if(r.pwr==='nuclear') b.push([r.powerFeasible?'ok':'mid', `${r.powerFeasible?'✓':'△'} Nuclear-electric: ${fmt(r.psMass)} kg reactor, constant power (no 1/r² fade)`]);
   b.push([r.massConverges?'ok':'no', r.massConverges
@@ -1691,7 +1735,7 @@ function drawCharts(r){
   Plotly.react('chartPower',[
     {x:isps,y:fc,name:'Fuel-cell reactant',line:{color:'#f85149'}},
     {x:isps,y:solar,name:'Solar array',line:{color:'#3fb950'}},
-    {x:isps,y:nuc,name:'RTG',line:{color:'#d29922'}},
+    {x:isps,y:nuc,name:'Reactor',line:{color:'#d29922'}},
   ],{...LAYOUT('Power-system mass vs Isp — why solar wins'),xaxis:{title:'Isp (s)',type:'log',gridcolor:'#2a323d'},yaxis:{title:'kg',type:'log',gridcolor:'#2a323d'}},CFG);
 
   // 4. time to AC vs cruise v∞

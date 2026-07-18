@@ -1,5 +1,6 @@
-// Nearby-star data for the encounter map + crossing table — generated from SIMBAD TAP (plx>=20 mas, 6-D
-// kinematics), ecliptic frame via astropy, spurious RVs (|v|>150 km/s) removed. Positions ly, velocities
+// Nearby-star data for the encounter map + crossing table — generated from SIMBAD TAP (plx>=10 mas with
+// full 6-D kinematics, complete to ~315 ly, plus V<=2.5 giants to ~1,000 ly), ecliptic frame via astropy,
+// spurious RVs (|v|>150 km/s) removed. Positions ly, velocities
 // ly/Myr, Sun at origin. NEARBY_STARS: n=name, sp=type, V=mag, p=pos, v=vel, tc=closest-approach Myr,
 // dc=closest ly.  ECLIPTIC_CROSSINGS_20LY: all z=0 crossings within 20 ly in the next 1 Myr, time-ranked;
 // tkyr=crossing time, dcross=Sun distance at crossing, dnow=current distance.
