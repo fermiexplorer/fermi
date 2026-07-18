@@ -23,7 +23,7 @@ DEFAULTS = {
     "enginekg": 4, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 1000, "rtg": 40, "rp": 6,
     "srp": 10, "skick": 5,
 }
-RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
+RADIO_DEFAULTS = {"pwr": "solar", "ga": "pumped"}
 
 # JS: reset everything to defaults, apply overrides, return compute()
 RESET_AND_COMPUTE = """
@@ -80,9 +80,12 @@ def run(page):
           f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
     check("default vehicle α is in the closing corner (~100-130 W/kg)",
           100 < base["pwrW"]/base["dryEff"] < 135, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
-    # Drop α below the threshold (heavy conservative array + thruster) → solar no longer closes.
-    lowalpha = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 5})
-    check("conservative low-α solar (91 W/kg, 6 kg/kW) does NOT close", lowalpha["feasible"] is False,
+    # The direct outward-spiral reference architecture (the pumped default replaces it as the
+    # page default, but the spiral physics checks below are about the direct trajectory class).
+    direct = comp(radio={"ga": "direct"})
+    # Drop α below the threshold (heavy conservative array + thruster) → the DIRECT spiral no longer closes.
+    lowalpha = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 5}, {"ga": "direct"})
+    check("conservative low-α solar (91 W/kg, 6 kg/kW) does NOT close the direct spiral", lowalpha["feasible"] is False,
           f"α={lowalpha['pwrW']/lowalpha['dryEff']:.0f} W/kg")
     check("low-α infeasibility is the power-fade reason", "power-limited" in lowalpha["infeasReason"])
     check("solar-Oberth (Jupiter) departure DOES close", comp(radio={"ga": "oberth"})["feasible"] is True)
@@ -91,7 +94,11 @@ def run(page):
     check("nuclear-electric (constant power) DOES close — the low-α EP path", nep["feasible"] is True,
           f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s")
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
-    check("default arrival sits at the fuel optimum", abs(base["arrivalYr"] - base["minFuelYr"]) < 600, f"{base['arrivalYr']:.0f} vs {base['minFuelYr']:.0f}")
+    # Pumped budget prices v∞ + plane change with no Earth borrow, so its fuel optimum sits at
+    # the ecliptic crossing (~79.3k), not the direct model's 72.8k Earth-borrow optimum.
+    check("pumped fuel optimum sits at the ecliptic crossing (~79.3k)",
+          abs(base["minFuelYr"] - 79250) < 600, f"{base['minFuelYr']:.0f}")
+    check("direct fuel optimum stays ~72.8k", abs(direct["minFuelYr"] - 72800) < 400, f"{direct['minFuelYr']:.0f}")
 
     # --- PAYLOAD: must raise propellant & wet, but NOT arrival / Δv / fraction ---
     p = comp({"pay": 50})
@@ -126,14 +133,17 @@ def run(page):
     check("T=58k costs more Δv than optimum", a58["dvDesign"] > base["dvDesign"] + 200)
     check("T=100k costs more Δv than optimum", a100["dvDesign"] > base["dvDesign"] + 200)
     check("Δv is flat between 73k and 79k (<2%)", abs(a79["dvDesign"]-base["dvDesign"])/base["dvDesign"] < 0.02)
-    check("fuel optimum stays ~72.8k regardless of aim", abs(a58["minFuelYr"]-72800) < 400 and abs(a100["minFuelYr"]-72800) < 400)
+    check("pumped fuel optimum stays ~79.3k regardless of aim", abs(a58["minFuelYr"]-79250) < 600 and abs(a100["minFuelYr"]-79250) < 600)
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 
     # --- DERIVED low-thrust departure Δv (no penalty knob anymore) ---
     # CONSERVATIVE pure-EP departure: build v∞ on the heliocentric spiral (v∞ + ~6 km/s tax) + the
     # plane-change penalty — ~30 km/s at the optimum, NOT the optimistic 25 km/s Earth-borrow spiral.
-    check("design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
-          abs(base["dvDesign"]/1e3 - 29.8) < 0.6, f"{base['dvDesign']/1e3:.2f}")
+    check("direct design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
+          abs(direct["dvDesign"]/1e3 - 29.8) < 0.6, f"{direct['dvDesign']/1e3:.2f}")
+    # Pumped default: √(μ⊕/a) escape + v∞ + plane change + 2 km/s tax (+ margins) ≈ 34.3 km/s
+    check("pumped default design Δv is the two-leg budget (~34.3 km/s)",
+          abs(base["dvDesign"]/1e3 - 34.3) < 0.6, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
@@ -195,16 +205,16 @@ def run(page):
 
     # --- ARCHITECTURE radio ---
     jup = comp(radio={"ga": "jupiter"})
-    check("Jupiter assist lowers required Δv", jup["dvDesign"] < base["dvDesign"] - 1000)
+    check("Jupiter assist lowers required Δv (vs direct)", jup["dvDesign"] < direct["dvDesign"] - 1000)
     obe = comp(radio={"ga": "oberth"})
     check("Oberth changes required Δv", not rel(obe["dvDesign"], base["dvDesign"], 1e-3))
     # Perihelion-pumped SEP: two-leg budget (no Earth borrow) is COSTLIER in Δv than the
     # Earth-borrow spiral, but the gate becomes the pumping staircase, which closes at
     # low-α (today's hardware) where the outward spiral saturates near zero.
     pmp = comp(radio={"ga": "pumped"})
-    check("pumped budget = escape + v_inf + tax (> direct budget)", pmp["dvDesign"] > base["dvDesign"] + 1000,
-          f"{pmp['dvDesign']/1e3:.1f} vs {base['dvDesign']/1e3:.1f} km/s")
-    low_alpha_direct = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50})
+    check("pumped budget = escape + v_inf + plane + tax (> direct budget)", pmp["dvDesign"] > direct["dvDesign"] + 1000,
+          f"{pmp['dvDesign']/1e3:.1f} vs {direct['dvDesign']/1e3:.1f} km/s")
+    low_alpha_direct = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50}, {"ga": "direct"})
     low_alpha_pumped = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50}, {"ga": "pumped"})
     check("low-α outward spiral fails but PUMPING closes it (power wall defeated)",
           low_alpha_direct["feasible"] is False and low_alpha_pumped["feasible"] is True,
@@ -237,14 +247,14 @@ def run(page):
     # Feasibility is set by vehicle α, NOT power: at the default α the design closes at any power
     # (power just scales the probe), and drops below the floor only when α falls (heavy components).
     check("default α closes at 50 kW too (power-independent)", comp({"pwrkw": 50})["feasible"] is True)
-    check("low-α (91 W/kg array, 6 kg/kW) does NOT close even at 50 kW", comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50})["feasible"] is False)
+    check("low-α (91 W/kg array, 6 kg/kW) does NOT close the direct spiral even at 50 kW", comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50}, {"ga": "direct"})["feasible"] is False)
     # The two levers must move together: a concentrator array with a HEAVY engine still fails (low α),
     # but with a light engine it closes — α is the binding variable.
-    conc_heavy = comp({"wkgsolar": 486, "enginekg": 8})
-    check("concentrator + heavy 8 kg/kW engine still does NOT close (low α)", conc_heavy["feasible"] is False,
+    conc_heavy = comp({"wkgsolar": 486, "enginekg": 8}, {"ga": "direct"})
+    check("concentrator + heavy 8 kg/kW engine still does NOT close the direct spiral (low α)", conc_heavy["feasible"] is False,
           f"α={conc_heavy['pwrW']/conc_heavy['dryEff']:.0f} W/kg")
-    conc_light = comp({"wkgsolar": 486, "enginekg": 2})
-    check("concentrator + light 2 kg/kW engine DOES close (high α)", conc_light["feasible"] is True,
+    conc_light = comp({"wkgsolar": 486, "enginekg": 2}, {"ga": "direct"})
+    check("concentrator + light 2 kg/kW engine DOES close the direct spiral (high α)", conc_light["feasible"] is True,
           f"α={conc_light['pwrW']/conc_light['dryEff']:.0f} W/kg")
 
 def main():
