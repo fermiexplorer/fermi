@@ -235,6 +235,39 @@
 <div class="layout">
   <aside id="controls">
     <div class="group">
+      <h3>Trajectory architecture</h3>
+      <div class="radios">
+        <label><input type="radio" name="ga" value="pumped" checked> Perihelion-pumped SEP (multi-rev — default)</label>
+        <label><input type="radio" name="ga" value="direct"> Direct from LEO (no assist)</label>
+        <label><input type="radio" name="ga" value="synchro"> Perihelion synchrotron — the “lasso” (EM station)</label>
+        <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist</label>
+        <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
+      </div>
+      <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
+        drop perihelion to 0.42 AU, then prograde burns at perihelion (4× array power + max Oberth
+        leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
+        Flown at the validated design profile a₀ = min(F/m<sub>wet</sub>, 2.5×10⁻⁴ m/s²).
+        <a href="#pumping">See the "Perihelion pumping" section</a>.</div>
+      <div class="ctrl" id="synOpts" style="display:none; margin-top:10px">
+        <label>Station perihelion <b><span id="o_srp">10</span> R<sub>☉</sub></b></label>
+        <input type="range" id="srp" min="4" max="215" step="1" value="10">
+        <label>Kick per pass <b><span id="o_skick">5.0</span> km/s</b></label>
+        <input type="range" id="skick" min="0.5" max="10" step="0.5" value="5">
+        <div class="hint">An externally powered EM station at perihelion (or a constellation of them,
+          which eases the rendezvous phasing) accelerates the passive probe in flight as it transits
+          the station's field tunnel at perihelion — an impulsive prograde kick, no capture; solar
+          gravity curves the path back for the next pass (the synchrotron's “bending magnet”, by
+          analogy). Escape terminates
+          recirculation — the final kick must land ≥ the target perihelion speed or the probe is gone too
+          slow. <a href="#synchrotron">See the "Perihelion synchrotron" section</a>. (215 R<sub>☉</sub> ≈ 1 AU.)</div>
+      </div>
+      <div class="ctrl" id="obOpts" style="display:none; margin-top:10px">
+        <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>☉</sub></b></label>
+        <input type="range" id="rp" min="3" max="30" step="1" value="6">
+        <div class="hint">Needs a heat shield (Parker Solar Probe reaches ~9 R<sub>☉</sub>).</div>
+      </div>
+    </div>
+    <div class="group">
       <h3>Mission / trajectory</h3>
       <div class="ctrl">
         <label>Arrival time (aim point) <b><span id="o_T">72,800</span> yr</b></label>
@@ -374,38 +407,6 @@
       </div>
     </div>
 
-    <div class="group">
-      <h3>Trajectory architecture</h3>
-      <div class="radios">
-        <label><input type="radio" name="ga" value="direct"> Direct from LEO (no assist)</label>
-        <label><input type="radio" name="ga" value="pumped" checked> Perihelion-pumped SEP (multi-rev — default)</label>
-        <label><input type="radio" name="ga" value="synchro"> Perihelion synchrotron — the “lasso” (EM station)</label>
-        <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist</label>
-        <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
-      </div>
-      <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
-        drop perihelion to 0.42 AU, then prograde burns at perihelion (4× array power + max Oberth
-        leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
-        <a href="#pumping">See the "Perihelion pumping" section</a>.</div>
-      <div class="ctrl" id="synOpts" style="display:none; margin-top:10px">
-        <label>Station perihelion <b><span id="o_srp">10</span> R<sub>☉</sub></b></label>
-        <input type="range" id="srp" min="4" max="215" step="1" value="10">
-        <label>Kick per pass <b><span id="o_skick">5.0</span> km/s</b></label>
-        <input type="range" id="skick" min="0.5" max="10" step="0.5" value="5">
-        <div class="hint">An externally powered EM station at perihelion (or a constellation of them,
-          which eases the rendezvous phasing) accelerates the passive probe in flight as it transits
-          the station's field tunnel at perihelion — an impulsive prograde kick, no capture; solar
-          gravity curves the path back for the next pass (the synchrotron's “bending magnet”, by
-          analogy). Escape terminates
-          recirculation — the final kick must land ≥ the target perihelion speed or the probe is gone too
-          slow. <a href="#synchrotron">See the "Perihelion synchrotron" section</a>. (215 R<sub>☉</sub> ≈ 1 AU.)</div>
-      </div>
-      <div class="ctrl" id="obOpts" style="display:none; margin-top:10px">
-        <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>☉</sub></b></label>
-        <input type="range" id="rp" min="3" max="30" step="1" value="6">
-        <div class="hint">Needs a heat shield (Parker Solar Probe reaches ~9 R<sub>☉</sub>).</div>
-      </div>
-    </div>
   </aside>
 
   <main>
@@ -909,9 +910,10 @@
   </table>
   <p class="src">The bang-bang policy's success is <em>not monotonic</em> in a₀: the contiguous working
   region starts at a₀ ≈ 2.24×10⁻⁴, but a phasing-dependent success island exists near 1.75–1.88×10⁻⁴
-  and stall bands at 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴. The calculator therefore gates feasibility by
-  integrating each design at its own a₀ (and retries a throttled 2.5×10⁻⁴ profile when a stronger
-  vehicle lands in a stall band — a vehicle with more thrust can always fly a weaker profile). Achieved
+  and stall bands at 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴. The calculator therefore flies the campaign at
+  the <em>validated design profile</em>, a₀ = min(vehicle a₀, 2.5×10⁻⁴): a stronger vehicle throttles
+  down to it (more thrust could close faster but the policy is validated in the design corridor), and
+  a weaker vehicle is integrated at its own a₀ and gated by the result. Achieved
   v∞ above the 23.64 target (23.66, 23.8) is one-time-step discretisation overshoot, not extra
   performance.</p>
   <p>The <b>α ≳ 100 W/kg pure-solar threshold — and the "Min solar α" columns in the tables below — are
@@ -1421,16 +1423,15 @@ function compute(){
   } else if(ga==='pumped'){
     if(!massConverges) achievableVinf=0;
     else if(pwr==='solar'){
-      // the bang-bang policy is NOT monotonic in a0 (stall windows exist, e.g. ~2.9-3.1e-4);
-      // a stronger vehicle can always THROTTLE to a working profile, so on a stall retry at
-      // the validated 2.5e-4 design point before declaring the design infeasible.
-      const a0=Number((thrust/wet).toPrecision(3));
+      // the campaign is FLOWN AT THE VALIDATED DESIGN PROFILE: a0_eff = min(vehicle a0, 2.5e-4).
+      // A stronger vehicle throttles down to it — the bang-bang policy is validated in the design
+      // corridor (it is NOT monotonic in a0: stall windows exist, e.g. ~2.9-3.1e-4, and the
+      // reference campaign is the ~5-revolution staircase at 2.5e-4); a weaker vehicle flies its
+      // own a0 and the gate decides.
+      const a0v=thrust/wet, a0=Number(Math.min(a0v, 2.5e-4).toPrecision(3));
       const tgt=Number(vinfSun.toPrecision(4));
       pumpInfo=perihelionPumpedVinf(a0, tgt, isp);
-      if(!pumpInfo.reaches && a0>2.5e-4){
-        const th=perihelionPumpedVinf(2.5e-4, tgt, isp);
-        if(th.reaches) pumpInfo={...th, throttled:true};
-      }
+      if(a0v>2.5e-4) pumpInfo={...pumpInfo, throttled:true};
       achievableVinf=pumpInfo.vinf;
     } else achievableVinf = sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, 0);
   } else if(ga==='synchro'){
@@ -1588,7 +1589,7 @@ function render(){
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
     d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to 4× the 1-AU power + Oberth leverage) and closes at today’s α — its gate is the integrated pumping staircase at the vehicle’s a₀ = F/m_wet, whose contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s². NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
     c:(r.pumpInfo
-       ? `pumped achievable v∞ (bang-bang policy, RK4, ${r.pumpInfo.throttled?`THROTTLED to a₀ = 2.5×10⁻⁴ m/s² — the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} hits a policy stall window, and a stronger vehicle can always fly a weaker profile`:`a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²`}) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
+       ? `pumped achievable v∞ (bang-bang policy, RK4, ${r.pumpInfo.throttled?`flown at the validated design profile a₀ = 2.5×10⁻⁴ m/s² — the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} is throttled down to it (the policy is validated in the design corridor; extra thrust could close faster but is not needed)`:`a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²`}) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
        : r.ga==='pumped' && r.pwr==='solar'
        ? `mass diverges at this Δv/Isp, so the pumping gate was not evaluated (the 0 shown is a sentinel, not a computed v∞) — fix the mass closure first`
        : r.ga==='direct'
@@ -1652,7 +1653,7 @@ function render(){
     v:(r.pumpInfo?fmt(r.pumpInfo.revs,1):(r.syn?fmt(r.syn.passes,0):fmt(sRev,2))), i:inl('pwr','eta','isp','dry','pay','prop'),
     s:(r.pumpInfo?'N☉ — heliocentric revolutions of the pumping campaign':(r.syn?'N☉ — recirculation passes through the station':'N☉ — heliocentric loops while spiralling to solar escape')),
     d:(r.pumpInfo
-      ? 'How many times the probe loops the Sun during the perihelion-pumping campaign: retrograde arcs near apoapsis pump perihelion down to 0.42 AU, then each perihelion pass adds a prograde boost until escape. The count depends on a₀ = F/m_wet — a strong (high-α) vehicle needs only ~1–2 revolutions, the a₀ ≈ 2.5×10⁻⁴ design point ~5 — in contrast to the sub-revolution outward spiral of the direct architecture.'
+      ? 'How many times the probe loops the Sun during the perihelion-pumping campaign: retrograde arcs near apoapsis pump perihelion down to 0.42 AU, then each perihelion pass adds a prograde boost until escape. The campaign is flown at the validated design profile a₀ = min(F/m_wet, 2.5×10⁻⁴ m/s²) — ~5 revolutions at the design point (stronger vehicles throttle down to it; weaker ones need more, or stall) — in contrast to the sub-revolution outward spiral of the direct architecture.'
       : r.syn
       ? 'How many times the probe recirculates through the station — one perihelion pass per kick. Each ellipse is larger than the last; the final kick sends it out for good.'
       : 'How many times the probe loops the Sun while the ion raises its heliocentric orbit from 1 AU to solar-escape speed. The Sun is far heavier and 1 AU far larger, so this is typically LESS THAN ONE full turn — the craft barely loops the Sun once before coasting straight to Alpha Centauri (contrast the hundreds of loops around Earth).'),
@@ -1956,18 +1957,24 @@ function buildModel(c){
   const MUs=4*Math.PI*Math.PI, MUe=MUs*(MU_EARTH/MU_SUN), AUyr=4.74057;
   const rLeo=(R_EARTH+alt*1e3)/AU, soi=earthSoiRadius(1)/AU;
   const thrust=SIM.thrust, wet=SIM.wet, dry=Math.max(1,SIM.dry||wet*0.5), isp=SIM.isp||3000;
+  // pumped campaign is flown at the validated design profile: a0_eff = min(vehicle a0, 2.5e-4)
+  const thrustPump=Math.min(thrust, 2.5e-4*wet);
   const mdot=thrust/(G0*isp), mp=Math.max(0,wet-dry), aSI=YEAR*YEAR/AU;   // mdot kg/s; m/s²→AU/yr²
   const vinf=c.vinfKmS/AUyr, Et=0.5*vinf*vinf;
   const w=2*Math.PI, Ep=t=>[Math.cos(w*t),Math.sin(w*t)], Ev=t=>[-w*Math.sin(w*t),w*Math.cos(w*t)];
   const vLeo=Math.sqrt(MUe/rLeo);
   const aMag=t=>(thrust/Math.max(dry, wet-mdot*t*YEAR))*aSI;          // thrust accel now (AU/yr²), falling mass
+  // After departure, the campaign architectures (pumped/synchro/oberth) are integrated Sun-only:
+  // their multi-revolution orbits re-cross 1 AU for years, and the restricted-3-body Earth at an
+  // arbitrary phase injects spurious encounters a real mission would phase away.
+  let helioOnly=false;
   const acc=(r,v,t,burn,dir,am)=>{
     const rs=Math.hypot(r[0],r[1])||1e-12, rs3=rs*rs*rs;
     let ax=-MUs*r[0]/rs3, ay=-MUs*r[1]/rs3;
     const E=Ep(t), dx=r[0]-E[0], dy=r[1]-E[1], de=Math.hypot(dx,dy)||1e-12, de3=de*de*de;
-    ax-=MUe*dx/de3; ay-=MUe*dy/de3;
+    if(!helioOnly){ ax-=MUe*dx/de3; ay-=MUe*dy/de3; }
     if(burn&&dir){ const a=(am!=null?am:aMag(t)), Eu=Ev(t), vgx=v[0]-Eu[0], vgy=v[1]-Eu[1], vg=Math.hypot(vgx,vgy)||1e-12, vh=Math.hypot(v[0],v[1])||1e-12;
-      const bw=de>=soi?1:0; let px=(1-bw)*vgx/vg+bw*v[0]/vh, py=(1-bw)*vgy/vg+bw*v[1]/vh, pn=Math.hypot(px,py)||1e-12;
+      const bw=(helioOnly||de>=soi)?1:0; let px=(1-bw)*vgx/vg+bw*v[0]/vh, py=(1-bw)*vgy/vg+bw*v[1]/vh, pn=Math.hypot(px,py)||1e-12;
       ax+=dir*a*px/pn; ay+=dir*a*py/pn; }
     return [ax,ay];
   };
@@ -1981,7 +1988,8 @@ function buildModel(c){
     const E=Ep(t), de=Math.hypot(r[0]-E[0],r[1]-E[1]), rs=Math.hypot(r[0],r[1]);
     const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
     const ha=Math.atan2(r[1],r[0]); if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
-    if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR); }
+    if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR);
+      if(arch!=='direct'&&arch!=='jupiter') helioOnly=true; }
     const outer=iSoi>=0, vsNow=Math.hypot(v[0],v[1])||1e-12;
     // per-architecture heliocentric control (thrust direction, magnitude, impulses)
     let dir=1, am=null, burning=burn;
@@ -2008,7 +2016,7 @@ function buildModel(c){
         if(!pumpedDown) dir = ecc<0.05?(r[0]>0?-1:0):(Math.abs(Math.abs(nu)-Math.PI)<Math.PI/3?-1:0);
         else if(Eh<EGUARD) dir=Math.abs(nu)<70*Math.PI/180?1:0;
         else dir=1;
-        const Fp=thrust*Math.min(1/(rs*rs),4);                        // power-scaled thrust (1-AU rating × min(1/r²,4))
+        const Fp=thrustPump*Math.min(1/(rs*rs),4);                    // power-scaled thrust (design profile × min(1/r²,4))
         am=(Fp/massNow)*aSI; burning=dir!==0;
       } else { burning=false; dir=0; if(burn){ burn=false; iBurn=iBurn<0?X.length:iBurn; } }
     } else {                                                          // oberth / synchro: coast + impulses
@@ -2041,7 +2049,7 @@ function buildModel(c){
     const inner=iSoi<0;
     const dt=inner?dtBase:((arch==='direct'||arch==='jupiter')?dtBase*200:Math.min(dtBase*200, Math.max(2e-5, 0.02*rs/vsNow)));
     if(burning && (arch==='direct'||arch==='jupiter'||arch==='pumped')){ dvTot += (am!=null?am:aMag(t))*dt;   // ∫ a dt (AU/yr) — onboard only
-      if(arch==='pumped'&&outer){ const Fp=thrust*Math.min(1/(rs*rs),4); massNow=Math.max(dry, massNow-Fp/(G0*isp)*dt*YEAR); } }
+      if(arch==='pumped'&&outer){ const Fp=thrustPump*Math.min(1/(rs*rs),4); massNow=Math.max(dry, massNow-Fp/(G0*isp)*dt*YEAR); } }
     const a1=acc(r,v,t,burning,dir,am);
     const r2=[r[0]+.5*dt*v[0],r[1]+.5*dt*v[1]], v2=[v[0]+.5*dt*a1[0],v[1]+.5*dt*a1[1]], a2=acc(r2,v2,t+.5*dt,burning,dir,am);
     const r3=[r[0]+.5*dt*v2[0],r[1]+.5*dt*v2[1]], v3=[v[0]+.5*dt*a2[0],v[1]+.5*dt*a2[1]], a3=acc(r3,v3,t+.5*dt,burning,dir,am);
