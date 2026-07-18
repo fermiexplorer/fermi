@@ -21,6 +21,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 DEFAULTS = {
     "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
     "enginekg": 4, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 1000, "rtg": 40, "rp": 6,
+    "srp": 10, "skick": 5,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "direct"}
 
@@ -41,7 +42,7 @@ RESET_AND_COMPUTE = """
           busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp,
           achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason,
           dry:r.dry, structureMass:r.structureMass, massConverges:r.massConverges, active:r.active,
-          pwrW:r.pwrW, arraySpecPower:r.arraySpecPower, pumpInfo:r.pumpInfo};
+          pwrW:r.pwrW, arraySpecPower:r.arraySpecPower, pumpInfo:r.pumpInfo, syn:r.syn};
 }
 """
 
@@ -211,6 +212,21 @@ def run(page):
     check("pumped gate reports the campaign (revs > 1, powered years > 1)",
           low_alpha_pumped["pumpInfo"] is not None and low_alpha_pumped["pumpInfo"]["revs"] > 1
           and low_alpha_pumped["pumpInfo"]["years"] > 1)
+    # Perihelion synchrotron ("lasso"): external station kicks — probe carries only a trim
+    # budget, so the wet mass collapses; feasibility is the escape-termination rule.
+    lasso = comp(radio={"ga": "synchro"})
+    check("lasso: probe Δv is a trim budget only (< 2 km/s)", lasso["dvDesign"] < 2000,
+          f"{lasso['dvDesign']/1e3:.2f} km/s")
+    check("lasso: default 10 R☉ / 5 km/s campaign closes (12 kicks)",
+          lasso["feasible"] is True and lasso["syn"] is not None and lasso["syn"]["passes"] == 12,
+          f"passes={lasso['syn'] and lasso['syn']['passes']}")
+    check("lasso: propellant fraction collapses (trim only, f < 5%) and wet mass drops",
+          lasso["f"] < 0.05 and lasso["wet"] < 0.5 * base["wet"],
+          f"f={100*lasso['f']:.1f}%, wet {lasso['wet']:.0f} vs {base['wet']:.0f} kg")
+    lasso_weak = comp(radio={"ga": "synchro"}, over={"skick": 2})
+    check("lasso: 2 km/s kicks escape below target (gone too slow → infeasible)",
+          lasso_weak["feasible"] is False and lasso_weak["syn"]["escapedBelow"] is True,
+          f"stranded v∞={lasso_weak['syn']['vInfFinal']/1e3:.1f} km/s")
 
     # --- FEASIBILITY transitions ---
     lowisp = comp({"isp": 1000})

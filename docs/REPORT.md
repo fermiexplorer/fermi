@@ -62,7 +62,7 @@ question is entirely about how you build the 24 km/s.*
 > **Update (July 2026).** The outward-spiral power wall below is a property of the
 > *trajectory class*, not of solar power: **multi-revolution perihelion pumping** (drop
 > perihelion to 0.42 AU, burn at perihelion where power is up to 4× the 1-AU rating)
-> reaches the full cruise speed at today's vehicle α (~13–25 W/kg), no reactor or assist
+> reaches the full cruise speed at today's vehicle α (~15–21 W/kg), no reactor or assist
 > required. The mechanism and its a₀ ≈ 2.25×10⁻⁴ m/s² failure threshold are integrated in
 > the engine (`perihelion_pumped_vinf`) and cross-checked externally. The α ≳ 100 W/kg
 > condition below therefore applies to the outward-spiral class only. The full SEP total

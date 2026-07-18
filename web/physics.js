@@ -213,14 +213,50 @@
     return out;
   }
 
+  // PERIHELION SYNCHROTRON — "the lasso idea" (mirror of fermi_sim synchrotron_escape).
+  // An externally powered station at perihelion rp applies one impulsive prograde kick per
+  // pass; the probe is passive (no onboard propellant/power) and flies exact Kepler
+  // ellipses between kicks. Corrections enforced: periods sum (and balloon near escape),
+  // and escape TERMINATES recirculation — a kick that clears escape below the target
+  // perihelion speed strands the probe ("escapedBelow").
+  function synchrotronEscape(rpRsun, dvPass, vInfTarget, maxPasses = 10000) {
+    const rp = rpRsun * R_SUN;
+    const vEsc = Math.sqrt(2 * MU_SUN / rp);
+    const vTarget = Math.sqrt(vInfTarget * vInfTarget + vEsc * vEsc);
+    const dvFinalMin = vTarget - vEsc;
+    let v = Math.sqrt(MU_SUN / rp);                // circular start at the station
+    let passes = 0, t = 0, eStation = 0, maxPeriod = 0, escapedBelow = false, leftAtTarget = false;
+    while (passes < maxPasses) {
+      const v2 = v + dvPass;
+      eStation += 0.5 * (v2 * v2 - v * v);
+      passes += 1;
+      v = v2;
+      if (v >= vTarget) { leftAtTarget = true; break; } // leaves at ≥ target v∞ → feasible
+      if (v >= vEsc) { escapedBelow = true; break; } // hyperbolic but slow → gone forever
+      const eps = 0.5 * v * v - MU_SUN / rp;
+      const a = -MU_SUN / (2 * eps);
+      const period = 2 * Math.PI * Math.sqrt(a ** 3 / MU_SUN);
+      t += period;
+      maxPeriod = Math.max(maxPeriod, period);
+    }
+    const vInfFinal = Math.sqrt(Math.max(v * v - vEsc * vEsc, 0));
+    return { passes, timeYr: t / YEAR, maxPeriodYr: maxPeriod / YEAR,
+      vPeriFinal: v, vInfFinal, vEsc, vTarget, dvFinalMin, energySpec: eStation,
+      rendezvousVel: (Math.SQRT2 - 1) * Math.sqrt(MU_SUN / rp),   // worst case: near-escape pass
+      escapedBelow, reached: leftAtTarget && !escapedBelow };
+  }
+
   // First-order total departure Δv for the pumped architecture (mirror of fermi_sim
   // pumped_departure_dv): Earth escape to C3≈0 at the orbit-energy speed √(μ⊕/a) + the
-  // heliocentric pumping campaign at v∞ + tax (tax calibrated against perihelionPumpedVinf:
-  // Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design point). No Earth-velocity borrow.
-  function pumpedDepartureDv(vinf, periAltKm, apoAltKm, pumpTax = 2000) {
+  // heliocentric pumping campaign at v∞ + v∞·|sin β| (plane change — the campaign is
+  // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
+  // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor;
+  // single-point calibration — misprices grow away from it). No Earth-velocity borrow.
+  function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = 2000) {
     const rp = R_EARTH + periAltKm * 1e3;
     const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
-    return Math.sqrt(MU_EARTH / (0.5 * (rp + ra))) + vinf + pumpTax;
+    const plane = vinf * Math.abs(Math.sin(tiltDeg * Math.PI / 180));
+    return Math.sqrt(MU_EARTH / (0.5 * (rp + ra))) + vinf + plane + pumpTax;
   }
 
   const expv = (isp) => isp * G0;
@@ -248,7 +284,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

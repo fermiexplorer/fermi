@@ -8,7 +8,10 @@ reviewer doesn't inherit our assumptions.
 **Status:** four independent models have executed these audits — **Codex, Grok, Gemini
 and Fable** (scripts + conclusions in `audit/codex|grok|gemini|fable/`); all agree with
 the engine on every headline quantity to ≤0.2%. The departure energetics are additionally
-cross-validated against **NASA GMAT** (`audit/gmat/`, ≤0.01%).
+cross-validated against **NASA GMAT** (`audit/gmat/`, ≤0.01%). Prompts 11–12 (perihelion
+pumping + synchrotron) were added 2026-07; Fable has executed them via a 31-agent
+adversarial workflow (`audit/fable/fable-pumping-synchrotron-audit.md` — 19 confirmed
+findings, all fixed/documented in build 126); Codex/Grok/Gemini runs are pending.
 
 > Setup line to prepend to any prompt:
 > "This repo (`fermi_sim/`, `web/physics.js`, `audits/`) models an ion-propulsion probe
@@ -111,3 +114,34 @@ Independently:
 (e) Confirm 58 kyr is the min-**speed** aim and costs *more* Δv than the ~73 kyr min-**Δv** point
     (13.88 km/s, ~154 kg xenon at Isp 3000) because of the out-of-plane plane change; flag anywhere
     the tool or its copy conflates the min-speed and min-Δv arrivals."
+
+## 11. Perihelion pumping (multi-revolution SEP escape)
+"`fermi_sim/departure.py::perihelion_pumped_vinf` claims a solar-electric probe at initial thrust
+acceleration a₀ = 2.5×10⁻⁴ m/s² (vehicle α ≈ 13–25 W/kg, today's hardware) reaches the full
+23.64 km/s cruise v∞ by pumping perihelion down to 0.42 AU (retrograde arcs near apoapsis) and then
+burning prograde at perihelion where power P(r) = P₁·min((1 AU/r)², 4) is up to 4× the 1-AU rating —
+defeating the 1/r² outward-spiral saturation that the same engine says caps that vehicle near zero.
+Attack it independently: (a) re-integrate the published bang-bang policy with YOUR OWN integrator and
+confirm/refute v∞ 23.66 km/s, Δv 25.6, 9.6 yr, 4.9 revs; (b) verify the failure threshold
+a₀ ≈ 2.25×10⁻⁴ m/s² by bisection and explain WHY it fails (escape-guard/stranding mechanics);
+(c) check the claimed physics is Oberth + power, not integrator artifact: work–energy closure, where
+the energy is bought (r < 0.8 AU?), thermal floor 0.42 AU respected; (d) audit the two-leg budget
+`pumped_departure_dv` = √(μ⊕/a) + v∞ + 2 km/s — is the 2 km/s tax honest across a₀ and targets, and
+is √(μ⊕/a) a fair (conservative?) escape leg vs an integrated spiral; (e) challenge the 4× power cap
+and the α ≈ 13–25 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at Isp 2800 s, η 0.55."
+
+## 12. Perihelion synchrotron — the "lasso idea" (external EM station)
+"`fermi_sim/departure.py::synchrotron_escape` models a passive probe recirculating through an
+externally powered EM station at perihelion r_p: one impulsive prograde kick per pass, exact Kepler
+ellipse between kicks, circular start at the station. Claims to attack: (a) escape TERMINATES
+recirculation — the kick that clears solar escape must land at ≥ v_p,target = √(v∞² + v_esc²) or the
+probe is gone too slow (verify the stranded cases: 10 R☉/2 km/s → escapes at 17.6 km/s; 1 AU/5 km/s
+→ 3 passes, 11.95 yr, escapes at 15.2); (b) periods must sum over the exact ellipses and the last
+bound orbit can dominate (20 R☉/5 km/s → ~20 yr accel phase, ~19 yr of it one orbit) — verify with
+your own Kepler propagation; (c) Δv_final,min = v_p,target − v_esc (~1.4 km/s at 10 R☉ vs ~6.9 at
+1 AU) — confirm the deep-station endgame win and its trade against station thermal (~460× Earth flux
+at 10 R☉) and the (√2−1)·v_circ ≈ 57 km/s aperture rendezvous; (d) the calculator's 'lasso' option
+charges the probe only a 0.5 km/s trim budget and keeps its array/engine — decide whether that
+bookkeeping is conservative or hides infrastructure cost (insertion onto the station-grazing orbit);
+(e) is the 'strong form' conclusion right — that equal-kick recirculation is mostly infeasible and
+the architecture only makes sense as a one-kick gateway reused across many probes?"

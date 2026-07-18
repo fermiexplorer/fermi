@@ -47,6 +47,17 @@ const REF = {
   // pumped-architecture departure budget (tmp/ro/dump_pump_dep.py): √(μ⊕/a) escape + v∞ + 2 km/s tax
   pump_dep_dv_ref: 33312.598648385014,
   pump_dep_dv_gto_ref: 29668.687196355662,
+  // ...with the out-of-plane aim charged: v∞·|sin(−2.48°)| plane-change term
+  pump_dep_dv_tilt_ref: 34335.51684033977,
+  // perihelion synchrotron (tmp/ro/test_synchro.py): 10 R☉ station, 5 km/s kicks, target 23.64 km/s
+  syn_passes_ref: 12,
+  syn_time_yr_ref: 1.5082462693332792,
+  syn_vinf_final_ref: 33133.814209947275,
+  syn_dv_final_min_ref: 1425.3562541557476,
+  syn_rendezvous_ref: 57209.62881731146,
+  // ...and the documented 1 AU infeasible case (escapes below target)
+  syn_1au_time_yr_ref: 11.947280963156182,
+  syn_1au_vinf_ref: 15212.250610896517,
 };
 
 let pass = 0, total = 0;
@@ -89,8 +100,22 @@ check("pumped v∞ @a0=2.5e-4 (m/s)", pump.vinf, REF.pump_vinf_ref, 1e-6);
 check("pumped Δv @a0=2.5e-4 (m/s)", pump.dv, REF.pump_dv_ref, 1e-6);
 check("pumped duration @a0=2.5e-4 (yr)", pump.years, REF.pump_yr_ref, 1e-6);
 check("pumped v∞ @a0=5e-4 (m/s)", F.perihelionPumpedVinf(5e-4, 23.64e3).vinf, REF.pump_vinf_hi_ref, 1e-6);
-check("pumped departure Δv budget (23.64 km/s, LEO 400) (m/s)", F.pumpedDepartureDv(23.64e3, 400), REF.pump_dep_dv_ref, 1e-9);
-check("pumped departure Δv budget (GTO-like 590x35786) (m/s)", F.pumpedDepartureDv(23.64e3, 590, 35786), REF.pump_dep_dv_gto_ref, 1e-9);
+check("pumped departure Δv budget (23.64 km/s, tilt 0, LEO 400) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 400), REF.pump_dep_dv_ref, 1e-9);
+check("pumped departure Δv budget (GTO-like 590x35786) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 590, 35786), REF.pump_dep_dv_gto_ref, 1e-9);
+check("pumped departure Δv budget charges the plane change (tilt −2.48°) (m/s)", F.pumpedDepartureDv(23.64e3, -2.48, 400), REF.pump_dep_dv_tilt_ref, 1e-9);
+
+// Perihelion synchrotron ("lasso idea"): externally powered recirculating accelerator.
+const syn = F.synchrotronEscape(10, 5e3, 23.64e3);
+check("synchrotron passes (10 R☉, 5 km/s)", syn.passes, REF.syn_passes_ref, 0);
+check("synchrotron accel-phase time (yr)", syn.timeYr, REF.syn_time_yr_ref, 1e-9);
+check("synchrotron final v∞ (m/s)", syn.vInfFinal, REF.syn_vinf_final_ref, 1e-9);
+check("synchrotron Δv_final,min (m/s)", syn.dvFinalMin, REF.syn_dv_final_min_ref, 1e-9);
+check("synchrotron rendezvous speed (m/s)", syn.rendezvousVel, REF.syn_rendezvous_ref, 1e-9);
+const syn1au = F.synchrotronEscape(215.032, 5e3, 25e3);
+check("synchrotron 1 AU case escapes below target (time yr)", syn1au.timeYr, REF.syn_1au_time_yr_ref, 1e-9);
+check("synchrotron 1 AU case stranded v∞ (m/s)", syn1au.vInfFinal, REF.syn_1au_vinf_ref, 1e-9);
+if (!syn1au.escapedBelow || syn1au.reached) { total++; console.log("  [FAIL] synchrotron 1 AU escape-termination flags"); }
+else { total++; pass++; console.log("  [PASS] synchrotron 1 AU escape-termination flags"); }
 
 // Internal consistency: rocket equation + energy formula round-trips.
 const mp = F.propMass(255, 20e3, 3000);

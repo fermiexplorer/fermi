@@ -181,10 +181,15 @@ def run() -> None:
     check("majority of post-latch energy bought inside 0.8 AU",
           frac > 0.5, f"{100*frac:.0f}% of post-latch thrust work")
 
-    # 8. Failure threshold by bisection (independent integrator): the maneuver
-    #    must die between 1.5e-4 (known-fail) and 2.5e-4 (known-pass), near the
-    #    published a0 ~ 2.25e-4.
-    lo, hi = 1.8e-4, 2.5e-4
+    # 8. The lower edge of the CONTIGUOUS working region, by bisection with the
+    #    independent integrator. NOTE (multi-model adversarial audit): success is
+    #    NOT monotonic in a0 — a phasing-dependent success island exists near
+    #    1.75-1.88e-4 with strand bands at 1.9-2.2e-4 and ~2.9-3.1e-4 — so the
+    #    bracket must start from a verified strand INSIDE the band (2.2e-4), not
+    #    from the island region.
+    _, _, _, d_band = _indep_pump(2.2e-4, tgt, dt_scale=2.0)
+    check("2.2e-4 sits in the strand band (bracket premise)", not d_band["reached"])
+    lo, hi = 2.2e-4, 2.5e-4
     for _ in range(5):
         mid = 0.5 * (lo + hi)
         _, _, _, d = _indep_pump(mid, tgt, dt_scale=2.0)
@@ -193,8 +198,12 @@ def run() -> None:
         else:
             lo = mid
     a0_star = 0.5 * (lo + hi)
-    check("failure threshold near the published a0 ~ 2.25e-4 (+-15%)",
-          abs(a0_star - 2.25e-4) < 0.15 * 2.25e-4, f"a0* = {a0_star:.2e} m/s^2")
+    check("contiguous-region edge near the published a0 ~ 2.24e-4 (+-10%)",
+          abs(a0_star - 2.24e-4) < 0.10 * 2.24e-4, f"a0* = {a0_star:.2e} m/s^2")
+    # ...and the island really exists (published fine print): 1.8e-4 reaches.
+    _, _, yr_isl, d_isl = _indep_pump(1.8e-4, tgt, dt_scale=2.0)
+    check("success island below the edge exists (1.8e-4 reaches, non-monotonic)",
+          d_isl["reached"], f"reached in {yr_isl:.0f} yr")
 
     # 9. Two-leg budget — escape leg. sqrt(mu/a) must sit ON or ABOVE the
     #    independently validated low-thrust spiral integration (conservative),
@@ -202,11 +211,19 @@ def run() -> None:
     for name, alt, apo in (("LEO 400", 400.0, None), ("GTO 590x35786", 590.0, 35786.0)):
         r_p = c.R_EARTH + alt * 1e3
         r_a = c.R_EARTH + (apo if apo else alt) * 1e3
-        leg = pumped_departure_dv(0.0, alt, apo, pump_tax=0.0)
+        leg = pumped_departure_dv(0.0, 0.0, alt, apo, pump_tax=0.0)
         dv_int = spiral_escape_dv(c.MU_EARTH, r_p, 0.0, accel=5e-4, apogee_r=r_a)
         check(f"escape leg bounds the integrated spiral ({name})",
               dv_int <= leg <= 1.15 * dv_int,
               f"sqrt(mu/a)={leg/1e3:.2f} vs integrated {dv_int/1e3:.2f} km/s")
+
+    # 9b. Two-leg budget — plane change. The campaign is integrated in-plane, so
+    #     the budget must charge the out-of-plane aim explicitly: v_inf*|sin(tilt)|.
+    d0 = pumped_departure_dv(23.64e3, 0.0, 400.0)
+    d_tilt = pumped_departure_dv(23.64e3, -10.1, 400.0)
+    expect_plane = 23.64e3 * abs(math.sin(math.radians(10.1)))
+    check("budget charges the plane change v_inf*|sin(beta)| (58 kyr aim ~4.1 km/s)",
+          rel_err(d_tilt - d0, expect_plane) < 1e-12, f"{(d_tilt-d0)/1e3:.2f} km/s at 10.1 deg")
 
     # 10. Two-leg budget — pumping tax. dv - v_inf from the independent
     #     integrator must be bracketed by the 2 km/s tax within [-0.5, +1.0]

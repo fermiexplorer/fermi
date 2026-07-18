@@ -269,14 +269,41 @@ def main() -> None:
         print(f"   a0={a0:.1e} m/s^2: v_inf {v/KMS:5.2f} km/s  dv {dv/KMS:5.2f}  "
               f"{yr:4.1f} yr  {revs:4.1f} revs   {tag}")
     print(
-        "\n=> Pumping defeats the 1/r^2 power wall. At a0=2.5e-4 (~vehicle alpha 13-25 W/kg --\n"
-        "   TODAY'S hardware) the cruise floor is reached where the outward spiral saturates near\n"
-        "   zero; below a0 ~ 2.25e-4 the maneuver fails (the escaping pass strands below target).\n"
+        "\n=> Pumping defeats the 1/r^2 power wall. At a0=2.5e-4 (~vehicle alpha 15-21 W/kg for\n"
+        "   the mass ratios the maneuver itself allows -- TODAY'S hardware) the cruise floor is\n"
+        "   reached where the outward spiral saturates near zero. The contiguous working region\n"
+        "   starts at a0 ~ 2.24e-4; below it the bang-bang policy is PHASING-SENSITIVE, not simply\n"
+        "   dead (a success island near 1.75-1.88e-4, strand bands at 1.9-2.2e-4 and ~2.9-3.1e-4\n"
+        "   where the escaping pass strands below target -- gate designs by integration, and note\n"
+        "   a stronger vehicle can always throttle to a working profile).\n"
         "   This bang-bang policy spends ~25.6 km/s; an optimised burn schedule reaches ~24. The\n"
         "   sec-7b alpha >~ 100 W/kg threshold applies to the OUTWARD-SPIRAL class only. The full\n"
         "   SEP total from LEO is ~30-32 km/s (7.6 Earth escape + ~23-24 helio), indicating our\n"
         "   closed-form low-thrust budget (~25-26 for AC) underprices the heliocentric\n"
         "   leg; a GTO drop-off cuts the Earth leg 7.6 -> ~4.2 km/s and closes a ~100 kg vehicle."
+    )
+
+    # ---------------------------------------------------------------
+    header("7d. PERIHELION SYNCHROTRON -- the 'lasso idea' (external EM station)")
+    from fermi_sim.departure import synchrotron_escape
+    print("A fixed, externally powered EM station at perihelion 'lassoes' a PASSIVE probe once per")
+    print("orbit with an impulsive prograde kick (no onboard propellant/power -- bypasses the rocket")
+    print("equation; the accelerator is reused). NOT a true synchrotron: the period grows after every")
+    print("kick, and ESCAPE TERMINATES RECIRCULATION -- the escaping kick must land >= v_p,target or")
+    print("the probe is gone too slow. Fixed equal kicks, circular start at the station:\n")
+    for rp, dv in ((10.0, 5e3), (20.0, 5e3), (10.0, 2e3), (215.03, 5e3)):
+        s = synchrotron_escape(rp, dv, 23.64e3)
+        tag = ("REACHES" if s["reached"]
+               else f"GONE TOO SLOW @ {s['v_inf_final']/KMS:.1f}" if s["escaped_below"] else "short")
+        rp_lbl = "1 AU  " if rp > 200 else f"{rp:4.0f} Rs"
+        print(f"   {rp_lbl} kick {dv/KMS:3.0f} km/s: {s['passes']:3d} passes  "
+              f"accel {s['time_yr']:5.1f} yr  max orbit {s['max_period_yr']:5.1f} yr  "
+              f"dv_final_min {s['dv_final_min']/KMS:4.2f}   {tag}")
+    print(
+        "\n=> Deep stations win the endgame (dv_final_min ~1.4 km/s at 10 Rs vs ~6.2 at 1 AU) but face\n"
+        "   continuous deep-solar exposure, ~57 km/s aperture rendezvous, phase-resonant orbit\n"
+        "   ladders, and kick recoil. Equal kicks usually escape BELOW target; the strong form is a\n"
+        "   ONE-KICK GATEWAY at ~4-10 Rs reused across a fleet of passive probes."
     )
 
     # ---------------------------------------------------------------

@@ -168,11 +168,25 @@ def perihelion_pumped_vinf(
     Isp, so accel = a0 · min((1/r)², cap) · (m0/m).  ``a0`` is the initial thrust
     acceleration at 1 AU and full mass (m/s²) — the single sizing parameter.
 
-    Simple bang-bang policy (an optimised burn schedule does ~7% better on Δv):
-    while perihelion > rp_min, thrust retrograde when r is in the
-    outer third of the osculating orbit; afterwards thrust prograde when r < 1.3·rp.
+    Bang-bang policy, exactly as implemented below (an optimised burn schedule does ~7%
+    better on Δv): (1) BOOTSTRAP — from near-circular (ecc < 0.05) burn retrograde only on
+    one inertial side (x > 0), which builds eccentricity instead of spiralling down
+    symmetrically; (2) PUMP-DOWN — retrograde only near apoapsis (||ν|−π| < 60°) until the
+    osculating perihelion reaches ``rp_min_au``, then a one-way latch holds the phase;
+    (3) STAIRCASE — prograde only near periapsis (|ν| < 70°) and only while comfortably
+    bound (E < −30 km²/s²; the escape guard — tipping past E=0 mid-staircase strands the
+    probe below target); (4) FINISHER — once near-parabolic, burn continuously.
+
+    CAUTION — the policy's success is NOT monotonic in ``a0`` (burn phasing relative to
+    periapsis matters): the contiguous working region starts at a0 ≈ 2.24×10⁻⁴ m/s² (for
+    the 23.64 km/s target), but there is a success island near 1.75–1.88×10⁻⁴, a strand
+    band at 1.9–2.2×10⁻⁴, and a stall window near 2.9–3.1×10⁻⁴. Gate designs by CALLING
+    this function at the design a0 (and remember a stronger vehicle can always throttle
+    to a working profile); do not treat 2.25×10⁻⁴ as a simple threshold.
+
     Returns (v_inf_achieved m/s, dv m/s, years, revs). Succeeds if the specific energy
-    reaches v_inf_target²/2 within ``max_yr``.
+    reaches v_inf_target²/2 within ``max_yr``. Achieved v∞ can overshoot the target by up
+    to ~1% of v∞ (one time-step of thrust); the overshoot is discretisation, not physics.
     """
     mu, AU = c.MU_SUN, c.AU
     ve = isp_s * c.G0
@@ -271,22 +285,89 @@ def perihelion_pumped_vinf(
     return (math.sqrt(2.0 * E) if E > 0 else 0.0), dv, t / c.YEAR, revs
 
 
-def pumped_departure_dv(v_inf: float, peri_alt_km: float, apo_alt_km: float | None = None,
-                        pump_tax: float = 2000.0) -> float:
+def synchrotron_escape(
+    rp_rsun: float, dv_pass: float, v_inf_target: float, max_passes: int = 10000,
+) -> dict:
+    """PERIHELION SYNCHROTRON — an externally powered recirculating accelerator. A fixed
+    station at perihelion radius ``rp_rsun`` (solar radii) applies one impulsive prograde
+    kick of ``dv_pass`` (m/s) per pass; between kicks the probe flies an EXACT Kepler
+    ellipse (the probe itself is passive — no onboard propellant or power; the Sun is the
+    "bending magnet"). It is not a true synchrotron: the apoapsis and period GROW after
+    every kick, so it is a recirculating linac whose return path balloons.
+
+    Two corrections that kill the naive equal-kick arithmetic (both enforced here):
+      1. Orbit periods are NOT constant — t = Σ Pᵢ over each bound orbit; as v_p → v_esc
+         the period diverges, so the LAST bound orbit can dominate the schedule.
+      2. Escape TERMINATES recirculation — once a kick makes the orbit hyperbolic the
+         probe leaves and never returns, so the final kick must jump from bound directly
+         to ≥ v_p,target = √(v∞² + v_esc²). A kick that clears escape but lands BELOW
+         v_p,target means the probe is gone too slow → INFEASIBLE (``escaped_below``).
+
+    Starts from the circular orbit at the station radius. Returns a dict with passes,
+    accel-phase time, max single period, Δv_final_min = v_target − v_esc, the station↔probe
+    rendezvous speed ≈ (√2−1)·v_circ(r_p), and the feasibility verdict.
+    """
+    r_p = rp_rsun * c.R_SUN
+    v_esc = math.sqrt(2.0 * c.MU_SUN / r_p)
+    v_target = math.sqrt(v_inf_target ** 2 + v_esc ** 2)
+    dv_final_min = v_target - v_esc
+    v = math.sqrt(c.MU_SUN / r_p)                  # circular start at the station
+    passes, t, e_station, max_period = 0, 0.0, 0.0, 0.0
+    escaped_below = False
+    left_at_target = False
+    while passes < max_passes:
+        v2 = v + dv_pass
+        e_station += 0.5 * (v2 * v2 - v * v)       # specific energy the station delivers
+        passes += 1
+        v = v2
+        if v >= v_target:                          # leaves at ≥ target v∞ → feasible
+            left_at_target = True
+            break
+        if v >= v_esc:                             # hyperbolic but slow → gone forever
+            escaped_below = True
+            break
+        eps = 0.5 * v * v - c.MU_SUN / r_p         # still bound → fly the return ellipse
+        a = -c.MU_SUN / (2.0 * eps)
+        period = 2.0 * math.pi * math.sqrt(a ** 3 / c.MU_SUN)
+        t += period
+        max_period = max(max_period, period)
+    v_inf_final = math.sqrt(max(v * v - v_esc * v_esc, 0.0))
+    v_circ = math.sqrt(c.MU_SUN / r_p)
+    return dict(
+        passes=passes, time_yr=t / c.YEAR, max_period_yr=max_period / c.YEAR,
+        v_peri_final=v, v_inf_final=v_inf_final, v_esc=v_esc, v_target=v_target,
+        dv_final_min=dv_final_min, energy_spec=e_station,
+        rendezvous_vel=(math.sqrt(2.0) - 1.0) * v_circ,   # worst case: the near-escape pass
+        escaped_below=escaped_below,
+        # reached only when the loop actually left at >= v_target — a max_passes
+        # exhaustion inside a tolerance window must NOT count as success
+        reached=left_at_target and not escaped_below,
+    )
+
+
+def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
+                        apo_alt_km: float | None = None, pump_tax: float = 2000.0) -> float:
     """First-order total departure Δv (m/s) for the PERIHELION-PUMPED architecture, as a
     two-leg budget: (1) low-thrust Earth escape to C3 ≈ 0, costed at the orbit-energy speed
     √(μ⊕/a) of the starting orbit (the classic Edelbaum spiral-to-escape result; ~7.7 km/s
-    from 400 km LEO, ~4.0 km/s from a GTO-like ellipse), then (2) the heliocentric pumping
-    campaign, whose integrated cost is v∞ + ``pump_tax`` — the tax is calibrated against
-    :func:`perihelion_pumped_vinf` (Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5×10⁻⁴ design point,
-    covering the pump-down arcs, gravity losses, and the small out-of-plane aim). Unlike the
-    outward-spiral budget this does NOT borrow Earth's orbital velocity — v∞ is built
-    heliocentrically at perihelion.
+    from 400 km LEO, ~4.0 km/s from a GTO-like ellipse — conservative vs the integrated
+    spiral by ~0.25–0.45 km/s), then (2) the heliocentric pumping campaign, priced
+    v∞ + v∞·|sin β| + ``pump_tax``: the campaign is integrated in-plane, so the
+    out-of-plane component of the aim (tilt β) is charged separately as a first-order
+    plane change v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential
+    aim), and the tax covers the in-plane overhead (pump-down arcs + gravity losses),
+    calibrated against :func:`perihelion_pumped_vinf` at the design corridor
+    (Δv − v∞ ≈ 2.0 km/s at a₀ = 2.5×10⁻⁴, v∞ ≈ 23.6 km/s). The flat tax is a single-point
+    calibration: audited mispricing grows to several km/s for targets far from the
+    corridor (low targets pay a near-fixed pump-down; high targets ride the finisher).
+    Unlike the outward-spiral budget this does NOT borrow Earth's orbital velocity — v∞
+    is built heliocentrically at perihelion.
     """
     r_p = c.R_EARTH + peri_alt_km * 1e3
     r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3
     a = 0.5 * (r_p + r_a)
-    return math.sqrt(c.MU_EARTH / a) + v_inf + pump_tax
+    plane = v_inf * abs(math.sin(math.radians(tilt_deg)))
+    return math.sqrt(c.MU_EARTH / a) + v_inf + plane + pump_tax
 
 
 def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,

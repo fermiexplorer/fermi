@@ -71,7 +71,7 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (73 checks: astropy ephemeris, conservation laws, optima)
+# independent audits (90 checks: astropy ephemeris, conservation laws, optima)
 .venv/bin/python audit/calcs/run_audits.py
 
 # web<->python parity (Node, 20 checks)

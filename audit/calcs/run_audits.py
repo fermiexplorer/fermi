@@ -14,6 +14,7 @@ import audit_intercept
 import audit_propulsion
 import audit_pumping
 import audit_solar
+import audit_synchrotron
 
 
 def main() -> int:
@@ -25,6 +26,7 @@ def main() -> int:
         audit_fuelcell,
         audit_solar,
         audit_pumping,
+        audit_synchrotron,
     ):
         mod.run()
         print()

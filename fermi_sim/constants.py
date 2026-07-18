@@ -18,6 +18,7 @@ MU_EARTH = 3.986004418e14  # m^3/s^2
 
 # --- Earth orbit / departure ---
 R_EARTH = 6.371e6  # m, mean radius
+R_SUN = 6.957e8  # m, solar radius (matches web/physics.js)
 V_EARTH_ORBITAL = math.sqrt(MU_SUN / AU)  # ~29.78 km/s, circular helio velocity at 1 AU
 V_ESC_SUN_1AU = math.sqrt(2.0 * MU_SUN / AU)  # ~42.1 km/s
 
