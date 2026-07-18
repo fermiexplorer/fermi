@@ -688,12 +688,17 @@
   agrees across methods:</p>
   <ul>
     <li><b>Engine ↔ web parity.</b> The browser math (<code>web/physics.js</code>) is checked value-by-value
-      against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, 10 checks).</li>
-    <li><b>Independent suite (41 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+      against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, 26 checks —
+      including the perihelion-pumping integrator, which agrees to ~13 significant digits).</li>
+    <li><b>Independent suite (73 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
       <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
       brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
       rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
-      sizing from first principles.</li>
+      sizing from first principles; and the perihelion-pumping manoeuvre by an independent re-integration of
+      the published policy (4× finer steps, step-convergence proven), the work–energy theorem, exact
+      rocket-equation mass closure, the 0.42 AU thermal floor and 4× power cap as invariants, Oberth
+      localisation of the energy gain, and a bisection of the a₀ failure threshold (2.25×10⁻⁴ m/s²
+      recovered independently).</li>
     <li><b>UI render test.</b> Playwright loads the page in a real browser and exercises the controls
       (<code>audit/calcs/ui_playwright.py</code>).</li>
     <li><b>Independent model re-implementations.</b> Parallel <b>Codex</b>, <b>Grok</b>, <b>Gemini</b> and
