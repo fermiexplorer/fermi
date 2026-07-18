@@ -272,7 +272,7 @@
       <div class="ctrl">
         <label>Arrival time (aim point) <b><span id="o_T">72,800</span> yr</b></label>
         <input type="range" id="T" min="58000" max="100000" step="200" value="72800">
-        <div class="hint">Parametrises the trajectory — where along AC's track you aim. Sets the out-of-plane tilt → required Δv → <b>minimum propellant</b> (smallest spacecraft). Fuel minimises near <b>~73k yr</b> (near-in-plane). <a href="#" id="snapopt">↳ snap to fuel optimum</a></div>
+        <div class="hint">Parametrises the trajectory — where along AC's track you aim. Sets the out-of-plane tilt → required Δv → <b>minimum propellant</b> (smallest spacecraft). Fuel minimises near <b>~79k yr</b> (the ecliptic crossing) for the pumped default, near <b>~73k yr</b> for the direct architecture. <a href="#" id="snapopt">↳ snap to fuel optimum</a></div>
       </div>
       <div class="ctrl">
         <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
@@ -388,7 +388,7 @@
           raising the <b>vehicle specific power α = P/m_dry</b>. Above <b>α ≈ 100 W/kg</b> the burn is short and
           near 1 AU, so the 1/r² fade barely bites and <b>pure solar closes</b>. The default uses <b>ultra-thin
           GaAs (~1000 W/kg</b>, Alta-Devices-class cells) — that single light-array lever lets a near-term
-          ~4 kg/kW thruster close it (α ≈ 130). See "Vehicle specific power".</div>
+          ~4 kg/kW thruster close it (α ≈ 120 at the pumped default's sizing). See "Vehicle specific power".</div>
       </div>
       <div class="ctrl" id="fcOpts" style="display:none">
         <label>Fuel-cell reactant</label>
@@ -512,7 +512,7 @@
     <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.02 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
     <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
   </table>
-  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s. The ion engine has no impulsive kick, so it cannot capture the Oberth floor. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
+  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s <em>with the direct architecture selected</em> (the pumped default prices its own two-leg budget, ≈ 34 km/s). The ion engine has no impulsive kick, so it cannot capture the Oberth floor. This §1–§2 optimum discussion is the <em>direct</em> (Earth-borrow) story; under the pumped default, tilt is pure cost and the fuel optimum moves to the ecliptic crossing (~79.3k yr), as the calculator's own Fuel-optimum readout shows. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
   <p><strong>Why does an out-of-plane aim raise Δv only <em>modestly</em>?</strong> A fair worry: a 10° tilt on
   a ~48 km/s departure vector is an ~8 km/s out-of-plane "plane change" — shouldn't that be huge? It isn't,
   because it adds in <em>quadrature</em> to an already-large in-plane excess, not on top of it. At 1 AU the
@@ -549,7 +549,8 @@
   to the integration within 0.5 m/s — see <code>tools/fit_spiral.py</code> and <code>audit/calcs/audit_departure.py</code>):
   ≈ <strong>25 km/s</strong> at the optimum, plus a conservative <strong>+5 km/s heliocentric-leg
   offset</strong> (no full Earth-velocity borrow) and small pointing margins — ≈ <strong>30 km/s
-  displayed</strong>. This sits in the physical bracket between the ~14 km/s impulsive
+  when the direct architecture is selected</strong> (the pumped default prices its own two-leg budget,
+  ≈ 34 km/s; see the pumping section). This sits in the physical bracket between the ~14 km/s impulsive
   floor (a theoretical lower bound, unreachable by an ion engine) and the spiral itself. We also checked
   <em>perigee-biased</em> thrusting (plan 02 Phase B, audited): at this vehicle's ~milli-g thrust it is
   <strong>time-divergent</strong> — escape would take centuries, because perigee-thrusting raises apogee until
@@ -838,7 +839,8 @@
     <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. What decides it is the
       whole-vehicle specific power α = power ÷ (dry + payload) mass, <em>not</em> the kilowatts: a heavy, low-α vehicle
       (today's silicon + Hall thruster, α ≈ 20–30) fails it because the 1/r² fade drags the burn far from the Sun,
-      while the light, high-α <b>default</b> (thin-film array + light thruster, α ≈ 130) <b>clears it as pure
+      while the light, high-α <b>default</b> (thin-film array + light thruster, α ≈ 120 at the pumped
+      default's sizing) <b>clears it as pure
       solar</b> — no reactor, no assist — as does nuclear-electric (constant power, no fade). See "Power-limited v∞".</li>
     <li><b>Mass diverges</b> — with the <em>derived</em> minimal dry mass, every kg of propellant drags a fixed
       mass of tank + structure; if that times the mass ratio exceeds 1, the propellant + structure spiral has no
@@ -1428,10 +1430,13 @@ function compute(){
       // corridor (it is NOT monotonic in a0: stall windows exist, e.g. ~2.9-3.1e-4, and the
       // reference campaign is the ~5-revolution staircase at 2.5e-4); a weaker vehicle flies its
       // own a0 and the gate decides.
-      const a0v=thrust/wet, a0=Number(Math.min(a0v, 2.5e-4).toPrecision(3));
+      const a0v=thrust/wet, a0=Number(Math.min(a0v, FERMI.PUMP_DESIGN_A0).toPrecision(3));
       const tgt=Number(vinfSun.toPrecision(4));
-      pumpInfo=perihelionPumpedVinf(a0, tgt, isp);
-      if(a0v>2.5e-4) pumpInfo={...pumpInfo, throttled:true};
+      // integrate at the VALIDATED profile Isp (2800 s) — the policy is non-monotonic in Isp
+      // too (it strands above ~3425 s at the design a0); the vehicle's own Isp governs
+      // propellant sizing, not the reference campaign policy
+      pumpInfo=perihelionPumpedVinf(a0, tgt);
+      if(a0v>FERMI.PUMP_DESIGN_A0) pumpInfo={...pumpInfo, throttled:true};
       achievableVinf=pumpInfo.vinf;
     } else achievableVinf = sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, 0);
   } else if(ga==='synchro'){
@@ -1496,7 +1501,7 @@ function render(){
       r.ga==='oberth' ? `the Oberth burn grows with v∞, so the optimum is the minimum-v∞ (tangential) aim; the burn buys energy from the Sun's well, not Earth's orbital velocity` :
       r.ga==='pumped' ? `the pumped budget prices v∞ + plane change with no Earth-velocity borrow, so the optimum favours low-v∞, low-tilt aims` :
       `AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully`}: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
-    `<div class="sline"><b>The trade (why ~73k yr):</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). The minimum-<em>Δv</em> point sits between, near the crossing — out-of-plane velocity can't be borrowed from Earth, it must be bought with propellant. Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
+    `<div class="sline"><b>The trade:</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). ${r.ga==='pumped'?'Under the pumped budget (no Earth-velocity borrow) tilt is pure cost, so the minimum-Δv point sits AT the crossing (~79.3k yr).':(r.ga==='synchro'?'Under the synchrotron the probe Δv is flat in arrival time — pick the aim by campaign considerations.':'The minimum-<em>Δv</em> point sits between, near the crossing (~73k yr) — out-of-plane velocity cannot be borrowed from Earth, it must be bought with propellant.')} Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
     `<div class="sline"><b>Profile:</b> Isp-${fmt(r.isp)} s ion, ~${fmt(r.pumpInfo?r.pumpInfo.years:r.burnYr,1)} yr ${r.pumpInfo?'campaign':'burn'} at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then ${r.pumpInfo?'the multi-revolution pumping campaign':(r.syn?'the station recirculation':'heliocentric escape')}), then coast ~${fmt(r.arrivalYr)} yr. Distance check: ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — where AC is at arrival.</div>`;
   document.getElementById('summary').innerHTML=summ;
 
@@ -1513,7 +1518,7 @@ function render(){
       `<div class="sc-i"><span class="sc-v">${fmt(r.thrust*1e3)} mN</span><span class="sc-l">thrust — only ~${fmt(a0,2)}–${fmt(a1,2)} milli-g</span></div>`+
       `<div class="sc-i"><span class="sc-v">~${fmt(r.pumpInfo?r.pumpInfo.years:(r.syn?r.syn.timeYr:r.burnYr),1)} yr</span><span class="sc-l">${r.pumpInfo?`pumping campaign — ${fmt(r.pumpInfo.revs,1)} revolutions around the Sun`:(r.syn?`station recirculation — ${fmt(r.syn.passes,0)} kicks (external energy)`:'continuous firing — a fraction of one revolution around the Sun')}</span></div>`+
     `</div>`+
-    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} yr is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
+    `<div class="sc-cap"><strong>It is slow, gentle thrust — not a fast burn.</strong> Sustaining ~${fmt(a0,2)} milli-g for ~${fmt(r.burnYr,1)} yr of cumulative firing${r.pumpInfo?` (spread across the ~${fmt(r.pumpInfo.years,1)}-yr campaign)`:''} is what reaches v∞; that gentleness is exactly why the power (~${fmt(r.pwrW/1000,1)} kW) and propellant (~${fmt(r.mp)} kg) stay this small. Reaching v∞ in weeks instead would demand megawatt-class power or a chemical stage carrying far more propellant — neither needed, since there is no schedule pressure against the ${r.feasible?fmt(r.arrivalYr)+'-yr':'long'} coast.</div>`;
   // ----- KPI tiles, each click-to-expand with the exact calculation (copy-pasteable) -----
   const g0=9.80665, ve=r.isp*g0, altKm=val('alt');
   const rLEO=R_EARTH+altKm*1e3, veL=Math.sqrt(2*MU_EARTH/rLEO)/1e3;
@@ -1658,7 +1663,7 @@ function render(){
       ? 'How many times the probe recirculates through the station — one perihelion pass per kick. Each ellipse is larger than the last; the final kick sends it out for good.'
       : 'How many times the probe loops the Sun while the ion raises its heliocentric orbit from 1 AU to solar-escape speed. The Sun is far heavier and 1 AU far larger, so this is typically LESS THAN ONE full turn — the craft barely loops the Sun once before coasting straight to Alpha Centauri (contrast the hundreds of loops around Earth).'),
     c:(r.pumpInfo
-      ? `pumping campaign (integrated policy at a₀ = ${(r.thrust/r.wet).toExponential(2)} m/s²):\n  ${fmt(r.pumpInfo.revs,1)} revolutions · ${fmt(r.pumpInfo.years,1)} yr powered · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\nThe interstellar cruise that follows is a straight coast, so this is the total turns around the Sun.`
+      ? `pumping campaign (integrated at the flown profile a₀ = ${Math.min(r.thrust/r.wet, FERMI.PUMP_DESIGN_A0).toExponential(2)} m/s², Isp ${FERMI.PUMP_DESIGN_ISP} s${r.pumpInfo.throttled?` — vehicle a₀ ${(r.thrust/r.wet).toExponential(2)} throttled to the validated profile`:''}):\n  ${fmt(r.pumpInfo.revs,1)} revolutions · ${fmt(r.pumpInfo.years,1)} yr campaign · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\nThe interstellar cruise that follows is a straight coast, so this is the total turns around the Sun.`
       : r.syn
       ? `${fmt(r.syn.passes,0)} kicks = ${fmt(r.syn.passes,0)} perihelion passes · accel phase ${fmt(r.syn.timeYr,1)} yr (longest single orbit ${fmt(r.syn.maxPeriodYr,1)} yr)\nThe interstellar cruise that follows is a straight coast.`
       : `a = thrust / wet mass = ${aAcc.toExponential(2)} m/s²\nN☉ = μ☉ / (8π·a·(1 AU)²) = ${fmt(sRev,2)} revolutions\nThe interstellar cruise that follows is a straight coast (no orbiting), so this is effectively the total turns around the Sun.`)}); }
@@ -1673,7 +1678,7 @@ function render(){
     c:`m_struct = k_struct · (active + tank + propellant)\n        = ${fmt(r.kstruct)}% · (${fmt(r.active)} + ${fmt(r.tankMass)} + ${fmt(r.mp)}) = ${fmt(r.structureMass)} kg`});
   { const vehWkg=(r.massConverges&&r.dryEff>0)?r.pwrW/r.dryEff:0;
     K.push({l:'Vehicle specific power', v:(r.massConverges?fmt(vehWkg,1)+' W/kg':'n/a'), i:inl('pwr','kstruct','isp','rtg','wkgsolar','cell','ekw'), s:'P / (m_dry + m_pay) — installed power per kg of total dry mass, payload included (the EP "α")',
-    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.3 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, and the high-α pure-solar default reaches ~130.',
+    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.3 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, and the high-α pure-solar default reaches ~120.',
     c:`P / m_dry+pay = ${fmt(r.pwrW)} W / ${fmt(r.dryEff)} kg = ${fmt(vehWkg,1)} W/kg\nminimum α to close:  pure solar ≳ 100 W/kg   ·   nuclear-electric ≳ ~23 W/kg (constant power, no fade)\n(power source alone: ${fmt(r.pwrW/Math.max(r.psMass,1e-9),0)} W/kg; engine + tank + structure dilute it to the vehicle value)`}); }
   document.getElementById('kpis').innerHTML=K.map(k=>
     `<div class="kpi" id="${kpiSlug(k.l)}" data-k="${k.l}" title="${k.s}">`+
@@ -1956,9 +1961,11 @@ function buildModel(c){
   const G0=9.80665, MU_SUN=V_EARTH*V_EARTH*AU;                       // MU_SUN, G0, R_SUN aren't exported from FERMI → derive
   const MUs=4*Math.PI*Math.PI, MUe=MUs*(MU_EARTH/MU_SUN), AUyr=4.74057;
   const rLeo=(R_EARTH+alt*1e3)/AU, soi=earthSoiRadius(1)/AU;
-  const thrust=SIM.thrust, wet=SIM.wet, dry=Math.max(1,SIM.dry||wet*0.5), isp=SIM.isp||3000;
-  // pumped campaign is flown at the validated design profile: a0_eff = min(vehicle a0, 2.5e-4)
-  const thrustPump=Math.min(thrust, 2.5e-4*wet);
+  // dry floor INCLUDES the payload (dryEff) — flooring at the payload-exclusive bus mass
+  // let the integrator burn the payload as propellant (audit finding, build 133)
+  const thrust=SIM.thrust, wet=SIM.wet, dry=Math.max(1,SIM.dryEff||SIM.dry||wet*0.5), isp=SIM.isp||3000;
+  // pumped campaign is flown at the validated design profile: a0_eff = min(vehicle a0, PUMP_DESIGN_A0)
+  const thrustPump=Math.min(thrust, FERMI.PUMP_DESIGN_A0*wet);
   const mdot=thrust/(G0*isp), mp=Math.max(0,wet-dry), aSI=YEAR*YEAR/AU;   // mdot kg/s; m/s²→AU/yr²
   const vinf=c.vinfKmS/AUyr, Et=0.5*vinf*vinf;
   const w=2*Math.PI, Ep=t=>[Math.cos(w*t),Math.sin(w*t)], Ev=t=>[-w*Math.sin(w*t),w*Math.cos(w*t)];
@@ -1983,12 +1990,12 @@ function buildModel(c){
   const dtBase=2*Math.PI*Math.sqrt(rLeo*rLeo*rLeo/MUe)/40;
   const EGUARD=-3.0e7*Math.pow(YEAR/AU,2);                            // pumping escape guard, (AU/yr)²
   let burn=true, iSoi=-1, iBurn=-1, geoAng=0, helAng=0, pg=null, ph=null, n=0, dvTot=0, dvEarth=0;
-  let massNow=wet, pumpedDown=false, burnEnded=false, jumped=false, prevRdot=null, kicks=0, dvKicksTot=0;
+  let massNow=wet, pumpedDown=false, burnEnded=false, jumped=false, prevRdot=null, kicks=0, dvKicksTot=0, tSoiT=0, failed=false;
   while(n++<500000){
     const E=Ep(t), de=Math.hypot(r[0]-E[0],r[1]-E[1]), rs=Math.hypot(r[0],r[1]);
     const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
     const ha=Math.atan2(r[1],r[0]); if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
-    if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR);
+    if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR); tSoiT=t;
       if(arch!=='direct'&&arch!=='jupiter') helioOnly=true; }
     const outer=iSoi>=0, vsNow=Math.hypot(v[0],v[1])||1e-12;
     // per-architecture heliocentric control (thrust direction, magnitude, impulses)
@@ -1996,8 +2003,10 @@ function buildModel(c){
     if(outer && (arch==='direct'||arch==='jupiter')){
       if(burn && (mdot*t*YEAR>=mp || 0.5*vsNow*vsNow-MUs/rs>=Et)){ burn=false; iBurn=X.length;
         // Jupiter: the flyby boost is drawn as an impulse when the onboard burn ends (schematic —
-        // the phased 5.2 AU flyby itself is not flown), so the trajectory still escapes at ~v∞
-        if(arch==='jupiter' && 0.5*vsNow*vsNow-MUs/rs<Et){ const g=jupiterGain(9000)/4740.57, sc=(vsNow+g)/vsNow; v=[v[0]*sc,v[1]*sc]; } }
+        // the phased 5.2 AU flyby is not flown). It completes the remaining energy EXACTLY, so
+        // the drawn escape lands on the cruise v∞ it splices onto (audit finding, build 133).
+        if(arch==='jupiter' && 0.5*vsNow*vsNow-MUs/rs<Et){ const need=Math.sqrt(2*(Et+MUs/rs))-vsNow;
+          if(need>0){ const sc=(vsNow+need)/vsNow; v=[v[0]*sc,v[1]*sc]; } } }
       burning=burn;
     } else if(!outer){
       // geo phase. Oberth/synchro vehicles carry no departure propellant — their delivery to escape
@@ -2020,9 +2029,18 @@ function buildModel(c){
         am=(Fp/massNow)*aSI; burning=dir!==0;
       } else { burning=false; dir=0; if(burn){ burn=false; iBurn=iBurn<0?X.length:iBurn; } }
     } else {                                                          // oberth / synchro: coast + impulses
-      if(!jumped){                                                    // jump-cut onto the dive/transfer ellipse
-        const aEll=0.5*(rs+rpArch), vap=Math.sqrt(Math.max(0,MUs*(2/rs-1/aEll)));
-        const th=Math.atan2(r[1],r[0]); v=[-vap*Math.sin(th), vap*Math.cos(th)];
+      if(!jumped){
+        const th=Math.atan2(r[1],r[0]), tx=-Math.sin(th), ty=Math.cos(th), nx=Math.cos(th), ny=Math.sin(th);
+        if(arch==='oberth'){
+          // jump-cut onto a NEAR-PARABOLIC approach with perihelion rp — the §5b convention, so
+          // the drawn perihelion kick equals the budgeted burn (a bound 1-AU-apoapsis dive made
+          // the drawn kick exceed the vehicle's Δv capacity; audit finding, build 133)
+          const vpar=Math.sqrt(2*MUs/rs), h0=Math.sqrt(2*MUs*rpArch), vt=Math.min(vpar,h0/rs), vr=-Math.sqrt(Math.max(0,vpar*vpar-vt*vt));
+          v=[vt*tx+vr*nx, vt*ty+vr*ny];
+        } else {                                                      // synchro: transfer ellipse to the station
+          const aEll=0.5*(rs+rpArch), vap=Math.sqrt(Math.max(0,MUs*(2/rs-1/aEll)));
+          v=[vap*tx, vap*ty];
+        }
         jumped=true; burn=false; prevRdot=null;
       }
       burning=false; dir=0;
@@ -2038,10 +2056,14 @@ function buildModel(c){
           if(kicks===0){ const vc=Math.sqrt(MUs/rs), th=Math.atan2(r[1],r[0]);
             v=[-vc*Math.sin(th), vc*Math.cos(th)]; vNew=vc+kickArch; }
           else vNew=vs2+kickArch;
+          // final kick THROTTLED to land exactly on the target energy (the station can modulate;
+          // a full fixed kick overshot the cruise it splices onto — audit finding, build 133)
+          const vCap=Math.sqrt(2*(Et+MUs/rs));
+          if(vNew>vCap) vNew=vCap;
           kicks++; dvKicksTot+=kickArch;                              // station kick — EXTERNAL energy, not onboard Δv
           const vsCur=Math.hypot(v[0],v[1])||1e-9, sc=vNew/vsCur; v=[v[0]*sc,v[1]*sc];
           const Eh2=0.5*vNew*vNew-MUs/rs;
-          if(Eh2>=Et || Eh2>=0 || kicks>=300){ burnEnded=true; iBurn=X.length; }
+          if(Eh2>=Et*0.9999 || Eh2>=0 || kicks>=300){ burnEnded=true; iBurn=X.length; }
         }
       }
       prevRdot=rdot;
@@ -2058,8 +2080,12 @@ function buildModel(c){
     v=[v[0]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), v[1]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])];
     t+=dt;
     if(!inner || n%4===0){ X.push(r[0]);Y.push(r[1]);TM.push(t); }
+    // a campaign that hasn't closed within the engine's 60-yr horizon has FAILED — stop and
+    // mark it so the render doesn't draw an infeasible mission as completing (audit finding)
+    if(iSoi>=0 && !burnEnded && arch!=='direct' && arch!=='jupiter' && t-tSoiT>60){
+      burnEnded=true; failed=true; if(iBurn<0) iBurn=X.length; }
     const done=(arch==='direct'||arch==='jupiter')?!burn:burnEnded;
-    if(done && Math.hypot(r[0],r[1])>3) break;
+    if(done && (failed || Math.hypot(r[0],r[1])>3)) break;
   }
   const va=Math.hypot(v[0],v[1])||1, ca=v[0]/va, sa=v[1]/va, u=c.vhat, hn=Math.hypot(u[0],u[1]);
   let wv=hn<1e-6?[1,0,0]:[-u[1]/hn,u[0]/hn,0]; const du=wv[0]*u[0]+wv[1]*u[1]+wv[2]*u[2];
@@ -2072,9 +2098,9 @@ function buildModel(c){
     const g=[p[0]-e3[0],p[1]-e3[1],p[2]-e3[2]]; geoF.push(g);
     if(i<Ng) sGeo.push(Math.hypot(g[0],g[1],g[2])); else sHel.push(rad[i]); }
   const acAt=ts=>[(R0[0]+VAC[0]*ts)/AU,(R0[1]+VAC[1]*ts)/AU,(R0[2]+VAC[2]*ts)/AU];
-  // cruise: straight to the intercept (= AC at arrival)
-  const helFineP=pos.slice(Ng).concat([[c.I[0],c.I[1],c.I[2]]]);
-  const helFineT=TM.slice(Ng).concat([SIM.Tsec/YEAR]); sHel.push(c.Inorm);
+  // cruise: straight to the intercept (= AC at arrival) — NOT spliced for a failed campaign
+  const helFineP=failed?pos.slice(Ng):pos.slice(Ng).concat([[c.I[0],c.I[1],c.I[2]]]);
+  const helFineT=failed?TM.slice(Ng):TM.slice(Ng).concat([SIM.Tsec/YEAR]); if(!failed) sHel.push(c.Inorm);
   const geoSimp=_simp(geoF.slice(0,Ng), TM.slice(0,Ng), sGeo, 0.01);
   const helSimp=_simp(helFineP, helFineT, sHel, 0.01);
   const geoSmooth=catmullRom(geoSimp.pts, 6);                         // smooth the coil (curves stitched through the knots)
@@ -2086,7 +2112,7 @@ function buildModel(c){
   const earthHelSmooth=catmullRom(helSimp.t.map(earthAtT), 16);
   const dvTotKm=dvTot*AUyr, dvEarthKm=dvEarth*AUyr;
   const planeN=[u[1]*wv[2]-u[2]*wv[1], u[2]*wv[0]-u[0]*wv[2], u[0]*wv[1]-u[1]*wv[0]];   // map3-plane normal (unit)
-  _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN, arch,
+  _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN, arch, failed,
     kicks, dvKicksKm:dvKicksTot*AUyr,
     geoSimp, helSimp, geoSmooth, helSmooth, earthGeoSmooth, earthHelSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
     revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
@@ -2265,7 +2291,15 @@ function chase3dDraw(c, st){
   const blend = 1 - ss(0.30, 0.52, animU);   // SLOW un-center Earth-frame → Sun-frame: coil unwinds into the ~1 AU orbital arc around the Sun
   const GS=M.geoSmooth, EG=M.earthGeoSmooth, HS=M.helSmooth, EH=M.earthHelSmooth;
   const coilR=i=>[GS[i][0]+(1-blend)*EG[i][0], GS[i][1]+(1-blend)*EG[i][1], GS[i][2]+(1-blend)*EG[i][2]];   // coil, blended to inertial
-  const helR =i=>[HS[i][0]-blend*EH[i][0], HS[i][1]-blend*EH[i][1], HS[i][2]-blend*EH[i][2]];               // helio, blended to Earth-frame
+  // Helio curve: the Earth-frame blend applies only to the HAND-OFF region (first ~0.25 yr after
+  // SOI exit). Shifting the whole curve by blend·Earth(t) was fine for the sub-revolution direct
+  // arc, but a multi-year pumped/synchro campaign spans many Earth orbits — the uniform shift
+  // painted a rotating ±1 AU epicycle wobble over the real rosette.
+  const tSoi=(M.time&&M.iSoi>=0?M.time[Math.min(M.iSoi,M.time.length-1)]:0), hKnT=M.helSimp.t, hSub=16;
+  const hT=i=>{ const k=Math.min(hKnT.length-1, i/hSub), k0=Math.floor(k), fr=k-k0;
+    const t1=hKnT[Math.min(k0+1,hKnT.length-1)]; return hKnT[k0]+(t1-hKnT[k0])*fr; };
+  const helR =i=>{ const w=blend*Math.max(0, 1-(hT(i)-tSoi)/0.25);
+    return [HS[i][0]-w*EH[i][0], HS[i][1]-w*EH[i][1], HS[i][2]-w*EH[i][2]]; };
   const earthStage = logTimeMode() && phaseOf(animU).stage==='earth';
   // live revolution counter (top-right): Earth revs accrue over the escape, Sun revs over the heliocentric leg
   { const pf=phaseOf(animU), c01=v=>Math.max(0,Math.min(1,v));
@@ -2281,9 +2315,14 @@ function chase3dDraw(c, st){
     earthNow=lerp(EG[i0], EG[i1], fr);
   } else {
     if(blend>0.002 || animU<0.66) for(let i=0;i<GS.length;i++) flown.push(coilR(i));   // keep the coil/orbital-arc through the orbit reveal; drop once sub-pixel in the cruise
+    // Probe index by the MONOTONE radius envelope (running max), not the raw radius: a pumped/
+    // synchro rosette is non-monotone in r, and a raw binary search skipped most of the campaign
+    // and never visited a perihelion pass (audit finding, build 133).
+    if(!M._maxR){ M._maxR=new Array(HS.length); let mr=0;
+      for(let i=0;i<HS.length;i++){ const rr=Math.hypot(HS[i][0],HS[i][1],HS[i][2]); if(rr>mr)mr=rr; M._maxR[i]=mr; } }
     const n=HS.length, d=Math.max(1,c.dist); let lo=1, hi=n-1;
-    while(lo<hi){ const mid=(lo+hi)>>1; if(Math.hypot(HS[mid][0],HS[mid][1],HS[mid][2])<d) lo=mid+1; else hi=mid; }
-    const i0=Math.max(0,lo-1), r0=Math.hypot(HS[i0][0],HS[i0][1],HS[i0][2]), r1=Math.hypot(HS[lo][0],HS[lo][1],HS[lo][2])||r0+1e-9, fr=(r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0;
+    while(lo<hi){ const mid=(lo+hi)>>1; if(M._maxR[mid]<d) lo=mid+1; else hi=mid; }
+    const i0=Math.max(0,lo-1), r0=M._maxR[i0], r1=M._maxR[lo]||r0+1e-9, fr=(r1>r0)?Math.max(0,Math.min(1,(d-r0)/(r1-r0))):0;
     for(let i=0;i<=i0;i++) flown.push(helR(i));
     probe=lerp(helR(i0), helR(lo), fr); flown.push(probe);
     earthNow=lerp(EH[i0], EH[lo], fr);
@@ -2643,8 +2682,13 @@ function drawVelDv(r,c){
 // heliocentrically to build v_inf, then the engine shuts off and it coasts.
 function burnPhases(r){
   // Earth-escape segment = the REAL geocentric spiral time (matches the disk inset), capped to the burn.
-  const tEarth=Math.min(earthEscapeRevs(r.thrust, r.wet, val('alt')).tYr, r.burnYr);
-  return {tEarth, tBurn:r.burnYr, arrival:r.arrivalYr};
+  // The powered-phase WALL-CLOCK length is architecture-dependent: for the pumped campaign and the
+  // synchrotron recirculation it is the campaign duration (mostly coast between arcs/kicks), not
+  // the cumulative-firing time (audit finding, build 133: the timeline showed a 0.5-yr phase for
+  // a ~9.6-yr campaign).
+  const wall=r.pumpInfo?r.pumpInfo.years:(r.syn?r.syn.timeYr:r.burnYr);
+  const tEarth=Math.min(earthEscapeRevs(r.thrust, r.wet, val('alt')).tYr, Math.max(wall, r.burnYr));
+  return {tEarth, tBurn:Math.max(wall, tEarth), arrival:r.arrivalYr};
 }
 function elapsedYrFromU(u){
   if(!logTimeMode()) return u*(SIM&&SIM.feasible?SIM.arrivalYr:(val('T')||75000));   // LINEAR: uniform 0 → arrival

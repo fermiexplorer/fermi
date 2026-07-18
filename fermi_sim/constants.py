@@ -27,3 +27,13 @@ OBLIQUITY = math.radians(23.439281)
 
 # Convenience
 KMS = 1.0e3  # one km/s in m/s
+
+# Perihelion-pumping VALIDATED DESIGN PROFILE (the envelope every consumer must fly the
+# campaign at): initial thrust acceleration a0 and thruster Isp of the reference campaign
+# that the audits validate (independent re-integration, threshold bisection, parity).
+# Campaigns are flown at a0_eff = min(vehicle a0, PUMP_DESIGN_A0); the bang-bang policy is
+# phasing-sensitive outside this corridor (success is NON-monotonic in both a0 and Isp —
+# e.g. at the design a0 the staircase strands for Isp >~ 3425 s), so do NOT evaluate the
+# policy at arbitrary slider values.
+PUMP_DESIGN_A0 = 2.5e-4  # m/s^2
+PUMP_DESIGN_ISP = 2800.0  # s

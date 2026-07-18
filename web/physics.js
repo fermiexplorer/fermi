@@ -13,6 +13,10 @@
   const R0 = [-1.5364679397919116e16, -2.6062563844058972e16, -2.7814865852216956e16];
   const VAC = [-9222.153827911658, 28889.554946491313, 11121.449350900906];
   const SPIRAL_MAX = 11.3; // naive continuous-spiral penalty (km/s), from numerical RK4
+  // Perihelion-pumping validated design profile (mirror of fermi_sim.constants): campaigns
+  // are flown at a0_eff = min(vehicle a0, PUMP_DESIGN_A0) and Isp PUMP_DESIGN_ISP — the
+  // bang-bang policy is validated only in this corridor (non-monotonic in a0 AND Isp).
+  const PUMP_DESIGN_A0 = 2.5e-4, PUMP_DESIGN_ISP = 2800;
 
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
@@ -282,6 +286,7 @@
 
   const API = {
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
+    PUMP_DESIGN_A0, PUMP_DESIGN_ISP,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
     oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
