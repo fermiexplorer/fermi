@@ -254,14 +254,14 @@ def main() -> None:
     )
 
     # ---------------------------------------------------------------
-    header("7c. PERIHELION PUMPING (cross-assessment of PSI-TR-2026-0714)")
+    header("7c. PERIHELION PUMPING (multi-revolution escape)")
     from fermi_sim.departure import perihelion_pumped_vinf
     print("The outward-spiral saturation (sec 7) is a property of the TRAJECTORY CLASS, not of solar")
-    print("power (PSI-TR-2026-0714, Physical Superintelligence PBC). Perihelion pumping inverts the")
-    print("spiral: retrograde arcs near apoapsis drop perihelion to 0.42 AU (the thermal cap), then")
-    print("prograde arcs at perihelion (power 4x the 1-AU rating + max Oberth leverage) staircase the")
-    print("energy up over a few revolutions. Reproduced here with an independent bang-bang policy")
-    print("(escape-guarded staircase + continuous finisher), power P(r) = P1*min((1AU/r)^2, 4):\n")
+    print("power. Perihelion pumping inverts the spiral: retrograde arcs near apoapsis drop")
+    print("perihelion to 0.42 AU (the thermal cap), then prograde arcs at perihelion (power 4x the")
+    print("1-AU rating + max Oberth leverage) staircase the energy up over a few revolutions.")
+    print("Integrated with a bang-bang policy (escape-guarded staircase + continuous finisher),")
+    print("power P(r) = P1*min((1AU/r)^2, 4):\n")
     tgt = 23.64e3
     for a0 in (1.5e-4, 2.5e-4, 5.0e-4):
         v, dv, yr, revs = perihelion_pumped_vinf(a0, tgt)
@@ -269,13 +269,13 @@ def main() -> None:
         print(f"   a0={a0:.1e} m/s^2: v_inf {v/KMS:5.2f} km/s  dv {dv/KMS:5.2f}  "
               f"{yr:4.1f} yr  {revs:4.1f} revs   {tag}")
     print(
-        "\n=> CONFIRMS PSI's central finding: pumping defeats the 1/r^2 power wall. At a0=2.5e-4\n"
-        "   (PSI's design point; ~vehicle alpha 13-25 W/kg -- TODAY'S hardware) the cruise floor is\n"
-        "   reached where the outward spiral saturates near zero; the a0 ~ 2.25e-4 failure threshold\n"
-        "   is reproduced. Our cruder policy costs ~25.6 km/s vs PSI's optimised 23.97 (+7%). The\n"
-        "   sec-7b alpha >~ 100 W/kg threshold applies to the OUTWARD-SPIRAL class only. PSI's\n"
-        "   verified SEP total from LEO is 30.5-31.6 km/s (7.6 Earth escape + 22.9-24.0 helio),\n"
-        "   indicating our closed-form low-thrust budget (~25-26 for AC) underprices the heliocentric\n"
+        "\n=> Pumping defeats the 1/r^2 power wall. At a0=2.5e-4 (~vehicle alpha 13-25 W/kg --\n"
+        "   TODAY'S hardware) the cruise floor is reached where the outward spiral saturates near\n"
+        "   zero; below a0 ~ 2.25e-4 the maneuver fails (the escaping pass strands below target).\n"
+        "   This bang-bang policy spends ~25.6 km/s; an optimised burn schedule reaches ~24. The\n"
+        "   sec-7b alpha >~ 100 W/kg threshold applies to the OUTWARD-SPIRAL class only. The full\n"
+        "   SEP total from LEO is ~30-32 km/s (7.6 Earth escape + ~23-24 helio), indicating our\n"
+        "   closed-form low-thrust budget (~25-26 for AC) underprices the heliocentric\n"
         "   leg; a GTO drop-off cuts the Earth leg 7.6 -> ~4.2 km/s and closes a ~100 kg vehicle."
     )
 

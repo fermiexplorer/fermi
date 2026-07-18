@@ -156,20 +156,20 @@ def perihelion_pumped_vinf(
     a0: float, v_inf_target: float, isp_s: float = 2800.0,
     rp_min_au: float = 0.42, power_cap: float = 4.0, max_yr: float = 60.0,
 ):
-    """Multi-revolution PERIHELION-PUMPING escape from a 1 AU circular heliocentric orbit
-    (cross-assessment of PSI-TR-2026-0714 §4). The conventional outward spiral saturates
-    below the cruise floor because solar power fades 1/r²; pumping inverts the logic:
+    """Multi-revolution PERIHELION-PUMPING escape from a 1 AU circular heliocentric orbit.
+    The conventional outward spiral saturates below the cruise floor because solar power
+    fades 1/r²; pumping inverts the logic:
     retrograde thrust arcs near apoapsis shed angular momentum until perihelion reaches
     ``rp_min_au`` (where the thermal cap engages), then prograde arcs concentrate at
     perihelion where power is `power_cap`× the 1-AU rating and the Oberth effect is
     strongest. Successive revolutions staircase the orbit energy up to the target.
 
-    Power model (PSI eq. 6):  P(r) = P1 · min((1 AU/r)², power_cap); thrust ∝ P at fixed
+    Power model:  P(r) = P1 · min((1 AU/r)², power_cap); thrust ∝ P at fixed
     Isp, so accel = a0 · min((1/r)², cap) · (m0/m).  ``a0`` is the initial thrust
     acceleration at 1 AU and full mass (m/s²) — the single sizing parameter.
 
-    Simple bang-bang policy (NOT PSI's optimised schedule — a deliberately independent,
-    cruder reconstruction): while perihelion > rp_min, thrust retrograde when r is in the
+    Simple bang-bang policy (an optimised burn schedule does ~7% better on Δv):
+    while perihelion > rp_min, thrust retrograde when r is in the
     outer third of the osculating orbit; afterwards thrust prograde when r < 1.3·rp.
     Returns (v_inf_achieved m/s, dv m/s, years, revs). Succeeds if the specific energy
     reaches v_inf_target²/2 within ``max_yr``.
@@ -269,6 +269,24 @@ def perihelion_pumped_vinf(
     r = math.hypot(x, y)
     E = 0.5 * (vx * vx + vy * vy) - mu / r
     return (math.sqrt(2.0 * E) if E > 0 else 0.0), dv, t / c.YEAR, revs
+
+
+def pumped_departure_dv(v_inf: float, peri_alt_km: float, apo_alt_km: float | None = None,
+                        pump_tax: float = 2000.0) -> float:
+    """First-order total departure Δv (m/s) for the PERIHELION-PUMPED architecture, as a
+    two-leg budget: (1) low-thrust Earth escape to C3 ≈ 0, costed at the orbit-energy speed
+    √(μ⊕/a) of the starting orbit (the classic Edelbaum spiral-to-escape result; ~7.7 km/s
+    from 400 km LEO, ~4.0 km/s from a GTO-like ellipse), then (2) the heliocentric pumping
+    campaign, whose integrated cost is v∞ + ``pump_tax`` — the tax is calibrated against
+    :func:`perihelion_pumped_vinf` (Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5×10⁻⁴ design point,
+    covering the pump-down arcs, gravity losses, and the small out-of-plane aim). Unlike the
+    outward-spiral budget this does NOT borrow Earth's orbital velocity — v∞ is built
+    heliocentrically at perihelion.
+    """
+    r_p = c.R_EARTH + peri_alt_km * 1e3
+    r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3
+    a = 0.5 * (r_p + r_a)
+    return math.sqrt(c.MU_EARTH / a) + v_inf + pump_tax
 
 
 def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,

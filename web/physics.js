@@ -135,6 +135,94 @@
     _sepCache[key] = out;
     return out;
   }
+  // PERIHELION PUMPING (mirror of fermi_sim.departure.perihelion_pumped_vinf): multi-revolution
+  // escape from 1 AU circular. Retrograde arcs near apoapsis drop perihelion to rpMinAu (thermal
+  // cap), then prograde arcs at perihelion — power capped at powerCap× the 1-AU rating — staircase
+  // the energy to the target. Defeats the 1/r² outward-spiral saturation at today's α.
+  // Returns { vinf (m/s), dv (m/s), years, revs, reaches }. Cached by argument key.
+  const _pumpCache = {};
+  function perihelionPumpedVinf(a0, vInfTarget, ispS = 2800, rpMinAu = 0.42, powerCap = 4, maxYr = 60) {
+    const key = [a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].map(x => "" + x).join(",");
+    if (_pumpCache[key] !== undefined) return _pumpCache[key];
+    const mu = MU_SUN, ve = ispS * G0, targetE = 0.5 * vInfTarget * vInfTarget;
+    let x = AU, y = 0, vx = 0, vy = Math.sqrt(mu / AU);
+    let m = 1, t = 0, dv = 0, angPrev = 0, revs = 0, pumpedDown = false;
+    const maxT = maxYr * YEAR;
+    const accelMag = (r) => a0 * Math.min((AU / r) ** 2, powerCap) / m;
+    let out = null;
+    while (t < maxT) {
+      const r = Math.hypot(x, y);
+      const v2 = vx * vx + vy * vy;
+      const E = 0.5 * v2 - mu / r;
+      if (E >= targetE) { out = { vinf: Math.sqrt(2 * E), dv, years: t / YEAR, revs, reaches: true }; break; }
+      const h = x * vy - y * vx;
+      const ecc = Math.sqrt(Math.max(0, 1 + 2 * E * h * h / (mu * mu)));
+      const pSl = h * h / mu;
+      const rp = pSl / (1 + ecc);
+      const rdotSign = (x * vx + y * vy) >= 0 ? 1 : -1;
+      let nu = 0;
+      if (ecc > 1e-6) {
+        const cnu = Math.max(-1, Math.min(1, (pSl / r - 1) / ecc));
+        nu = rdotSign * Math.acos(cnu);                    // (-pi, pi], 0 = periapsis
+      }
+      if (rp <= rpMinAu * AU) pumpedDown = true;           // one-way latch (else the policy dithers)
+      let thrustDir;
+      if (!pumpedDown) {
+        if (ecc < 0.05) thrustDir = x > 0 ? -1 : 0;        // inertial-side bootstrap from circular
+        else thrustDir = Math.abs(Math.abs(nu) - Math.PI) < Math.PI / 3 ? -1 : 0; // pump-down at apoapsis
+      } else if (E < -3.0e7) {
+        // escape-guarded staircase: prograde near periapsis only while comfortably bound
+        thrustDir = Math.abs(nu) < 70 * Math.PI / 180 ? 1 : 0;
+      } else {
+        thrustDir = 1;                                     // near-parabolic finisher: burn continuously
+      }
+      const vmag = Math.sqrt(v2) || 1;
+      const amag = thrustDir ? accelMag(r) : 0;
+      const period = 2 * Math.PI * Math.sqrt(Math.max(r, 0.1 * AU) ** 3 / mu);
+      const dt = Math.min(Math.max(600, 0.002 * period), 5 * 86400);
+      const dr2 = (s) => { const X = s[0], Y = s[1], VX = s[2], VY = s[3];
+        const rr = Math.hypot(X, Y), vv = Math.hypot(VX, VY) || 1;
+        const am = thrustDir ? accelMag(rr) * thrustDir : 0;
+        const g = -mu / (rr * rr * rr);
+        return [VX, VY, g * X + am * VX / vv, g * Y + am * VY / vv]; };
+      const s = [x, y, vx, vy], k1 = dr2(s);
+      const s2 = s.map((v, i) => v + 0.5 * dt * k1[i]), k2 = dr2(s2);
+      const s3 = s.map((v, i) => v + 0.5 * dt * k2[i]), k3 = dr2(s3);
+      const s4 = s.map((v, i) => v + dt * k3[i]), k4 = dr2(s4);
+      x += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+      y += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+      vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+      vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
+      if (thrustDir) {
+        dv += amag * dt;
+        m = Math.max(0.05, m - (a0 * Math.min((AU / r) ** 2, powerCap) / ve) * dt);
+      }
+      const ang = Math.atan2(y, x);
+      let dAng = ang - angPrev;
+      if (dAng > Math.PI) dAng -= 2 * Math.PI;
+      else if (dAng < -Math.PI) dAng += 2 * Math.PI;
+      revs += Math.abs(dAng) / (2 * Math.PI);
+      angPrev = ang;
+      t += dt;
+    }
+    if (!out) {
+      const r = Math.hypot(x, y), E = 0.5 * (vx * vx + vy * vy) - mu / r;
+      out = { vinf: E > 0 ? Math.sqrt(2 * E) : 0, dv, years: t / YEAR, revs, reaches: false };
+    }
+    _pumpCache[key] = out;
+    return out;
+  }
+
+  // First-order total departure Δv for the pumped architecture (mirror of fermi_sim
+  // pumped_departure_dv): Earth escape to C3≈0 at the orbit-energy speed √(μ⊕/a) + the
+  // heliocentric pumping campaign at v∞ + tax (tax calibrated against perihelionPumpedVinf:
+  // Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design point). No Earth-velocity borrow.
+  function pumpedDepartureDv(vinf, periAltKm, apoAltKm, pumpTax = 2000) {
+    const rp = R_EARTH + periAltKm * 1e3;
+    const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
+    return Math.sqrt(MU_EARTH / (0.5 * (rp + ra))) + vinf + pumpTax;
+  }
+
   const expv = (isp) => isp * G0;
   const propMass = (dry, dv, isp) => dry * (Math.exp(dv / expv(isp)) - 1);
   const elecEnergy = (mp, isp, eta) => 0.5 * mp * expv(isp) * expv(isp) / eta;
@@ -160,7 +248,7 @@
     AU, LY, YEAR, G0, MU_SUN, MU_EARTH, R_EARTH, V_ESC_SUN, V_EARTH, R0, VAC, SPIRAL_MAX,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

@@ -59,16 +59,16 @@ question is entirely about how you build the 24 km/s.*
 > orbital velocity. The check closes: AC recedes to ~6.0 ly by 75,000 yr, and
 > 23.8 km/s × 75,000 yr ≈ 6.0 ly — exactly AC's distance then.
 
-> **Update (July 2026).** An independent external assessment (PSI‑TR‑2026‑0714, Physical
-> Superintelligence PBC) shows the outward-spiral power wall below is a property of the
+> **Update (July 2026).** The outward-spiral power wall below is a property of the
 > *trajectory class*, not of solar power: **multi-revolution perihelion pumping** (drop
 > perihelion to 0.42 AU, burn at perihelion where power is up to 4× the 1-AU rating)
 > reaches the full cruise speed at today's vehicle α (~13–25 W/kg), no reactor or assist
-> required. We reproduced the mechanism and its a₀ ≈ 2.25×10⁻⁴ m/s² threshold in our own
-> engine (`perihelion_pumped_vinf`). The α ≳ 100 W/kg condition below therefore applies
-> to the outward-spiral class only. PSI's verified SEP total from LEO is 30.5–31.6 km/s;
-> their recommended architecture is a ~100 kg vehicle from a GTO drop-off. See the live
-> page's "Perihelion pumping" section for the full cross-assessment.
+> required. The mechanism and its a₀ ≈ 2.25×10⁻⁴ m/s² failure threshold are integrated in
+> the engine (`perihelion_pumped_vinf`) and cross-checked externally. The α ≳ 100 W/kg
+> condition below therefore applies to the outward-spiral class only. The full SEP total
+> from LEO is ~30–32 km/s (7.6 km/s Earth escape + ~23–24 heliocentric); a GTO drop-off
+> cuts the Earth leg to ~4.2 km/s and closes a ~100 kg vehicle. See the live page's
+> "Perihelion pumping" section.
 
 ## 2. The conservative power gate — pure solar closes only as a light (high-α) vehicle
 

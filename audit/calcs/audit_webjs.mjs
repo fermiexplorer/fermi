@@ -38,6 +38,15 @@ const REF = {
   sep_achievable_vinf_nep_ref: 31112.327059089537,
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
+  // perihelion pumping (multi-rev escape, tmp/ro/dump_pump_ref.py): a0=2.5e-4 m/s², target 23.64 km/s
+  pump_vinf_ref: 23655.06444231674,
+  pump_dv_ref: 25634.909409435655,
+  pump_yr_ref: 9.634918223784087,
+  // ...and the a0=5e-4 case
+  pump_vinf_hi_ref: 23828.096843458618,
+  // pumped-architecture departure budget (tmp/ro/dump_pump_dep.py): √(μ⊕/a) escape + v∞ + 2 km/s tax
+  pump_dep_dv_ref: 33312.598648385014,
+  pump_dep_dv_gto_ref: 29668.687196355662,
 };
 
 let pass = 0, total = 0;
@@ -73,6 +82,15 @@ check("derived minimal dry mass (active 155, pay 1, 30 km/s, Isp 3000, tank 2.5%
   F.minimalDryMass(155,1,30000,3000,0.025,0.10).dryEff, 221.5710758812226, 1e-6);
 
 check("cruise time at v_inf=24 km/s (yr)", F.timeToAc(24e3) / F.YEAR, REF.time_24kms_yr, 1e-3);
+
+// Perihelion pumping: multi-revolution escape (mirror of fermi_sim perihelion_pumped_vinf).
+const pump = F.perihelionPumpedVinf(2.5e-4, 23.64e3);
+check("pumped v∞ @a0=2.5e-4 (m/s)", pump.vinf, REF.pump_vinf_ref, 1e-6);
+check("pumped Δv @a0=2.5e-4 (m/s)", pump.dv, REF.pump_dv_ref, 1e-6);
+check("pumped duration @a0=2.5e-4 (yr)", pump.years, REF.pump_yr_ref, 1e-6);
+check("pumped v∞ @a0=5e-4 (m/s)", F.perihelionPumpedVinf(5e-4, 23.64e3).vinf, REF.pump_vinf_hi_ref, 1e-6);
+check("pumped departure Δv budget (23.64 km/s, LEO 400) (m/s)", F.pumpedDepartureDv(23.64e3, 400), REF.pump_dep_dv_ref, 1e-9);
+check("pumped departure Δv budget (GTO-like 590x35786) (m/s)", F.pumpedDepartureDv(23.64e3, 590, 35786), REF.pump_dep_dv_gto_ref, 1e-9);
 
 // Internal consistency: rocket equation + energy formula round-trips.
 const mp = F.propMass(255, 20e3, 3000);

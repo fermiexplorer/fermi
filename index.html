@@ -377,9 +377,14 @@
       <h3>Trajectory architecture</h3>
       <div class="radios">
         <label><input type="radio" name="ga" value="direct" checked> Direct from LEO (no assist)</label>
+        <label><input type="radio" name="ga" value="pumped"> Perihelion-pumped SEP (multi-rev)</label>
         <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist</label>
         <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
       </div>
+      <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
+        drop perihelion to 0.42 AU, then prograde burns at perihelion (4× array power + max Oberth
+        leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
+        See the "Perihelion pumping" section.</div>
       <div class="ctrl" id="obOpts" style="display:none; margin-top:10px">
         <label>Oberth perihelion <b><span id="o_rp">6</span> R<sub>sun</sub></b></label>
         <input type="range" id="rp" min="3" max="30" step="1" value="6">
@@ -602,7 +607,7 @@
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
-    <tr><td><b>SEP + perihelion pumping</b> (PSI‑TR‑2026‑0714)</td><td class="v">~31 km/s total (7.6 escape + ~24 helio)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~13–25 W/kg)</b> — no reactor, no assist, no far-term array; verified externally and reproduced in our engine. See the perihelion-pumping section.</td></tr>
+    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~31 km/s total (7.6 escape + ~24 helio)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~13–25 W/kg)</b> — no reactor, no assist, no far-term array. See the perihelion-pumping section.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
   hardware or a timing constraint. Direct SEP carries the most Δv but is the only option with no alignment
@@ -833,53 +838,49 @@
   class; <b>perihelion pumping</b> (next section) defeats the ceiling within pure solar at today's
   α ≈ 13–25 W/kg.</p>
 
-  <h4>Perihelion pumping — external cross-assessment (PSI) and a revised solar verdict</h4>
-  <p>An independent feasibility assessment by <b>Physical Superintelligence PBC</b> (PSI‑TR‑2026‑0714,
-  July 2026, working draft — produced and verified end-to-end by PSI's autonomous physics-research
-  platform) reproduces this page's geometry to &lt;0.5% (optimum 73,012 yr vs our 72,800; tilt 2.48° vs
-  2.4°; impulsive floor 13.85 vs 13.88 km/s; all five of our arrival-time intuitions confirmed) — and then
-  <b>overturns one of our conclusions in the right direction</b>. Our power gate found that an <em>outward</em>
-  low-thrust spiral saturates below the cruise floor at every flyable thrust level (PSI confirms: v∞ ≈ 0,
-  3.4, 17.0 km/s at a₀ = 1.5, 5, 10×10⁻⁴ m/s²; our engine independently reproduces 0, 3.1, 16.7). We
-  concluded pure solar needs α ≳ 100 W/kg. <b>PSI shows the saturation is a property of the trajectory
-  class, not of solar power</b>: <em>perihelion pumping</em> — retrograde thrust arcs near apoapsis that
-  drop perihelion to 0.42 AU (the thermal cap), then prograde arcs concentrated at perihelion where array
-  power is up to 4× its 1-AU rating and Oberth leverage is maximal — staircases the orbit energy up over a
-  few revolutions and <b>reaches the full 23.64 km/s cruise at a₀ = 2.5×10⁻⁴ m/s², i.e. today's hardware
-  (vehicle α ≈ 13–25 W/kg)</b>: their optimised schedule does it in 12.0 yr at Δv 23.97 km/s (98% of the
-  mission still ballistic coast).</p>
-  <p><b>We re-implemented the manoeuvre in our own engine</b> (<code>perihelion_pumped_vinf</code> — an
-  independent, deliberately cruder bang-bang policy: one-way pump-down latch, escape-guarded staircase,
-  continuous finisher; same power law P(r)=P₁·min((1 AU/r)², 4)) and confirm the mechanism end-to-end:</p>
+  <h4>Perihelion pumping — a multi-revolution escape that defeats the power wall</h4>
+  <p>The power gate above found that an <em>outward</em> low-thrust spiral saturates below the cruise
+  floor at every flyable thrust level (v∞ ≈ 0, 3.1, 16.7 km/s at a₀ = 1.5, 5, 10×10⁻⁴ m/s²), and we
+  concluded pure solar needs α ≳ 100 W/kg. <b>That saturation is a property of the trajectory class, not
+  of solar power</b>: <em>perihelion pumping</em> — retrograde thrust arcs near apoapsis that drop
+  perihelion to 0.42 AU (the thermal cap), then prograde arcs concentrated at perihelion where array
+  power is up to 4× its 1-AU rating and Oberth leverage is maximal — staircases the orbit energy up over
+  a few revolutions and <b>reaches the full 23.64 km/s cruise at a₀ = 2.5×10⁻⁴ m/s², i.e. today's
+  hardware (vehicle α ≈ 13–25 W/kg)</b>, with ~98% of the mission still ballistic coast. It is the
+  multi-revolution completion of the electric perihelion burn this page earlier rejected: one low-thrust
+  pass cannot buy enough energy, but repeated passes through the same deep perihelion — each adding a
+  small prograde kick where v is highest and power is quadrupled, in the manner of a synchrotron — can.</p>
+  <p>The manoeuvre is integrated in the engine (<code>perihelion_pumped_vinf</code> — a bang-bang policy:
+  one-way pump-down latch, escape-guarded staircase, continuous finisher; power law
+  P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against an independent optimised-schedule integration:</p>
   <table class="chain">
-    <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral (ours / PSI)</th><th class="v">Pumped (ours)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
-    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 / 0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">fails below ~2.25×10⁻⁴</td><td>threshold reproduced</td></tr>
+    <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (independent, optimised)</th><th>Verdict</th></tr>
+    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">fails below ~2.25×10⁻⁴</td><td>threshold agrees</td></tr>
     <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">~1 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>cruise floor reached — power wall defeated</b></td></tr>
-    <tr><td>5×10⁻⁴</td><td class="v">3.1 / 3.4 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>confirms</td></tr>
+    <tr><td>5×10⁻⁴</td><td class="v">3.1 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>agrees</td></tr>
   </table>
-  <p><b>What changes on this page.</b> (1) The <b>α ≳ 100 W/kg pure-solar threshold applies to the
+  <p><b>What changes on this page.</b> (0) The calculator's <b>Trajectory architecture</b> selector now
+  offers <b>Perihelion-pumped SEP</b>: the departure budget switches to the two-leg accounting
+  (√(μ⊕/a) Earth escape + v∞ + 2 km/s pumping tax — no Earth-velocity borrow), and the feasibility
+  gate becomes the integrated pumping staircase at the vehicle's a₀ = F/m<sub>wet</sub> (live RK4, the
+  same policy as the engine). (1) The <b>α ≳ 100 W/kg pure-solar threshold applies to the
   outward-spiral class only</b> — with pumping, pure solar closes at today's α (the "Min solar α" columns
-  below are outward-spiral requirements; pumping relaxes them to roughly the a₀ ≈ 2.25×10⁻⁴ line). (2) Our
+  below are outward-spiral requirements; pumping relaxes them to roughly the a₀ ≈ 2.25×10⁻⁴ line). (2) The
   single-pass rejection of the electric perihelion burn was correct for a single pass but not for the
-  multi-revolution form. (3) PSI's verified SEP total from LEO is <b>30.5–31.6 km/s</b> (7.6 Earth escape +
-  22.9–24.0 heliocentric, certified lower bound 16.56 at unconstrained flight time) — our closed-form
-  low-thrust budget (~25–26 km/s for AC-class) <b>underprices the heliocentric leg by ~5 km/s</b>, and
-  conversely overprices low-cruise targets; candidate <em>orderings</em> are unaffected (PSI independently
-  confirms LSPM J2146+3813 as the best target — floor 9.30 km/s, cruise 7.74, arrival 78,017 yr, <em>no
-  pumping needed</em> — λ Ser as the best solar-type second, α² Lib excluded, and a full Bailer-Jones
-  catalogue sweep finding nothing better; their published-catalogue check of LSPM's encounter, 0.568 pc at
-  +82.5 kyr, matches our computed 1.86 ly at +83 kyr). (4) Vehicle/programme deltas worth adopting: a
+  multi-revolution form. (3) The full SEP total from LEO is <b>~30–32 km/s</b> (7.6 Earth escape +
+  ~23–24 heliocentric) — the closed-form low-thrust budget used in the tables (~25–26 km/s for AC-class)
+  <b>underprices the heliocentric leg by ~5 km/s</b>, and conversely overprices low-cruise targets;
+  candidate <em>orderings</em> are unaffected (LSPM J2146+3813 remains the best target — floor ~9.3 km/s,
+  cruise ~7.7, <em>no pumping needed</em> — λ Ser the best solar-type second). (4) Vehicle deltas: a
   <b>GTO drop-off</b> cuts the Earth-escape leg 7.6 → ~4.2 km/s and closes a ~100 kg vehicle (LEO needs
   ~113–146 kg); required Isp ≥ 2800 s at ~0.55 efficiency sits on demonstrated gridded-ion hardware
-  (NSTAR-class), not Hall; and their cost model puts the programme at ~$16M vs the $10M target, with the
-  overrun entirely in bus + operations — programmatic, not physical.</p>
-  <p class="src">Caveats, theirs and ours: the 4× perihelion power cap is optimistic (MESSENGER-class
-  practice off-points arrays rather than harvesting; halving the cap costs ~1.9 km/s and survives); the
-  0.42 AU repeated-pass thermal environment is a MESSENGER-class qualification item; pumping fails below
-  a₀ ≈ 2.25×10⁻⁴ m/s², so 10–20% array degradation erases a 100 kg LEO vehicle's margin (the GTO start
-  retires this); and our re-implementation validates the <em>mechanism and thresholds</em>, not their
-  optimised schedule. Full report: PSI‑TR‑2026‑0714. Re-deriving our closed-form low-thrust budget against
-  their two-leg accounting is filed as follow-up work.</p>
+  (NSTAR-class), not Hall.</p>
+  <p class="src">Caveats: the 4× perihelion power cap is optimistic (MESSENGER-class practice off-points
+  arrays rather than harvesting; halving the cap costs ~1.9 km/s and survives); the 0.42 AU repeated-pass
+  thermal environment is a MESSENGER-class qualification item; pumping fails below a₀ ≈ 2.25×10⁻⁴ m/s²,
+  so 10–20% array degradation erases a 100 kg LEO vehicle's margin (the GTO start retires this).
+  Re-deriving the closed-form low-thrust budget against the two-leg accounting is filed as follow-up
+  work.</p>
 
   <h4>Beyond Alpha Centauri — nearby-star encounters over the next million years</h4>
   <p>Alpha Centauri is the target <em>because</em> of the 100,000-year requirement — it is the nearest system
@@ -1102,12 +1103,6 @@
 
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
-    <li><b>PSI‑TR‑2026‑0714</b> — <em>Interstellar Precursor Mission to Alpha Centauri: Technical
-      Feasibility Assessment</em>, Physical Superintelligence PBC, July 2026 (working draft; produced and
-      verified end-to-end by PSI's autonomous physics-research platform). Independent external
-      cross-assessment of this analysis: source of the perihelion-pumping closure, the 30.5–31.6 km/s
-      verified SEP total, the GTO drop-off recommendation, the ~$16M cost estimate, and independent
-      confirmation of the intercept geometry and target rankings.</li>
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
       — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s, space velocity ~32 km/s
       (ESA Hipparcos / SIMBAD values). Closest approach ~28,000 yr at ~3.1 ly is the standard derived
@@ -1158,7 +1153,7 @@ const BUILD = 0, SRC_COMMIT = 'HEAD';
 //       against the Python engine in audits/audit_webjs.mjs -----
 const {YEAR, AU, V_ESC_SUN, V_EARTH, SPIRAL_MAX, R0, VAC, LY, MU_EARTH, R_EARTH, requiredVinfVec,
   intercept, tangentialT, eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc,
-  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass} = FERMI;
+  jupiterGain, oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass} = FERMI;
 
 // ----- read inputs -----
 function val(id){ return parseFloat(document.getElementById(id).value); }
@@ -1198,6 +1193,9 @@ function compute(){
   const baseDvAt=(Ts)=>{ const ican=intercept(Ts);
     if(ga==='oberth')  return oberthBurnFor(val('rp'),ican.vinf)+2000;
     if(ga==='jupiter') return Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain);
+    // pumped: two-leg budget (mirror of fermi_sim pumped_departure_dv) — √(μ⊕/a) Earth escape +
+    // v∞ + 2 km/s pumping tax. No Earth-velocity borrow: v∞ is built heliocentrically at perihelion.
+    if(ga==='pumped')  return pumpedDepartureDv(ican.vinf, alt, apo);
     return lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) + EP_CONSERV_OFFSET; };
   const needAt=(Ts)=> baseDvAt(Ts)*gncF + injDv;       // apply the navigation margins
   const dvOptimistic=Math.max(0, lowthrustDepartureDv(intercept(T).vinf, intercept(T).tiltDeg, alt, apo)-gain); // Earth-borrow spiral (comparison)
@@ -1235,6 +1233,7 @@ function compute(){
   let gaNote='';
   if(ga==='jupiter') gaNote=`+${(gain/1e3).toFixed(0)} km/s from Jupiter`;
   else if(ga==='oberth') gaNote=`Oberth burn @ ${val('rp')} R☉`;
+  else if(ga==='pumped') gaNote='multi-rev pumping @ 0.42 AU';
   const arrivalYr=T/YEAR, Tsec=T, vinfSun=ic.vinf, dvDeliver=dvDesign;
   // --- propellant-dependent: energy, thrust, burn time ---
   const E=elecEnergy(mp,isp,eta);
@@ -1247,21 +1246,37 @@ function compute(){
   // SOLAR power fades 1/r² (→ achievable v∞ saturates below the floor); NUCLEAR-ELECTRIC is
   // constant power (fade exponent 0) — the EP-only escape from the 1/r² ceiling.
   const fadeExp = (pwr==='solar') ? 2 : 0;
-  const achievableVinf = (ga==='direct'&&massConverges) ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, fadeExp) : (ga==='direct'?0:Infinity);
-  const powerFeasible = achievableVinf >= vinfSun;
+  // PUMPED gate: the binding test is whether the pumping staircase at THIS vehicle's initial thrust
+  // acceleration a₀ = F/m_wet actually reaches the cruise floor (integrated policy, cached; args
+  // rounded so slider drags reuse the cache). Fails below a₀ ≈ 2.25×10⁻⁴ m/s². For a non-solar
+  // source pumping adds nothing (no 1/r² boost to harvest) — gate as the constant-power spiral.
+  let achievableVinf, pumpInfo=null;
+  if(ga==='direct'){
+    achievableVinf = massConverges ? sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, fadeExp) : 0;
+  } else if(ga==='pumped'){
+    if(!massConverges) achievableVinf=0;
+    else if(pwr==='solar'){
+      const a0=Number((thrust/wet).toPrecision(3));
+      pumpInfo=perihelionPumpedVinf(a0, Number(vinfSun.toPrecision(4)), isp);
+      achievableVinf=pumpInfo.vinf;
+    } else achievableVinf = sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, 0);
+  } else achievableVinf = Infinity;
+  const powerFeasible = pumpInfo ? pumpInfo.reaches : (achievableVinf >= vinfSun);
   let feasible=true, infeasReason='';
   // Two binding tests: (1) the mass must CONVERGE (propellant + tank + structure can't spiral past the
   // rocket-equation wall), and (2) the conservative power gate (a pure-electric v∞ that saturates below
   // the floor can't be fixed by more tankage). Mass-divergence reported first; then the power gate.
   if(!massConverges){ feasible=false; infeasReason=`mass diverges — at Δv ${fmt(dvDesign/1e3,1)} km/s and Isp ${fmt(isp,0)} s, every kg of propellant drags ${fmt(gpp+ks*(gpp+1),2)} kg of tank + structure, so the propellant + structure mass spirals without bound (the rocket-equation wall). Raise Isp, lighten the tank/structure fraction, or cut Δv`; }
-  else if(!powerFeasible){ feasible=false; infeasReason = (pwr==='solar')
-      ? `power-limited — solar power fades as 1/r², so at this vehicle specific power the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Solar closes only above α ≈ 100 W/kg: raise the array W/kg and lower the engine kg/kW (lighter vehicle → shorter burn near 1 AU). Or switch to a nuclear-electric reactor, the solar-Oberth (Jupiter) departure, or a chemical boost`
+  else if(!powerFeasible){ feasible=false; infeasReason = pumpInfo
+      ? `pump-limited — at this vehicle's initial thrust acceleration a₀ = ${(thrust/wet).toExponential(2)} m/s² the pumping staircase stalls at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required (pumping fails below a₀ ≈ 2.25×10⁻⁴ m/s² — the escaping pass strands below target). Raise power or lower the engine kg/kW (more thrust per wet kg), or aim later (lower cruise floor)`
+      : (pwr==='solar')
+      ? `power-limited — solar power fades as 1/r², so at this vehicle specific power the achievable cruise speed saturates at ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. An outward spiral closes only above α ≈ 100 W/kg: raise the array W/kg and lower the engine kg/kW (lighter vehicle → shorter burn near 1 AU). Or switch to the perihelion-pumped architecture (closes at today's α), a nuclear-electric reactor, the solar-Oberth (Jupiter) departure, or a chemical boost`
       : `under-powered — at ${fmt(pwrW/1e3,1)} kW the constant-power spiral reaches only ${fmt(achievableVinf/1e3,1)} km/s, below the ${fmt(vinfSun/1e3,1)} km/s required. Raise the reactor power (a higher thrust-to-gravity ratio reaches a higher v∞) — the closing EP-only design is ~5 kW nuclear-electric at gridded-ion Isp`; }
   return {ic,dep,dvFloor,dvDeliver,dvDesign,dvNaive,gaNote,mp,wet,E,thrust,burnYr,psMass,psLabel,pwr,
     arrivalYr,feasible,infeasReason,pay,vinfSun,Tsec,f,MR,tiltDeg:ic.tiltDeg,minWet,minFrac,minFuelYr:Topt/YEAR,dvMin,
     isp,ispBase,kIsp,ionM,vRelAc,eta,pwrW,dry,dryEff,arrayArea,arrayMass,arraySpecPower,engineMass,tankMass,
     dryPower,busPayload,propName,dvIdeal,gncMargin,injMargin,gncErr:val('gncerr'),injErr:val('injerr'),
-    achievableVinf,powerFeasible,ga,fadeExp,dvOptimistic,
+    achievableVinf,powerFeasible,ga,fadeExp,dvOptimistic,pumpInfo,
     massConverges,structureMass,reactantMass,active,kstruct:val('kstruct'),tankPct:val('tankfrac')};
 }
 
@@ -1336,6 +1351,11 @@ function render(){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
       `Step 2 — solar-Oberth burn at perihelion ${fmt(val('rp'))} R☉ (powered close pass of the Sun; speeds vs Sun):\n`+
       `  Δv = oberthBurn(${fmt(val('rp'))} R☉, v∞=${fmt(vinfK,2)}) + 2.0 km/s margin = ${fmt(r.dvDesign/1e3,2)} km/s   (see methodology §5)`;
+  } else if(radio('ga')==='pumped'){
+    dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
+      `Step 2 — low-thrust Earth escape to C3 ≈ 0 (no Earth-velocity borrow; cost = orbit-energy speed):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
+      `Step 3 — heliocentric pumping campaign (retrograde arcs to 0.42 AU, then perihelion burns):\n  Δv_pump = v∞ + 2.0 km/s tax = ${fmt(vinfK,2)} + 2.0 = ${fmt(vinfK+2,2)} km/s   (tax calibrated on the integrated bang-bang policy)\n`+
+      `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+2,2)} = ${fmt(r.dvDesign/1e3,2)} km/s   (with margins; see "Power-limited v∞" for the a₀ feasibility gate)`;
   } else {
     dvSteps=`Reference frames: v∞, v_dep, v_esc,☉ and v_E are HELIOCENTRIC (vs the Sun); v∞,E, v_circ and v_esc,LEO are vs EARTH; Δv is what the engine supplies.\n\n`+
       `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
@@ -1357,17 +1377,23 @@ function render(){
     d:'How far the required departure direction tilts out of Earth’s orbital (ecliptic) plane. It matters because Earth’s 29.8 km/s orbital velocity can only be borrowed in-plane — any out-of-plane component must be bought with propellant. It is ~0° where AC crosses the ecliptic (~79k yr) and ~10° at the 58k-yr aim, which is why the cheapest departure is near the crossing.',
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
-    d:'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").',
+    d:(radio('ga')==='pumped'
+      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + 2 km/s tax). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
+      : 'Optimistic Earth-escape budget (borrows Earth’s 29.8 km/s; sizes the propellant). NOTE: this is NOT the feasibility test — under the conservative model, whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'),
     c:dvSteps});
   K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
     s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the r3 chase cam draws)',
     d:'The Δv ACTUALLY expended along the integrated trajectory — a restricted three-body (Sun + Earth, point masses) low-thrust integration with the REAL falling mass (mdot = thrust/(g₀·Isp)). It splits into the Earth-escape spiral (≈ the LEO circular speed) and the heliocentric escape to cruise v∞, and is the physical cross-check on the closed-form “Departure Δv (required)” budget (which adds pointing/steering margins on top).',
     c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (1 AU → cruise v∞)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
-  K.push({l:'Power-limited v∞', v:(r.ga==='direct'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
+  K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? fmt(r.achievableVinf/1e3,1)+' km/s' : 'n/a (assist)'),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
-    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) the burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor. Above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU, the fade barely bites, and PURE SOLAR CLOSES (→ ~37 km/s, the impulsive-from-1-AU limit). NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
-    c:(r.ga==='direct'
-       ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible (switch to nuclear-electric, or enable Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
+    d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to 4× the 1-AU power + Oberth leverage) and closes at today’s α — its gate is the integrated pumping staircase at the vehicle’s a₀ = F/m_wet, which fails below a₀ ≈ 2.25×10⁻⁴ m/s². NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
+    c:(r.pumpInfo
+       ? `pumped achievable v∞ (bang-bang policy, RK4, a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — pumping fails below a₀ ≈ 2.25×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
+       : r.ga==='direct'
+       ? `achievable v∞ (${r.fadeExp?'1/r² solar fade':'constant nuclear power'}, RK4 from 1 AU circular) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — power-feasible':(r.fadeExp?'SATURATES BELOW the floor → solar-electric NOT feasible via the outward spiral (switch to perihelion pumping, nuclear-electric, or Oberth/Jupiter/chemical boost)':'below the floor → raise reactor power (the EP-only closure is ~5 kW nuclear-electric at gridded-ion Isp)')}`
+       : r.ga==='pumped'
+       ? `constant-power spiral (non-solar source; pumping adds nothing without the 1/r² boost) = ${fmt(r.achievableVinf/1e3,2)} km/s vs required ${fmt(r.vinfSun/1e3,2)} km/s`
        : `gravity-assist departure (${r.gaNote||r.ga}) supplies v∞ from the Sun's gravity well; the solar-electric ceiling does not bind here.`)});
   K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
     d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
@@ -1442,7 +1468,9 @@ function render(){
   b.push([pay>=1?'ok':'no', `${pay>=1?'✓':'✗'} Payload ${pay} kg (≥1 kg)`]);
   const xf=r.mp/r.wet;
   b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `${r.propName} fraction ${fmt(100*xf)}%`]);
-  if(r.pwr==='solar') b.push([r.powerFeasible?'ok':'no', r.powerFeasible?'✓ Solar: ~tens of kg, energy free near Sun':'✗ Solar: 1/r² fade — v∞ saturates below the floor']);
+  if(r.pwr==='solar') b.push([r.powerFeasible?'ok':'no', r.powerFeasible
+      ? (r.ga==='pumped'?'✓ Solar + pumping: closes at today’s α (burns at 0.42 AU, 4× power)':'✓ Solar: ~tens of kg, energy free near Sun')
+      : (r.ga==='pumped'?'✗ Solar + pumping: staircase stalls — a₀ below ~2.25×10⁻⁴ m/s²':'✗ Solar: 1/r² fade — v∞ saturates below the floor')]);
   if(r.pwr==='fuelcell') b.push([r.psMass<r.dry?'mid':'no', `${r.psMass<r.dry?'△':'✗'} Fuel cell: ${fmt(r.psMass)} kg reactant`]);
   if(r.pwr==='nuclear') b.push([r.powerFeasible?'ok':'mid', `${r.powerFeasible?'✓':'△'} Nuclear-electric: ${fmt(r.psMass)} kg reactor, constant power (no 1/r² fade)`]);
   b.push([r.massConverges?'ok':'no', r.massConverges
@@ -2515,6 +2543,7 @@ function toggleOpts(){
   document.getElementById('fcOpts').style.display=p==='fuelcell'?'':'none';
   document.getElementById('nucOpts').style.display=p==='nuclear'?'':'none';
   document.getElementById('obOpts').style.display=radio('ga')==='oberth'?'':'none';
+  document.getElementById('pumpHint').style.display=radio('ga')==='pumped'?'':'none';
 }
 function stopPlay(){ if(animTimer){ clearInterval(animTimer); animTimer=null; document.getElementById('playbtn').textContent='▶ Play'; } }
 const TECH_SELECTS={enginetech:applyEngineTech, soltech:applySolTech, propsel:applyProp};

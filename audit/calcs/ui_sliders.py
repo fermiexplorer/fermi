@@ -41,7 +41,7 @@ RESET_AND_COMPUTE = """
           busPayload:r.busPayload, dryEff:r.dryEff, psLabel:r.psLabel, feasible:r.feasible, isp:r.isp,
           achievableVinf:r.achievableVinf, powerFeasible:r.powerFeasible, infeasReason:r.infeasReason,
           dry:r.dry, structureMass:r.structureMass, massConverges:r.massConverges, active:r.active,
-          pwrW:r.pwrW, arraySpecPower:r.arraySpecPower};
+          pwrW:r.pwrW, arraySpecPower:r.arraySpecPower, pumpInfo:r.pumpInfo};
 }
 """
 
@@ -197,6 +197,20 @@ def run(page):
     check("Jupiter assist lowers required Δv", jup["dvDesign"] < base["dvDesign"] - 1000)
     obe = comp(radio={"ga": "oberth"})
     check("Oberth changes required Δv", not rel(obe["dvDesign"], base["dvDesign"], 1e-3))
+    # Perihelion-pumped SEP: two-leg budget (no Earth borrow) is COSTLIER in Δv than the
+    # Earth-borrow spiral, but the gate becomes the pumping staircase, which closes at
+    # low-α (today's hardware) where the outward spiral saturates near zero.
+    pmp = comp(radio={"ga": "pumped"})
+    check("pumped budget = escape + v_inf + tax (> direct budget)", pmp["dvDesign"] > base["dvDesign"] + 1000,
+          f"{pmp['dvDesign']/1e3:.1f} vs {base['dvDesign']/1e3:.1f} km/s")
+    low_alpha_direct = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50})
+    low_alpha_pumped = comp({"wkgsolar": 91, "enginekg": 6, "pwrkw": 50}, {"ga": "pumped"})
+    check("low-α outward spiral fails but PUMPING closes it (power wall defeated)",
+          low_alpha_direct["feasible"] is False and low_alpha_pumped["feasible"] is True,
+          f"pumped achievable {low_alpha_pumped['achievableVinf']/1e3:.1f} km/s")
+    check("pumped gate reports the campaign (revs > 1, powered years > 1)",
+          low_alpha_pumped["pumpInfo"] is not None and low_alpha_pumped["pumpInfo"]["revs"] > 1
+          and low_alpha_pumped["pumpInfo"]["years"] > 1)
 
     # --- FEASIBILITY transitions ---
     lowisp = comp({"isp": 1000})
