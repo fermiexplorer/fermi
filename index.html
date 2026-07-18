@@ -393,8 +393,9 @@
         <input type="range" id="skick" min="0.5" max="10" step="0.5" value="5">
         <div class="hint">An externally powered EM station at perihelion (or a constellation of them,
           which eases the rendezvous phasing) accelerates the passive probe in flight as it transits
-          the station's field tunnel at perihelion — an impulsive prograde kick, no capture; the Sun
-          is the bending magnet. Escape terminates
+          the station's field tunnel at perihelion — an impulsive prograde kick, no capture; solar
+          gravity curves the path back for the next pass (the synchrotron's “bending magnet”, by
+          analogy). Escape terminates
           recirculation — the final kick must land ≥ the target perihelion speed or the probe is gone too
           slow. See the "Perihelion synchrotron" section. (215 R<sub>sun</sub> ≈ 1 AU.)</div>
       </div>
@@ -923,15 +924,16 @@
   stations</b> on an orbit of perihelion radius r<sub>p</sub> accelerate a <b>passive</b> probe in flight —
   the probe threads the station's field tunnel as it sweeps through perihelion and leaves with an
   impulsive prograde kick; nothing is captured or docked, the “lasso” is the travelling field's brief
-  grip on the probe's armature; the Sun is the bending magnet that brings the probe back for
-  the next kick. The probe carries no propellant and no power for departure — only the payload and a
+  grip on the probe's armature; and — to continue the synchrotron analogy — the Sun's gravity stands
+  in for the machine's bending magnets, curving the probe's path back to the station for the next
+  kick (gravitationally, of course; the Sun is not being treated as a magnet). The probe carries no propellant and no power for departure — only the payload and a
   small conductive armature the station's fields can grip — so it bypasses the rocket equation entirely,
   and the accelerator is <em>reused</em> for the next probe. Each kick lands where the Oberth leverage is
   greatest (perihelion, max v), like a particle gaining energy each lap through a synchrotron's
   accelerating gap.</p>
   <p>It is <b>not a true synchrotron</b>, and that is the whole difficulty: unlike a particle in a ring,
-  the probe's apoapsis and period <b>grow after every kick</b>, so it is really a recirculating linac
-  whose return path balloons without bound. Two corrections kill the naive equal-kick arithmetic, and
+  the probe's apoapsis and period <b>grow after every kick</b>, so it is really a recirculating
+  “linac” whose return path balloons without bound. Two corrections kill the naive equal-kick arithmetic, and
   both are enforced in the engine (<code>synchrotron_escape</code>) and the calculator option:</p>
   <ul>
     <li><b>Periods sum, and diverge.</b> The wait between kicks is the exact Kepler period of each new

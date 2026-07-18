@@ -286,9 +286,11 @@ def main() -> None:
     # ---------------------------------------------------------------
     header("7d. PERIHELION SYNCHROTRON -- the 'lasso idea' (external EM station)")
     from fermi_sim.departure import synchrotron_escape
-    print("A fixed, externally powered EM station at perihelion 'lassoes' a PASSIVE probe once per")
-    print("orbit with an impulsive prograde kick (no onboard propellant/power -- bypasses the rocket")
-    print("equation; the accelerator is reused). NOT a true synchrotron: the period grows after every")
+    print("One or more fixed, externally powered EM stations at perihelion accelerate a PASSIVE probe")
+    print("in flight -- an impulsive prograde kick as it transits the station's field aperture, no")
+    print("capture; continuing the synchrotron analogy, the Sun's gravity stands in for the bending")
+    print("magnets, curving the path back for the next pass. No onboard propellant/power --")
+    print("bypasses the rocket equation; the accelerator is reused. NOT a true synchrotron: the period grows after every")
     print("kick, and ESCAPE TERMINATES RECIRCULATION -- the escaping kick must land >= v_p,target or")
     print("the probe is gone too slow. Fixed equal kicks, circular start at the station:\n")
     for rp, dv in ((10.0, 5e3), (20.0, 5e3), (10.0, 2e3), (215.03, 5e3)):

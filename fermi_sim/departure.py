@@ -291,9 +291,11 @@ def synchrotron_escape(
     """PERIHELION SYNCHROTRON — an externally powered recirculating accelerator. A fixed
     station at perihelion radius ``rp_rsun`` (solar radii) applies one impulsive prograde
     kick of ``dv_pass`` (m/s) per pass; between kicks the probe flies an EXACT Kepler
-    ellipse (the probe itself is passive — no onboard propellant or power; the Sun is the
-    "bending magnet"). It is not a true synchrotron: the apoapsis and period GROW after
-    every kick, so it is a recirculating linac whose return path balloons.
+    ellipse (the probe itself is passive — no onboard propellant or power; continuing the
+    synchrotron analogy, the Sun's gravity stands in for the bending magnets that curve the
+    path back to the accelerating station). It is not a true synchrotron even by analogy:
+    the apoapsis and period GROW after every kick, so it is a recirculating "linac" whose
+    return path balloons.
 
     Two corrections that kill the naive equal-kick arithmetic (both enforced here):
       1. Orbit periods are NOT constant — t = Σ Pᵢ over each bound orbit; as v_p → v_esc
