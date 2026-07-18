@@ -602,6 +602,7 @@
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Baseline.</b> Simplest, meets the 2029 schedule, no alignment needed.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
+    <tr><td><b>SEP + perihelion pumping</b> (PSI‑TR‑2026‑0714)</td><td class="v">~31 km/s total (7.6 escape + ~24 helio)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~13–25 W/kg)</b> — no reactor, no assist, no far-term array; verified externally and reproduced in our engine. See the perihelion-pumping section.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
   hardware or a timing constraint. Direct SEP carries the most Δv but is the only option with no alignment
@@ -827,7 +828,58 @@
   star's required cruise. Landmarks: below <b>~40 W/kg</b> a solar vehicle never escapes the Sun at all;
   ~4 km/s cruises need ~41; λ Ser's 19.2 needs ~68; AC-class ~24 km/s needs ~100–115; above ~27 km/s no α
   suffices (the fade always wins). A nuclear-electric vehicle (constant power, no fade) escapes this
-  ceiling and closes AC-class missions from ~23 W/kg — at the programmatic price of flying a reactor.</p>
+  ceiling and closes AC-class missions from ~23 W/kg — at the programmatic price of flying a reactor.
+  <b>Important qualifier (2026-07):</b> these thresholds are for the <em>outward-spiral</em> trajectory
+  class; <b>perihelion pumping</b> (next section) defeats the ceiling within pure solar at today's
+  α ≈ 13–25 W/kg.</p>
+
+  <h4>Perihelion pumping — external cross-assessment (PSI) and a revised solar verdict</h4>
+  <p>An independent feasibility assessment by <b>Physical Superintelligence PBC</b> (PSI‑TR‑2026‑0714,
+  July 2026, working draft — produced and verified end-to-end by PSI's autonomous physics-research
+  platform) reproduces this page's geometry to &lt;0.5% (optimum 73,012 yr vs our 72,800; tilt 2.48° vs
+  2.4°; impulsive floor 13.85 vs 13.88 km/s; all five of our arrival-time intuitions confirmed) — and then
+  <b>overturns one of our conclusions in the right direction</b>. Our power gate found that an <em>outward</em>
+  low-thrust spiral saturates below the cruise floor at every flyable thrust level (PSI confirms: v∞ ≈ 0,
+  3.4, 17.0 km/s at a₀ = 1.5, 5, 10×10⁻⁴ m/s²; our engine independently reproduces 0, 3.1, 16.7). We
+  concluded pure solar needs α ≳ 100 W/kg. <b>PSI shows the saturation is a property of the trajectory
+  class, not of solar power</b>: <em>perihelion pumping</em> — retrograde thrust arcs near apoapsis that
+  drop perihelion to 0.42 AU (the thermal cap), then prograde arcs concentrated at perihelion where array
+  power is up to 4× its 1-AU rating and Oberth leverage is maximal — staircases the orbit energy up over a
+  few revolutions and <b>reaches the full 23.64 km/s cruise at a₀ = 2.5×10⁻⁴ m/s², i.e. today's hardware
+  (vehicle α ≈ 13–25 W/kg)</b>: their optimised schedule does it in 12.0 yr at Δv 23.97 km/s (98% of the
+  mission still ballistic coast).</p>
+  <p><b>We re-implemented the manoeuvre in our own engine</b> (<code>perihelion_pumped_vinf</code> — an
+  independent, deliberately cruder bang-bang policy: one-way pump-down latch, escape-guarded staircase,
+  continuous finisher; same power law P(r)=P₁·min((1 AU/r)², 4)) and confirm the mechanism end-to-end:</p>
+  <table class="chain">
+    <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral (ours / PSI)</th><th class="v">Pumped (ours)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
+    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 / 0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">fails below ~2.25×10⁻⁴</td><td>threshold reproduced</td></tr>
+    <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">~1 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>cruise floor reached — power wall defeated</b></td></tr>
+    <tr><td>5×10⁻⁴</td><td class="v">3.1 / 3.4 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>confirms</td></tr>
+  </table>
+  <p><b>What changes on this page.</b> (1) The <b>α ≳ 100 W/kg pure-solar threshold applies to the
+  outward-spiral class only</b> — with pumping, pure solar closes at today's α (the "Min solar α" columns
+  below are outward-spiral requirements; pumping relaxes them to roughly the a₀ ≈ 2.25×10⁻⁴ line). (2) Our
+  single-pass rejection of the electric perihelion burn was correct for a single pass but not for the
+  multi-revolution form. (3) PSI's verified SEP total from LEO is <b>30.5–31.6 km/s</b> (7.6 Earth escape +
+  22.9–24.0 heliocentric, certified lower bound 16.56 at unconstrained flight time) — our closed-form
+  low-thrust budget (~25–26 km/s for AC-class) <b>underprices the heliocentric leg by ~5 km/s</b>, and
+  conversely overprices low-cruise targets; candidate <em>orderings</em> are unaffected (PSI independently
+  confirms LSPM J2146+3813 as the best target — floor 9.30 km/s, cruise 7.74, arrival 78,017 yr, <em>no
+  pumping needed</em> — λ Ser as the best solar-type second, α² Lib excluded, and a full Bailer-Jones
+  catalogue sweep finding nothing better; their published-catalogue check of LSPM's encounter, 0.568 pc at
+  +82.5 kyr, matches our computed 1.86 ly at +83 kyr). (4) Vehicle/programme deltas worth adopting: a
+  <b>GTO drop-off</b> cuts the Earth-escape leg 7.6 → ~4.2 km/s and closes a ~100 kg vehicle (LEO needs
+  ~113–146 kg); required Isp ≥ 2800 s at ~0.55 efficiency sits on demonstrated gridded-ion hardware
+  (NSTAR-class), not Hall; and their cost model puts the programme at ~$16M vs the $10M target, with the
+  overrun entirely in bus + operations — programmatic, not physical.</p>
+  <p class="src">Caveats, theirs and ours: the 4× perihelion power cap is optimistic (MESSENGER-class
+  practice off-points arrays rather than harvesting; halving the cap costs ~1.9 km/s and survives); the
+  0.42 AU repeated-pass thermal environment is a MESSENGER-class qualification item; pumping fails below
+  a₀ ≈ 2.25×10⁻⁴ m/s², so 10–20% array degradation erases a 100 kg LEO vehicle's margin (the GTO start
+  retires this); and our re-implementation validates the <em>mechanism and thresholds</em>, not their
+  optimised schedule. Full report: PSI‑TR‑2026‑0714. Re-deriving our closed-form low-thrust budget against
+  their two-leg accounting is filed as follow-up work.</p>
 
   <h4>Beyond Alpha Centauri — nearby-star encounters over the next million years</h4>
   <p>Alpha Centauri is the target <em>because</em> of the 100,000-year requirement — it is the nearest system
@@ -903,9 +955,10 @@
   LEO-departure model at that cruise — one number that combines "low cruise" and "good alignment"
   (misalignment inflates the cruise above the star's own minimum). <b>Propellant</b> is the
   rocket-equation fraction for that budget at Isp 3000 s. <b>Min solar α</b> is the smallest whole-vehicle
-  specific power at which the engine's 1/r² power gate reaches that cruise (page-default sizing: 2 kW,
-  Isp 3000, tank 2.5%, struct 10%; the solar-escape threshold itself is ~40 W/kg, AC-class cruises need
-  ~100, and "—" means pure solar never reaches it at any α). <b>Luminosity</b> is bolometric, in watts and as % of the Sun,
+  specific power at which the engine's 1/r² power gate reaches that cruise via an <em>outward spiral</em>
+  (page-default sizing: 2 kW, Isp 3000, tank 2.5%, struct 10%; the solar-escape threshold itself is
+  ~40 W/kg, AC-class cruises need ~100, and "—" means the outward spiral never reaches it at any α —
+  perihelion pumping relaxes all of these to today's α; see that section). <b>Luminosity</b> is bolometric, in watts and as % of the Sun,
   derived from V + distance + a spectral-type bolometric correction (Sun = 3.828e26 W = 100%; late-M values are
   order-of-magnitude; SIMBAD's combined V for unresolved binaries gives the pair's total — the relevant
   number for energy capture). <b>⚠</b> marks stars whose kinematics the deep data audit could not
@@ -1049,6 +1102,12 @@
 
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
+    <li><b>PSI‑TR‑2026‑0714</b> — <em>Interstellar Precursor Mission to Alpha Centauri: Technical
+      Feasibility Assessment</em>, Physical Superintelligence PBC, July 2026 (working draft; produced and
+      verified end-to-end by PSI's autonomous physics-research platform). Independent external
+      cross-assessment of this analysis: source of the perihelion-pumping closure, the 30.5–31.6 km/s
+      verified SEP total, the GTO drop-off recommendation, the ~$16M cost estimate, and independent
+      confirmation of the intercept geometry and target rankings.</li>
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
       — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s, space velocity ~32 km/s
       (ESA Hipparcos / SIMBAD values). Closest approach ~28,000 yr at ~3.1 ly is the standard derived

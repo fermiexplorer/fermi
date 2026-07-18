@@ -152,6 +152,125 @@ def gnc_steering_factor(sigma_deg: float) -> float:
     return 1.0 / math.cos(math.radians(max(0.0, min(89.0, sigma_deg))))
 
 
+def perihelion_pumped_vinf(
+    a0: float, v_inf_target: float, isp_s: float = 2800.0,
+    rp_min_au: float = 0.42, power_cap: float = 4.0, max_yr: float = 60.0,
+):
+    """Multi-revolution PERIHELION-PUMPING escape from a 1 AU circular heliocentric orbit
+    (cross-assessment of PSI-TR-2026-0714 §4). The conventional outward spiral saturates
+    below the cruise floor because solar power fades 1/r²; pumping inverts the logic:
+    retrograde thrust arcs near apoapsis shed angular momentum until perihelion reaches
+    ``rp_min_au`` (where the thermal cap engages), then prograde arcs concentrate at
+    perihelion where power is `power_cap`× the 1-AU rating and the Oberth effect is
+    strongest. Successive revolutions staircase the orbit energy up to the target.
+
+    Power model (PSI eq. 6):  P(r) = P1 · min((1 AU/r)², power_cap); thrust ∝ P at fixed
+    Isp, so accel = a0 · min((1/r)², cap) · (m0/m).  ``a0`` is the initial thrust
+    acceleration at 1 AU and full mass (m/s²) — the single sizing parameter.
+
+    Simple bang-bang policy (NOT PSI's optimised schedule — a deliberately independent,
+    cruder reconstruction): while perihelion > rp_min, thrust retrograde when r is in the
+    outer third of the osculating orbit; afterwards thrust prograde when r < 1.3·rp.
+    Returns (v_inf_achieved m/s, dv m/s, years, revs). Succeeds if the specific energy
+    reaches v_inf_target²/2 within ``max_yr``.
+    """
+    mu, AU = c.MU_SUN, c.AU
+    ve = isp_s * c.G0
+    target_E = 0.5 * v_inf_target ** 2
+    x, y = AU, 0.0
+    vx, vy = 0.0, math.sqrt(mu / AU)
+    m = 1.0                                     # mass fraction; F0/m0 = a0
+    t = 0.0
+    dv = 0.0
+    ang_prev = 0.0
+    revs = 0.0
+    max_t = max_yr * c.YEAR
+    pumped_down = False                          # one-way latch: once periapsis reaches
+                                                 # rp_min, stay in the energy-staircase
+                                                 # phase (else the policy dithers)
+
+    def accel_mag(r):
+        return a0 * min((AU / r) ** 2, power_cap) / m
+
+    while t < max_t:
+        r = math.hypot(x, y)
+        v2 = vx * vx + vy * vy
+        E = 0.5 * v2 - mu / r
+        if E >= target_E:
+            return math.sqrt(2.0 * E), dv, t / c.YEAR, revs
+        # osculating elements
+        h = x * vy - y * vx
+        ecc = math.sqrt(max(0.0, 1.0 + 2.0 * E * h * h / (mu * mu)))
+        p_sl = h * h / mu
+        rp = p_sl / (1.0 + ecc)
+        ra = p_sl / (1.0 - ecc) if ecc < 1.0 else 1e30
+        # true anomaly from the orbit geometry (sign from the radial velocity)
+        rdot_sign = 1.0 if (x * vx + y * vy) >= 0.0 else -1.0
+        if ecc > 1e-6:
+            cnu = max(-1.0, min(1.0, (p_sl / r - 1.0) / ecc))
+            nu = rdot_sign * math.acos(cnu)                # (-pi, pi], 0 = periapsis
+        else:
+            nu = 0.0
+        if rp <= rp_min_au * AU:
+            pumped_down = True
+        if not pumped_down:
+            if ecc < 0.05:
+                # bootstrap from near-circular: fire retrograde on one inertial side only,
+                # which builds eccentricity instead of spiralling down symmetrically
+                thrust_dir = -1.0 if x > 0.0 else 0.0
+            else:
+                # retrograde only near APOAPSIS (|nu - pi| < 60 deg): lowers periapsis,
+                # keeps apoapsis — the pump-down arc
+                thrust_dir = -1.0 if abs(abs(nu) - math.pi) < math.radians(60.0) else 0.0
+        elif E < -3.0e7:
+            # energy staircase with an ESCAPE GUARD: prograde only near periapsis
+            # (|nu| < 70 deg), and only while E stays comfortably bound (< -30 km²/s²) —
+            # tipping past E=0 mid-staircase strands the probe below the target
+            thrust_dir = +1.0 if abs(nu) < math.radians(70.0) else 0.0
+        else:
+            # FINISHER: near-parabolic — one full-power pass through periapsis (plus the
+            # fading outward tail) delivers the remaining excess; burn continuously
+            thrust_dir = +1.0
+        vmag = math.sqrt(v2) or 1.0
+        amag = accel_mag(r) if thrust_dir else 0.0
+        axc, ayc = thrust_dir * amag * vx / vmag, thrust_dir * amag * vy / vmag
+        period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * AU) ** 3 / mu)
+        dt = min(max(600.0, 0.002 * period), 5.0 * 86400.0)
+
+        def deriv(s):
+            X, Y, VX, VY = s
+            rr = math.hypot(X, Y)
+            vv = math.hypot(VX, VY) or 1.0
+            am = (accel_mag(rr) * thrust_dir) if thrust_dir else 0.0
+            g = -mu / rr ** 3
+            return (VX, VY, g * X + am * VX / vv, g * Y + am * VY / vv)
+
+        s = (x, y, vx, vy)
+        k1 = deriv(s)
+        k2 = deriv(tuple(s[i] + 0.5 * dt * k1[i] for i in range(4)))
+        k3 = deriv(tuple(s[i] + 0.5 * dt * k2[i] for i in range(4)))
+        k4 = deriv(tuple(s[i] + dt * k3[i] for i in range(4)))
+        x += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
+        y += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
+        vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
+        vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
+        if thrust_dir:
+            dv += amag * dt
+            m = max(0.05, m - (a0 * min((AU / r) ** 2, power_cap) / ve) * dt)
+        ang = math.atan2(y, x)
+        d_ang = ang - ang_prev
+        if d_ang > math.pi:
+            d_ang -= 2 * math.pi
+        elif d_ang < -math.pi:
+            d_ang += 2 * math.pi
+        revs += abs(d_ang) / (2 * math.pi)
+        ang_prev = ang
+        t += dt
+    r = math.hypot(x, y)
+    E = 0.5 * (vx * vx + vy * vy) - mu / r
+    return (math.sqrt(2.0 * E) if E > 0 else 0.0), dv, t / c.YEAR, revs
+
+
 def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,
                         eff: float = 0.5, r0_au: float = 1.0, fade_exp: float = 2.0) -> float:
     """Maximum heliocentric excess speed v∞ (m/s) a solar-electric probe can actually reach from a
