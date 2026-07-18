@@ -254,10 +254,11 @@ def main() -> None:
     )
 
     # ---------------------------------------------------------------
-    header("7c. PERIHELION PUMPING (multi-revolution escape)")
+    header("7c. PERIHELION PUMPING (multi-revolution escape; PSI-TR-2026-0714 cross-assessment)")
     from fermi_sim.departure import perihelion_pumped_vinf
     print("The outward-spiral saturation (sec 7) is a property of the TRAJECTORY CLASS, not of solar")
-    print("power. Perihelion pumping inverts the spiral: retrograde arcs near apoapsis drop")
+    print("power (PSI-TR-2026-0714, archived in audit/psi/). Perihelion pumping inverts the spiral:")
+    print("retrograde arcs near apoapsis drop")
     print("perihelion to 0.42 AU (the thermal cap), then prograde arcs at perihelion (power 4x the")
     print("1-AU rating + max Oberth leverage) staircase the energy up over a few revolutions.")
     print("Integrated with a bang-bang policy (escape-guarded staircase + continuous finisher),")
@@ -312,10 +313,17 @@ def main() -> None:
     # ---------------------------------------------------------------
     header("8. VERDICT (conservative)")
     print(
-        "* The mission CLOSES, but the conservative power gate settles it, and it reduces to ONE\n"
-        "  number: the whole-vehicle specific power alpha = power/dry_mass. At today's specific\n"
-        "  masses (alpha ~20-30 W/kg) pure solar-electric does NOT reach the 23.4 km/s floor.\n"
+        "* The mission CLOSES. PURE SOLAR-ELECTRIC CLOSES AT TODAY'S HARDWARE via perihelion\n"
+        "  pumping (sec 7c; PSI-TR-2026-0714): a0 = 2.5e-4 m/s^2 (~vehicle alpha 15-21 W/kg)\n"
+        "  reaches the full cruise -- the OUTWARD-SPIRAL power gate below applies to that\n"
+        "  trajectory class only.\n"
+        "* For the outward-spiral class the conservative power gate settles it, and it reduces to\n"
+        "  ONE number: the whole-vehicle specific power alpha = power/dry_mass. At today's specific\n"
+        "  masses (alpha ~20-30 W/kg) an outward-spiral pure solar-electric does NOT reach the\n"
+        "  ~23.4 km/s cruise.\n"
         "* Closing architectures:\n"
+        "    - SEP + PERIHELION PUMPING (the adopted default): closes pure solar at today's alpha;\n"
+        "      two-leg budget ~31-34 km/s from LEO (7.6 escape + ~23-24 helio + ~2 policy tax).\n"
         "    - NUCLEAR-ELECTRIC ion (constant power): closes at LOW alpha (~23 W/kg) with near-term\n"
         "      specific masses but an optimistic ~40 W/kg reactor; ~5 kW + gridded ion -> ~24.8 km/s.\n"
         "    - HIGH-ALPHA SOLAR-ELECTRIC: pure solar DOES close above alpha ~ 100 W/kg -- an ultralight\n"

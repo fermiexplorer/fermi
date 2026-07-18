@@ -509,7 +509,7 @@
     <tr><th>Arrival (aim point)</th><th class="v">Out-of-plane tilt</th><th class="v">Impulsive Δv floor (400 km LEO)</th><th class="v">Cruise v∞</th><th>What it is</th></tr>
     <tr><td>58,000 yr</td><td class="v">−10.1°</td><td class="v">14.65 km/s</td><td class="v">23.27 km/s</td><td>minimum cruise <em>speed</em> (tangential) — but most out-of-plane, so not cheapest</td></tr>
     <tr><td><b>72,800 yr</b></td><td class="v"><b>−2.4°</b></td><td class="v tot"><b>13.88 km/s</b></td><td class="v">23.71 km/s</td><td><b>minimum Δv → minimum propellant → smallest spacecraft</b></td></tr>
-    <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.93 km/s</td><td class="v">24.02 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
+    <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.95 km/s</td><td class="v">24.02 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
     <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
   </table>
   <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s <em>with the direct architecture selected</em> (the pumped default prices its own two-leg budget, ≈ 34 km/s). The ion engine has no impulsive kick, so it cannot capture the Oberth floor. This §1–§2 optimum discussion is the <em>direct</em> (Earth-borrow) story; under the pumped default, tilt is pure cost and the fuel optimum moves to the ecliptic crossing (~79.3k yr), as the calculator's own Fuel-optimum readout shows. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
@@ -597,7 +597,7 @@
   <table class="chain">
     <tr><th>Phase</th><th>Event</th><th class="v">Duration</th></tr>
     <tr><td>0 · Launch</td><td>Rideshare to a ~400 km LEO (before end-2029); deploy, commission ion system</td><td class="v">—</td></tr>
-    <tr><td>1 · Earth-escape spiral</td><td>Continuous (always-on, tangential) ion thrust, spiralling out of Earth to C3 ≈ 0 (geocentric escape). This is where the low-thrust "spiral tax" is paid. (Perigee-biasing would cut the Δv but is time-divergent at this thrust — see below.)</td><td class="v">~0.5 yr</td></tr>
+    <tr><td>1 · Earth-escape spiral</td><td>Continuous (always-on, tangential) ion thrust, spiralling out of Earth to C3 ≈ 0 (geocentric escape). This is where the low-thrust "spiral tax" is paid. (Perigee-biasing would cut the Δv but is time-divergent at this thrust — see below.)</td><td class="v">~0.75 yr</td></tr>
     <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1.9 yr total burn</td></tr>
     <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~344 kg xenon spent</td><td class="v">—</td></tr>
     <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
@@ -645,8 +645,9 @@
   <p>Xenon propellant: <code>m_p = m_dry·(e^(Δv/v_e) − 1)</code>, <code>v_e = Isp·g₀</code>. Electrical energy
   to expel it: <code>E ≈ ½·m_p·v_e²/η</code> — note this <em>grows with Isp</em>. Thruster force from input
   power: <code>F = 2ηP/v_e</code>; burn duration <code>= m_p·v_e/F</code>. For the derived ~25 km/s a vehicle is
-  ~45–60% xenon at Isp 3000–4000 s (≈600 kg wet on a ~256 kg derived dry mass at Isp 3000 s — the same
-  ~57% example as the CONOPS timeline above) — still comfortably feasible today.</p>
+  ~45–60% xenon at Isp 3000–4000 s (≈600 kg wet on the ~256 kg dry+payload of the conservative
+  reference configuration at Isp 3000 s — the same ~57% example as the CONOPS timeline above) — still
+  comfortably feasible today.</p>
   <p><strong>Subsystem sizing.</strong> The solar array AREA <code>= P / (S₀·η_cell / r²)</code> with
   <code>S₀</code> = 1361 W/m² (set by efficiency); its MASS <code>= P / (W/kg)</code>, set directly by the
   array-specific-power slider. The page default is ultra-thin <em>GaAs</em> (~30% cells, ~1000 W/kg at
@@ -745,6 +746,12 @@
       vs fixed-step integrators — and agree on every headline quantity to ≤0.2%.</li>
     <li><b>NASA GMAT cross-validation.</b> The departure energetics are independently reproduced by NASA's
       flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; <a href="#gmat">see the GMAT section below</a>).</li>
+    <li><b>External assessment (PSI).</b> An independent end-to-end feasibility assessment
+      (<a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a>,
+      archived with our cross-validation in <code>audit/psi/</code>) reproduces the intercept geometry to
+      &lt;0.5%, independently confirms the target rankings, and contributed the perihelion-pumping
+      closure this page adopts — which our engine and adversarial audits in turn reproduce
+      (mechanism, thresholds, and spiral ceilings within their own 2.7% two-integrator band).</li>
   </ul>
 
   <h4 id="gmat">GMAT cross-validation (NASA)</h4>
@@ -878,10 +885,10 @@
   star's required cruise. Landmarks: below <b>~43 W/kg</b> a solar vehicle never escapes the Sun at all
   (bisected escape edge of the engine's gate at the page sizing);
   ~4 km/s cruises need ~46; λ Ser's 19.2 needs ~68; AC-class ~24 km/s needs ~100–140 depending on the
-  aim (the tangential 23.3 needs ~100, the in-plane crossing 23.9 ~112); above ~27 km/s no α
-  suffices <em>at this page's default sizing</em> (the ceiling there is the fixed propellant budget
-  behind these tables — its impulsive limit from 1 AU — not the fade itself; a heavier propellant load
-  pushes it higher, which is how the table's brightest entries carry finite α values at 27 km/s). A nuclear-electric vehicle (constant power, no fade) escapes this
+  aim (the tangential 23.3 needs ~100, the in-plane crossing 24.0 ~112); above ~26.5 km/s no α
+  suffices <em>at this page's default sizing</em> — that ceiling is the fixed ~20 km/s propellant
+  budget behind these tables (its impulsive limit from 1 AU), not the fade itself; a heavier
+  propellant load would push it higher, and cruises beyond it show "—" in the tables. A nuclear-electric vehicle (constant power, no fade) escapes this
   ceiling and closes AC-class missions from ~23 W/kg — at the programmatic price of flying a reactor.
   These thresholds apply to the <em>outward-spiral</em> trajectory class; <b><a href="#pumping">perihelion
   pumping</a></b> (next section) defeats the ceiling within pure solar at today's α ≈ 15–21 W/kg.</p>
@@ -901,11 +908,15 @@
   enough energy (which is why a one-pass electric Oberth fails), but repeated passes through the same
   deep perihelion — each adding a small prograde kick where v is highest and power is quadrupled, in
   the manner of a synchrotron — can.</p>
-  <p>The manoeuvre is integrated in the engine (<code>perihelion_pumped_vinf</code> — a bang-bang policy:
-  one-way pump-down latch, escape-guarded staircase, continuous finisher; power law
-  P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against an independent optimised-schedule integration:</p>
+  <p>The manoeuvre and its closure are due to the independent external assessment
+  <b>PSI‑TR‑2026‑0714</b> (Physical Superintelligence PBC, July 2026 — see References and
+  <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/psi" target="_blank" rel="noopener noreferrer"><code>audit/psi/</code></a>),
+  which also reproduces this page's intercept geometry to &lt;0.5%. It is integrated in the engine
+  (<code>perihelion_pumped_vinf</code> — a bang-bang policy: one-way pump-down latch, escape-guarded
+  staircase, continuous finisher; power law P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against
+  PSI's optimised-schedule integration:</p>
   <table class="chain">
-    <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (independent, optimised)</th><th>Verdict</th></tr>
+    <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
     <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">contiguous closure above ~2.24×10⁻⁴</td><td>edge agrees</td></tr>
     <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">≈0 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>design cruise reached — power wall defeated</b></td></tr>
     <tr><td>5×10⁻⁴</td><td class="v">3.1 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>agrees</td></tr>
@@ -1060,7 +1071,7 @@
     <tr><td><b>λ Serpentis</b></td><td>G0V · 4.4</td><td class="v">39</td><td class="v">7.6</td><td class="v">169</td><td class="v"><b>13.2</b></td><td class="v">−27.8°</td><td class="v">29.1</td><td class="v">63</td><td class="v">~54</td><td class="v">8.4e26 (219%)</td><td><b>the best validated bright candidate</b>: naked-eye Sun-like star, ~2 L☉, corroborated by published Gaia encounter surveys — arrive at its ecliptic crossing (145 kyr, cruise 19.2, tilt 0) and the <b>Δv is 23.0 km/s (54% propellant)</b>, ~2 below AC with a brighter future flyby</td></tr>
     <tr><td>⚠ <b>HD 176051A</b></td><td>F9V · 5.3</td><td class="v">49</td><td class="v">—</td><td class="v">288</td><td class="v">16.9</td><td class="v">0° @ crossing</td><td class="v">22.1</td><td class="v">53</td><td class="v">~62</td><td class="v">—</td><td>would be the cheapest naked-eye Δv (22.1 @ 288 kyr) — but its component RV is <b>single-source</b>: flagged unverified by the deep data audit, needs corroboration before promotion</td></tr>
     <tr><td><b>c UMa</b> (corrected)</td><td>G0V · 5.2</td><td class="v">66</td><td class="v">~13</td><td class="v">~1,240</td><td class="v">3.1</td><td class="v">−46.3°</td><td class="v">37.0</td><td class="v">72</td><td class="v">~45</td><td class="v">1.2e27 (313%)</td><td>with the validated RV (−15.4, Gaia; a 2023 catalogue error said −38.6) its approach is later and farther than first computed — and it remains the tilt-trap example: cheap cruise, ruinous 46° aim</td></tr>
-    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~60</td><td class="v">5.0e27 (1,296%)</td><td>no ecliptic crossing inside 20 ly — at this 138-kyr optimum the +20° tilt is priced in (≈ AC's budget); a tilt-free crossing arrival exists just outside, at ~22 ly / 330 kyr, dropping the Δv to 23.2 (see the passes table). At ~13 L☉ the biggest energy prize of the cheap set</td></tr>
+    <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~60</td><td class="v">5.0e27 (1,296%)</td><td>no ecliptic crossing inside 20 ly — at its min-Δv aim the +20° tilt is priced in (≈ AC's budget); a tilt-free crossing arrival exists just outside, at ~22 ly / 330 kyr, dropping the Δv to 23.2 (see the passes table). At ~13 L☉ the biggest energy prize of the cheap set</td></tr>
   </table>
   <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
   toward the encounter point and coast; the star does the closing. But cruise is only half the budget: the
@@ -1078,7 +1089,7 @@
   below which no vehicle escapes the Sun at all. That is near-term hardware
   (ROSA-class array + today's thruster), not the far-term thin-film array AC demands. Red-dwarf
   record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr — closer than AC ever
-  gets) and Gliese 445 (~3.4 ly @ 46 kyr) — but both are M dwarfs.</p>
+  gets) and Gliese 445 (~3.4 ly @ 44 kyr) — but both are M dwarfs.</p>
   <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
   50 ly of the Sun in the next 1 Myr</b> — so in-plane departure geometry (borrowing Earth's 29.8 km/s with
   no plane change) is never in short supply, whatever the target era. The complete list of crossings
@@ -1122,7 +1133,7 @@
   (25.2 @ 80 kyr, in-plane arrival) holds up remarkably well after the data cleanup. The shortlist admits
   only stars whose kinematics are corroborated (≥2 published RVs, low scatter); ⚠ rows in the tables are
   single-source or high-scatter and stay out of the ranking — that gate demoted HD 176051A (22.1 @ 288 kyr
-  on one RV) and the UCAC4 0.8-ly crossing claim. Kinematically ideal but faint: LSPM J2146+3813 (M5V,
+  on one RV) and the UCAC4 0.9-ly crossing claim. Kinematically ideal but faint: LSPM J2146+3813 (M5V,
   crossing 78 kyr, Δ −5 kyr, passes 1.86 ly, RV confirmed by 4 measurements) — a perfect candidate in
   speed and direction, sadly not bright in the night sky.</p>
 
@@ -1264,6 +1275,14 @@
 
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
+    <li><b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a></b>
+      — <em>Interstellar Precursor Mission to Alpha Centauri: Technical Feasibility Assessment</em>,
+      Physical Superintelligence PBC, July 2026 (working draft; produced and verified end-to-end by
+      PSI's autonomous physics-research platform; archived in this repo under <code>audit/psi/</code>
+      with our cross-validation notes). Source of the perihelion-pumping closure, the validated design
+      profile (a₀ = 2.5×10⁻⁴ m/s², Isp ≥ 2800 s), the 30.5–31.6 km/s verified direct-SEP total and
+      16.56 km/s certified heliocentric lower bound, the GTO drop-off recommendation, and independent
+      confirmation of the intercept geometry and target rankings.</li>
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
       — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s, space velocity ~32 km/s
       (ESA Hipparcos / SIMBAD values). Closest approach ~28,000 yr at ~3.1 ly is the standard derived

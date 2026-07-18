@@ -16,12 +16,15 @@ with ion propulsion.
 
 It answers:
 
-- Is the concept (≈500 kg, ~20 km/s from LEO, solar-electric ion, direct from LEO)
-  feasible? **Yes.**
+- Is the mission feasible with pure solar-electric ion propulsion? **Yes — via
+  perihelion pumping at today's hardware** (PSI‑TR‑2026‑0714, archived in
+  `audit/psi/`; the naive outward spiral does *not* close at today's α — the
+  original ≈500 kg / ~20 km/s direct concept survives only as the outward-spiral
+  reference case, power-gated at α ≳ 100 W/kg).
 - What is the **minimum spacecraft Δv from LEO** with no gravity assist, and the
   mission profile that achieves it?
 - **Solar vs fuel-cell vs hybrid** power — which wins, and why?
-- **Direct vs gravity-assist** (Jupiter flyby, solar Oberth) trajectories.
+- **Direct vs pumped vs synchrotron vs gravity-assist** trajectories.
 
 ## Headline results
 
@@ -29,10 +32,11 @@ It answers:
 |---|---|
 | Required heliocentric cruise speed v∞ | ~23–24 km/s |
 | Min departure Δv from LEO (impulsive floor) | ~14 km/s @ ~73,000 yr arrival |
-| Realistic low-thrust (SEP) departure Δv | ~20 km/s |
-| Best direct-departure window | ~70,000-80,000 yr (exact floor near 72,800 yr) |
-| Departure aim | ~2.4° off the ecliptic at exact floor; ~1.5° at the 75k benchmark |
-| Baseline vehicle | ~500 kg wet, ~40–50% xenon, ~55 kg silicon array @5 kW |
+| Direct SEP departure Δv (conservative model) | ~25 km/s spiral + 5 km/s offset ≈ ~30 km/s |
+| **Pumped SEP departure Δv (default architecture)** | ~31–34 km/s two-leg total; closes at today's α (~15–21 W/kg) |
+| Best departure window | direct optimum ~72,800 yr; pumped optimum at the ~79,250 yr ecliptic crossing |
+| Departure aim | ~2.4° off the ecliptic (direct optimum); 0° at the crossing |
+| Reference vehicles | pumped default ~54 kg wet @2 kW GaAs; conservative direct ~600 kg wet @5 kW silicon |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn
@@ -74,10 +78,10 @@ python3 -m venv .venv
 # independent audits (90 checks: astropy ephemeris, conservation laws, optima)
 .venv/bin/python audit/calcs/run_audits.py
 
-# web<->python parity (Node, 20 checks)
+# web<->python parity (Node, 35 checks)
 node audit/calcs/audit_webjs.mjs
 
-# UI behaviour: every slider drives the right outputs, in the right direction (71 checks)
+# UI behaviour: every slider drives the right outputs, in the right direction (80 checks)
 .venv/bin/python audit/calcs/ui_sliders.py
 
 # NASA GMAT cross-validation of the departure model (downloads GMAT; Linux/WSL)
@@ -103,7 +107,7 @@ The physics is checked **independently** (different method, not self-comparison)
   departure C3 to 2×10⁻⁶ % and the low-thrust Earth-escape spiral time to 0.007 %
   (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
-All 55 Python checks + 20 JS-parity checks pass (plus a Playwright UI render test, the
+All 90 Python checks + 35 JS-parity checks pass (plus a Playwright UI render test, the
 NASA GMAT cross-validation, and independent Codex, Grok, Gemini & Fable re-implementations
 under `audit/`, which agree to ≤0.2% on every headline number). See
 `audit/AUDIT_PROMPTS.md` for adversarial review prompts.

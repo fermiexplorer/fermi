@@ -60,15 +60,21 @@ question is entirely about how you build the 24 km/s.*
 > 23.8 km/s × 75,000 yr ≈ 6.0 ly — exactly AC's distance then.
 
 > **Update (July 2026).** The outward-spiral power wall below is a property of the
-> *trajectory class*, not of solar power: **multi-revolution perihelion pumping** (drop
-> perihelion to 0.42 AU, burn at perihelion where power is up to 4× the 1-AU rating)
-> reaches the full cruise speed at today's vehicle α (~15–21 W/kg), no reactor or assist
-> required. The mechanism and its a₀ ≈ 2.25×10⁻⁴ m/s² failure threshold are integrated in
-> the engine (`perihelion_pumped_vinf`) and cross-checked externally. The α ≳ 100 W/kg
-> condition below therefore applies to the outward-spiral class only. The full SEP total
-> from LEO is ~30–32 km/s (7.6 km/s Earth escape + ~23–24 heliocentric); a GTO drop-off
-> cuts the Earth leg to ~4.2 km/s and closes a ~100 kg vehicle. See the live page's
-> "Perihelion pumping" section.
+> *trajectory class*, not of solar power (external assessment **PSI‑TR‑2026‑0714**,
+> Physical Superintelligence PBC — archived with our cross-validation in `audit/psi/`):
+> **multi-revolution perihelion pumping** (drop perihelion to 0.42 AU, burn at perihelion
+> where power is up to 4× the 1-AU rating) reaches the full cruise speed at today's
+> vehicle α (~15–21 W/kg), no reactor or assist required. The mechanism is integrated in
+> the engine (`perihelion_pumped_vinf`) at the validated design profile
+> (a₀ = 2.5×10⁻⁴ m/s², Isp 2800 s); the contiguous working region starts at
+> a₀ ≈ 2.24×10⁻⁴ — success below is phasing-dependent and NON-monotonic, so gate designs
+> by integration, not by a threshold. The α ≳ 100 W/kg condition below therefore applies
+> to the outward-spiral class only, and the recommended architecture is now
+> **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
+> The full SEP total from LEO is ~31–34 km/s (7.6 km/s Earth escape + ~23–24 heliocentric
+> + ~2 km/s bang-bang policy tax; PSI's optimised schedule totals 30.5–31.6); a GTO
+> drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. See the live
+> page's "Perihelion pumping" section.
 
 ## 2. The conservative power gate — pure solar closes only as a light (high-α) vehicle
 
@@ -122,10 +128,11 @@ must improve:
 ROSA's 150 W/kg, ≈2× lighter thruster than Hall's 6 kg/kW) — both on a continuous commercial roadmap
 (thin-film arrays, advanced gridded thrusters), and **no reactor, no gravity assist**. Nuclear-electric
 needs **one ~7× stretch** (40 W/kg reactor vs Kilopower's ~6) *plus* the programmatic weight of flying a
-fission reactor — a step-change, not a roadmap. On technology maturity the **high-α solar path is the
-more conservative route to "feasible," which is why it is the default**; nuclear-electric remains the
-no-far-term-array fallback. (This is the optimistic mirror: solar at high α ~150 W/kg, nuclear at low
-α ~23 W/kg.) Today's silicon + Hall (α ~20–30) still does **not** close — α ≈ 100 W/kg is the bar.
+fission reactor — a step-change, not a roadmap. (This trade is now largely superseded by the
+July-2026 update above: **SEP + perihelion pumping closes at today's α with NO stretches**, and is
+the recommended architecture and the calculator's default; the high-α-solar and nuclear-electric
+routes below remain the outward-spiral-class alternatives.) Today's silicon + Hall (α ~20–30) does
+**not** close an outward spiral — α ≈ 100 W/kg is that class's bar.
 
 ## 3. The pure-electric closure — nuclear-electric ion
 
@@ -218,17 +225,22 @@ opportunistic Δv-saver, not a baseline.
 
 ## Bottom line for the tender
 
-The geometry closes easily; the **power physics** is the real constraint, and it reduces to
-one number — the whole-vehicle specific power **α = power ÷ dry mass**. At conservative,
-today's specific masses (α ~20–30 W/kg) **pure solar-electric does not close** (the 1/r² fade
-saturates the cruise speed below the 23.4 km/s floor). Three architectures do close:
+The geometry closes easily; the **power physics** is the real constraint. For the
+*outward-spiral* class it reduces to one number — the whole-vehicle specific power
+**α = power ÷ dry mass** — and at conservative, today's specific masses (α ~20–30 W/kg) an
+outward-spiral **pure solar-electric does not close** (the 1/r² fade saturates the cruise
+speed below the ~23.4 km/s cruise). Four architectures do close:
 
-1. **Nuclear-electric ion** — constant power (no fade); closes at low α (~23 W/kg) with
-   near-term specific masses but an optimistic ~40 W/kg reactor. The recommended baseline.
-2. **High-α solar-electric** — pure solar *does* close above **α ≈ 100 W/kg**: an ultralight
+1. **SEP + perihelion pumping** (PSI‑TR‑2026‑0714; see the July-2026 update) — **pure solar
+   at today's α (~15–21 W/kg)**: retrograde arcs pump perihelion to 0.42 AU, prograde
+   perihelion burns staircase the energy over a few revolutions. No reactor, no assist, no
+   far-term array. **The recommended architecture and the calculator's default.**
+2. **Nuclear-electric ion** — constant power (no fade); closes at low α (~23 W/kg) with
+   near-term specific masses but an optimistic ~40 W/kg reactor. The constant-power fallback.
+3. **High-α solar-electric** — an outward spiral *does* close above **α ≈ 100 W/kg**: an ultralight
    ~40 kg micro-probe (ultra-thin GaAs ~1000 W/kg array + ~4 kg/kW thruster, Isp ~3000 s) burns briefly near
    1 AU and dodges the fade. Needs far-term array + thruster tech, but no reactor and no assist.
-3. **Solar-Oberth** (tiny burn, but heat shield + chemical kick + assist tour) or a **~14 km/s
+4. **Solar-Oberth** (tiny burn, but heat shield + chemical kick + assist tour) or a **~14 km/s
    chemical kick** — the assist/kick routes.
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival

@@ -117,18 +117,23 @@ Independently:
 
 ## 11. Perihelion pumping (multi-revolution SEP escape)
 "`fermi_sim/departure.py::perihelion_pumped_vinf` claims a solar-electric probe at initial thrust
-acceleration a₀ = 2.5×10⁻⁴ m/s² (vehicle α ≈ 13–25 W/kg, today's hardware) reaches the full
-23.64 km/s cruise v∞ by pumping perihelion down to 0.42 AU (retrograde arcs near apoapsis) and then
-burning prograde at perihelion where power P(r) = P₁·min((1 AU/r)², 4) is up to 4× the 1-AU rating —
-defeating the 1/r² outward-spiral saturation that the same engine says caps that vehicle near zero.
+acceleration a₀ = 2.5×10⁻⁴ m/s² (vehicle α ≈ 15–21 W/kg, today's hardware; source assessment
+archived in `audit/psi/`) reaches the full 23.64 km/s cruise v∞ by pumping perihelion down to
+0.42 AU (retrograde arcs near apoapsis) and then burning prograde at perihelion where power
+P(r) = P₁·min((1 AU/r)², 4) is up to 4× the 1-AU rating — defeating the 1/r² outward-spiral
+saturation that the same engine says caps that vehicle near zero.
 Attack it independently: (a) re-integrate the published bang-bang policy with YOUR OWN integrator and
-confirm/refute v∞ 23.66 km/s, Δv 25.6, 9.6 yr, 4.9 revs; (b) verify the failure threshold
-a₀ ≈ 2.25×10⁻⁴ m/s² by bisection and explain WHY it fails (escape-guard/stranding mechanics);
-(c) check the claimed physics is Oberth + power, not integrator artifact: work–energy closure, where
-the energy is bought (r < 0.8 AU?), thermal floor 0.42 AU respected; (d) audit the two-leg budget
-`pumped_departure_dv` = √(μ⊕/a) + v∞ + 2 km/s — is the 2 km/s tax honest across a₀ and targets, and
-is √(μ⊕/a) a fair (conservative?) escape leg vs an integrated spiral; (e) challenge the 4× power cap
-and the α ≈ 13–25 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at Isp 2800 s, η 0.55."
+confirm/refute v∞ 23.66 km/s, Δv 25.6, 9.6 yr, 4.9 revs (2.13 retrograde pump-down revs + 3
+perihelion passes; Δv split 8.3 retro + 17.3 prograde); (b) verify the CONTIGUOUS working-region
+edge a₀ ≈ 2.24×10⁻⁴ m/s² AND the non-monotonic structure below it (success island ~1.75–1.88×10⁻⁴,
+strand bands 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴; Isp-sensitivity too — the policy strands above
+~3425 s at the design a₀, hence the pinned validated profile a₀_eff = min(a₀, PUMP_DESIGN_A0),
+Isp = PUMP_DESIGN_ISP in fermi_sim.constants); (c) check the claimed physics is Oberth + power, not
+integrator artifact: work–energy closure, where the energy is bought (r < 0.8 AU?), thermal floor
+0.42 AU respected; (d) audit the two-leg budget `pumped_departure_dv` = √(μ⊕/a) + v∞ + v∞·|sin β| +
+2 km/s — is the 2 km/s tax honest across a₀ and targets (known to misprice away from the design
+corridor), and is √(μ⊕/a) a fair (conservative) escape leg vs an integrated spiral; (e) challenge
+the 4× power cap and the α ≈ 15–21 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at Isp 2800 s, η 0.55."
 
 ## 12. Perihelion synchrotron — the "lasso idea" (external EM station)
 "`fermi_sim/departure.py::synchrotron_escape` models a passive probe recirculating through an
@@ -138,8 +143,8 @@ recirculation — the kick that clears solar escape must land at ≥ v_p,target 
 probe is gone too slow (verify the stranded cases: 10 R☉/2 km/s → escapes at 17.6 km/s; 1 AU/5 km/s
 → 3 passes, 11.95 yr, escapes at 15.2); (b) periods must sum over the exact ellipses and the last
 bound orbit can dominate (20 R☉/5 km/s → ~20 yr accel phase, ~19 yr of it one orbit) — verify with
-your own Kepler propagation; (c) Δv_final,min = v_p,target − v_esc (~1.4 km/s at 10 R☉ vs ~6.9 at
-1 AU) — confirm the deep-station endgame win and its trade against station thermal (~460× Earth flux
+your own Kepler propagation; (c) Δv_final,min = v_p,target − v_esc (~1.4 km/s at 10 R☉ vs ~6.2 at
+1 AU for the ~23.6 km/s design cruise) — confirm the deep-station endgame win and its trade against station thermal (~460× Earth flux
 at 10 R☉) and the (√2−1)·v_circ ≈ 57 km/s aperture rendezvous; (d) the calculator's 'lasso' option
 charges the probe only a 0.5 km/s trim budget and keeps its array/engine — decide whether that
 bookkeeping is conservative or hides infrastructure cost (insertion onto the station-grazing orbit);
