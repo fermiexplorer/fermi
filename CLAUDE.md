@@ -70,7 +70,7 @@ Node (any recent version) is used only for the web-parity audit.
 
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
-.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (90 checks)
+.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (130 checks)
 node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 .venv/bin/python audit/calcs/ui_playwright.py  # render the page in Chromium + screenshot
 .venv/bin/python run_analysis.py      # print the integrated analysis

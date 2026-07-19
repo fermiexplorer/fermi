@@ -75,7 +75,7 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (90 checks: astropy ephemeris, conservation laws, optima)
+# independent audits (130 checks: astropy ephemeris, conservation laws, optima, star data, doc consistency)
 .venv/bin/python audit/calcs/run_audits.py
 
 # web<->python parity (Node, 35 checks)
@@ -107,7 +107,7 @@ The physics is checked **independently** (different method, not self-comparison)
   departure C3 to 2×10⁻⁶ % and the low-thrust Earth-escape spiral time to 0.007 %
   (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
-All 90 Python checks + 35 JS-parity checks pass (plus a Playwright UI render test, the
+All 130 Python checks + 35 JS-parity checks pass (plus a Playwright UI render test, the
 NASA GMAT cross-validation, and independent Codex, Grok, Gemini & Fable re-implementations
 under `audit/`, which agree to ≤0.2% on every headline number). See
 `audit/AUDIT_PROMPTS.md` for adversarial review prompts.

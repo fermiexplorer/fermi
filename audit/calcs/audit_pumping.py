@@ -127,6 +127,78 @@ def _indep_pump(a0, v_inf_target, dt_scale=1.0, max_yr=60.0, want_traj=False):
     return v_inf, dv, t / c.YEAR, diag
 
 
+def _phase_split(a0, v_inf_target, isp_s=ISP_S):
+    """Independent re-integration returning the phase split (retrograde pump-down revs to
+    the 0.42 AU latch, prograde perihelion-pass count, dv by thrust direction). Written
+    from the policy spec, standalone (does NOT call departure.py)."""
+    mu, AU = c.MU_SUN, c.AU
+    ve = isp_s * c.G0
+    target_E = 0.5 * v_inf_target ** 2
+    x, y, vx, vy = AU, 0.0, 0.0, math.sqrt(mu / AU)
+    m, t, ang_prev, revs = 1.0, 0.0, 0.0, 0.0
+    pumped_down, revs_at_latch, passes, prev_rdot = False, None, 0, None
+    dv_retro = dv_pro = 0.0
+    while t < 60.0 * c.YEAR:
+        r = math.hypot(x, y)
+        E = 0.5 * (vx * vx + vy * vy) - mu / r
+        if E >= target_E:
+            break
+        h = x * vy - y * vx
+        ecc = math.sqrt(max(0.0, 1.0 + 2.0 * E * h * h / (mu * mu)))
+        p_sl = h * h / mu
+        rp = p_sl / (1.0 + ecc)
+        rdot = x * vx + y * vy
+        s = 1.0 if rdot >= 0.0 else -1.0
+        nu = s * math.acos(max(-1.0, min(1.0, (p_sl / r - 1.0) / ecc))) if ecc > 1e-6 else 0.0
+        if rp <= RP_MIN_AU * AU and not pumped_down:
+            pumped_down, revs_at_latch = True, revs
+        if not pumped_down:
+            td = (-1.0 if x > 0.0 else 0.0) if ecc < 0.05 else (-1.0 if abs(abs(nu) - math.pi) < math.radians(60.0) else 0.0)
+        elif E < -3.0e7:
+            td = 1.0 if abs(nu) < math.radians(70.0) else 0.0
+        else:
+            td = 1.0
+        if pumped_down and prev_rdot is not None and prev_rdot < 0 and rdot >= 0:
+            passes += 1
+        prev_rdot = rdot
+        amag = (a0 * min((AU / r) ** 2, POWER_CAP) / m) if td else 0.0
+        period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * AU) ** 3 / mu)
+        dt = min(max(600.0, 0.002 * period), 5.0 * 86400.0)
+
+        def deriv(st):
+            X, Y, VX, VY = st
+            rr = math.hypot(X, Y)
+            vv = math.hypot(VX, VY) or 1.0
+            am = (a0 * min((AU / rr) ** 2, POWER_CAP) / m * td) if td else 0.0
+            g = -mu / rr ** 3
+            return (VX, VY, g * X + am * VX / vv, g * Y + am * VY / vv)
+
+        st = (x, y, vx, vy)
+        k1 = deriv(st)
+        k2 = deriv(tuple(st[i] + 0.5 * dt * k1[i] for i in range(4)))
+        k3 = deriv(tuple(st[i] + 0.5 * dt * k2[i] for i in range(4)))
+        k4 = deriv(tuple(st[i] + dt * k3[i] for i in range(4)))
+        x += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
+        y += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
+        vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
+        vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
+        if td:
+            step = amag * dt
+            if td < 0:
+                dv_retro += step
+            else:
+                dv_pro += step
+            m = max(0.05, m - (a0 * min((AU / r) ** 2, POWER_CAP) / ve) * dt)
+        ang = math.atan2(y, x)
+        d = ang - ang_prev
+        d = (d + math.pi) % (2 * math.pi) - math.pi
+        revs += abs(d) / (2 * math.pi)
+        ang_prev = ang
+        t += dt
+    return {"retro_revs": revs_at_latch or 0.0, "passes": passes,
+            "dv_retro": dv_retro, "dv_pro": dv_pro}
+
+
 def run() -> None:
     print("== Audit 7: perihelion pumping (multi-revolution escape) ==")
     tgt = 23.64e3
@@ -248,6 +320,38 @@ def run() -> None:
     check("page table row @ 5e-4 (23.8 km/s, 6.3 yr)",
           close(v_hi / 1e3, 23.8, abs_=0.05) and close(yr_hi, 6.3, abs_=0.05),
           f"{v_hi/1e3:.2f} km/s, {yr_hi:.1f} yr")
+
+    # 12. VALIDATED-DESIGN-PROFILE pins. Builds 133-135 fly every pumped campaign at
+    #     a0_eff = min(vehicle a0, PUMP_DESIGN_A0), Isp PUMP_DESIGN_ISP. A silent edit to
+    #     either constant would drift every consumer (JS mirror, page gate, run_analysis)
+    #     while the parity audit stays green (it re-dumps from the same constant), so pin
+    #     the constants and the function's default Isp against them explicitly.
+    check("PUMP_DESIGN_A0 constant is 2.5e-4 m/s^2", c.PUMP_DESIGN_A0 == 2.5e-4, f"{c.PUMP_DESIGN_A0:.2e}")
+    check("PUMP_DESIGN_ISP constant is 2800 s", c.PUMP_DESIGN_ISP == 2800.0, f"{c.PUMP_DESIGN_ISP:.0f}")
+    check("perihelion_pumped_vinf default Isp == PUMP_DESIGN_ISP (gate/policy lockstep)",
+          ISP_S == c.PUMP_DESIGN_ISP, f"module ISP_S={ISP_S}")
+
+    # 13. NON-MONOTONICITY is load-bearing (the 'gate by integration, not a threshold'
+    #     claim): a success island must exist BELOW the contiguous edge, and a stall band
+    #     must exist ABOVE the design point. If the policy ever became monotone these pin
+    #     the page's fine print to reality.
+    v_isl, _, _, _ = perihelion_pumped_vinf(1.8e-4, tgt)
+    check("success island below the edge: 1.8e-4 reaches (non-monotone)", v_isl >= tgt * 0.999,
+          f"{v_isl/1e3:.2f} km/s")
+    v_stall, _, _, _ = perihelion_pumped_vinf(3.0e-4, tgt)
+    check("stall band above the design point: 3.0e-4 strands (non-monotone)", v_stall < tgt,
+          f"{v_stall/1e3:.2f} km/s")
+
+    # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
+    #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the
+    #     dv split ~8.3 retro + ~17.3 prograde. Re-integrated independently.
+    ph = _phase_split(2.5e-4, tgt)
+    check("phase split: ~2.1 retro pump-down revs, 3 perihelion passes",
+          close(ph["retro_revs"], 2.13, abs_=0.25) and ph["passes"] == 3,
+          f"{ph['retro_revs']:.2f} retro revs, {ph['passes']} passes")
+    check("phase split: dv ~8.3 retro + ~17.3 prograde",
+          close(ph["dv_retro"] / 1e3, 8.31, abs_=0.6) and close(ph["dv_pro"] / 1e3, 17.32, abs_=0.6),
+          f"{ph['dv_retro']/1e3:.2f} + {ph['dv_pro']/1e3:.2f} km/s")
 
 
 if __name__ == "__main__":

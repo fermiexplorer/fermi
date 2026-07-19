@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import _util
 import audit_departure
+import audit_docs
 import audit_ephemeris
 import audit_fuelcell
 import audit_intercept
 import audit_propulsion
 import audit_pumping
 import audit_solar
+import audit_stars
 import audit_synchrotron
 
 
@@ -27,6 +29,8 @@ def main() -> int:
         audit_solar,
         audit_pumping,
         audit_synchrotron,
+        audit_stars,
+        audit_docs,
     ):
         mod.run()
         print()

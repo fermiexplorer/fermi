@@ -16,23 +16,28 @@ feasible, and what is the minimum spacecraft Δv?
 
 ## Short answer
 
-**Yes — but the conservative case is decisive, and it rules out the obvious choice.**
+**Yes — pure solar-electric closes at today's hardware, via perihelion pumping.**
 The geometry is comfortable (a ~24 km/s cruise reaches AC in the ~70,000–80,000-yr
-window, well inside 100,000 yr). The catch is *building* that 24 km/s with electric
-propulsion: a **pure solar-electric** probe is **power-limited** — as it spirals out,
-array power falls as 1/r², its thrust starves, and the achievable cruise speed
-**saturates below the 23.4 km/s floor**. So pure solar-electric **does not close from
-LEO**. Three architectures do:
+window, well inside 100,000 yr). Building that 24 km/s with electric propulsion has one
+subtlety: a *conventional outward spiral* is **power-limited** — array power falls as
+1/r², thrust starves, and the achievable cruise **saturates below the ~23.4 km/s floor**,
+so the naive outward spiral does not close at today's α. But the saturation is a property
+of the *trajectory class*, not of solar power. **Four architectures close:**
 
-1. **Nuclear-electric ion** — constant power (no 1/r² fade); the only *pure-electric*
-   path that closes. ~5 kW fission reactor + gridded ion → ~24.8 km/s, mass closes.
-2. **Solar-Oberth** — a ~1.4 km/s burn at a close perihelion yields the full 24 km/s,
+1. **SEP + perihelion pumping** *(recommended; the calculator's default)* — retrograde
+   arcs pump perihelion to 0.42 AU, then prograde perihelion burns (up to 4× the 1-AU
+   power) staircase the energy over a few revolutions. **Closes pure solar at today's
+   α (~15–21 W/kg)** — no reactor, no assist, no far-term array (external assessment
+   PSI‑TR‑2026‑0714; see the July-2026 update and `audit/psi/`).
+2. **Nuclear-electric ion** — the constant-power fallback (no 1/r² fade): ~5 kW fission
+   reactor + gridded ion → ~24.8 km/s, mass closes; a step-change (flying a reactor).
+3. **Solar-Oberth** — a ~1.4 km/s burn at a close perihelion yields the full 24 km/s,
    but needs a chemical kick stage, a heat shield, and a gravity-assist tour to set up.
-3. **Chemical kick from LEO** — ~14 km/s impulsive does the whole job (the classic floor).
+4. **Chemical kick from LEO** — ~14 km/s impulsive does the whole job (the classic floor).
 
-The recommended closing architecture is **nuclear-electric ion**: it keeps the
-simplicity of a direct, inertial aim (no planetary alignment, no heat shield) and is the
-only option that closes on electric propulsion alone.
+The recommended (default) architecture is **SEP + perihelion pumping**: it keeps the
+simplicity of a direct, inertial aim (no planetary alignment, no heat shield) and closes
+on pure solar electric propulsion at today's specific power.
 
 ## 1. Where to aim, and the cruise floor
 
@@ -76,7 +81,7 @@ question is entirely about how you build the 24 km/s.*
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. See the live
 > page's "Perihelion pumping" section.
 
-## 2. The conservative power gate — pure solar closes only as a light (high-α) vehicle
+## 2. The outward-spiral power gate — a spiral closes only as a light (high-α) vehicle
 
 Electric propulsion converts electrical power to thrust: `F = 2ηP/v_e`. For **solar**
 EP, the array power scales as **1/r²**, so as the probe climbs away from the Sun its
@@ -105,7 +110,7 @@ the achievable v∞ approaches the impulsive-from-1-AU limit (~38 km/s). The fea
 | ~155 | 37 km/s | ✓ |
 | ~200 | 38 km/s (saturates) | ✓ |
 
-So **pure solar-electric closes above α ≈ 100 W/kg.** The **recommended (default) high-α point uses
+So **an outward-spiral solar-electric closes above α ≈ 100 W/kg.** The **high-α reference point uses
 ultra-thin GaAs** (~1000 W/kg array — Alta-Devices-class epitaxial-liftoff cells, demonstrated at cell
 level; lightweight blanket is the far-term step) paired with a **near-term ~4 kg/kW thruster** → α ≈
 130, v∞ ≈ 30 km/s, ~40 kg wet. Crucially the 1000 W/kg array makes the array the demonstrated lever and
@@ -134,7 +139,7 @@ the recommended architecture and the calculator's default; the high-α-solar and
 routes below remain the outward-spiral-class alternatives.) Today's silicon + Hall (α ~20–30) does
 **not** close an outward spiral — α ≈ 100 W/kg is that class's bar.
 
-## 3. The pure-electric closure — nuclear-electric ion
+## 3. The constant-power fallback — nuclear-electric ion
 
 The fix is to remove the 1/r² fade. A **nuclear-electric reactor delivers constant
 power**, so the spiral keeps thrusting all the way out and reaches the floor. The closing

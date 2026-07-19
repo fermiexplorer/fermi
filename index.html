@@ -715,7 +715,7 @@
     <li>Patched-conic geometry with best-case launch timing; the low-thrust departure is a naïve constant-tangential Earth-escape spiral (perigee-biasing was checked — plan 02 Phase B — and is time-divergent at this thrust, so always-on is the operating point), and no finite-burn steering losses beyond it.</li>
     <li>Gravity-assist figures are geometric upper bounds, not phased trajectory solutions.</li>
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
-    <li>All four trajectory panels draw the <em>same</em> path: one continuous low-thrust solar escape, numerically integrated (RK4, μ=4π², tangential thrust until v∞ is reached, then coast) and rotated so its escape asymptote points at the AC intercept — so the spiral opens <em>smoothly</em> into the cruise with no hard turns. The scrubber is <em>log-scaled</em> in distance (1 AU → AC), and every view renders only the <em>flown</em> path (never the future). The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape is correctly a sub-revolution arc.</li>
+    <li>The <b>chase-cam</b> (the large default view) integrates the <em>selected architecture's</em> campaign in a restricted three-body model (RK4, real falling mass): direct/Jupiter as a tangential burn to v∞, <b>pumped as the multi-revolution pumping rosette</b>, Oberth as a dive + perihelion kick, synchrotron as the station recirculation. The <b>overview 3-D and the 2-D panels</b> draw a simpler <em>architecture-blind reference</em> escape (one continuous tangential spiral to v∞, rotated onto the AC asymptote) — so for the pumped/Oberth/synchrotron architectures they intentionally show the schematic reference path while the chase cam shows the real campaign; they agree only for the direct architecture. All views are <em>log-scaled</em> in distance (1 AU → AC) and render only the <em>flown</em> path. The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape reads correctly.</li>
   </ul>
   <h4>Audits &amp; independent verification</h4>
   <p>Every headline number is cross-checked several independent ways — a value is only trusted when it
@@ -725,7 +725,7 @@
       against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, 35 checks —
       including the perihelion-pumping integrator, which agrees to ~13 significant digits, and the
       synchrotron recirculation model).</li>
-    <li><b>Independent suite (90 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+    <li><b>Independent suite (130 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
       <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
       brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
       rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
@@ -985,7 +985,7 @@
       and never returns. The final kick must therefore jump from bound directly to
       v<sub>p,target</sub> = √(v∞² + v<sub>esc</sub>²). A kick that clears escape but lands <em>below</em>
       that is fatal: the probe is flung away too slow, with no second chance. The minimum possible
-      final kick is Δv<sub>final,min</sub> = v<sub>p,target</sub> − v<sub>esc</sub> — ~6.4 km/s at 1 AU
+      final kick is Δv<sub>final,min</sub> = v<sub>p,target</sub> − v<sub>esc</sub> — ~6.2 km/s at 1 AU
       but only ~1.4 km/s at 10 R<sub>☉</sub>, for the ~23.6 km/s design cruise (deep stations make the endgame
       easy). Unless a single kick of Δv<sub>final,min</sub> is feasible in one aperture transit, the
       final leg therefore <b>needs a staged chain of Sun-orbiting stations posted progressively along
@@ -1344,6 +1344,17 @@ function radio(name){ return document.querySelector(`input[name=${name}]:checked
 // propellant to deliver it (Tsiolkovsky) is derived — the goal is the smallest spacecraft.
 // Fuel minimises near the in-plane optimum (~73k yr, ~2° off-ecliptic); aiming sooner /
 // more out-of-plane costs more Δv and more propellant.
+// Architecture-aware IDEAL departure Δv at an arrival time (m/s, before nav margins). ONE source
+// of truth for compute() and the Δv-vs-arrival chart — the chart used to hard-plot the direct
+// spiral even under the pumped default (audit finding).
+function architectureBaseDv(ga, Ts, alt, apo, gain){
+  const ican=intercept(Ts);
+  if(ga==='oberth')  return oberthBurnFor(val('rp'),ican.vinf)+2000;
+  if(ga==='jupiter') return Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - (gain||0));
+  if(ga==='pumped')  return pumpedDepartureDv(ican.vinf, ican.tiltDeg, alt, apo);   // two-leg budget
+  if(ga==='synchro') return 500;                                                    // external station energy; probe trim only
+  return lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) + 5000;            // direct: spiral + conservative offset
+}
 function compute(){
   const T=val('T')*YEAR, alt=val('alt'), apo=alt;   // circular LEO (perigee = apogee)
   const pay=val('pay');   // dry mass is DERIVED below (minimal: active + tank + structure), no margin
@@ -1370,17 +1381,7 @@ function compute(){
   // fixed ~5 km/s. The tilt-dependence (and thus the ~73 kyr fuel optimum) is preserved by reusing the
   // spiral fit; the constant offset shifts the budget without moving the optimum.
   const EP_CONSERV_OFFSET=5000;
-  const baseDvAt=(Ts)=>{ const ican=intercept(Ts);
-    if(ga==='oberth')  return oberthBurnFor(val('rp'),ican.vinf)+2000;
-    if(ga==='jupiter') return Math.max(0, lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) - gain);
-    // pumped: two-leg budget (mirror of fermi_sim pumped_departure_dv) — √(μ⊕/a) Earth escape +
-    // v∞ + plane change v∞·|sin β| + 2 km/s pumping tax. No Earth-velocity borrow: v∞ is built
-    // heliocentrically at perihelion, in-plane, so the out-of-plane aim is charged separately.
-    if(ga==='pumped')  return pumpedDepartureDv(ican.vinf, ican.tiltDeg, alt, apo);
-    // synchrotron ("lasso"): the departure energy is EXTERNAL (station kicks); the probe itself
-    // carries only a trim/navigation budget. Insertion onto the station orbit is infrastructure.
-    if(ga==='synchro') return 500;
-    return lowthrustDepartureDv(ican.vinf, ican.tiltDeg, alt, apo) + EP_CONSERV_OFFSET; };
+  const baseDvAt=(Ts)=> architectureBaseDv(ga, Ts, alt, apo, gain);
   const needAt=(Ts)=> baseDvAt(Ts)*gncF + injDv;       // apply the navigation margins
   const dvOptimistic=Math.max(0, lowthrustDepartureDv(intercept(T).vinf, intercept(T).tiltDeg, alt, apo)-gain); // Earth-borrow spiral (comparison)
   const ic=intercept(T), dvDesign=needAt(T);
@@ -1744,12 +1745,15 @@ function drawCharts(r){
   //    Shows the two DIFFERENT minima: v∞ floors at the tangential intercept (~58k yr)
   //    and RISES afterwards (AC recedes); Δv minimises later (~73k) due to plane change.
   const Ts=[], fl=[], de=[], vi=[];
-  const altC=val('alt');                                 // circular LEO altitude
+  const altC=val('alt'), gaC=radio('ga'), gainC=gaC==='jupiter'?jupiterGain(9000):0;   // selected architecture
+  const gncFc=gncSteeringFactor(val('gncerr')), injDvc=injectionPointingDv(val('injerr'), altC);
   for(let y=45000;y<=100000;y+=1000){ const T=y*YEAR; const ic=intercept(T);
     const d=vInfEarth(ic.vinf,ic.tiltDeg); const f=impulsiveDv(d.vInfE,altC,altC)/1e3;
-    Ts.push(y); fl.push(f); de.push(lowthrustDepartureDv(ic.vinf,ic.tiltDeg,altC,altC)/1e3); vi.push(ic.vinf/1e3); }
+    Ts.push(y); fl.push(f);
+    de.push((architectureBaseDv(gaC,T,altC,altC,gainC)*gncFc+injDvc)/1e3); vi.push(ic.vinf/1e3); }
+  const gaLabel={direct:'direct spiral',pumped:'pumped two-leg',synchro:'synchrotron (probe trim)',jupiter:'Jupiter-assisted',oberth:'solar-Oberth'}[gaC]||gaC;
   Plotly.react('chartDv',[
-    {x:Ts,y:de,name:'Design Δv — derived low-thrust spiral',line:{color:'#4cc2ff'}},
+    {x:Ts,y:de,name:'Design Δv — '+gaLabel,line:{color:'#4cc2ff'}},
     {x:Ts,y:fl,name:'With a chemical boost (comparison) — impulsive floor',line:{color:'#3fb950',dash:'dot'}},
     {x:Ts,y:vi,name:'cruise v∞ (right axis)',line:{color:'#d29922'},yaxis:'y2'},
     ...(r.feasible?[{x:[r.arrivalYr,r.arrivalYr],y:[0,Math.max(...de)+2],name:'derived arrival',line:{color:'#8b949e',dash:'dash'},showlegend:false}]:[]),
@@ -1966,6 +1970,9 @@ function catmullRom(K, sub){
 let _full=null, _fullKey='';
 function buildModel(c){
   if(typeof SIM==='undefined' || !SIM) return null;
+  // mass-divergence guard: an infinite wet/dry mass would give zero thrust and spin the RK4
+  // loop to its 500k-step ceiling (multi-hundred-ms UI freeze) on every render (audit finding)
+  if(SIM.massConverges===false || !isFinite(SIM.wet) || !isFinite(SIM.dryEff)) return null;
   const alt=val('alt');
   // ARCHITECTURE-AWARE heliocentric phase: direct/jupiter = tangential burn to v∞ (the reference
   // spiral); pumped = the bang-bang pumping policy (power-scaled thrust, multi-rev); oberth = coast
@@ -2075,10 +2082,12 @@ function buildModel(c){
           if(kicks===0){ const vc=Math.sqrt(MUs/rs), th=Math.atan2(r[1],r[0]);
             v=[-vc*Math.sin(th), vc*Math.cos(th)]; vNew=vc+kickArch; }
           else vNew=vs2+kickArch;
-          // final kick THROTTLED to land exactly on the target energy (the station can modulate;
-          // a full fixed kick overshot the cruise it splices onto — audit finding, build 133)
+          // final kick THROTTLED to land exactly on the target energy ONLY when the mission is
+          // feasible (the station can modulate); on an infeasible design the probe is genuinely
+          // "flung away too slow", so we let the kick play naturally and the campaign strands
+          // below target — matching the verdict (audit findings, builds 133 + 135)
           const vCap=Math.sqrt(2*(Et+MUs/rs));
-          if(vNew>vCap) vNew=vCap;
+          if((SIM.feasible!==false) && vNew>vCap) vNew=vCap;
           kicks++; dvKicksTot+=kickArch;                              // station kick — EXTERNAL energy, not onboard Δv
           const vsCur=Math.hypot(v[0],v[1])||1e-9, sc=vNew/vsCur; v=[v[0]*sc,v[1]*sc];
           const Eh2=0.5*vNew*vNew-MUs/rs;
@@ -2099,10 +2108,12 @@ function buildModel(c){
     v=[v[0]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), v[1]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])];
     t+=dt;
     if(!inner || n%4===0){ X.push(r[0]);Y.push(r[1]);TM.push(t); }
-    // a campaign that hasn't closed within the engine's 60-yr horizon has FAILED — stop and
-    // mark it so the render doesn't draw an infeasible mission as completing (audit finding)
+    // 60-yr horizon = loop-termination bound only (stop spinning). Whether the drawn mission
+    // "completed" is decided by the authoritative feasibility verdict below, NOT by whether this
+    // cruder Sun-only schematic happened to close in time (audit finding: the drawn cap and the
+    // phase-independent gate disagreed, showing a feasible verdict beside a stranded path).
     if(iSoi>=0 && !burnEnded && arch!=='direct' && arch!=='jupiter' && t-tSoiT>60){
-      burnEnded=true; failed=true; if(iBurn<0) iBurn=X.length; }
+      burnEnded=true; if(iBurn<0) iBurn=X.length; }
     const done=(arch==='direct'||arch==='jupiter')?!burn:burnEnded;
     if(done && (failed || Math.hypot(r[0],r[1])>3)) break;
   }
@@ -2117,7 +2128,9 @@ function buildModel(c){
     const g=[p[0]-e3[0],p[1]-e3[1],p[2]-e3[2]]; geoF.push(g);
     if(i<Ng) sGeo.push(Math.hypot(g[0],g[1],g[2])); else sHel.push(rad[i]); }
   const acAt=ts=>[(R0[0]+VAC[0]*ts)/AU,(R0[1]+VAC[1]*ts)/AU,(R0[2]+VAC[2]*ts)/AU];
-  // cruise: straight to the intercept (= AC at arrival) — NOT spliced for a failed campaign
+  // the drawn mission "completes" (splices the cruise to AC) IFF the authoritative verdict is
+  // feasible — the engine, not this schematic, is the source of truth (audit finding)
+  failed = (SIM.feasible===false);
   const helFineP=failed?pos.slice(Ng):pos.slice(Ng).concat([[c.I[0],c.I[1],c.I[2]]]);
   const helFineT=failed?TM.slice(Ng):TM.slice(Ng).concat([SIM.Tsec/YEAR]); if(!failed) sHel.push(c.Inorm);
   const geoSimp=_simp(geoF.slice(0,Ng), TM.slice(0,Ng), sGeo, 0.01);
@@ -2325,7 +2338,10 @@ function chase3dDraw(c, st){
     let eRev=M.revsGeo, sRev=M.revsHel;
     if(pf.stage==='earth'){ eRev=M.revsGeo*c01(pf.f); sRev=0; }
     else if(pf.stage==='sun'){ sRev=M.revsHel*c01(pf.f); }
-    if(_t3.revlbl) _t3.revlbl.textContent = '⟳ Earth '+fmt(eRev, eRev<10?1:0)+' rev\n☉ Sun '+fmt(sRev,2)+' rev'; }
+    // label as the DRAWN 3-body playback (distinct from the validated design-campaign KPI,
+    // which shows the engine's ~4.9-rev reference for the pumped default) — audit finding
+    if(_t3.revlbl) _t3.revlbl.textContent = '⟳ Earth '+fmt(eRev, eRev<10?1:0)+' rev (drawn)\n☉ Sun '+fmt(sRev,2)+' rev (drawn)'
+      + (SIM&&SIM.pumpInfo?'\n  engine ref '+fmt(SIM.pumpInfo.revs,1)+' rev':''); }
   const flown=[]; let probe, earthNow, sunFacing;
   if(earthStage){
     const n=GS.length, x=Math.max(0,Math.min(1,phaseOf(animU).f))*(n-1), i0=Math.floor(x), fr=x-i0, i1=Math.min(i0+1,n-1);

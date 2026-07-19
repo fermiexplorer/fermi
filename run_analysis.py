@@ -279,9 +279,10 @@ def main() -> None:
         "   a stronger vehicle can always throttle to a working profile).\n"
         "   This bang-bang policy spends ~25.6 km/s; an optimised burn schedule reaches ~24. The\n"
         "   sec-7b alpha >~ 100 W/kg threshold applies to the OUTWARD-SPIRAL class only. The full\n"
-        "   SEP total from LEO is ~30-32 km/s (7.6 Earth escape + ~23-24 helio), indicating our\n"
-        "   closed-form low-thrust budget (~25-26 for AC) underprices the heliocentric\n"
-        "   leg; a GTO drop-off cuts the Earth leg 7.6 -> ~4.2 km/s and closes a ~100 kg vehicle."
+        "   SEP two-leg total from LEO is ~31-34 km/s (7.6 Earth escape + ~23-24 helio + ~2 policy\n"
+        "   tax), indicating our closed-form low-thrust budget (~25-26 for AC) underprices the\n"
+        "   heliocentric leg; a GTO drop-off cuts the Earth leg 7.6 -> ~4.0 km/s and closes a\n"
+        "   ~100 kg vehicle."
     )
 
     # ---------------------------------------------------------------

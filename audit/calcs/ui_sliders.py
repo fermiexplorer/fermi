@@ -80,6 +80,22 @@ def run(page):
           f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
     check("default vehicle α is in the closing corner (~100-130 W/kg)",
           100 < base["pwrW"]/base["dryEff"] < 135, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
+    # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
+    # show the validated reference campaign, and be pinned regardless of the Isp slider.
+    check("default pumped campaign is the validated reference (4.9 revs, 9.6 yr, 25.6 dv)",
+          base["pumpInfo"] is not None
+          and abs(base["pumpInfo"]["revs"] - 4.9) < 0.2
+          and abs(base["pumpInfo"]["years"] - 9.6) < 0.3
+          and abs(base["pumpInfo"]["dv"]/1e3 - 25.6) < 0.2,
+          str(base["pumpInfo"] and (round(base["pumpInfo"]["revs"],2), round(base["pumpInfo"]["years"],2))))
+    # ENVELOPE PIN: the pumped campaign is flown at min(a0, 2.5e-4)/Isp 2800, so moving the Isp
+    # slider must NOT change the campaign (the default vehicle a0 >> 2.5e-4, so it is throttled).
+    isp_lo = comp({"isp": 2300}); isp_hi = comp({"isp": 4500})
+    check("pumped campaign is Isp-pinned (2300 vs 4500 give the same campaign)",
+          isp_lo["pumpInfo"] and isp_hi["pumpInfo"]
+          and abs(isp_lo["pumpInfo"]["revs"] - isp_hi["pumpInfo"]["revs"]) < 1e-6
+          and abs(isp_lo["pumpInfo"]["dv"] - isp_hi["pumpInfo"]["dv"]) < 1e-3,
+          f"{isp_lo['pumpInfo'] and round(isp_lo['pumpInfo']['revs'],3)} vs {isp_hi['pumpInfo'] and round(isp_hi['pumpInfo']['revs'],3)}")
     # The direct outward-spiral reference architecture (the pumped default replaces it as the
     # page default, but the spiral physics checks below are about the direct trajectory class).
     direct = comp(radio={"ga": "direct"})
