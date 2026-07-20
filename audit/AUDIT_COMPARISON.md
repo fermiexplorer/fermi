@@ -53,7 +53,9 @@ revolution counts are close; the *durations and Δv* differ, and they differ **b
    starts from the *actual post-Earth-escape state* rather than the engine's clean 1 AU circular
    start. Same policy, different entry conditions — labelled "(drawn)" in the UI for that reason.
 
-The phase-by-phase breakdown behind these numbers is in [§4](#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only).
+The phase-by-phase breakdown behind these numbers is in [§4](#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only);
+if the **α** figures are what you are comparing, read [§2b](#2b-α-specific-power--the-same-symbol-in-three-different-senses)
+first — α means three different things across these sources, and PSI sizes in a₀ rather than α.
 
 ---
 
@@ -123,6 +125,66 @@ epoch or aim** than the engine's reference (75 kyr / 58 kyr slider vs the 72.8 k
 | Nuclear-electric 5 kW v∞ (km/s) | **25.24** | 25.25 | 0.05 % |
 
 Same feasibility verdicts across two integrators — the α ≳ 100 W/kg outward-spiral gate is real.
+
+---
+
+## 2b. α (specific power) — the same symbol in three different senses
+
+α is the most-confused number in this project, because **three different quantities all get called
+"specific power"**, they differ by an order of magnitude, and PSI's primary sizing variable is not
+α at all — it is **a₀** (initial thrust acceleration, m/s²). This section makes every α claim
+comparable.
+
+**The conversion.** With `F = 2ηP/vₑ` and `a₀ = F/m_wet`, whole-vehicle
+`α = P/m_dry = (a₀·vₑ/2η) · (m_wet/m_dry)`. At the design profile (a₀ = 2.5×10⁻⁴ m/s²,
+Isp 2800 s, η 0.55) the leading factor is **6.24 W/kg per unit mass-ratio**, so
+**α = 6.24 · (m_wet/m_dry)** — α is fixed by the *mass ratio*, not by the vehicle's size.
+
+### Sense 1 — component (array) specific power. *Not* the gate variable.
+
+| Source | Array specific power | Notes |
+|---|---|---|
+| **PSI** | **60 W/kg** system-level, ×1.25 radiation penalty for a LEO start | PDF §5.1; PPU 6 kg/kW, tank 12 % of propellant |
+| Engine — conservative preset | 91 W/kg (silicon, ~20 % cells) | Starlink-class representative value |
+| Engine — page default | 1000 W/kg (ultra-thin GaAs) | epitaxial-liftoff cells, far-term blanket |
+| Engine — concentrator preset | 486 W/kg | |
+| Grok | 90.7 W/kg (independently recomputed) | matches the silicon preset |
+
+*These are hardware numbers for one subsystem. A vehicle never achieves them, because engine, tank,
+structure and payload dilute the dry mass.*
+
+### Sense 2 — whole-vehicle α = P / (m_dry + payload). **This is the gate variable.**
+
+| Source / design | Vehicle α | How obtained |
+|---|---|---|
+| **PSI — LEO 100 & 150 kg** (68 % propellant) | **19.5 W/kg** | derived here from PSI's own §5.1/§5.2 sizing (a₀ 2.5×10⁻⁴, Isp 2800, η 0.55) |
+| **PSI — GTO 100 & 80 kg** (64 % propellant) | **17.3 W/kg** | same derivation |
+| **Fermi page — published pumping band** | **15–21 W/kg** | our band; **brackets PSI's implied 17.3–19.5** ✔ |
+| Fermi page — default vehicle (2 kW GaAs) | ~120 W/kg | the shipped default is *far above* what pumping needs |
+| Fermi — nuclear-electric closure | ~23 W/kg | constant-power route |
+| *(retracted)* 13 W/kg | **impossible** | R = 2.08 ⇒ Δv capacity 20.1 km/s < the 23.97 required (Fable audit finding; band corrected 13–25 → 15–21) |
+
+**The key cross-check:** PSI never publishes a vehicle-α figure — it sizes in a₀. Converting PSI's
+*own published mass model* through the formula above gives **17.3–19.5 W/kg**, which falls inside
+the **15–21 W/kg** band this project publishes. So the headline claim *"pumping closes at today's
+α"* is corroborated in PSI's own numbers, not merely asserted from ours.
+
+### Sense 3 — α *thresholds* (what a trajectory class demands)
+
+| Threshold | Value | Trajectory class | Source |
+|---|---|---|---|
+| Solar-escape floor | **~43 W/kg** | outward spiral — below this a solar vehicle never escapes the Sun | engine, bisected escape edge |
+| Cheap targets (e.g. HD 7924, 3.9 km/s cruise) | ~46 W/kg | outward spiral | engine star tables |
+| λ Ser (19.2 km/s cruise) | ~68 W/kg | outward spiral | engine star tables |
+| **AC-class (23.3–24.9 km/s)** | **~100–140 W/kg** | outward spiral | engine; PSI cites "roughly 100 W/kg" for the same corner |
+| Ceiling | no α suffices above ~26.5 km/s | outward spiral at this sizing | engine (fixed 20 km/s propellant budget) |
+| **Perihelion pumping** | **15–21 W/kg** | pumped campaign | engine + PSI-derived (above) |
+
+**Why the same mission needs ~100 W/kg one way and ~18 W/kg the other:** it is the *trajectory*, not
+the power system. An outward spiral must keep thrusting as sunlight fades (1/r²), so it needs a very
+light vehicle to finish while power is still available. Pumping instead concentrates every burn at
+0.42 AU where power is up to 4× the 1-AU rating — so a ~6× heavier vehicle (per watt) closes the
+same mission. **That factor of ~6 in α is the entire result.**
 
 ---
 
@@ -198,6 +260,7 @@ validation reconstruction, and it lands exactly on PSI's own patience-trade curv
 |---|---|---|---|
 | **A — triangulated** | ephemeris, intercept geometry, impulsive floor, low-thrust spiral, C3, xenon sizing, power gate | 4 blind AI bots + GMAT + PSI, ≤0.2 % (most ≤0.01 %), multiple methods | **Yes**, to Fermi-estimate fidelity |
 | **B — dual-source mechanism** | pumping mechanism, design endpoints, thresholds, spiral ceilings, synchrotron model | Engine + Fable (2 integrators each) + PSI on mechanism | **Yes** for the *mechanism and thresholds* |
+| **B — α closure band** | pumping closes at α ≈ 15–21 W/kg | our band **brackets** the 17.3–19.5 W/kg implied by PSI's own published mass model (§2b) | **Yes** — corroborated in both sources' numbers |
 | **C — single-source** | PSI's optimised 23.97 / 22.9 km/s schedule; our exact bang-bang Δv premium | one optimiser each; PSI's own cross-check didn't converge | **Directionally** — the closure holds; the exact optimum is not independently confirmed |
 | **D — superseded** | the old ~20 km/s "modest xenon" SEP budget | Grok/Codex flagged it; replaced by the ~30 km/s + pumping model | **No** — historical only |
 
