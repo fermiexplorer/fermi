@@ -328,6 +328,82 @@ validation reconstruction, and it lands exactly on PSI's own patience-trade curv
 
 ---
 
+## 4b. Provenance & priority — who found perihelion pumping, and when
+
+Stated plainly, because credit matters and the record is unambiguous.
+
+### The Fermi Explorer position *before* the PSI paper
+
+Build 64 (2026-06-22, §5b "Solar-Oberth, in depth") did not merely omit pumping — it **argued
+against the electric perihelion burn**, and that text stood unchanged through build 122, the last
+build before the assessment arrived:
+
+> "**The perihelion burn must be high-thrust (chemical), not ion.** The Oberth benefit exists only
+> during the brief perihelion pass (hours). A ~0.2 N ion thruster would need ~58 days to deliver
+> 1.4 km/s, so it cannot capture the effect — a small storable-chemical or solid kick stage is
+> required at perihelion. So this path is *not* pure electric propulsion."
+
+**No audit caught it.** A full-history search of the four independent bot audits (Codex v01–v04,
+Grok, Gemini, Fable-core), every `docs/plans/` entry, and the page's complete `perihelion` lineage
+returns **zero** occurrences of multi-revolution / pump-down / retrograde-arc / apoapsis-shedding
+concepts before build 123. The page's `perihelion` history jumps straight from build 64 (single-pass
+solar-Oberth) to build 123 (PSI pumping).
+
+### Why it was missed — a scope error, not an arithmetic error
+
+The "58 days vs an hours-long pass" calculation was **correct**. What was wrong was the unexamined
+premise that the manoeuvre must complete **in a single pass**. Spread those same 58 days across
+~3–6 perihelion passes and the objection dissolves — the number we published as a refutation was
+in fact the requirement.
+
+Sharper still: **both ingredients were already in this project's own material, in separate documents,
+and were never combined.**
+
+| Ingredient | Where we already had it | Why it didn't connect |
+|---|---|---|
+| Multi-revolution low-thrust apsis-arc escape | the Earth-departure model integrates **~692 revolutions** | applied at Earth only; never transposed to the heliocentric leg |
+| Repeated perihelion kicks, Sun as the return path | private "lasso" notes (2026-06-22) — a recirculating perihelion accelerator | **externally powered stations, passive probe**; and its own post-critique conclusion was that recirculating one probe is *weak* (one terminal kick per probe is the strong form) |
+| Electric burn at a deep perihelion | §5b | rejected on the single-pass timing argument above |
+
+The missing physical fact — the one that makes the combination work — is that a **power-limited
+onboard** thruster receives up to **4× its 1-AU rated power** at 0.42 AU. Neither of our documents
+contained that step.
+
+### What PSI claims — and what PSI explicitly does *not* claim
+
+PSI is scrupulous about priority. From [PSI‑TR‑2026‑0714](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) §4.3, verbatim:
+
+> "The ingredients of this maneuver are established practice, and it is worth stating which are old
+> and which is new. The energetic advantage of burning deep in a gravity well was identified by
+> **Oberth**, and the two-burn strategy that exploits it — lower the periapsis, then burn at
+> periapsis — **is classical**. Powered-flyby and solar-Oberth (perihelion-burn) escapes built on the
+> same effect **are established concepts** in the interstellar-precursor literature, **including in
+> Fermi Explorer's own reference analysis**. Splitting a low-thrust maneuver into repeated
+> apsis-centered arcs over many revolutions **is likewise standard**: **SMART-1** escaped
+> geostationary-transfer orbit on repeated perigee- and apogee-centered thrust arcs, and
+> multi-revolution apsis-arc structures **are routine in low-thrust trajectory optimization**. What
+> the present analysis contributes is **the quantified closure of this mission class by that
+> combination** — cruise speed, Δv, flight time, and mass fraction — under the 1/r² law."
+
+So PSI credits Oberth (1929), SMART-1's flight heritage, and standard low-thrust optimisation
+practice — and credits *this project's own analysis* for the solar-Oberth concept.
+
+### Attribution, as this project records it
+
+| Question | Answer |
+|---|---|
+| Did Fermi Explorer or its audits find pumping first? | **No.** A documented rejection of the electric perihelion burn stood for ~3 weeks; no audit raised it. |
+| Was PSI first **for this project**? | **Yes.** PSI overturned our published conclusion and supplied the mechanism, the design point, and the closure. |
+| Did PSI invent perihelion pumping *as such*? | **No — and PSI says so itself** (§4.3): the ingredients are Oberth-classical and flight-demonstrated (SMART-1). |
+| What is genuinely PSI's contribution? | **The quantified closure of this mission class** under the 1/r² power law — cruise speed, Δv, flight time and mass fraction — plus the correction of our single-pass error. |
+| What is this project's contribution on top? | Independent in-engine reproduction, the non-monotonic envelope characterisation (islands/stall bands), the validated-profile convention, and the durable guard suite. |
+
+**Adopted from PSI and credited throughout:** the perihelion-pumping closure, the validated design
+profile (`PUMP_DESIGN_A0` = 2.5×10⁻⁴ m/s², `PUMP_DESIGN_ISP` = 2800 s), the GTO drop-off
+recommendation, and the independent confirmation of the intercept geometry and target rankings.
+
+---
+
 ## 5. Trust summary — what to rely on, and how hard
 
 | Tier | Quantities | Corroboration | Rely on it? |

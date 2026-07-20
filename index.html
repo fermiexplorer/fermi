@@ -222,7 +222,11 @@
   <h1>Fermi Explorer — Alpha Centauri Ion-Propulsion Mission Calculator <a class="build" id="buildlink" target="_blank" rel="noopener noreferrer">build 0</a></h1>
   <p>Reach Alpha Centauri (≤ 2600 AU) within 100,000 yr, with a ≥1 kg payload, launching from LEO. Adjust assumptions on the left; results update live.</p>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
-  <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a></p>
+  <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a><br>
+  The default <b>perihelion-pumped</b> architecture is due to the external assessment
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a>
+  (Physical Superintelligence PBC) — see the <a href="#pumping">perihelion-pumping section</a> and the
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md" target="_blank" rel="noopener noreferrer">audit cross-comparison</a>.</p>
 </header>
 
 <!-- persistent toolbar: NOT part of the collapsible parameters panel -->
@@ -899,6 +903,22 @@
   pumping</a></b> (next section) defeats the ceiling within pure solar at today's α ≈ 15–21 W/kg.</p>
 
   <h4 id="pumping">Perihelion pumping — a multi-revolution escape that defeats the power wall</h4>
+  <div class="worked" style="margin-bottom:12px">
+    <p class="wt">Credit — this result is not ours</p>
+    <p>The perihelion-pumping closure comes from an independent external assessment,
+    <b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a></b>
+    — <em>Interstellar Precursor Mission to Alpha Centauri: Technical Feasibility Assessment</em>,
+    <b>Physical Superintelligence PBC</b>, July 2026 (working draft), produced and verified end-to-end by
+    PSI's autonomous physics-research platform. <b>This page previously argued the opposite</b> — that a
+    perihelion burn had to be chemical because a single ion pass is far too slow — and PSI corrected it.
+    The assessment also independently reproduces this page's intercept geometry to &lt;0.5% and its target
+    rankings. PSI is careful about priority in turn: it credits Oberth for the deep-gravity-well burn,
+    SMART-1 for flown multi-revolution apsis-arc escape, and standard low-thrust optimisation practice —
+    claiming as new the <em>quantified closure of this mission class</em> under the 1/r² power law.
+    Everything below is our independent in-engine reproduction of that work; the full attribution record
+    and cross-comparison is in
+    <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md" target="_blank" rel="noopener noreferrer">audit/AUDIT_COMPARISON.md</a>.</p>
+  </div>
   <p>The power gate above shows that an <em>outward</em> low-thrust spiral saturates below the cruise
   floor at every flyable thrust level (v∞ ≈ 0, 3.1, 16.7 km/s at a₀ = 1.5, 5, 10×10⁻⁴ m/s²) — on that
   trajectory, pure solar needs α ≳ 100 W/kg. <b>That saturation is a property of the trajectory class, not
@@ -913,13 +933,11 @@
   enough energy (which is why a one-pass electric Oberth fails), but repeated passes through the same
   deep perihelion — each adding a small prograde kick where v is highest and power is quadrupled, in
   the manner of a synchrotron — can.</p>
-  <p>The manoeuvre and its closure are due to the independent external assessment
-  <b>PSI‑TR‑2026‑0714</b> (Physical Superintelligence PBC, July 2026 — see References and
-  <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/psi" target="_blank" rel="noopener noreferrer"><code>audit/psi/</code></a>),
-  which also reproduces this page's intercept geometry to &lt;0.5%. It is integrated in the engine
+  <p>The manoeuvre is integrated in the engine
   (<code>perihelion_pumped_vinf</code> — a bang-bang policy: one-way pump-down latch, escape-guarded
   staircase, continuous finisher; power law P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against
-  PSI's optimised-schedule integration:</p>
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI's</a>
+  optimised-schedule integration:</p>
   <table class="chain">
     <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
     <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">contiguous closure above ~2.24×10⁻⁴</td><td>edge agrees</td></tr>
