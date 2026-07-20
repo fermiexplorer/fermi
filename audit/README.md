@@ -10,6 +10,12 @@ optimisation, a separate propagator, or an independent AI re-implementation) and
 numbers differ where they do, and why our pumping campaign is 4.9 revolutions while PSI's is 12
 *years* (different units — see §0 there).
 
+> **The result the whole audit record supports:** the same vehicle needs **~100–140 W/kg** as an
+> outward spiral but only **~15–21 W/kg** pumped — **~6×, from the trajectory alone, not the power
+> system.** Decomposed (4× power availability × 2.2× Oberth leverage, minus the pump-down cost) and
+> corroborated by engine, Fable and PSI in
+> [§2c](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md#2c-the-6x-specific-power-result--the-trajectory-not-the-power-system-decides-feasibility).
+
 ---
 
 ## Summary of latest results

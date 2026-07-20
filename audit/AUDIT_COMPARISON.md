@@ -10,6 +10,12 @@ Engine values are the current tree; bot values are from each bot's committed `*_
 conclusions; GMAT from [`audit/gmat/out/`](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out);
 PSI from [`audit/psi/`](https://github.com/fermiexplorer/fermi/tree/main/audit/psi).
 
+> **The headline result in one line:** the same spacecraft flown as an *outward spiral* needs
+> **~100–140 W/kg** of whole-vehicle specific power, but flown as a *perihelion-pumped* campaign
+> needs only **~15–21 W/kg** — a **~6× difference that comes entirely from the trajectory, not the
+> power system.** That factor is what moves the mission onto today's hardware. Full derivation and
+> corroboration: **[§2c](#2c-the-6x-specific-power-result--the-trajectory-not-the-power-system-decides-feasibility)**.
+
 **Quick links:** [master audit index](https://github.com/fermiexplorer/fermi/blob/main/audit/README.md) ·
 [adversarial prompts](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) ·
 [in-repo suite](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) ·
@@ -180,11 +186,79 @@ the **15–21 W/kg** band this project publishes. So the headline claim *"pumpin
 | Ceiling | no α suffices above ~26.5 km/s | outward spiral at this sizing | engine (fixed 20 km/s propellant budget) |
 | **Perihelion pumping** | **15–21 W/kg** | pumped campaign | engine + PSI-derived (above) |
 
-**Why the same mission needs ~100 W/kg one way and ~18 W/kg the other:** it is the *trajectory*, not
-the power system. An outward spiral must keep thrusting as sunlight fades (1/r²), so it needs a very
-light vehicle to finish while power is still available. Pumping instead concentrates every burn at
-0.42 AU where power is up to 4× the 1-AU rating — so a ~6× heavier vehicle (per watt) closes the
-same mission. **That factor of ~6 in α is the entire result.**
+*Why the same mission demands ~100 W/kg one way and ~18 W/kg the other is the whole result — it gets
+its own section next.*
+
+---
+
+## 2c. The 6x specific-power result — the trajectory, not the power system, decides feasibility
+
+This is the single most important number in the project, and it is easy to miss because it hides
+behind two α figures quoted in different sections.
+
+> **The same spacecraft, the same array, the same thruster, the same Isp — flown two different ways —
+> differ by a factor of ~6 in the specific power they require.**
+>
+> | Flying the *same* AC-class mission | Whole-vehicle α required | Verdict at today's hardware |
+> |---|---|---|
+> | **Outward spiral** (thrust continuously while receding) | **~100–140 W/kg** | ✗ needs a far-term ultralight vehicle |
+> | **Perihelion pumping** (burn only at 0.42 AU) | **~15–21 W/kg** (PSI's own model: 17.3–19.5) | ✓ **closes on today's hardware** |
+> | **Ratio** | **≈ 5–7× (call it ~6×)** | this factor *is* the feasibility result |
+
+### Where the ~6× comes from (decomposition)
+
+Two multiplicative effects, both purchased by moving the burn to 0.42 AU:
+
+| Effect | Factor | Why |
+|---|---|---|
+| **Power availability** | **4.0×** | array output ∝ 1/r²; at 0.42 AU that is 5.7× the 1-AU rating, capped at **4×** by the assumed thermal limit |
+| **Oberth leverage** | **2.2×** | energy gained per unit Δv is `v·Δv`; perihelion speed there is 65.0 km/s vs 29.8 km/s circular at 1 AU |
+| *naive product* | *8.7×* | if the manoeuvre were free |
+| **Observed α ratio** | **≈ 5–7×** | the shortfall is the cost of *getting* there — the retrograde pump-down (8.3 of our 25.6 km/s) plus gravity losses |
+
+### Why this, and not "better solar panels", is the answer
+
+- An **outward spiral is self-defeating**: it must keep thrusting as it recedes, exactly when its
+  power source is fading. The Δv still deliverable arrives at ever-larger radii, where each increment
+  buys less orbital energy — so achievable v∞ *saturates* below the cruise floor no matter how much
+  propellant is carried. The only escape is to finish the burn before the light fades, i.e. an
+  ultralight (high-α) vehicle — the ~100–140 W/kg requirement.
+- **Pumping inverts the logic**: it first spends Δv to *lower* perihelion, then takes every subsequent
+  burn where power is quadrupled and speed is doubled. The vehicle may therefore be ~6× heavier per
+  installed watt and still close.
+- **Consequence.** This moves the mission from *"needs a far-term thin-film array (~1000 W/kg class
+  hardware to reach ~100+ W/kg vehicle α)"* to *"closes with a 60 W/kg system-level array"* — which is
+  precisely the array PSI sizes with. **No power-system breakthrough is required; the change is
+  entirely in the trajectory.**
+
+### What it costs (the honest other side)
+
+The ~6× in α is not free — it is bought with Δv, time and thermal risk:
+
+| Price | Value |
+|---|---|
+| Extra Δv vs the impulsive ideal | pumped campaign 25.6 km/s (ours) / 23.97 (PSI optimised) vs a 13.9 km/s impulsive floor |
+| Powered-flight duration | 9.6 yr (ours) – 12 yr (PSI) vs ~0.5–2 yr for a spiral |
+| Thermal qualification | repeated 0.42 AU passes — MESSENGER-class, and the 4× harvest cap is optimistic |
+| Policy fragility | success is non-monotonic in a₀; the campaign must be flown at a validated profile |
+
+### Corroboration
+
+| Claim | Engine | Fable (adversarial) | PSI |
+|---|---|---|---|
+| Outward spiral saturates below the floor | ✓ 0 / 3.1 / 16.7 km/s | ✓ confirms | ✓ 0 / 3.4 / 17.0 km/s |
+| Pumping reaches the floor at the design a₀ | ✓ 23.66 km/s | ✓ 23.66–23.67 | ✓ 23.64 km/s |
+| Vehicle α needed for pumping | ✓ 15–21 W/kg | ✓ band verified, 13 refuted | ✓ 17.3–19.5 implied (§2b) |
+| Outward-spiral α for AC-class | ✓ ~100–140 W/kg | ✓ gate reproduced (RK45) | ✓ cites "roughly 100 W/kg" |
+
+*Reproduce it:* the power and Oberth factors follow from `MU_SUN`/`AU` in
+[`fermi_sim/constants.py`](https://github.com/fermiexplorer/fermi/blob/main/fermi_sim/constants.py)
+(v_esc(0.42 AU) = 65.0 km/s vs v_circ(1 AU) = 29.8; cap = 4 from the power law in
+[`departure.py`](https://github.com/fermiexplorer/fermi/blob/main/fermi_sim/departure.py));
+the spiral ceilings come from `sep_achievable_vinf` and the pumped endpoints from
+`perihelion_pumped_vinf`, both guarded in
+[`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py);
+the α figures are derived in §2b.
 
 ---
 
