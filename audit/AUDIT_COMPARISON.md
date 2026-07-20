@@ -5,9 +5,55 @@ NASA GMAT, and the four independent AI re-implementations (Codex, Grok, Gemini, 
 up against each other — quantity by quantity — with an honest account of **which results are
 trustworthy, which are single-sourced, and exactly why the numbers differ where they do.**
 
-Every value below is copied from the committed result artifacts (`audit/*/`), not re-derived
-for this table. Engine values are the current tree; bot values are from each bot's committed
-`*_results.json` / conclusions; GMAT from `audit/gmat/out/`; PSI from `audit/psi/`.
+Every value below is copied from the committed result artifacts, not re-derived for this table.
+Engine values are the current tree; bot values are from each bot's committed `*_results.json` /
+conclusions; GMAT from [`audit/gmat/out/`](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out);
+PSI from [`audit/psi/`](https://github.com/fermiexplorer/fermi/tree/main/audit/psi).
+
+**Quick links:** [master audit index](https://github.com/fermiexplorer/fermi/blob/main/audit/README.md) ·
+[adversarial prompts](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) ·
+[in-repo suite](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) ·
+[PSI assessment (PDF)](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) ·
+[GMAT](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) ·
+[Codex](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v04.md) ·
+[Grok](https://github.com/fermiexplorer/fermi/blob/main/audit/grok/grok-conclusions.md) ·
+[Gemini](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini-conclusions.md) ·
+[Fable](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-conclusions.md)
+
+---
+
+## 0. Read this first — "why do we get 4.9 and PSI gets 12?"
+
+**They are different units.** Our **4.9 is revolutions**; PSI's **12 is years**. Comparing them
+directly is an apples-to-oranges trap that this table exists to prevent:
+
+| | Revolutions around the Sun | Campaign duration | Δv |
+|---|---|---|---|
+| **Fermi engine** (bang-bang policy) | **4.9 revs** | 9.6 yr | 25.63 km/s |
+| **Fable** (adversarial, 2 integrators) | 4.88 revs | 9.6–9.7 yr | 25.61 km/s |
+| **PSI** (optimised schedule) | ~5–6 perihelion passes | **12 yr** | 23.97 km/s |
+| *(drawn animation)* | *~3.5 revs* | *8.6 yr* | *(schematic)* |
+
+So the honest comparison is **4.9 revs / 9.6 yr (ours) vs ~5–6 passes / 12 yr (PSI)** — the
+revolution counts are close; the *durations and Δv* differ, and they differ **by design**:
+
+1. **Ours burns harder per arc.** Our bang-bang policy applies full available thrust whenever its
+   gate opens, so each perihelion pass adds a bigger energy step. Bigger steps ⇒ slightly fewer,
+   fatter revolutions and a shorter campaign (9.6 yr), paid for with **more Δv (25.63)**.
+2. **PSI's optimiser is patient.** It spreads gentler arcs over more revolutions/time, staying
+   closer to the impulsive ideal at each pass, so it reaches the same v∞ for **less Δv (23.97)** —
+   at the cost of **12 years** of powered flight. PSI names this explicitly as the *patience trade*:
+   in their own words, patience is worth ≈4 km/s (their faster variant costs 28.2 km/s in 4.9 **years** —
+   another number whose numeric coincidence with our 4.9 *revolutions* is pure accident).
+3. **Neither is "wrong."** Ours is a deliberately cruder, independent reconstruction whose job is to
+   *validate the mechanism*; PSI's is an optimised schedule. Ours lands exactly where PSI's own
+   patience curve predicts — between their patient (12 yr / 23.97) and fast (4.9 yr / 28.2) profiles.
+   **PSI's is the more optimal trajectory**; ours is the independent check that the mechanism is real.
+4. **The third number** (~3.5 revs in the on-page animation) is the drawn 3-body schematic, which
+   starts from the *actual post-Earth-escape state* rather than the engine's clean 1 AU circular
+   start. Same policy, different entry conditions — labelled "(drawn)" in the UI for that reason.
+
+The phase-by-phase breakdown behind these numbers is in [§4](#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only).
 
 ---
 
@@ -19,14 +65,14 @@ independent corroboration, whereas PSI confirming its own result is not.
 
 | Audit run | Source | Build audited | Input / prompt given | **Saw the PSI report?** | Method (vs engine) | Scope | Document |
 |---|---|---|---|---|---|---|---|
-| Codex v01–v04 | GPT-class (Codex) | pre-pumping (≈v3–v4) | `AUDIT_PROMPTS.md` §1–10 (deep-dive on §10, the 58 kyr / xenon claim); repo only | **No** — ran on builds that predate pumping | hand-built vectors + rocket equation, independent grids | ephemeris, intercept, departure, xenon sizing | `codex/codex-conclusions-v0{1..4}.md` |
-| Grok v02 | Grok | ≈build 106 | `AUDIT_PROMPTS.md` §1–10 + sensitivity sweeps; repo only | **No** | hand ephemeris + independent sweeps | all 10 areas | `grok/grok-conclusions.md` |
-| Gemini v01 (+v2 rerun) | Gemini | ≈build 106 | `AUDIT_PROMPTS.md` §1–9; repo only | **No** | **astropy** SkyCoord + **scipy solve_ivp** (RK45) | ephemeris, intercept, spiral | `gemini/gemini-conclusions.md` |
-| Fable — core | Fable 5 | build 106 | 22 independent checks over §1–9; repo only | **No** | scipy RK45 + finite-difference ephemeris | ephemeris → power gate | `fable/fable-conclusions.md` |
-| **GMAT** | NASA GMAT (R2020a) | departure model | 2 mission scripts (impulsive C3; low-thrust escape) | **No** | separate flight-proven propagator | departure energetics only | `gmat/README.md` |
-| Fable — pumping | Fable 5 (31-agent workflow) | build 123 | `AUDIT_PROMPTS.md` §11–12, adversarial ("refute it") | **Partial** — repo held *our* reproduction; **not** the PSI PDF (added only at build 135) | 2 independent integrators (own RK4 + **DOP853**) | perihelion pumping + synchrotron | `fable/fable-pumping-synchrotron-audit.md` |
-| Fable — text/coherence | Fable 5 (144 / 98 / 43 agents) | builds 129–135 | reader-text + default-state + envelope lenses | Yes (by then archived) | scripted extraction + node/scipy re-derivation | prose, data, UI-state coherence | `fable/fable-text-audit.md` |
-| **PSI** | Physical Superintelligence PBC | external (our public page) | produced end-to-end on its own platform | **Is** the report | autonomous physics-research platform | full mission | `psi/PSI-TR-2026-0714.pdf` |
+| Codex v01–v04 | GPT-class (Codex) | pre-pumping (≈v3–v4) | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §1–10 (deep-dive on §10, the 58 kyr / xenon claim); repo only | **No** — ran on builds that predate pumping | hand-built vectors + rocket equation, independent grids | ephemeris, intercept, departure, xenon sizing | [v01](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v01.md) · [v02](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v02.md) · [v03](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v03.md) · [**v04**](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v04.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/codex) |
+| Grok v02 | Grok | ≈build 106 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §1–10 + sensitivity sweeps; repo only | **No** | hand ephemeris + independent sweeps | all 10 areas | [conclusions](https://github.com/fermiexplorer/fermi/blob/main/audit/grok/grok-conclusions.md) · [results.json](https://github.com/fermiexplorer/fermi/blob/main/audit/grok/prompt_results.json) · [sweeps](https://github.com/fermiexplorer/fermi/blob/main/audit/grok/sweep_results.json) |
+| Gemini v01 (+v2 rerun) | Gemini | ≈build 106 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §1–9; repo only | **No** | **astropy** SkyCoord + **scipy solve_ivp** (RK45) | ephemeris, intercept, spiral | [conclusions](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini-conclusions.md) · [v01 audit](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini-audit-v01.md) · [results](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini_results.json) · [v2 results](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini_results_v2.json) |
+| Fable — core | Fable 5 | build 106 | 22 independent checks over §1–9; repo only | **No** | scipy RK45 + finite-difference ephemeris | ephemeris → power gate | [conclusions](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-conclusions.md) · [results.json](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable_results.json) · [script](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable_independent_checks.py) |
+| **GMAT** | NASA GMAT (R2020a) | departure model | 2 mission scripts (impulsive C3; low-thrust escape) | **No** | separate flight-proven propagator | departure energetics only | [README](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/scripts) · [raw outputs](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out) · [compare.py](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/compare.py) |
+| Fable — pumping | Fable 5 (31-agent workflow) | build 123 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §11–12, adversarial ("refute it") | **Partial** — repo held *our* reproduction; **not** the PSI PDF (added only at build 135) | 2 independent integrators (own RK4 + **DOP853**) | perihelion pumping + synchrotron | [pumping/synchrotron audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-pumping-synchrotron-audit.md) |
+| Fable — text/coherence | Fable 5 (144 / 98 / 43 agents) | builds 129–135 | reader-text + default-state + envelope lenses | Yes (by then archived) | scripted extraction + node/scipy re-derivation | prose, data, UI-state coherence | [text audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-text-audit.md) |
+| **PSI** | Physical Superintelligence PBC | external (our public page) | produced end-to-end on its own platform | **Is** the report | autonomous physics-research platform | full mission | [PSI‑TR‑2026‑0714 (PDF)](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) · [our notes](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/README.md) |
 
 **The independence chain that matters:** Codex, Grok, Gemini, Fable-core and GMAT all ran on
 builds that **predate the pumping work entirely** — pumping wasn't in the model yet, so they
@@ -165,9 +211,23 @@ overturns the closure; the honest caveats are all about *how cheaply* pumping cl
 
 ## 6. How to reproduce / extend
 
-Each bot's script + committed results live under `audit/<bot>/`; the prompts are
-`audit/AUDIT_PROMPTS.md` (§1–10 geometry/departure, §11–12 pumping/synchrotron). To add a new
-independent run, follow the setup line in `AUDIT_PROMPTS.md`, drop the conclusions +
-`*_results.json` under a new `audit/<name>/`, and add a column here. Codex/Grok/Gemini/Gemini-v2
-are separate runs of the same §1–10 audit and converged; their per-run detail is in the individual
-`codex-conclusions-v0{1..4}.md` etc. — this page shows each bot's definitive (latest) values.
+Each bot's script + committed results live under its own directory (linked in §1); the prompts are
+[`audit/AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md)
+(§1–10 geometry/departure, §11–12 pumping/synchrotron). To add a new independent run, follow the
+setup line in the prompts file, drop the conclusions + `*_results.json` under a new
+`audit/<name>/`, and add a column here.
+
+Codex v01–v04 and Gemini v01/v2 are **separate runs of the same §1–10 audit** and converged; their
+per-run detail is in the individual documents linked in §1 — this page shows each bot's definitive
+(latest) values. The genuinely *different* audits are kept as separate documents:
+[core geometry/departure](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-conclusions.md),
+[pumping/synchrotron](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-pumping-synchrotron-audit.md),
+and [text/coherence](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-text-audit.md).
+
+**Reproduce the engine side yourself:**
+[`fermi_sim/`](https://github.com/fermiexplorer/fermi/tree/main/fermi_sim) (source of truth) ·
+[`web/physics.js`](https://github.com/fermiexplorer/fermi/blob/main/web/physics.js) (parity-checked port) ·
+[`run_analysis.py`](https://github.com/fermiexplorer/fermi/blob/main/run_analysis.py) ·
+[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (130 checks) ·
+[`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py) (the pumping guards, incl. the phase split) ·
+[`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (35 parity checks)
