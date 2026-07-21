@@ -908,10 +908,8 @@
     <b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a></b>
     — <em>Interstellar Precursor Mission to Alpha Centauri: Technical Feasibility Assessment</em>,
     <b>Physical Superintelligence PBC</b>, July 2026 (working draft), produced and verified end-to-end by
-    PSI's autonomous physics-research platform. <b>This page previously argued the opposite</b> — that a
-    perihelion burn had to be chemical because a single ion pass is far too slow — and PSI corrected it.
-    The assessment also independently reproduces this page's intercept geometry to &lt;0.5% and its target
-    rankings. PSI is careful about priority in turn: it credits Oberth for the deep-gravity-well burn,
+    PSI's autonomous physics-research platform. The assessment also independently reproduces this page's
+    intercept geometry to &lt;0.5% and its target rankings. PSI is careful about priority in turn: it credits Oberth for the deep-gravity-well burn,
     SMART-1 for flown multi-revolution apsis-arc escape, and standard low-thrust optimisation practice —
     claiming as new the <em>quantified closure of this mission class</em> under the 1/r² power law.
     Everything below is our independent in-engine reproduction of that work; the full attribution record
@@ -948,19 +946,19 @@
   and stall bands at 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴. The calculator therefore flies the campaign at
   the <em>validated design profile</em>, a₀ = min(vehicle a₀, 2.5×10⁻⁴): a stronger vehicle throttles
   down to it (more thrust could close faster but the policy is validated in the design corridor), and
-  a weaker vehicle is integrated at its own a₀ and gated by the result. Achieved
-  v∞ above the 23.64 target (23.66, 23.8) is one-time-step discretisation overshoot, not extra
-  performance.</p>
+  a weaker vehicle is integrated at its own a₀ and gated by the result. The campaign terminates on the
+  first step past the target, so the achieved v∞ sits just above it (23.66, 23.8 against a 23.64
+  target).</p>
   <p>The <b>α ≳ 100 W/kg pure-solar threshold — and the "Min solar α" columns in the tables below — are
   outward-spiral requirements</b>; with pumping, pure solar closes at today's α, roughly wherever the
   vehicle's a₀ clears the ≈ 2.24×10⁻⁴ m/s² line. The target <em>rankings</em> do not move:
   LSPM J2146+3813 stays the cheapest destination (Δv ~19.7 km/s, cruise 8.7 km/s at its crossing — low
   enough that it needs <em>no pumping at all</em>), with λ Ser the best solar-type second. A complete SEP budget from
   LEO for an AC-class cruise totals <b>~31–34 km/s</b> (7.6 km/s Earth escape + ~23–24 heliocentric,
-  plus ~2 km/s pumping tax under the bang-bang policy);
-  the closed-form low-thrust budget behind the tables (~25–26 km/s for AC-class) underprices the
-  heliocentric leg by ~5 km/s and conversely overprices low-cruise targets, so read the tables' Δv as a
-  ranking metric rather than an absolute budget.</p>
+  plus ~2 km/s pumping tax under the bang-bang policy). The <b>Δv column in the star tables below is a
+  different quantity</b>: the closed-form Earth-borrow spiral (~25–26 km/s for AC-class), applied
+  identically to every candidate. It is the basis for <em>ranking</em> targets against one another;
+  absolute departure budgets are the two-leg figures given here and in the calculator.</p>
   <p>For the vehicle, the practical corollaries: a <b>GTO drop-off</b> cuts the Earth-escape leg
   ~7.7 → ~4.0 km/s and closes a ~100 kg spacecraft (a LEO start needs ~113–146 kg), and the required
   Isp ≥ 2800 s at ~0.55 efficiency sits on demonstrated gridded-ion hardware (NSTAR-class), not Hall
