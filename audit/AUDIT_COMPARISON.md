@@ -186,6 +186,45 @@ the **15–21 W/kg** band this project publishes. So the headline claim *"pumpin
 | Ceiling | no α suffices above ~26.5 km/s | outward spiral at this sizing | engine (fixed 20 km/s propellant budget) |
 | **Perihelion pumping** | **15–21 W/kg** | pumped campaign | engine + PSI-derived (above) |
 
+### Reading α correctly — α and Δv are *different* constraints (worked example: α Librae)
+
+A low α threshold does **not** mean an easy target. α is set by the **required cruise speed** alone;
+the **Δv budget** is set by cruise *plus* the out-of-plane aim. They can point in opposite directions,
+and α² Librae is the clean case:
+
+| | **α² Librae** | **α Centauri** (crossing) |
+|---|---|---|
+| Required cruise | 14.5 km/s | 23.9 km/s |
+| Arrival epoch | +798 kyr | ~80 kyr |
+| **Min solar α (outward spiral)** | **~57 W/kg** ← *half of AC* | ~112 W/kg |
+| Aim tilt | **−47°** | 0° |
+| **Δv budget** | **39.1 km/s** ← *much worse* | 25.2 km/s |
+| Propellant fraction | 74 % | 57 % |
+
+**Why α is lower:** 798 kyr of patience permits a 14.5 km/s crawl, and a slower cruise is a much
+easier power problem. **Why that is misleading:** α Librae's binding constraint is not power but the
+−47° plane change, which Earth's velocity cannot supply and propellant must buy. It is
+**power-easy but propellant-brutal** — which is precisely why this project ranks candidates by
+**Δv budget, not by α** (the same trap as the c UMa −46° "tilt trap").
+
+**Under pumping the α advantage vanishes entirely**, because every campaign flies at the same
+validated a₀ — so α converges for both targets while α Librae's plane-change term makes its budget
+slightly *worse*:
+
+| Target | Cruise | Plane-change term | Pumped Δv | Propellant | Vehicle α |
+|---|---|---|---|---|---|
+| α² Lib | 14.5 | **10.6** | **34.7** | 72 % | **22.1 W/kg** |
+| AC (crossing) | 23.9 | 0.0 | 33.5 | 70 % | 21.1 W/kg |
+| AC (design) | 23.6 | 1.0 | 34.2 | 71 % | 21.7 W/kg |
+
+*(α² Lib's low cruise does close at a₀ as small as 8×10⁻⁵ — but that campaign runs ~60 yr over
+~15 revolutions: the patience trade taken to its limit.)*
+
+**Rule of thumb for reading these tables: α tells you whether the power system can do it at all;
+Δv tells you whether the vehicle can afford it. Both must pass.**
+
+---
+
 *Why the same mission demands ~100 W/kg one way and ~18 W/kg the other is the whole result — it gets
 its own section next.*
 
