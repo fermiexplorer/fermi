@@ -73,9 +73,13 @@ def solar_oberth_vinf(perihelion_solar_radii: float, burn_dv: float) -> float:
 
 
 def solar_oberth_burn_for_vinf(perihelion_solar_radii: float, v_inf_target: float) -> float:
-    """Burn delta-v at perihelion needed to reach a target v_inf."""
+    """Burn delta-v at perihelion needed to reach a target v_inf.
+
+    Uses the cancellation-free identity sqrt(v² + vₑ²) − vₑ == v²/(sqrt(v² + vₑ²) + vₑ),
+    exact for v ≪ vₑ where the subtractive form loses ~2 digits.
+    """
     r_sun = 6.957e8
     r_p = perihelion_solar_radii * r_sun
     v_esc = math.sqrt(2.0 * c.MU_SUN / r_p)
     v_after = math.sqrt(v_inf_target**2 + v_esc**2)
-    return v_after - v_esc
+    return v_inf_target**2 / (v_after + v_esc)

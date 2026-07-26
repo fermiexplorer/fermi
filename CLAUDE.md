@@ -68,6 +68,18 @@ Node (any recent version) is used only for the web-parity audit.
 
 ## Running Tests
 
+**ALWAYS run verification through scripts — never as chains of one-off suite
+commands or filter pipes.** Verification is READ-ONLY, so it is invoked via
+zero-argument launchers in `tmp/ro/` (auto-approved); the tracked logic lives
+in `tools/verify.py`. Recreate the launchers if missing (5-line wrappers):
+
+```bash
+timeout 600 .venv/bin/python tmp/ro/verify_now.py     # audits + parity + syntax + pytest
+timeout 600 .venv/bin/python tmp/ro/verify_ui_now.py  # + browser UI suite (heavy, last)
+```
+
+Individual suites, for reference (verify.py invokes these):
+
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
 .venv/bin/python audit/calcs/run_audits.py # full independent audit suite (130 checks)
@@ -102,6 +114,19 @@ node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 ## Push / Default Branch
 
 Default branch is `main`. Branch before committing if on `main`.
+
+**ALWAYS release through scripts — never as chains of one-off git/deploy
+commands.** The tracked logic is `tools/release.py` (commit from a message
+file, auto-detect shipped-file changes → `tools/deploy.py` → commit+push both
+Pages clones → push branch + `HEAD:main` → poll the live badge). Because a
+release is STATE-CHANGING, invoke it via a zero-argument wrapper written to
+`tmp/rw/` for that specific release (selective approval), e.g.:
+
+```bash
+timeout 600 .venv/bin/python tmp/rw/release_now.py
+```
+
+Run the verification launcher (`tmp/ro/verify_now.py`) first.
 
 ## Banned Bash Patterns — NEVER USE
 

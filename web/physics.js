@@ -77,8 +77,9 @@
     return 2 * vrel * sd;
   }
   function oberthBurnFor(rpRsun, vinf) {
+    // cancellation-free identity: sqrt(v²+vₑ²) − vₑ == v²/(sqrt(v²+vₑ²) + vₑ) (mirror of fermi_sim)
     const r = rpRsun * R_SUN, ve = Math.sqrt(2 * MU_SUN / r);
-    return Math.sqrt(vinf * vinf + ve * ve) - ve;
+    return vinf * vinf / (Math.sqrt(vinf * vinf + ve * ve) + ve);
   }
   // Earth-escape spiral: revolutions & time to spiral from circular LEO to C3=0 at a=thrust/mass.
   // Analytic near-circular result N = mu/(8*pi*a*r_p^2), t = v_circ/a (matches integration ~0.2%).
@@ -249,7 +250,7 @@
     const rp = rpRsun * R_SUN;
     const vEsc = Math.sqrt(2 * MU_SUN / rp);
     const vTarget = Math.sqrt(vInfTarget * vInfTarget + vEsc * vEsc);
-    const dvFinalMin = vTarget - vEsc;
+    const dvFinalMin = vInfTarget * vInfTarget / (vTarget + vEsc);   // cancellation-free v_target − v_esc
     let v = Math.sqrt(MU_SUN / rp);                // circular start at the station
     let passes = 0, t = 0, eStation = 0, maxPeriod = 0, escapedBelow = false, leftAtTarget = false;
     while (passes < maxPasses) {

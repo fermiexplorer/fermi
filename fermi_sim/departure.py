@@ -349,7 +349,8 @@ def synchrotron_escape(
     r_p = rp_rsun * c.R_SUN
     v_esc = math.sqrt(2.0 * c.MU_SUN / r_p)
     v_target = math.sqrt(v_inf_target ** 2 + v_esc ** 2)
-    dv_final_min = v_target - v_esc
+    # cancellation-free form of v_target − v_esc (exact for v_inf ≪ v_esc)
+    dv_final_min = v_inf_target**2 / (v_target + v_esc)
     v = math.sqrt(c.MU_SUN / r_p)                  # circular start at the station
     passes, t, e_station, max_period = 0, 0.0, 0.0, 0.0
     escaped_below = False
