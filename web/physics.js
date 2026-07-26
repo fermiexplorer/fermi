@@ -111,8 +111,12 @@
   // CONSERVATIVE solar-electric feasibility: max heliocentric v∞ a SEP probe can reach from a 1-AU
   // circular orbit, with thrust faded as 1/r² (array power). Saturates → practical SEP falls below
   // the ~23.4 km/s cruise floor (the 1/r² power-fade analysis). RK4 in SI; cached by argument key.
-  const _sepCache = {};
+  // FIFO cap on the memo tables so a long slider-drag session can't grow them without bound (each
+  // entry is tiny, but the key space is effectively unbounded); evict the oldest key past the cap.
+  const CACHE_CAP = 4096;
+  const _sepCache = {}, _sepOrder = [];
   function sepAchievableVinf(powerW, wetKg, dryPayKg, ispS, eff = 0.5, r0Au = 1, fadeExp = 2) {
+    if (![powerW, wetKg, dryPayKg, ispS, eff, r0Au, fadeExp].every(Number.isFinite)) return 0;
     const ve = ispS * G0, mp = wetKg - dryPayKg;
     if (mp <= 0 || powerW <= 0 || ve <= 0) return 0;
     const key = [powerW, wetKg, dryPayKg, ispS, eff, r0Au, fadeExp].map(x => +(+x).toFixed(3)).join(',');
@@ -141,6 +145,7 @@
     const r = Math.hypot(rx, ry), E = 0.5 * (vx * vx + vy * vy) - mu / r;
     const out = E > 0 ? Math.sqrt(2 * E) : 0;
     _sepCache[key] = out;
+    if (_sepOrder.push(key) > CACHE_CAP) delete _sepCache[_sepOrder.shift()];
     return out;
   }
   // PERIHELION PUMPING (mirror of fermi_sim.departure.perihelion_pumped_vinf): multi-revolution
@@ -148,8 +153,10 @@
   // cap), then prograde arcs at perihelion — power capped at powerCap× the 1-AU rating — staircase
   // the energy to the target. Defeats the 1/r² outward-spiral saturation at today's α.
   // Returns { vinf (m/s), dv (m/s), years, revs, reaches }. Cached by argument key.
-  const _pumpCache = {};
+  const _pumpCache = {}, _pumpOrder = [];
   function perihelionPumpedVinf(a0, vInfTarget, ispS = 2800, rpMinAu = 0.42, powerCap = 4, maxYr = 60) {
+    if (![a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].every(Number.isFinite) || a0 <= 0 || vInfTarget <= 0)
+      return { vinf: 0, dv: 0, years: 0, revs: 0, reaches: false };
     const key = [a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].map(x => "" + x).join(",");
     if (_pumpCache[key] !== undefined) return _pumpCache[key];
     const mu = MU_SUN, ve = ispS * G0, targetE = 0.5 * vInfTarget * vInfTarget;
@@ -218,6 +225,7 @@
       out = { vinf: E > 0 ? Math.sqrt(2 * E) : 0, dv, years: t / YEAR, revs, reaches: false };
     }
     _pumpCache[key] = out;
+    if (_pumpOrder.push(key) > CACHE_CAP) delete _pumpCache[_pumpOrder.shift()];
     return out;
   }
 
@@ -228,6 +236,12 @@
   // and escape TERMINATES recirculation — a kick that clears escape below the target
   // perihelion speed strands the probe ("escapedBelow").
   function synchrotronEscape(rpRsun, dvPass, vInfTarget, maxPasses = 10000) {
+    // hardening: clamp the pass budget so a huge/hostile maxPasses can't spin the tab, and reject
+    // non-physical inputs (dvPass<=0 never builds speed) with a fully-formed zero sentinel.
+    maxPasses = Number.isFinite(maxPasses) ? Math.min(Math.max(1, Math.floor(maxPasses)), 1e6) : 10000;
+    if (!(rpRsun > 0) || !(dvPass > 0) || !Number.isFinite(vInfTarget))
+      return { passes: 0, timeYr: 0, maxPeriodYr: 0, vPeriFinal: 0, vInfFinal: 0, vEsc: 0, vTarget: 0,
+        dvFinalMin: 0, energySpec: 0, rendezvousVel: 0, escapedBelow: false, reached: false };
     const rp = rpRsun * R_SUN;
     const vEsc = Math.sqrt(2 * MU_SUN / rp);
     const vTarget = Math.sqrt(vInfTarget * vInfTarget + vEsc * vEsc);
