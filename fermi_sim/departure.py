@@ -199,13 +199,19 @@ def perihelion_pumped_vinf(
     The conventional outward spiral saturates below the cruise floor because solar power
     fades 1/r²; pumping inverts the logic:
     retrograde thrust arcs near apoapsis shed angular momentum until perihelion reaches
-    ``rp_min_au`` (where the thermal cap engages), then prograde arcs concentrate at
+    ``rp_min_au`` (the thermal floor), then prograde arcs concentrate at
     perihelion where power is `power_cap`× the 1-AU rating and the Oberth effect is
     strongest. Successive revolutions staircase the orbit energy up to the target.
 
     Power model:  P(r) = P1 · min((1 AU/r)², power_cap); thrust ∝ P at fixed
     Isp, so accel = a0 · min((1/r)², cap) · (m0/m).  ``a0`` is the initial thrust
     acceleration at 1 AU and full mass (m/s²) — the single sizing parameter.
+    The constant ``power_cap`` is a STEP-FUNCTION stand-in for the real, continuous
+    thermal derate curve (cell temperature coefficient, α/ε, emission geometry,
+    pointing); deriving cap_eff(r) from a first-principles energy balance is tracked
+    as issue #5 / roadmap Stage 7. The closure carries a factor-of-two margin on this
+    assumption: a halved cap (2.0×) still reaches the AC target (+1.1 km/s, campaign
+    9.6 → 18.3 yr; audit-pinned in audit_pumping check 13b).
 
     Bang-bang policy, exactly as implemented below (an optimised burn schedule does ~7%
     better on Δv): (1) BOOTSTRAP — from near-circular (ecc < 0.05) burn retrograde only on
