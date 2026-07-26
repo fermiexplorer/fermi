@@ -25,16 +25,19 @@ plan (NN = issue number). Unscheduled stages get theirs when picked up.
 
 ## Stage 1 — Adaptive timestep in the SEP power gate  *(scheduled: [#2](https://github.com/fermiexplorer/fermi/issues/2))*
 
-**Today:** `sep_achievable_vinf` integrates with a fixed 50,000 s step. Result
-differs from a finer-step integration by up to ~3%. The verdict it produces
-(conservative solar saturates far below the 23.3 km/s floor) has margin far wider
-than 3%, so no conclusion changes — but the achievable-v∞ *values* it prints
-(page gate numbers, the star tables' "Min solar α" column, the α ≈ 100 W/kg
-outward-spiral threshold) carry that error.
+**Today:** `sep_achievable_vinf` integrates with a fixed 50,000 s step (result up
+to ~3% off a finer-step integration), and its mass is Euler-updated once per step
+while the state is fourth-order — all four RK4 stages see the start-of-step mass
+(worst case ~1% more, at high power and ~80% propellant fraction). The verdict it
+produces (conservative solar saturates far below the 23.3 km/s floor) has margin
+far wider than either error, so no conclusion changes — but the achievable-v∞
+*values* it prints (page gate numbers, the star tables' "Min solar α" column, the
+α ≈ 100 W/kg outward-spiral threshold) carry them.
 
 **Tightened:** adaptive step `dt = min(max(600, 0.002·period), 5 days)` — the
-scheme the pumping integrator already uses — plus a step-halving convergence
-assertion in `audit/calcs/audit_departure.py`.
+scheme the pumping integrator already uses — with mass folded into the RK4 state
+vector (5th component, ṁ = −F/vₑ), plus a step-halving convergence assertion in
+`audit/calcs/audit_departure.py`.
 
 **Re-baselines:** parity REF values for the two SEP checks; the star tables'
 `amin` column; the α-threshold numbers quoted on the page/REPORT if they move.
