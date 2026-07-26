@@ -59,6 +59,7 @@ for the independence chain.
 
 ```
 AUDIT_COMPARISON.md   the cross-source comparison + trust analysis (read this first)
+EXTERNAL_AUDIT_SCOPE.md  scope & file guide for a third-party reviewer (engine-focused; browser out of scope)
 AUDIT_PROMPTS.md      adversarial prompts (§1–10 geometry/departure, §11–12 pumping/synchrotron)
 calcs/                the in-repo independent suite (Python) + Node parity check
 codex/ grok/          independent AI re-implementations + committed results
@@ -67,6 +68,16 @@ gmat/                 NASA GMAT cross-validation (scripts, comparison, raw outpu
 psi/                  archived external assessment PSI-TR-2026-0714 + our cross-validation notes
 stk/                  Ansys STK/Astrogator prep (driver + comparator; awaits a trial licence)
 ```
+
+## Guide for an independent (human) auditor
+
+If you are a **human reviewer** auditing the model — as opposed to the AI re-implementations under
+`codex/ grok/ gemini/ fable/` — start with
+[`EXTERNAL_AUDIT_SCOPE.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/EXTERNAL_AUDIT_SCOPE.md).
+It is the file-by-file scope guide written for you: what is in and out of scope (browser code is
+excluded), the Tier-1 engine files and exactly what to check in each, the headline numbers to
+reproduce by an independent method, the disclosed model assumptions, and full disclosure of the
+known open/declined items so you can challenge our judgement rather than rediscover them.
 
 ## Adding a new independent audit
 

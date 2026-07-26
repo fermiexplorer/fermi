@@ -1,8 +1,10 @@
-# External Audit — Scope & File Guide
+# Guide for an Independent (Human) Auditor — Scope & Files
 
-A guide for a third-party reviewer auditing the **physics engine and its
-conclusions**. It tells you which files carry the load-bearing math, what each
-one claims, what to check, and where the known soft spots are.
+A guide for a **human reviewer** auditing the **physics engine and its
+conclusions** — distinct from the AI re-implementations under
+`audit/codex|grok|gemini|fable/`, which re-derive the numbers programmatically.
+It tells you which files carry the load-bearing math, what each one claims, what
+to check, and where the known soft spots are.
 
 **Browser / UI code is deliberately out of scope for this pass** (see
 [§2](#2-out-of-scope)). This document covers the Python engine, the integrated
