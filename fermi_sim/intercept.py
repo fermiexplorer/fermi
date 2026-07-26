@@ -19,6 +19,7 @@ cancels the radial part of V_ac and only the tangential part (~23 km/s) remains.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -43,8 +44,18 @@ class InterceptSolution:
 
 
 def required_v_inf(state: StateVector, arrival_time_s: float) -> np.ndarray:
-    """Heliocentric v_inf vector needed to intercept AC at the given time."""
-    return state.position_at(arrival_time_s) / arrival_time_s
+    """Heliocentric v_inf vector needed to intercept AC at the given time.
+
+    ``arrival_time_s`` must be finite and positive: T = 0 would divide by zero
+    (numpy would return an inf/nan vector SILENTLY, not raise) and T < 0 would
+    return the velocity needed to have arrived in the past — meaningless. This
+    is the front door of the intercept chain (``solve_intercept`` and everything
+    above it inherit the check).
+    """
+    t = float(arrival_time_s)
+    if not math.isfinite(t) or t <= 0.0:
+        raise ValueError(f"required_v_inf: arrival_time_s must be finite and > 0, got {arrival_time_s!r}")
+    return state.position_at(t) / t
 
 
 def solve_intercept(state: StateVector, arrival_time_s: float) -> InterceptSolution:
