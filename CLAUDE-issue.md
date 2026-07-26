@@ -73,24 +73,20 @@ Then update the issue:
 gh -R fermiexplorer/fermi issue edit N --body-file tmp/issue-body.txt
 ```
 
-## 4. Update the convergence matrix
+## 4. Cross-link the issue and its plan
 
-Add a row to the appropriate section in `docs/plans/00-matrix.md` (or your
-project's equivalent tracking file).
+The GitHub issue is the tracker (there is no convergence-matrix file). Keep the
+issue and its plan file cross-referenced:
 
-- **# column** (main tables) — the issue number (zero-padded): `07`
-- **# column** (summary tables) — linked issue number:
-  `[#N](https://github.com/fermiexplorer/fermi/issues/N)`
-- **Item column** — link to the plan file:
+- The **issue body** links its plan file:
   `[Title](https://github.com/fermiexplorer/fermi/blob/main/docs/plans/NN-slug.md)`
-- **Issue column** — link to the GitHub issue:
-  `[#N](https://github.com/fermiexplorer/fermi/issues/N)`
-
-Fill in component status columns using the legend at the top of the matrix.
+- The **plan file** references its issue number `#N` in its header.
+- When related issues need a summary, link each by number:
+  `[#N](https://github.com/fermiexplorer/fermi/issues/N)`.
 
 ## 5. Commit
 
-Stage the plan file and the matrix update together. Reference the issue number
+Stage the plan file (and any code change) together. Reference the issue number
 in the commit message:
 
 ```

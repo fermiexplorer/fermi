@@ -1,5 +1,9 @@
 # Gemini Conclusions — Independent Audit
 
+> **Historical snapshot (June 2026).** Predates perihelion pumping; confirms the ephemeris,
+> intercept and departure energetics. The current default architecture is perihelion pumping —
+> see [`audit/README.md`](../README.md) and [`audit/AUDIT_COMPARISON.md`](../AUDIT_COMPARISON.md).
+
 Third independent re-implementation of the core physics, using **different methods**
 from the engine and from the Codex/Grok audits:
 

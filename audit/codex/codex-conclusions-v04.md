@@ -1,5 +1,9 @@
 # Codex Conclusions v04 - prompt 10 rerun
 
+> **Historical snapshot (2026-06-21).** Predates perihelion pumping; confirms the geometry,
+> intercept and departure energetics. The current default architecture is perihelion pumping —
+> see [`audit/README.md`](../README.md) and [`audit/AUDIT_COMPARISON.md`](../AUDIT_COMPARISON.md).
+
 Date: 2026-06-21
 
 Scope: rerun the audit against the new prompt 10 in `audit/AUDIT_PROMPTS.md`,

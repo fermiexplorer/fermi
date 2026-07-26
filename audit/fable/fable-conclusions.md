@@ -1,5 +1,10 @@
 # Fable 5 independent audit — conclusions
 
+> **Historical snapshot (build ~104).** This core audit predates perihelion pumping; its
+> "high-α solar default" was the model of the time. The current default is perihelion pumping.
+> Fable's later, current audits are the [pumping/synchrotron](fable-pumping-synchrotron-audit.md)
+> and [text](fable-text-audit.md) docs; overview in [`audit/README.md`](../README.md).
+
 *Parallel model re-implementation (alongside `audit/codex`, `audit/grok`, `audit/gemini`),
 performed by Claude Fable 5. Every headline quantity was re-derived from the same catalogued
 inputs by a **different method** than the engine, then compared. The engine (`fermi_sim`) was

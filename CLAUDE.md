@@ -247,16 +247,15 @@ Conventions for issue tracking:
 
 ### Resolving issues
 
-<!-- Optional: use this loop if/when Fermi adopts a convergence matrix. -->
-
-Source of truth: `docs/plans/00-matrix.md`
+Source of truth: **GitHub Issues** (Fermi tracks work items as issues, each with a
+`docs/plans/NN-slug.md` plan file — there is no convergence-matrix file).
 
 1. **Read** — Open the issue and its plan file
 2. **Plan** — Identify affected files
 3. **Investigate** — Real bug, false positive, or needs-clarification?
 4. **Fix** — Make the code change
 5. **Test** — Run test suite
-6. **Update matrix** — Mark resolved
+6. **Update the issue** — Mark resolved / close it
 7. **Commit** — One commit per issue
 
 ## Permissions

@@ -1,5 +1,11 @@
 # Grok Conclusions — Independent Audit (v02)
 
+> **Historical snapshot (June 2026).** This audit predates perihelion pumping: it confirms
+> the ephemeris, intercept and departure energetics, and its "direct solar-electric" verdict
+> was the model of the time. The current default architecture is perihelion pumping (closes
+> pure solar at today's α) — see [`audit/README.md`](../README.md) and
+> [`audit/AUDIT_COMPARISON.md`](../AUDIT_COMPARISON.md).
+
 Rerun against `audit/AUDIT_PROMPTS.md` (prompts 1–10), June 2026.
 Parallel Codex/Gemini sessions under `audit/codex/` and `audit/gemini/` left untouched.
 
