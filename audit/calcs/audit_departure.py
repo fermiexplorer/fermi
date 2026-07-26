@@ -87,6 +87,19 @@ def run() -> None:
     check("derived departure fit matches integrated spiral to <0.5% (10-25 km/s)",
           worst < 0.005 * 18e3, f"max |fit - integration| = {worst:.1f} m/s")
 
+    # 6b. EXTRAPOLATION pin (external ledger F4i): the fit is trained on v_inf 0-32 km/s
+    #     but the star tables evaluate it up to ~190 km/s cruise. The affine form with
+    #     slope ~1 IS the asymptote (excess built beyond the well costs ~1:1, and the
+    #     Oberth-savings offset saturates by ~10 km/s), so extrapolation must stay exact —
+    #     pin it at 0.1% so any future refit that breaks the asymptotic form is caught.
+    worst_x = 0.0
+    for v in (60e3, 190e3):
+        fit = v_circ + _SPIRAL_FIT_C0 + _SPIRAL_FIT_C1 * v
+        integ = spiral_escape_dv(c.MU_EARTH, r_leo, v)
+        worst_x = max(worst_x, abs(fit - integ) / integ)
+    check("fit extrapolates exactly beyond its 0-32 km/s training range (60/190 km/s, <0.1%)",
+          worst_x < 1e-3, f"worst rel err = {worst_x:.2e}")
+
     # 7. Cross-method: the integrated spiral is within ~1.5 km/s of the classic Edelbaum
     #    estimate (v_circ + v_inf,E) at every test point -> it is genuinely spiral-class.
     for v in (15e3, 20e3, 25e3):

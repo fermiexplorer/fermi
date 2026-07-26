@@ -89,6 +89,12 @@ def lowthrust_departure_dv(
     elliptical start a higher apogee carries more orbital energy, so the ion has less to spiral:
     v_circ → sqrt(mu/a), plus a small eccentricity correction. Closed form of the integrated
     constant-tangential spiral (`spiral_escape_dv`); the audit suite re-checks it vs integration.
+
+    Validity: the coefficients are fitted on v∞,E ∈ [0, 32] km/s (tools/fit_spiral.py), but the
+    form extrapolates EXACTLY — measured <0.01% vs integration out to 190 km/s (and pinned at
+    0.1% in audit_departure) — because the affine shape with slope ≈ 1 is the true asymptote:
+    excess built beyond the well costs ~1:1, and the Oberth-savings offset saturates by
+    ~10 km/s. Eccentric starts are validated to e ≤ 0.7 only.
     """
     if apogee_km is None:
         apogee_km = perigee_km
