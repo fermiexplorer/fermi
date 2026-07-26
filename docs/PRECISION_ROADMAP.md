@@ -88,11 +88,19 @@ phased-departure option the report currently lists as future work.
 ## Stage 6 — Ephemeris beyond linear motion  *(unscheduled)*
 
 **Today:** every star (including AC) moves on a straight line at constant
-velocity. Fine to ≪1% over the ~80 kyr AC mission; degrades over the ±1.5 Myr
-horizon of the beyond-AC tables (galactic orbit curvature ~kpc scale).
+velocity. The extrapolation error is *second-order* — the measured 6-D velocity
+already contains all first-order relative motion, so the residual is
+½·a_rel·t², where a_rel is the differential galactic tide (~Ω²·d ≈ 2.6×10⁻¹⁴
+m/s² in-plane, ~9× that for the vertical oscillation) plus the mutual Sun↔AC
+attraction (≈ 2.4×10⁻¹³ m/s² — the largest single term). Quantified: **~6–10 AU
+at the 80 kyr AC mission horizon** (0.2–0.4% of the 2600 AU miss allowance) —
+negligible; **~1000–2600 AU by the 1–1.3 Myr horizons** of the beyond-AC tables
+(e.g. the Gliese 710 epoch) — comparable to the allowance itself, which is what
+makes this stage worth doing.
 
-**Tightened:** epicyclic/galactic-potential propagation for the long-horizon
-star tables; AC-mission numbers are unaffected.
+**Tightened:** epicyclic/galactic-potential propagation (plus point-mass mutual
+attraction for the nearest systems) for the long-horizon star tables;
+AC-mission numbers are unaffected.
 
 ---
 

@@ -203,7 +203,7 @@ undisclosed assumption, that is a finding.
 
 | Assumption | Where it bites | Disclosed error / scope |
 |---|---|---|
-| AC (and every star) moves in a **straight line at constant velocity** | all intercept geometry | ≪1% over the ~80 kyr AC window; degrades over the ±1.5 Myr beyond-AC tables (roadmap Stage 6) |
+| AC (and every star) moves in a **straight line at constant velocity** | all intercept geometry | error is *second-order* (the measured 6-D velocity absorbs all first-order motion): ½·a_rel·t² with a_rel = differential galactic tide + mutual Sun↔AC gravity (the larger term) ≈ **6–10 AU at 80 kyr** — 0.2–0.4% of the 2600 AU allowance; grows to ~1000–2600 AU by the 1–1.3 Myr beyond-AC horizons (roadmap Stage 6) |
 | **Two-body dynamics** (Sun + one body) | all trajectory integrators | no planetary perturbations or galactic tides |
 | Campaign integrators are **2-D in-plane** | pumping + SEP gate | out-of-plane aim charged separately as v∞·\|sin β\| (roadmap Stage 4) |
 | Solar power = **1/r² exactly**, 4× perihelion cap | pumping power model | the cap is a thermal assumption — a real hot array derates toward ~3× (disclosed on the page) |
