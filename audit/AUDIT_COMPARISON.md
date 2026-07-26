@@ -210,23 +210,30 @@ easier power problem. **Why that is misleading:** α Librae's binding constraint
 **Δv budget, not by α** (the same trap as the c UMa −46° "tilt trap").
 
 **Under pumping the α advantage vanishes entirely**, because every campaign flies at the same
-validated a₀ — so α converges for both targets while α Librae's plane-change term makes its budget
-slightly *worse*:
+validated a₀ — so α converges for both targets while α² Librae's plane change *plus* its
+low-cruise campaign overhead make its budget substantially **worse**:
 
 | Target | Cruise | Plane-change term | Pumped Δv | Propellant | Vehicle α |
 |---|---|---|---|---|---|
-| α² Lib | 14.5 | **10.6** | **34.7** | 72 % | **22.1 W/kg** |
+| α² Lib | 14.5 | **10.6** | **41.0**¹ | 78 % | **27.8 W/kg** |
 | AC (crossing) | 23.9 | 0.0 | 33.5 | 70 % | 21.1 W/kg |
 | AC (design) | 23.6 | 1.0 | 34.2 | 71 % | 21.7 W/kg |
+
+¹ α² Lib's campaign leg is **integrated** (`perihelion_pumped_vinf` at its 14.5 km/s target:
+Δv 22.7 km/s = v∞ + ~8.1 km/s of in-plane overhead), because the flat 2 km/s pump tax is
+calibrated only for the v∞ ≈ 23–25 km/s corridor — the low-cruise overhead is ~4× larger, and
+`pumped_departure_dv` refuses targets below 20 km/s for exactly this reason
+(`PUMP_TAX_VINF_MIN`). The AC rows sit inside the corridor and use the flat-tax budget.
 
 *(α² Lib's low cruise does close at a₀ as small as 8×10⁻⁵ — but that campaign runs ~60 yr over
 ~15 revolutions: the patience trade taken to its limit.)*
 
 *(On the band: the project's headline "~15–21 W/kg" is the **PSI-implied** vehicle-α band, which
-brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slightly higher — 21.7 W/kg
-at the AC design point, 22.1 for α² Lib — so these per-target rows sit just above the top of the
-published band. Same physics, ~1 W/kg of sizing conservatism; the headline is kept at 15–21 because
-that is the PSI-implied figure the project cites.)*
+brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slightly higher —
+21.7 W/kg at the AC design point, just above the top of the band: same physics, ~1 W/kg of sizing
+conservatism, and the headline is kept at 15–21 because that is the PSI-implied figure the project
+cites. α² Lib's 27.8 W/kg is higher for a different reason — its integrated low-cruise campaign
+carries ~8 km/s of in-plane overhead, which inflates the mass ratio that multiplies into vehicle α.)*
 
 **Naming & kinematic caveat (α² Lib = SIMBAD "alf02 Lib" = PSI's "Alpha-2 Librae").** All rows
 above refer to the same object: the naked-eye A-type component of the α Librae multiple system

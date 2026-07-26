@@ -119,6 +119,11 @@ launch timing, additive low-thrust penalty, geometric (not phased) gravity-assis
 bounds. Cost is treated as a soft constraint and is out of scope here. Intended for
 feasibility and architecture trades, not detailed trajectory design.
 
+The staged plan for tightening the model's precision — what is loose today, by how
+much, and the fix each stage adopts — is
+[docs/PRECISION_ROADMAP.md](docs/PRECISION_ROADMAP.md); scheduled stages are tracked
+as GitHub issues with `docs/plans/` entries.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

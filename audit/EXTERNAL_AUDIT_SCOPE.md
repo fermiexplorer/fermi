@@ -126,10 +126,11 @@ This is where the novel and contested physics lives. Functions to scrutinise:
   design point (e.g. reaches at cap 2.0/2.5/3.5/4.0×, strands at 1.5/3.0/3.25×).
   Confirm this is real physics of the bang-bang schedule, not a bug.
 - **`pumped_departure_dv`** — the two-leg budget: √(μ⊕/a) escape + v∞ +
-  v∞·|sinβ| plane change + a flat **2 km/s "pump tax."** **Check:** the flat tax
-  is calibrated *only* near the AC corridor (v∞≈23–25 km/s); it under-prices
-  low-v∞ targets. Confirm shipped code never evaluates it outside that corridor
-  (see the docstring caveat).
+  v∞·|sinβ| plane change + a flat **2 km/s "pump tax."** The tax is calibrated
+  only for the AC corridor (v∞ ≈ 23–25 km/s) and the corridor is **enforced at
+  runtime**: the function raises below `PUMP_TAX_VINF_MIN` (20 km/s) in both
+  languages. **Check:** the guard actually fires; the in-corridor calibration
+  (Δv − v∞ ≈ 2.0 km/s at the design point) against your own integration.
 - **`sep_achievable_vinf`** — the conservative solar-power-fade feasibility gate
   (1/r² thrust, RK4). **Check:** the fixed 50,000 s timestep (see
   [§8](#8-known-numerical-limitations-of-the-implementation)); whether the saturation verdict is robust
@@ -203,34 +204,29 @@ reasonable* for a first-order estimate:
 ## 8. Known numerical limitations of the implementation
 
 Properties of the code as written that fall short of textbook-ideal numerics.
-Each is stated with its magnitude and the reason it does not affect the shipped
-conclusions at Fermi-estimate precision — **verify that reasoning yourself; if
-you find a case where one of these becomes material, that is a finding.**
+For each: the **defect** is stated bare, and the project's **materiality claim**
+is labelled separately — your deliverable ([§10](#10-suggested-deliverable))
+includes a verdict on each claim (MATERIAL / CONFIRMED-IMMATERIAL / UNTESTED).
+Do not inherit the claim; test it. The staged plan for tightening these is
+[`docs/PRECISION_ROADMAP.md`](../docs/PRECISION_ROADMAP.md).
 
-- **Catastrophic cancellation in `v_inf_earth_required`** (`departure.py:49`,
-  law-of-cosines form): subtracting near-equal ~10⁹-scale terms loses ~1–2 of
-  the ~15 double-precision digits. Immaterial here because the input constants
-  themselves carry only 10–11 digits; the half-angle identity
-  `(v_dep − V_E)² + 4·v_dep·V_E·sin²(β/2)` is the cancellation-free form if you
-  want to bound the error.
-- **Cancellation in `solar_oberth_vinf`** (`trajectory.py`, `v_after² − v_esc²`):
-  loses digits for burns much smaller than the perihelion escape speed; a
-  `max(...,0)` guard prevents a negative sqrt argument. The burn sizes the tool
-  actually evaluates (~1–2 km/s against ~195 km/s) retain ~4 significant digits —
-  the same level as the 4-digit `R_SUN` constant that feeds them.
-- **Fixed 50,000 s timestep in `sep_achievable_vinf`**: the achievable-v∞ result
-  differs by up to ~3% from a finer-step integration. The verdict this gate
-  produces (solar saturates far below the 23.3 km/s floor at conservative α) has
-  a margin much wider than 3% — check the margin yourself near the threshold.
-- **No input validation at the Python boundary** (`perihelion_pumped_vinf` and
-  siblings): non-finite or degenerate arguments produce garbage rather than a
-  clear error. All in-repo callers pass controlled values; if the engine is
-  reused as a library, this is worth flagging.
-- **Flat 2 km/s pump tax in `pumped_departure_dv`**: calibrated at, and exact
-  only near, the AC corridor (v∞ ≈ 23–25 km/s); at v∞ ≈ 8–10 km/s the true
-  campaign overhead is ~10–13 km/s, so the budget under-prices low-v∞ targets.
-  The shipped code only evaluates it in the AC corridor (the docstring states
-  the validity window).
+- **Fixed 50,000 s timestep in `sep_achievable_vinf`.**
+  *Defect:* the achievable-v∞ result differs by up to ~3% from a finer-step
+  integration, and that error propagates to the page gate numbers, the star
+  tables' "Min solar α" column, and the α ≈ 100 W/kg outward-spiral threshold.
+  *Materiality claim (test this):* the gate's verdict — conservative solar
+  saturates far below the 23.3 km/s floor — has margin much wider than 3%, so no
+  conclusion flips. Scheduled fix: adaptive timestep,
+  [issue #2](https://github.com/fermiexplorer/fermi/issues/2).
+- **Flat 2 km/s pump tax in `pumped_departure_dv`, corridor-enforced.**
+  *Defect:* the tax models the campaign overhead as a constant, which is only
+  correct for v∞ ≈ 23–25 km/s (the true overhead is ~8–13 km/s at v∞ ≈ 8–15).
+  The function raises below `PUMP_TAX_VINF_MIN` (20 km/s) in both languages, so
+  the wrong regime is unreachable rather than modelled.
+  *Materiality claim (test this):* every shipped caller sits inside the corridor
+  (the AC aim's v∞ floor is 23.27 km/s), and the guard fires outside it.
+  Scheduled fix: v∞-dependent overhead model,
+  [issue #3](https://github.com/fermiexplorer/fermi/issues/3).
 
 The independent suite has a further ~139 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).

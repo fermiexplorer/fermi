@@ -283,7 +283,9 @@ def run() -> None:
     for name, alt, apo in (("LEO 400", 400.0, None), ("GTO 590x35786", 590.0, 35786.0)):
         r_p = c.R_EARTH + alt * 1e3
         r_a = c.R_EARTH + (apo if apo else alt) * 1e3
-        leg = pumped_departure_dv(0.0, 0.0, alt, apo, pump_tax=0.0)
+        # compute the escape leg INDEPENDENTLY (sqrt(mu/a) from first principles) rather than
+        # calling the budget with zeroed args — which the corridor guard now rightly refuses
+        leg = math.sqrt(c.MU_EARTH / (0.5 * (r_p + r_a)))
         dv_int = spiral_escape_dv(c.MU_EARTH, r_p, 0.0, accel=5e-4, apogee_r=r_a)
         check(f"escape leg bounds the integrated spiral ({name})",
               dv_int <= leg <= 1.15 * dv_int,
@@ -355,6 +357,19 @@ def run() -> None:
     check("power cap is non-monotone: 2.0/2.5/3.5/4.0x reach, 1.5/3.0/3.25/5.67x stall",
           len(reach_caps) == 4 and len(stall_caps) == 4,
           f"reach={reach_caps}, stall={stall_caps}")
+
+    # 13c. Corridor guard: the flat 2 km/s tax is calibrated only for v_inf ~ 23-25 km/s;
+    #      below PUMP_TAX_VINF_MIN the true overhead is ~8-13 km/s, so the budget must REFUSE
+    #      rather than silently underprice (the alpha2-Lib mispricing class of error).
+    try:
+        pumped_departure_dv(14.5e3, -47.0, 400.0)
+        guard_fired = False
+    except ValueError:
+        guard_fired = True
+    check("pumped_departure_dv refuses v_inf below the calibrated corridor (20 km/s)",
+          guard_fired, "ValueError raised at 14.5 km/s")
+    check("pumped_departure_dv still prices the AC corridor (23.64 km/s)",
+          pumped_departure_dv(23.64e3, 0.0, 400.0) > 30e3, "in-corridor call works")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the

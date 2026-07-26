@@ -45,9 +45,13 @@ def v_inf_earth_required(v_inf_sun: float, plane_angle_deg: float) -> float:
     v_dep = math.sqrt(v_inf_sun**2 + c.V_ESC_SUN_1AU**2)  # helio speed at 1 AU
     beta = math.radians(plane_angle_deg)
     # Law of cosines with the angle between V_dep and Earth's (in-plane) velocity
-    # minimised to beta (align the in-plane projection with Earth's motion).
-    v_inf_e_sq = v_dep**2 + c.V_EARTH_ORBITAL**2 - 2 * v_dep * c.V_EARTH_ORBITAL * math.cos(beta)
-    return math.sqrt(max(v_inf_e_sq, 0.0)), v_dep
+    # minimised to beta (align the in-plane projection with Earth's motion), in the
+    # cancellation-free half-angle form:
+    #   v² + V² − 2vV·cosβ  ==  (v − V)² + 4vV·sin²(β/2)
+    # (both terms non-negative, so no near-equal subtraction for small β).
+    s = math.sin(0.5 * beta)
+    v_inf_e_sq = (v_dep - c.V_EARTH_ORBITAL) ** 2 + 4.0 * v_dep * c.V_EARTH_ORBITAL * s * s
+    return math.sqrt(v_inf_e_sq), v_dep
 
 
 # --- Derived low-thrust departure fit (Plan 02, Phase A: naïve constant-tangential spiral) ---
@@ -68,6 +72,11 @@ _SPIRAL_FIT_CE2 = 284.8  # m/s
 # (parabolic escape), vs the r→∞ Edelbaum asymptote of v_circ. Mildly acceleration-dependent
 # (~0.95 at a≈1e-4, ~0.94 at the design band, ~0.87 at a≈5e-3); 0.93 holds the SEP band to ≲1 %.
 _C3_ESCAPE_FRAC = 0.93
+# Lower edge (m/s) of the corridor where pumped_departure_dv's flat 2 km/s tax is honest —
+# below this the integrated campaign overhead is ~8-13 km/s and the flat tax underprices,
+# so the function refuses (see its docstring). The AC aim geometry never goes below the
+# 23.27 km/s tangential floor, so shipped callers sit comfortably inside.
+PUMP_TAX_VINF_MIN = 20.0e3
 
 
 def lowthrust_departure_dv(
@@ -196,6 +205,16 @@ def perihelion_pumped_vinf(
     reaches v_inf_target²/2 within ``max_yr``. Achieved v∞ can overshoot the target by up
     to ~1% of v∞ (one time-step of thrust); the overshoot is discretisation, not physics.
     """
+    for nm, val in (("a0", a0), ("v_inf_target", v_inf_target), ("isp_s", isp_s),
+                    ("rp_min_au", rp_min_au), ("power_cap", power_cap), ("max_yr", max_yr)):
+        if not math.isfinite(val):
+            raise ValueError(f"perihelion_pumped_vinf: {nm} must be finite, got {val!r}")
+    if a0 <= 0.0 or v_inf_target <= 0.0 or isp_s <= 0.0 or max_yr <= 0.0:
+        raise ValueError("perihelion_pumped_vinf: a0, v_inf_target, isp_s and max_yr must be positive")
+    if not 0.0 < rp_min_au < 1.0:
+        raise ValueError("perihelion_pumped_vinf: rp_min_au must be in (0, 1) AU — the campaign starts at 1 AU")
+    if power_cap < 1.0:
+        raise ValueError("perihelion_pumped_vinf: power_cap is a multiple of the 1-AU rating and must be >= 1")
     mu, AU = c.MU_SUN, c.AU
     ve = isp_s * c.G0
     target_E = 0.5 * v_inf_target ** 2
@@ -315,6 +334,12 @@ def synchrotron_escape(
     accel-phase time, max single period, Δv_final_min = v_target − v_esc, the station↔probe
     rendezvous speed ≈ (√2−1)·v_circ(r_p), and the feasibility verdict.
     """
+    for nm, val in (("rp_rsun", rp_rsun), ("dv_pass", dv_pass), ("v_inf_target", v_inf_target)):
+        if not math.isfinite(val):
+            raise ValueError(f"synchrotron_escape: {nm} must be finite, got {val!r}")
+    if rp_rsun <= 0.0 or dv_pass <= 0.0 or v_inf_target <= 0.0 or max_passes < 1:
+        raise ValueError("synchrotron_escape: rp_rsun, dv_pass and v_inf_target must be "
+                         "positive and max_passes >= 1")
     r_p = rp_rsun * c.R_SUN
     v_esc = math.sqrt(2.0 * c.MU_SUN / r_p)
     v_target = math.sqrt(v_inf_target ** 2 + v_esc ** 2)
@@ -369,10 +394,23 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     the AC corridor (v∞ ≈ 23–25 km/s): re-integrating the policy at the design a₀, the true
     campaign overhead (Δv − v∞) is ~13.5 km/s at v∞=8, ~11.7 at v∞=10, ~7.8 at v∞=15, falling
     through 2.0 at v∞≈23.6 and to ≈0 by v∞=30. So this two-leg budget UNDERPRICES low-v∞
-    targets by ~10 km/s — it is valid only for the AC-class corridor it ships for (shipped code
-    never evaluates it below ~23 km/s). Unlike the outward-spiral budget this does NOT borrow
-    Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
+    targets by ~10 km/s. The corridor is therefore ENFORCED: v_inf below
+    ``PUMP_TAX_VINF_MIN`` (20 km/s) raises ValueError — price such targets by integrating
+    :func:`perihelion_pumped_vinf` at the target (its returned dv IS the campaign leg,
+    v∞ + true overhead). Above the corridor the flat tax overprices slightly
+    (conservative), so no upper guard. Unlike the outward-spiral budget this does NOT
+    borrow Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
     """
+    for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg), ("peri_alt_km", peri_alt_km),
+                    ("pump_tax", pump_tax)):
+        if not math.isfinite(val):
+            raise ValueError(f"pumped_departure_dv: {nm} must be finite, got {val!r}")
+    if v_inf < PUMP_TAX_VINF_MIN:
+        raise ValueError(
+            f"pumped_departure_dv: v_inf {v_inf/1e3:.1f} km/s is below the calibrated corridor "
+            f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — the flat {pump_tax/1e3:.1f} km/s tax underprices the "
+            "campaign there (true overhead ~8-13 km/s). Integrate perihelion_pumped_vinf at this "
+            "target instead; its returned dv is the correctly-priced campaign leg.")
     r_p = c.R_EARTH + peri_alt_km * 1e3
     r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3
     a = 0.5 * (r_p + r_a)
@@ -392,10 +430,16 @@ def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s:
     until the propellant is spent OR the probe coasts far enough that power is negligible, then
     v∞ = sqrt(2·E) for the specific orbital energy E (0 if it never reaches escape).
     """
+    for nm, val in (("power_w", power_w), ("wet_kg", wet_kg), ("dry_pay_kg", dry_pay_kg),
+                    ("isp_s", isp_s), ("eff", eff), ("r0_au", r0_au), ("fade_exp", fade_exp)):
+        if not math.isfinite(val):
+            raise ValueError(f"sep_achievable_vinf: {nm} must be finite, got {val!r}")
+    if not 0.0 < eff <= 1.0 or r0_au <= 0.0 or fade_exp < 0.0:
+        raise ValueError("sep_achievable_vinf: need 0 < eff <= 1, r0_au > 0, fade_exp >= 0")
     ve = isp_s * c.G0
     m_p = wet_kg - dry_pay_kg
     if m_p <= 0.0 or power_w <= 0.0 or ve <= 0.0:
-        return 0.0
+        return 0.0                     # physical sentinel: no propellant/power/exhaust -> v_inf 0
     mu, r0 = c.MU_SUN, r0_au * c.AU
     F0 = 2.0 * eff * power_w / ve            # thrust at 1 AU (N)
     rx, ry = r0, 0.0

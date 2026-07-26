@@ -66,9 +66,10 @@ def solar_oberth_vinf(perihelion_solar_radii: float, burn_dv: float) -> float:
     r_sun = 6.957e8  # m
     r_p = perihelion_solar_radii * r_sun
     v_esc = math.sqrt(2.0 * c.MU_SUN / r_p)
-    v_peri = v_esc  # near-parabolic arrival
-    v_after = v_peri + burn_dv
-    return math.sqrt(max(v_after**2 - v_esc**2, 0.0))
+    # v_after = v_esc + dv (near-parabolic arrival), so the algebraically equivalent,
+    # cancellation-free form of v_after² − v_esc² is 2·v_esc·dv + dv² (no subtraction
+    # of near-equal squares for small burns).
+    return math.sqrt(max(2.0 * v_esc * burn_dv + burn_dv * burn_dv, 0.0))
 
 
 def solar_oberth_burn_for_vinf(perihelion_solar_radii: float, v_inf_target: float) -> float:

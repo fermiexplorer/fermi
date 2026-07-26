@@ -1,0 +1,102 @@
+# Precision roadmap — tightening the model, stage by stage
+
+The engine is a first-order ("Fermi estimate") model. This roadmap lists the places
+where its numbers are looser than they need to be, ordered by impact, with the
+tightened model each stage adopts and what it re-baselines. The policy is to
+**tighten the numbers rather than merely document their looseness**; until a stage
+lands, its looseness is stated here and (where possible) enforced by a runtime
+guard or regression test.
+
+Ground rules for every stage:
+
+- `fermi_sim/` first, then the `web/physics.js` mirror, then re-run the parity
+  audit (`node audit/calcs/audit_webjs.mjs`).
+- Any stage that shifts published numbers re-baselines the parity reference
+  values, the affected star-table columns (regenerate via
+  `tools/make_starmap_data.py`), and the page/report prose **in the same commit**
+  (see `docs/DOC_MAINTENANCE.md`).
+- A stage is done when the full suite (`audit/calcs/run_audits.py`, parity,
+  UI, pytest) is green at the new baseline.
+
+Tracking: each scheduled stage has a GitHub issue and a `docs/plans/NN-slug.md`
+plan (NN = issue number). Unscheduled stages get theirs when picked up.
+
+---
+
+## Stage 1 — Adaptive timestep in the SEP power gate  *(scheduled: [#2](https://github.com/fermiexplorer/fermi/issues/2))*
+
+**Today:** `sep_achievable_vinf` integrates with a fixed 50,000 s step. Result
+differs from a finer-step integration by up to ~3%. The verdict it produces
+(conservative solar saturates far below the 23.3 km/s floor) has margin far wider
+than 3%, so no conclusion changes — but the achievable-v∞ *values* it prints
+(page gate numbers, the star tables' "Min solar α" column, the α ≈ 100 W/kg
+outward-spiral threshold) carry that error.
+
+**Tightened:** adaptive step `dt = min(max(600, 0.002·period), 5 days)` — the
+scheme the pumping integrator already uses — plus a step-halving convergence
+assertion in `audit/calcs/audit_departure.py`.
+
+**Re-baselines:** parity REF values for the two SEP checks; the star tables'
+`amin` column; the α-threshold numbers quoted on the page/REPORT if they move.
+
+## Stage 2 — v∞-dependent pumped-campaign pricing  *(scheduled: [#3](https://github.com/fermiexplorer/fermi/issues/3))*
+
+**Today:** `pumped_departure_dv` prices the campaign leg as v∞ + a flat 2 km/s
+tax, calibrated at the AC corridor (v∞ ≈ 23–25 km/s). The true in-plane overhead
+is ~8 km/s at v∞ = 15 and ~13 km/s at v∞ = 8, so the flat tax is wrong off-corridor
+— now **enforced**: the function raises below `PUMP_TAX_VINF_MIN` (20 km/s), and
+off-corridor targets are priced by integrating `perihelion_pumped_vinf` directly
+(as `audit/AUDIT_COMPARISON.md` §2b does for α² Lib).
+
+**Tightened:** replace the flat tax with a calibrated overhead curve tax(v∞)
+fitted against the integrator across v∞ = 8–30 km/s (or integrate on demand with
+caching), removing the corridor restriction.
+
+**Re-baselines:** pumped-budget parity checks; the two-leg budget quotes in the
+page/REPORT if the in-corridor value shifts.
+
+## Stage 3 — Optimised pumping schedule  *(unscheduled)*
+
+**Today:** the bang-bang policy costs ~7% more Δv than PSI's optimised schedule
+(25.6 vs 24.0 km/s) and is non-monotonic in a₀/Isp/power-cap (islands and stall
+bands, pinned by `audit/calcs/audit_pumping.py`).
+
+**Tightened:** a trajectory-optimised burn schedule (direct collocation or CasADi
+class) that removes the phasing gaps and the ~7% premium; the bang-bang stays as
+the audit cross-check.
+
+## Stage 4 — 3-D pumping campaign  *(unscheduled)*
+
+**Today:** the campaign is integrated in-plane; the out-of-plane aim is charged
+separately as a first-order plane change v∞·|sin β|.
+
+**Tightened:** integrate the campaign in 3-D with the aim's true inclination, so
+the plane change is bought where it is cheapest instead of priced as a bolt-on.
+
+## Stage 5 — Finite-burn / higher-T/W departure  *(unscheduled; extends plan 01)*
+
+**Today:** the Earth-escape leg is the constant-tangential spiral (closed-form
+fit, validated to ~0.5 m/s against integration); perigee-biased phasing was shown
+time-divergent at sub-milli-g thrust.
+
+**Tightened:** a full finite-burn solution for a higher-T/W stage, pricing the
+phased-departure option the report currently lists as future work.
+
+## Stage 6 — Ephemeris beyond linear motion  *(unscheduled)*
+
+**Today:** every star (including AC) moves on a straight line at constant
+velocity. Fine to ≪1% over the ~80 kyr AC mission; degrades over the ±1.5 Myr
+horizon of the beyond-AC tables (galactic orbit curvature ~kpc scale).
+
+**Tightened:** epicyclic/galactic-potential propagation for the long-horizon
+star tables; AC-mission numbers are unaffected.
+
+---
+
+## Floor that is NOT worth tightening
+
+`R_EARTH` and `R_SUN` are 4-significant-digit constants because the physical
+quantities themselves are fuzzy at that level (mean vs equatorial radius; the
+photosphere is ~200 km deep). They bound every LEO- and solar-radius-referenced
+number to ~4 digits regardless of the arithmetic. More digits would add
+precision the underlying definition does not have.

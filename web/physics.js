@@ -34,8 +34,10 @@
   function vInfEarth(vinfSun, tiltDeg) {
     const vDep = Math.sqrt(vinfSun * vinfSun + V_ESC_SUN * V_ESC_SUN);
     const b = tiltDeg * Math.PI / 180;
-    const e = Math.max(vDep * vDep + V_EARTH * V_EARTH - 2 * vDep * V_EARTH * Math.cos(b), 0);
-    return { vInfE: Math.sqrt(e), vDep };
+    // law of cosines in the cancellation-free half-angle form (mirror of fermi_sim):
+    // v² + V² − 2vV·cosβ == (v − V)² + 4vV·sin²(β/2)
+    const s = Math.sin(0.5 * b), d = vDep - V_EARTH;
+    return { vInfE: Math.sqrt(d * d + 4 * vDep * V_EARTH * s * s), vDep };
   }
   function impulsiveDv(vInfE, periAltKm, apoAltKm) {
     // Single Oberth kick at perigee from the (possibly elliptical) starting orbit.
@@ -274,9 +276,16 @@
   // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
   // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor).
   // The flat tax is exact ONLY near the AC corridor (v∞ ≈ 23–25 km/s): the true overhead is
-  // ~10–13 km/s at v∞ ≈ 8–10, so this budget UNDERPRICES low-v∞ targets — valid only for the
-  // AC-class corridor it ships for. No Earth-velocity borrow.
+  // ~10–13 km/s at v∞ ≈ 8–10, so this budget UNDERPRICES low-v∞ targets. The corridor is
+  // ENFORCED (mirror of fermi_sim PUMP_TAX_VINF_MIN): below 20 km/s the function throws —
+  // price such targets by integrating perihelionPumpedVinf (its dv IS the campaign leg).
+  // Unreachable from the page: the AC aim's v∞ floor is 23.27 km/s. No Earth-velocity borrow.
+  const PUMP_TAX_VINF_MIN = 20e3;
   function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = 2000) {
+    if (vinf < PUMP_TAX_VINF_MIN)
+      throw new Error("pumpedDepartureDv: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is below the "
+        + "calibrated 20 km/s corridor — the flat tax underprices there; integrate "
+        + "perihelionPumpedVinf at this target instead.");
     const rp = R_EARTH + periAltKm * 1e3;
     const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
     const plane = vinf * Math.abs(Math.sin(tiltDeg * Math.PI / 180));
