@@ -75,9 +75,18 @@
   .kpi .kcalc pre { margin: 6px 0 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; line-height: 1.55; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   pre.cmd { margin: 8px 0; padding: 9px 11px; background: #0d1117; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #c9d4de; white-space: pre-wrap; overflow-x: auto; }
   #starmap { min-height: clamp(420px, 52vh, 640px); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .crosswrap { max-height: 430px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+  .crosswrap { max-height: 430px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
   .crosswrap table.chain { margin: 0; }
   .crosswrap table.chain th { position: sticky; top: 0; background: #1c232d; }
+  /* compact star tables: headers wrap to 2 lines instead of forcing wide columns */
+  .method .crosswrap table.chain th { white-space: normal; line-height: 1.15; font-size: 11px; padding: 4px 6px; vertical-align: bottom; }
+  .method .crosswrap table.chain th.v { white-space: normal; }
+  .crosswrap table.chain td { padding: 4px 7px; font-size: 12px; }
+  /* drag handle on each header's right edge (desktop) — see the column-resize script */
+  .crosswrap .cresz { position: absolute; top: 0; right: 0; width: 9px; height: 100%; cursor: col-resize; touch-action: none; }
+  .crosswrap .cresz:hover { background: rgba(88,166,255,.3); }
+  /* wide screens: let the star tables bleed right of the 1100px text column into unused space */
+  @media (min-width: 1160px) { .method .crosswrap { width: calc(100vw - 64px); max-width: none; } }
   .method table.chain th { cursor: pointer; user-select: none; }
   /* compact candidates table: headers may wrap and numeric cells stay tight, so the
      prose Note column keeps most of the width instead of being crammed */
@@ -213,6 +222,12 @@
     #animctl #tscrub { flex-basis: 100%; }            /* scrubber gets its own full-width row, not squished */
     #tlabel { min-width: 0; text-align: left; }
     .method table.chain { display: block; overflow-x: auto; white-space: nowrap; }
+    /* star tables on phones: keep real table layout (sticky headers + wrapping) and scroll
+       inside .crosswrap in BOTH axes; shrink type one step further; no drag-resize handles */
+    .method .crosswrap table.chain { display: table; white-space: normal; }
+    .crosswrap { max-height: 60vh; }
+    .crosswrap table.chain td { font-size: 11px; padding: 3px 5px; }
+    .crosswrap .cresz { display: none; }
     pre.cmd, .kpi .kcalc pre { font-size: 11px; }
   }
 </style>
@@ -1206,8 +1221,9 @@
   derived from V + distance + a spectral-type bolometric correction (Sun = 3.828e26 W = 100%; late-M values are
   order-of-magnitude; SIMBAD's combined V for unresolved binaries gives the pair's total — the relevant
   number for energy capture). <b>⚠</b> marks stars whose kinematics the deep data audit could not
-  corroborate (&lt;2 published RVs, or non-Gaia RV scatter &gt; 10 km/s MAD) — shown for completeness but
-  excluded from the top-20 ranking. Click any column header to sort.</p>
+  corroborate (&lt;2 published RVs, non-Gaia RV scatter &gt; 10 km/s MAD, or a systemic RV disputed
+  between credible catalogue solutions — e.g. spectroscopic binaries like α² Lib) — shown for
+  completeness but excluded from the top-20 ranking. Click any column header to sort.</p>
 
   <h4>Top-20 candidates (Δv budget + brightness)</h4>
   <p>Ranked by <code>score = Δv budget + 2·max(0, V − 6)</code> — the engine's spacecraft Δv for an
@@ -1272,12 +1288,17 @@
   spectral code — and itself a spectroscopic binary; it orbits with the fainter F-type pair α¹,
   four-plus stars in all. Despite the α label it is only Libra's <em>second</em> brightest: β Lib
   (Zubeneschamali, the northern claw) outshines it and tops this very table, so both of Libra's claws
-  are inbound. Our sweep prices the system's combined light at ~50 L☉ and its kinematics are clean
-  (verified RV, no ⚠ flag): it closes from 75.8 ly to <b>59.4 ly at +798 kyr</b>, brightening only
-  ~half a magnitude to V ≈ 2.2 — a slow sky event, not a flyby: even at closest approach it remains
-  ~14× farther than Alpha Centauri is today, which is why it never ranks as a probe target despite its
-  luminosity (best-arrival Δv 39.1 km/s at a −47° aim, cruise floor 14.5 km/s, outward-spiral min
-  solar α ~57 W/kg — the price of a generic 60–76 ly A-star trip). <b>Vega itself</b> is the far more
+  are inbound. Our sweep prices the system's combined light at ~50 L☉. One caveat travels with every
+  number in its row — hence its ⚠ flag: being a spectroscopic binary, its <b>systemic radial velocity
+  is disputed</b> between credible solutions. The table adopts −11.0 km/s (the median of 8 published
+  measurements, whose ±6 km/s scatter is the binary <em>orbit</em>, not noise), while the
+  revised-Hipparcos systemic solution is −22.0 ± 5.8 km/s. On the adopted value it closes from
+  75.8 ly to <b>59.4 ly at +798 kyr</b>, brightening only ~half a magnitude to V ≈ 2.2 — a slow sky
+  event, not a flyby: even at closest approach it remains ~14× farther than Alpha Centauri is today,
+  and under <em>either</em> RV solution its cheapest intercept lies beyond ~1 Myr, which is why it
+  never ranks as a probe target despite its luminosity (best-arrival Δv 39.1 km/s at a −47° aim,
+  cruise floor 14.5 km/s, outward-spiral min solar α ~57 W/kg — the price of a generic 60–76 ly
+  A-star trip; the external PSI assessment reaches the same exclusion). <b>Vega itself</b> is the far more
   interesting approacher of the two: row "alf Lyr" — 25.0 ly today, closest <b>16.9 ly at
   +294 kyr</b>, when it will shine at V ≈ −0.8, the brightest star in Earth's sky (its turn as the
   northern pole star in ~12,000 yr is unrelated — that is Earth's precession, not Vega's motion).</p>
@@ -3315,7 +3336,7 @@ function drawStarMap(tMyr){
     const dt = c.ttan==null ? null : c.tkyr - c.ttan;
     const aligned = dt!=null && Math.abs(dt)<=25;                       // crossing ~coincides with the cheap era
     return `<tr${aligned?' style="background:rgba(63,185,80,.07)"':''}>`+
-    `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs or high scatter">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+    `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs, high scatter, or disputed systemic RV">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
     `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
     `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
     `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
@@ -3369,7 +3390,7 @@ function drawStarMap(tMyr){
       const dt=(c.tcross==null||c.ttan==null)?null:c.tcross-c.ttan;
       const nearplane=Math.abs(c.tilt)<=10;                             // "a few degrees off the ecliptic"
       return `<tr${nearplane?' style="background:rgba(63,185,80,.07)"':''}>`+
-      `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs or high scatter">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
+      `<td>${k+1}</td><td>${c.u?'<span title="unverified kinematics: <2 published RVs, high scatter, or disputed systemic RV">⚠ </span>':''}${esc(c.n)}</td><td>${esc(c.sp)}</td>`+
       `<td class="v">${c.V==null?'—':c.V.toFixed(1)}</td>`+
       `<td class="v">${c.V!=null&&c.V<=6?'✓':'—'}</td>`+
       `<td class="v">${c.dnow.toFixed(1)} ly</td>`+
@@ -3469,6 +3490,31 @@ function drawStarMap(tMyr){
           return asc?txt(a).localeCompare(txt(b)):txt(b).localeCompare(txt(a));
         });
         rows.forEach(r=>body.appendChild(r));
+      });
+    });
+  });
+  // Manual column resize for the star tables: drag a header cell's right edge. The first drag
+  // freezes the table's current column widths (table-layout: fixed) so the dragged edge moves
+  // deterministically; total table width grows/shrinks with the column and .crosswrap scrolls
+  // horizontally if it outgrows the viewport. The handle swallows the click so it never sorts.
+  document.querySelectorAll('.crosswrap table.chain').forEach(tb=>{
+    const hdr=tb.rows[0]; if(!hdr) return;
+    [...hdr.cells].forEach(th=>{
+      const h=document.createElement('span'); h.className='cresz'; h.title='Drag to resize column';
+      th.appendChild(h);
+      h.addEventListener('click',ev=>ev.stopPropagation());
+      h.addEventListener('pointerdown',ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        if(tb.style.tableLayout!=='fixed'){
+          [...hdr.cells].forEach(c=>{ c.style.width=c.offsetWidth+'px'; });
+          tb.style.width=tb.offsetWidth+'px';
+          tb.style.tableLayout='fixed';
+        }
+        const x0=ev.clientX, w0=th.offsetWidth, tw0=tb.offsetWidth;
+        const move=e=>{ const w=Math.max(34, w0+(e.clientX-x0));
+          th.style.width=w+'px'; tb.style.width=(tw0+(w-w0))+'px'; };
+        const up=()=>{ removeEventListener('pointermove',move); removeEventListener('pointerup',up); };
+        addEventListener('pointermove',move); addEventListener('pointerup',up);
       });
     });
   });

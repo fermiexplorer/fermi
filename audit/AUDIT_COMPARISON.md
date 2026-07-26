@@ -188,7 +188,7 @@ the **15–21 W/kg** band this project publishes. So the headline claim *"pumpin
 | Ceiling | no α suffices above ~26.5 km/s | outward spiral at this sizing | engine (fixed 20 km/s propellant budget) |
 | **Perihelion pumping** | **15–21 W/kg** | pumped campaign | engine + PSI-derived (above) |
 
-### Reading α correctly — α and Δv are *different* constraints (worked example: α Librae)
+### Reading α correctly — α and Δv are *different* constraints (worked example: α² Librae)
 
 A low α threshold does **not** mean an easy target. α is set by the **required cruise speed** alone;
 the **Δv budget** is set by cruise *plus* the out-of-plane aim. They can point in opposite directions,
@@ -227,6 +227,22 @@ brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slight
 at the AC design point, 22.1 for α² Lib — so these per-target rows sit just above the top of the
 published band. Same physics, ~1 W/kg of sizing conservatism; the headline is kept at 15–21 because
 that is the PSI-implied figure the project cites.)*
+
+**Naming & kinematic caveat (α² Lib = SIMBAD "alf02 Lib" = PSI's "Alpha-2 Librae").** All rows
+above refer to the same object: the naked-eye A-type component of the α Librae multiple system
+(Zubenelgenubi). Its **systemic radial velocity is disputed between credible solutions**: the
+star-table pipeline adopts **−11.0 km/s** (median of 8 published measurements, MAD 5.9 — but the
+star is a spectroscopic binary, so that scatter is *orbital motion*, and the median is a biased
+estimate of the centre-of-mass velocity), while the revised-Hipparcos systemic solution used by
+[PSI‑TR‑2026‑0714 §8.3](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf)
+is **−22.0 ± 5.8 km/s**. The 11 km/s difference moves the minimum-cruise-speed intercept epoch by
+~2× (≈2.07 Myr on the adopted RV, ≈1.03 Myr on the Hipparcos value — substituting PSI's RV into
+this project's linear kinematics reproduces their epoch to ~1%). **The verdict is identical under
+either solution**: the cheap intercept lies far outside any mission horizon, and a
+horizon-constrained arrival costs more than going to α Centauri itself (PSI: 19.74 vs
+13.85 km/s impulsive) — so α² Lib is excluded as a mission target, appears only in the
+relaxed-clock survey tables, and its row carries the ⚠ unverified-kinematics flag
+(`RV_DISPUTED` in the star-table generator).
 
 **Rule of thumb for reading these tables: α tells you whether the power system can do it at all;
 Δv tells you whether the vehicle can afford it. Both must pass.**
