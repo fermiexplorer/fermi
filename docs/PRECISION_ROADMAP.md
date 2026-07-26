@@ -109,6 +109,21 @@ makes this stage worth doing.
 attraction for the nearest systems) for the long-horizon star tables;
 AC-mission numbers are unaffected.
 
+## Stage 7 — Thermal derating derived, not assumed  *(scheduled: [#5](https://github.com/fermiexplorer/fermi/issues/5))*
+
+**Today:** the pumping power model caps perihelion concentration at an assumed
+`power_cap = 4.0` — disclosed as a derating-free, Parker-class-managed working
+point (realistic GaAs at the 0.42 AU floor delivers nearer ~3× effective), with
+a measured factor-of-two feasibility margin (a 2.0× cap still closes: +1.1 km/s,
+9.6 → 18.3 yr) and the non-monotone closure pattern pinned in the audit suite.
+The consequence of the thermal limit is modelled; the limit itself is not.
+
+**Tightened:** a first-principles perihelion-array energy balance — T(r) from
+absorbed vs radiated flux (α/ε, off-pointing as the control), η(T) from the
+cell coefficient — yielding a continuous `cap_eff(r)` that the campaign
+integrator consumes in place of `min((1 AU/r)², cap)`; the constant-cap form
+stays as the audit comparator. Coordinate with Stage 3 (#4).
+
 ---
 
 ## Floor that is NOT worth tightening
