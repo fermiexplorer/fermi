@@ -200,7 +200,7 @@ reasonable* for a first-order estimate:
 
 ---
 
-## 8. Known open / declined items (full disclosure)
+## 8. Known open / declined items
 
 We have already identified these; they are documented so you can judge them
 independently rather than "discover" them. Each was declined as negligible or
@@ -252,4 +252,3 @@ For each claim in [§6](#6-claims-to-validate) and each Tier-1 function in
 with the *independent method* you used (not "re-ran the engine") and the numbers
 you got. Flag any assumption in [§7](#7-known-assumptions--limitations) you find
 undisclosed or indefensible, and any new defect with a concrete failing input.
-```

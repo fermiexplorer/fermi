@@ -93,6 +93,11 @@ node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 - **Language**: Python 3 (engine), vanilla JS (web). Follow PEP 8.
 - **SI units everywhere** in the engine; convert to km/s, AU, yr only at display time.
 - Physics functions are pure and dependency-light (numpy/scipy); plotting/UI is isolated.
+- **Doc changes propagate in ONE pass.** The prose lives on mirrored surfaces
+  (page section ↔ audit/README ↔ canonical .md). Before editing any doc fact,
+  read `docs/DOC_MAINTENANCE.md` for the surface clusters, the anchor-pinning
+  rule, and the deploy-vs-push table; grep for every surface first, edit them
+  all in the same commit.
 
 ## Push / Default Branch
 
