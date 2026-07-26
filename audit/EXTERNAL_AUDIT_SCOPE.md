@@ -1,10 +1,18 @@
-# Guide for an Independent (Human) Auditor — Scope & Files
+# Guide for an Independent Auditor (Human or AI) — Scope & Files
 
-A guide for a **human reviewer** auditing the **physics engine and its
-conclusions** — distinct from the AI re-implementations under
-`audit/codex|grok|gemini|fable/`, which re-derive the numbers programmatically.
-It tells you which files carry the load-bearing math, what each one claims, what
-to check, and where the known soft spots are.
+A guide for any **independent reviewer** — human or AI — auditing the **physics
+engine and its conclusions**. Human and AI reviewers should check the same
+things: the same files, the same claims, the same independence bar. It tells you
+which files carry the load-bearing math, what each one claims, what to check,
+and where the known soft spots are.
+
+**AI reviewers:** the adversarial prompt set used by previous AI audits is
+[`AUDIT_PROMPTS.md`](AUDIT_PROMPTS.md) (§1–10 geometry/departure, §11–12
+pumping/synchrotron); prior AI runs and their committed results live under
+`audit/codex|grok|gemini|fable/`. Follow this scope document for *what* to
+review, the prompt set for *how* to run it, and commit conclusions plus a
+`*_results.json` under a new `audit/<name>/` per
+[`README.md`](README.md#adding-a-new-independent-audit).
 
 **Browser / UI code is deliberately out of scope for this pass** (see
 [§2](#2-out-of-scope)). This document covers the Python engine, the integrated

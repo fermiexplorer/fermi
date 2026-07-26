@@ -790,12 +790,16 @@
   engine uses (we avoid GMAT's <code>C3Energy</code> stop condition because it is singular at the parabolic
   escape point). Full method and Windows/macOS notes: <code>audit/gmat/README.md</code>.</p>
 
-  <h4>Guide for an independent (human) auditor</h4>
+  <!-- id pinned to the pre-rename slug so published links keep resolving -->
+  <h4 id="guide-for-an-independent-human-auditor">Guide for an independent auditor (human or AI)</h4>
   <p>To check the calculations yourself — and to surface anything the model omits — work through the steps
-  below. Each headline number should be reproducible with a calculator or a few lines of code. For the full
-  file-by-file scope — which engine files to review, exactly what to check in each, the numbers to reproduce,
-  the disclosed model assumptions, and the known open/declined items — see
-  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/EXTERNAL_AUDIT_SCOPE.md" target="_blank" rel="noopener noreferrer"><code>audit/EXTERNAL_AUDIT_SCOPE.md</code></a>.</p>
+  below; a human reviewer and an AI reviewer should check the same things. Each headline number should be
+  reproducible with a calculator or a few lines of code. For the full file-by-file scope — which engine files
+  to review, exactly what to check in each, the numbers to reproduce, the disclosed model assumptions, and
+  the known open/declined items — see
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/EXTERNAL_AUDIT_SCOPE.md" target="_blank" rel="noopener noreferrer"><code>audit/EXTERNAL_AUDIT_SCOPE.md</code></a>;
+  AI reviewers additionally get the adversarial prompt set in
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md" target="_blank" rel="noopener noreferrer"><code>audit/AUDIT_PROMPTS.md</code></a>.</p>
   <ol>
     <li><b>Ephemeris.</b> From AC's catalogued RA/Dec, distance, proper motion and radial velocity, build its
       3-D heliocentric velocity and confirm space speed ≈ 32.3 km/s and closest approach ≈ 28,000 yr at
