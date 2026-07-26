@@ -75,8 +75,9 @@ Any independent reviewer — **human or AI** — should start with
 [`EXTERNAL_AUDIT_SCOPE.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/EXTERNAL_AUDIT_SCOPE.md);
 both review the same things. It is the file-by-file scope guide: what is in and out of scope
 (browser code is excluded), the Tier-1 engine files and exactly what to check in each, the headline
-numbers to reproduce by an independent method, the disclosed model assumptions, and full disclosure
-of the known open/declined items so you can challenge our judgement rather than rediscover them.
+numbers to reproduce by an independent method, the disclosed model assumptions, and the known
+numerical limitations of the implementation — each stated with its magnitude and the case for why
+it is immaterial at this precision, for you to verify.
 AI reviewers additionally get the adversarial prompt set in
 [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md);
 prior AI runs are under `codex/ grok/ gemini/ fable/`.

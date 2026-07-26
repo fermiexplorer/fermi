@@ -13,6 +13,26 @@ file in the cluster **in one pass**, then run the guards.
    later" — that is how the live site ends up builds behind the repo.
 3. **Run the guards** (below), then push. If `index.html` changed, deploy.
 
+## Style: write for a first-time reader
+
+Every shipped doc must stand alone for a reader with **zero context** — no
+knowledge of past sessions, review rounds, or git history.
+
+- **No references to past interactions or review process.** Banned framings:
+  "we already identified", "was declined", "previously argued", "now
+  supersedes", "this has happened before", "Update (date)". State what a thing
+  **IS** — location, magnitude, reasoning — not how it came to be.
+- **No commit-history archeology.** Point the reader at **current files only**;
+  never ask them to consult commits, diffs, or earlier builds. If a fact matters,
+  it lives in a file; if only its history matters, it lives in git (and, for
+  attribution, in `audit/AUDIT_COMPARISON.md` §4b — the one designated
+  history-keeping surface).
+- **No self-flagellation.** A limitation is stated as a neutral property of the
+  code with the case for why it is (im)material — never as an apology or a
+  confession of a past mistake.
+- The test: hand the doc to someone who has never seen the repo. Every sentence
+  they cannot act on or verify from the current tree alone should be cut.
+
 ## Clusters — when you change X, also update Y
 
 ### 1. Physics / headline numbers
@@ -91,8 +111,8 @@ and leave a comment saying why.
 | `index.html`, `web/*.js` | commit → `tools/deploy.py` → commit+push BOTH Pages clones → push branch + main → poll live |
 | only `.md` / `.py` (non-shipped) | commit → push branch + main. No deploy. |
 
-A committed-but-not-deployed page change leaves the live site stale — this has
-happened; the poll (`tmp/ro/poll_live.py`) is the check that it hasn't.
+A committed-but-not-deployed page change leaves the live site stale;
+`tmp/ro/poll_live.py` verifies the live build number after every deploy.
 
 ## Guards to run before pushing doc changes
 

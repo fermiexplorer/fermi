@@ -6,9 +6,9 @@ things: the same files, the same claims, the same independence bar. It tells you
 which files carry the load-bearing math, what each one claims, what to check,
 and where the known soft spots are.
 
-**AI reviewers:** the adversarial prompt set used by previous AI audits is
+**AI reviewers:** the adversarial prompt set is
 [`AUDIT_PROMPTS.md`](AUDIT_PROMPTS.md) (§1–10 geometry/departure, §11–12
-pumping/synchrotron); prior AI runs and their committed results live under
+pumping/synchrotron); the existing AI reviews and their results are under
 `audit/codex|grok|gemini|fable/`. Follow this scope document for *what* to
 review, the prompt set for *how* to run it, and commit conclusions plus a
 `*_results.json` under a new `audit/<name>/` per
@@ -132,7 +132,7 @@ This is where the novel and contested physics lives. Functions to scrutinise:
   (see the docstring caveat).
 - **`sep_achievable_vinf`** — the conservative solar-power-fade feasibility gate
   (1/r² thrust, RK4). **Check:** the fixed 50,000 s timestep (see
-  [§8](#8-known-open--declined-items)); whether the saturation verdict is robust
+  [§8](#8-known-numerical-limitations-of-the-implementation)); whether the saturation verdict is robust
   to step size. This gate decides "does pure solar close?"
 - **`spiral_escape_dv`**, **`lowthrust_departure_dv`** (closed-form fit),
   **`earth_escape_revs`**, **`impulsive_dv_from_leo`**, **`synchrotron_escape`**.
@@ -200,29 +200,37 @@ reasonable* for a first-order estimate:
 
 ---
 
-## 8. Known open / declined items
+## 8. Known numerical limitations of the implementation
 
-We have already identified these; they are documented so you can judge them
-independently rather than "discover" them. Each was declined as negligible or
-inert for a Fermi estimate — **challenge that judgement if you disagree.**
+Properties of the code as written that fall short of textbook-ideal numerics.
+Each is stated with its magnitude and the reason it does not affect the shipped
+conclusions at Fermi-estimate precision — **verify that reasoning yourself; if
+you find a case where one of these becomes material, that is a finding.**
 
-- **Catastrophic cancellation, `departure.py:49`** (`v_inf_earth_required`, law
-  of cosines): loses ~1–2 of ~15 double-precision digits. Declined (sub-
-  precision, and it feeds the parity-mirrored path). A half-angle rewrite is the
-  standard fix if you consider it warranted.
-- **Cancellation, `trajectory.py`** (`solar_oberth_vinf`, `v_after²−v_esc²`):
-  `max(...,0)` guard present; digits lost only for tiny burns the tool never
-  uses. Declined.
-- **Fixed 50,000 s timestep in `sep_achievable_vinf`**: ~3% vs a finer step. The
-  solar-saturation verdict has wide margin (solar saturates far below the floor),
-  so no verdict flips — but confirm that for yourself near the threshold.
-- **Python-side input validation** on `perihelion_pumped_vinf` / others: the
-  engine's callers are controlled, so non-finite/degenerate inputs are not
-  guarded at the Python boundary (the browser port is guarded separately). If you
-  intend the engine to be a reusable library, this is worth flagging.
-- **Flat 2 km/s pump tax** in `pumped_departure_dv`: exact only near the AC
-  corridor; under-prices low-v∞ targets by ~10 km/s. Valid only for the AC-class
-  budgets the code actually evaluates.
+- **Catastrophic cancellation in `v_inf_earth_required`** (`departure.py:49`,
+  law-of-cosines form): subtracting near-equal ~10⁹-scale terms loses ~1–2 of
+  the ~15 double-precision digits. Immaterial here because the input constants
+  themselves carry only 10–11 digits; the half-angle identity
+  `(v_dep − V_E)² + 4·v_dep·V_E·sin²(β/2)` is the cancellation-free form if you
+  want to bound the error.
+- **Cancellation in `solar_oberth_vinf`** (`trajectory.py`, `v_after² − v_esc²`):
+  loses digits for burns much smaller than the perihelion escape speed; a
+  `max(...,0)` guard prevents a negative sqrt argument. The burn sizes the tool
+  actually evaluates (~1–2 km/s against ~195 km/s) retain ~4 significant digits —
+  the same level as the 4-digit `R_SUN` constant that feeds them.
+- **Fixed 50,000 s timestep in `sep_achievable_vinf`**: the achievable-v∞ result
+  differs by up to ~3% from a finer-step integration. The verdict this gate
+  produces (solar saturates far below the 23.3 km/s floor at conservative α) has
+  a margin much wider than 3% — check the margin yourself near the threshold.
+- **No input validation at the Python boundary** (`perihelion_pumped_vinf` and
+  siblings): non-finite or degenerate arguments produce garbage rather than a
+  clear error. All in-repo callers pass controlled values; if the engine is
+  reused as a library, this is worth flagging.
+- **Flat 2 km/s pump tax in `pumped_departure_dv`**: calibrated at, and exact
+  only near, the AC corridor (v∞ ≈ 23–25 km/s); at v∞ ≈ 8–10 km/s the true
+  campaign overhead is ~10–13 km/s, so the budget under-prices low-v∞ targets.
+  The shipped code only evaluates it in the AC corridor (the docstring states
+  the validity window).
 
 The independent suite has a further ~139 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
