@@ -36,6 +36,17 @@ especially the novel/contested ones (perihelion pumping, the two-leg departure
 budget). Treat every result as unproven until you have reproduced it by a
 **different method** than the engine uses.
 
+**Two audit modes — declare yours before starting.** This guide serves two
+different reviews, and one section reads differently in each:
+
+- **Conclusions audit** — "is the answer right?" The scope, claims table, and
+  the materiality claims in [§8](#8-known-numerical-limitations-of-the-implementation)
+  are all working material: test the claims, rule on each.
+- **Defect audit** — "where can this code fail?" Then the project's materiality
+  opinions are **not your input**: disregard the "materiality claim" halves of
+  §8 entirely and treat its items as open defects alongside anything you find.
+  A defect is a finding whether or not it moves a headline number.
+
 ---
 
 ## 2. Out of scope
@@ -179,35 +190,47 @@ Reproduce these independently (astropy, hand calculation, your own integrator):
 
 ## 7. Known assumptions & limitations
 
-These are intended simplifications. Judge whether each is *disclosed and
-reasonable* for a first-order estimate:
+**How §7 and §8 differ:** §7 lists **modelling choices** — simplifications the
+model makes *on purpose*; the audit question is whether each is disclosed and
+reasonable for a first-order estimate. §8 lists **implementation shortfalls** —
+places where the code computes its own model less accurately than it could; each
+has a tracked fix. If a §7 assumption turns out unreasonable, the *model* is
+wrong; if a §8 claim fails, the *code* is wrong.
 
-- Alpha Centauri moves in a **straight line at constant velocity** (neglects
-  galactic curvature; valid over the ~80 kyr window, degrades far beyond it).
-- **Two-body dynamics** (Sun + one body); no planetary perturbations or galactic
-  tides in the trajectory integrators.
-- The pumping and SEP-gate integrators are **2D planar** (in-plane); the
-  out-of-plane aim is charged separately as a first-order plane change.
-- Solar power follows **1/r² exactly**; the 4× perihelion power cap is a thermal
-  modelling assumption (a real hot array derates toward ~3×).
-- Constant thruster efficiency (η≈0.55–0.6); continuous mass flow.
-- The bang-bang pumping policy is **~7% off the optimal schedule** on Δv
-  (documented); an optimised schedule removes the non-monotone gaps.
-- No relativistic effects (v ≪ c throughout).
-- **Precision floor:** `R_EARTH` and `R_SUN` are 4-significant-digit constants,
-  so all LEO/solar-surface-referenced results are ~4-digit regardless of the
-  floating-point arithmetic. The integrators are far more precise than the
-  constants.
+For each row: what is assumed, where the assumption bites, and the disclosed
+error it introduces. Judge disclosure and reasonableness; if you find an
+undisclosed assumption, that is a finding.
+
+| Assumption | Where it bites | Disclosed error / scope |
+|---|---|---|
+| AC (and every star) moves in a **straight line at constant velocity** | all intercept geometry | ≪1% over the ~80 kyr AC window; degrades over the ±1.5 Myr beyond-AC tables (roadmap Stage 6) |
+| **Two-body dynamics** (Sun + one body) | all trajectory integrators | no planetary perturbations or galactic tides |
+| Campaign integrators are **2-D in-plane** | pumping + SEP gate | out-of-plane aim charged separately as v∞·\|sin β\| (roadmap Stage 4) |
+| Solar power = **1/r² exactly**, 4× perihelion cap | pumping power model | the cap is a thermal assumption — a real hot array derates toward ~3× (disclosed on the page) |
+| **Constant thruster efficiency** (η ≈ 0.55–0.6), continuous mass flow | all propulsion sizing | no throttle/efficiency curves |
+| **Bang-bang pumping policy** | pumping Δv, campaign shape | ~7% above the optimal schedule; source of the non-monotone islands (roadmap Stage 3) |
+| **No relativity** | everywhere | v ≪ c throughout; exact for this regime |
+| **4-digit `R_EARTH`, `R_SUN`** | every LEO- or solar-radius-referenced number | hard ~4-digit precision floor — the physical definitions are fuzzy at that level, so this is not worth tightening (see the roadmap's closing note) |
 
 ---
 
 ## 8. Known numerical limitations of the implementation
 
-Properties of the code as written that fall short of textbook-ideal numerics.
-For each: the **defect** is stated bare, and the project's **materiality claim**
-is labelled separately — your deliverable ([§10](#10-suggested-deliverable))
-includes a verdict on each claim (MATERIAL / CONFIRMED-IMMATERIAL / UNTESTED).
-Do not inherit the claim; test it. The staged plan for tightening these is
+Places where the code computes its own model less accurately than it could
+(contrast §7, which lists the model's *deliberate* simplifications). Each entry
+has two labelled halves:
+
+- ***Defect*** — a bare, falsifiable statement of what the code does wrong and
+  what it propagates to. This half is fact; audit modes do not change it.
+- ***Materiality claim (test this)*** — the project's argument for why the
+  defect does not change a shipped conclusion. **Conclusions audit:** rule on
+  each claim in your deliverable ([§10](#10-suggested-deliverable)) —
+  MATERIAL / CONFIRMED-IMMATERIAL / UNTESTED; do not inherit it.
+  **Defect audit:** ignore this half entirely — the defect is an open finding
+  regardless of materiality (see the audit-modes note in
+  [§1](#1-what-you-are-auditing)).
+
+Every entry has a tracked fix; the staged plan is
 [`docs/PRECISION_ROADMAP.md`](../docs/PRECISION_ROADMAP.md).
 
 - **Fixed 50,000 s timestep in `sep_achievable_vinf`.**
