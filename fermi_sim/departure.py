@@ -15,6 +15,22 @@ heliocentric hyperbola with excess speed ``v_inf_sun`` (in a direction tilted
 ``plane_angle`` out of the ecliptic), the vehicle needs heliocentric speed
 ``v_dep = sqrt(v_inf_sun^2 + v_esc_sun^2)`` at 1 AU. Earth supplies 29.8 km/s of
 that *in the ecliptic plane only*; the out-of-plane part must be paid in full.
+
+INPUT-VALIDATION CONTRACT (applies engine-wide; JS mirror differs on purpose):
+
+* Heavy integrators and closure functions (``perihelion_pumped_vinf``,
+  ``sep_achievable_vinf``, ``synchrotron_escape``, ``pumped_departure_dv``,
+  ``spacecraft.minimal_dry_mass``, ``intercept.required_v_inf``) RAISE
+  ``ValueError`` on non-finite or out-of-domain arguments — a library must fail
+  loudly, never return silent NaN/garbage.
+* Light closed-form helpers (``leo_speeds``, ``impulsive_dv_from_leo``,
+  ``solar_oberth_*``) rely on Python's native ``math`` domain errors, which
+  already raise (``math.sqrt`` of a negative is a ``ValueError``, not a NaN).
+* The ``web/physics.js`` mirror deliberately does NOT raise: it returns
+  diverged/zero sentinels for the heavy functions (an exception would kill the
+  page's render loop) and stays permissive where the UI's slider bounds make
+  the input physically unreachable. See the contract note at the top of that
+  file.
 """
 
 from __future__ import annotations
@@ -412,6 +428,8 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
                     ("pump_tax", pump_tax)):
         if not math.isfinite(val):
             raise ValueError(f"pumped_departure_dv: {nm} must be finite, got {val!r}")
+    if apo_alt_km is not None and not math.isfinite(apo_alt_km):
+        raise ValueError(f"pumped_departure_dv: apo_alt_km must be finite or None, got {apo_alt_km!r}")
     if v_inf < PUMP_TAX_VINF_MIN:
         raise ValueError(
             f"pumped_departure_dv: v_inf {v_inf/1e3:.1f} km/s is below the calibrated corridor "

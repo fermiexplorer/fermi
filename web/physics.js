@@ -1,6 +1,18 @@
 // Project Fermi -- shared mission physics (browser + Node).
 // Ported from the validated Python engine (fermi_sim/). Loaded by index.html and
 // cross-checked against Python in audit/calcs/audit_webjs.mjs. No third-party code.
+//
+// INPUT-VALIDATION CONTRACT (mirror of the note in fermi_sim/departure.py):
+// unlike the Python engine, this port NEVER throws on bad numeric input inside the
+// render path -- an exception would kill the page's compute/render loop. Heavy
+// functions (sepAchievableVinf, perihelionPumpedVinf, minimalDryMass,
+// synchrotronEscape) return diverged/zero SENTINELS on non-finite input; light
+// helpers (requiredVinfVec, eclipticCrossingT, leo-speed forms) are deliberately
+// unguarded because the UI's slider bounds make bad input unreachable (arrival
+// slider floor 58,000 yr; eclipticCrossingT has NO inputs -- it reads the baked
+// ephemeris constant VAC[2], nonzero by construction). The one throwing exception:
+// pumpedDepartureDv's calibration-corridor guard, unreachable from the page (the
+// AC aim's v-inf floor is 23.27 km/s) and intended to fail loud for library callers.
 (function (root) {
   "use strict";
 
