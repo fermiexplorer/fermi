@@ -225,7 +225,6 @@ def perihelion_pumped_vinf(
         ecc = math.sqrt(max(0.0, 1.0 + 2.0 * E * h * h / (mu * mu)))
         p_sl = h * h / mu
         rp = p_sl / (1.0 + ecc)
-        ra = p_sl / (1.0 - ecc) if ecc < 1.0 else 1e30
         # true anomaly from the orbit geometry (sign from the radial velocity)
         rdot_sign = 1.0 if (x * vx + y * vy) >= 0.0 else -1.0
         if ecc > 1e-6:
@@ -253,9 +252,7 @@ def perihelion_pumped_vinf(
             # FINISHER: near-parabolic — one full-power pass through periapsis (plus the
             # fading outward tail) delivers the remaining excess; burn continuously
             thrust_dir = +1.0
-        vmag = math.sqrt(v2) or 1.0
         amag = accel_mag(r) if thrust_dir else 0.0
-        axc, ayc = thrust_dir * amag * vx / vmag, thrust_dir * amag * vy / vmag
         period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * AU) ** 3 / mu)
         dt = min(max(600.0, 0.002 * period), 5.0 * 86400.0)
 

@@ -82,7 +82,7 @@
   // asymptote v_circ, which overstates the escape TIME by ~7.6 %); mildly accel-dependent, 0.93
   // holds the SEP band to ≲1 %. Mirror of fermi_sim.departure._C3_ESCAPE_FRAC.
   const C3_ESCAPE_FRAC = 0.93;
-  function earthEscapeRevs(thrustN, massKg, periAltKm) {
+  function earthEscapeRevs(thrustN, massKg, periAltKm = 590) {
     const a = thrustN / Math.max(massKg, 1);
     if (a <= 0) return { revs: 0, tYr: 0 };
     const rp = R_EARTH + periAltKm * 1e3;

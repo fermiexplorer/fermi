@@ -70,7 +70,13 @@ def min_speed_arrival(state: StateVector) -> InterceptSolution:
         T* = |A0|^2 / (-A0 . V_ac)
     """
     r0, vac = state.r, state.v
-    t_star = float(np.dot(r0, r0)) / (-float(np.dot(r0, vac)))
+    radial = float(np.dot(r0, vac))       # < 0 iff the target is radially approaching the Sun
+    if radial >= 0.0:
+        raise ValueError(
+            "min_speed_arrival: target is not radially approaching (A0.V_ac >= 0), so no "
+            "tangential-intercept minimum exists in the future"
+        )
+    t_star = float(np.dot(r0, r0)) / (-radial)
     return solve_intercept(state, t_star)
 
 
@@ -80,7 +86,12 @@ def ecliptic_crossing_time(state: StateVector) -> float:
     Arriving here makes V_p purely in-plane, so the entire departure can borrow
     Earth's in-ecliptic orbital velocity -- no costly plane change.
     """
-    return -state.r[2] / state.v[2]
+    vz = float(state.v[2])
+    if vz == 0.0:
+        raise ValueError(
+            "ecliptic_crossing_time: v[2] is zero, so the trajectory never crosses the ecliptic"
+        )
+    return -state.r[2] / vz
 
 
 def sweep_arrival_times(
