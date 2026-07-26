@@ -64,8 +64,11 @@ page/REPORT if the in-corridor value shifts.
 (25.6 vs 24.0 km/s) and is non-monotonic in a₀/Isp/power-cap (islands and stall
 bands, pinned by `audit/calcs/audit_pumping.py`). A third, smaller cost rides
 the same heuristic: the bang-bang on/off/sign decision is taken once per RK4
-step, so burn-arc edges are quantized by O(dt) — bounded < 0.5% by the
-step-convergence audit check (external ledger F5l).
+step, so burn-arc edges are quantized by O(dt) — directly measured at **0.12%
+Δv at the design a₀** (verdict unchanged; a per-stage-switching variant flips
+the verdict only at the bisected working-region edge, where any perturbation
+does), and bounded < 0.5% by the step-convergence audit check (external ledger
+F5l).
 
 **Tightened:** a trajectory-optimised burn schedule (direct collocation or
 equivalent) with switching times as decision variables — removing the ~7%

@@ -16,10 +16,15 @@ The pumping campaign is flown by the bang-bang heuristic in
    a validated profile rather than a threshold.
 3. **Per-step switch quantization** (external ledger F5l): the on/off/sign
    decision is taken once per RK4 step from start-of-step osculating elements,
-   so burn-arc edges are fuzzy by O(dt). Bounded < 0.5% by the step-convergence
-   audit check — LOW alone; retired for free here because switching times
-   become decision variables. (F5l's wording is imprecise: the thrust
-   *direction* is stage-local; only the switch *state* is frozen per step.)
+   so burn-arc edges are fuzzy by O(dt). Directly measured (A/B experiment,
+   per-step vs per-stage switching, `tmp/ro/f5l_repro.py`): **0.12% Δv / 0.00%
+   v∞ at the design a₀** with the reach verdict unchanged; at the *bisected
+   edge* a₀ = 2.24×10⁻⁴ the verdict flips (v∞ −0.14%) — i.e. the published
+   edge is scheme-dependent at the ~1% level in a₀, which is precisely why
+   designs are gated by integration at the validated profile, 12% above the
+   edge. LOW alone; retired for free here because switching times become
+   decision variables. (F5l's wording is imprecise: the thrust *direction* is
+   stage-local; only the switch *state* is frozen per step.)
 
 ## Change
 
