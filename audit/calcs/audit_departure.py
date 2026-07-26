@@ -143,13 +143,17 @@ def run() -> None:
             dt = min(max(1.0, 0.01 * period), 1800.0)
             ang += abs((x * vy - y * vx) / (r * r)) * dt
             vx += ax * dt; vy += ay * dt; x += vx * dt; y += vy * dt; t += dt
-        return ang / (2 * math.pi)
+        return ang / (2 * math.pi), t / c.YEAR
 
     for accel in (3.3e-4, 1e-3):
-        n_anal, _ = earth_escape_revs(accel, 1.0, 590.0)   # thrust=accel, mass=1 → a=accel
-        n_int = integ_revs(accel, 590.0)
+        n_anal, t_anal = earth_escape_revs(accel, 1.0, 590.0)   # thrust=accel, mass=1 → a=accel
+        n_int, t_int = integ_revs(accel, 590.0)
         check(f"Earth-escape rev count: analytic ≈ integration @ a={accel:.0e} (<3%)",
               rel_err(n_anal, n_int) < 0.03, f"analytic {n_anal:.0f} vs integ {n_int:.0f}")
+        # The escape TIME must match the true C3=0 spiral (the ~0.93·v_circ/a form), NOT the
+        # r→∞ Edelbaum v_circ/a asymptote that overstates it ~7.6%. Pins the _C3_ESCAPE_FRAC fix.
+        check(f"Earth-escape time: analytic ≈ integration @ a={accel:.0e} (<3%)",
+              rel_err(t_anal, t_int) < 0.03, f"analytic {t_anal:.3f} vs integ {t_int:.3f} yr")
 
     # --- conservative 1/r² SEP achievable-v∞ gate: independent (Euler-Cromer, finer dt) ---
     from fermi_sim.departure import sep_achievable_vinf
@@ -183,7 +187,7 @@ def run() -> None:
     v_ind = sep_vinf_indep(20000.0, 1600.0, 300.0, 1585.0, 0.5)
     check("SEP achievable v∞: RK4 ≈ independent Euler-Cromer (<3%)",
           rel_err(v_rk4, v_ind) < 0.03, f"{v_rk4/1e3:.2f} vs {v_ind/1e3:.2f} km/s")
-    check("conservative SEP (20 kW / 1600 kg) saturates BELOW the 23.4 km/s floor",
+    check("conservative SEP (20 kW / 1600 kg) saturates BELOW the 23.3 km/s floor",
           v_rk4 < 23.4e3, f"achievable {v_rk4/1e3:.2f} km/s")
 
     # --- EP-ONLY closure: nuclear-electric is CONSTANT power (fade_exp=0) — no 1/r² starvation. ---
@@ -194,7 +198,7 @@ def run() -> None:
     sol_same = sep_achievable_vinf(5000.0, 717.0, 256.0, 3000.0, 0.55, 1.0, 2.0)
     check("NEP achievable v∞: RK4 ≈ independent Euler-Cromer (<3%)",
           rel_err(nep_rk4, nep_ind) < 0.03, f"{nep_rk4/1e3:.2f} vs {nep_ind/1e3:.2f} km/s")
-    check("EP-only closure: NEP (constant power) REACHES the 23.4 km/s floor",
+    check("EP-only closure: NEP (constant power) REACHES the 23.3 km/s floor",
           nep_rk4 >= 23.4e3, f"achievable {nep_rk4/1e3:.2f} km/s")
     check("same probe on SOLAR (1/r² fade) does NOT reach the floor — power law is decisive",
           sol_same < nep_rk4 and sol_same < 23.4e3, f"solar {sol_same/1e3:.2f} vs nep {nep_rk4/1e3:.2f} km/s")

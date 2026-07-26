@@ -78,7 +78,7 @@ independent corroboration, whereas PSI confirming its own result is not.
 | Gemini v01 (+v2 rerun) | Gemini | ≈build 106 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §1–9; repo only | **No** | **astropy** SkyCoord + **scipy solve_ivp** (RK45) | ephemeris, intercept, spiral | [conclusions](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini-conclusions.md) · [v01 audit](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini-audit-v01.md) · [results](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini_results.json) · [v2 results](https://github.com/fermiexplorer/fermi/blob/main/audit/gemini/gemini_results_v2.json) |
 | Fable — core | Fable 5 | build 106 | 22 independent checks over §1–9; repo only | **No** | scipy RK45 + finite-difference ephemeris | ephemeris → power gate | [conclusions](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-conclusions.md) · [results.json](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable_results.json) · [script](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable_independent_checks.py) |
 | **GMAT** | NASA GMAT (R2020a) | departure model | 2 mission scripts (impulsive C3; low-thrust escape) | **No** | separate flight-proven propagator | departure energetics only | [README](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/scripts) · [raw outputs](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out) · [compare.py](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/compare.py) |
-| Fable — pumping | Fable 5 (31-agent workflow) | build 123 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §11–12, adversarial ("refute it") | **Partial** — repo held *our* reproduction; **not** the PSI PDF (added only at build 135) | 2 independent integrators (own RK4 + **DOP853**) | perihelion pumping + synchrotron | [pumping/synchrotron audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-pumping-synchrotron-audit.md) |
+| Fable — pumping | Fable 5 (31-agent workflow) | builds 124–126 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §11–12, adversarial ("refute it") | **Partial** — repo held *our* reproduction; **not** the PSI PDF (added only at build 135) | 2 independent integrators (own RK4 + **DOP853**) | perihelion pumping + synchrotron | [pumping/synchrotron audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-pumping-synchrotron-audit.md) |
 | Fable — text/coherence | Fable 5 (144 / 98 / 43 agents) | builds 129–135 | reader-text + default-state + envelope lenses | Yes (by then archived) | scripted extraction + node/scipy re-derivation | prose, data, UI-state coherence | [text audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-text-audit.md) |
 | **PSI** | Physical Superintelligence PBC | external (our public page) | produced end-to-end on its own platform | **Is** the report | autonomous physics-research platform | full mission | [PSI‑TR‑2026‑0714 (PDF)](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) · [our notes](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/README.md) |
 
@@ -97,30 +97,32 @@ Blank cell = that source did not report that quantity. Bold engine column is the
 
 | Quantity | **Engine** | PSI | GMAT | Codex | Grok | Gemini | Fable |
 |---|---|---|---|---|---|---|---|
-| AC space speed (km/s) | **32.3008** | ~32.3 | — | 32.301 | 32.3008 | (Δ only) | 32.3008 |
+| AC space speed (km/s) | **32.3008** | 32.38³ | — | 32.301 | 32.3008 | (Δ only) | 32.3008 |
 | AC distance now (ly) | **4.344** | — | — | 4.513¹ | 4.344 | — | 4.344 |
 | Closest-approach epoch (kyr) | **27.960** | 27.955 | — | — | 27.9597 | — | 27.9596 |
-| Closest-approach distance (ly) | **3.1297** | 3.152 | — | — | 3.1297 | — | 3.1297 |
+| Closest-approach distance (ly) | **3.1297** | 3.152³ | — | — | 3.1297 | — | 3.1297 |
 | Hand-vs-astropy state error | **—** | — | — | — | 5.66 m / 2.6×10⁻⁶ m/s | 5.66 m / 2.6×10⁻⁶ m/s | ~1×10⁻⁸ % |
-| Tangential (min-speed) arrival (yr) | **58,138** | 58,422 | — | 58,138 | 58,138 | — | 58,138 |
-| Tangential v∞ (km/s) | **23.2719** | 23.38 | — | 23.2719 | 23.2719 | — | 23.2719 |
+| Tangential (min-speed) arrival (yr) | **58,138** | 58,422³ | — | 58,138 | 58,138 | — | 58,138 |
+| Tangential v∞ (km/s) | **23.2719** | 23.38³ | — | 23.2719 | 23.2719 | — | 23.2719 |
 | Tangential aim tilt (deg) | **−10.0** | — | — | −9.99 | −9.995 | — | −9.995 |
-| Min-Δv arrival (yr) | **72,800** | 73,012 | — | 72,800 | 72,800 | — | — |
+| Min-Δv arrival (yr) | **72,800** | 73,012³ | — | 72,800 | 72,800 | — | — |
 | Min-Δv impulsive floor (km/s) | **13.875** | 13.85 | — | 13.875 | 13.875 | 13.8856² | — |
 | v∞ at 75 kyr (km/s) | **23.8106** | — | — | — | 23.8106 | 23.8106 | — |
 | v∞,Earth at optimum (km/s) | **19.489** | 18.59² | — | 19.489 | — | 18.628² | 19.489 |
 | Impulsive floor, 400 km @ optimum (km/s) | **14.633** | — | — | 14.633 | 14.651² | — | 14.633 |
 | Post-burn C3 (km²/s²) | **379.8154** | — | **379.8154** | — | — | — | — |
-| Spiral escape time (Ms) | **14.266** | — | **14.266** | — | — | — | 14.265 |
+| Spiral escape time (Ms) | **14.266** | — | 14.265 | — | — | — | 14.265 |
 | Spiral revs to Earth escape | **691.9** | — | ~692 | — | — | — | 692.0 |
-| Low-thrust departure Δv (km/s) | **25.99** | — | — | 25.987 | 25.99² | 25.127² | 25.987 |
+| Low-thrust departure Δv (km/s) | **25.99** | — | — | 25.987 | 26.01 | 25.127² | 25.987 |
 | Xenon @ 20 km/s, Isp 3000 (kg) | **248.24** | — | — | 248.2 | 248.24 | — | — |
 | Silicon array (kg / W·kg⁻¹) | **55.1 / 91** | — | — | — | 55.1 / 91 | — | — |
 
 ¹ Codex reported AC's *4.513 ly asymptotic* distance term, not the 4.344 ly present distance —
 different quantity, not a disagreement. ² marked cells are evaluated at a **different arrival
 epoch or aim** than the engine's reference (75 kyr / 58 kyr slider vs the 72.8 kyr optimum); see
-§3. All unmarked cells agree with the engine to **≤0.2 %, most to ≤0.01 %.**
+§3. ³ PSI evaluates against its own catalogue astrometry and optimiser, so these cells differ from
+the engine by 0.2–0.7 % (all reconciled in §3). All unmarked (non-², non-³) cells agree with the
+engine to **≤0.2 %, most to ≤0.01 %.**
 
 ### α-conditional power gate (Fable's independent RK45 vs the engine's fixed-dt RK4)
 
@@ -220,6 +222,12 @@ slightly *worse*:
 *(α² Lib's low cruise does close at a₀ as small as 8×10⁻⁵ — but that campaign runs ~60 yr over
 ~15 revolutions: the patience trade taken to its limit.)*
 
+*(On the band: the project's headline "~15–21 W/kg" is the **PSI-implied** vehicle-α band, which
+brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slightly higher — 21.7 W/kg
+at the AC design point, 22.1 for α² Lib — so these per-target rows sit just above the top of the
+published band. Same physics, ~1 W/kg of sizing conservatism; the headline is kept at 15–21 because
+that is the PSI-implied figure the project cites.)*
+
 **Rule of thumb for reading these tables: α tells you whether the power system can do it at all;
 Δv tells you whether the vehicle can afford it. Both must pass.**
 
@@ -251,7 +259,7 @@ Two multiplicative effects, both purchased by moving the burn to 0.42 AU:
 | Effect | Factor | Why |
 |---|---|---|
 | **Power availability** | **4.0×** | array output ∝ 1/r²; at 0.42 AU that is 5.7× the 1-AU rating, capped at **4×** by the assumed thermal limit |
-| **Oberth leverage** | **2.2×** | energy gained per unit Δv is `v·Δv`; perihelion speed there is 65.0 km/s vs 29.8 km/s circular at 1 AU |
+| **Oberth leverage** | **2.18×** | energy gained per unit Δv is `v·Δv`; perihelion speed there is 65.0 km/s vs 29.8 km/s circular at 1 AU (65.0/29.8 = 2.18) |
 | *naive product* | *8.7×* | if the manoeuvre were free |
 | **Observed α ratio** | **≈ 5–7×** | the shortfall is the cost of *getting* there — the retrograde pump-down (8.3 of our 25.6 km/s) plus gravity losses |
 
@@ -410,7 +418,7 @@ contained that step.
 
 ### What PSI claims — and what PSI explicitly does *not* claim
 
-PSI is scrupulous about priority. From [PSI‑TR‑2026‑0714](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) §4.3, verbatim:
+PSI is scrupulous about priority. From [PSI‑TR‑2026‑0714](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) §4.3 (emphasis added; reference brackets omitted):
 
 > "The ingredients of this maneuver are established practice, and it is worth stating which are old
 > and which is new. The energetic advantage of burning deep in a gravity well was identified by
@@ -418,7 +426,7 @@ PSI is scrupulous about priority. From [PSI‑TR‑2026‑0714](https://github.c
 > periapsis — **is classical**. Powered-flyby and solar-Oberth (perihelion-burn) escapes built on the
 > same effect **are established concepts** in the interstellar-precursor literature, **including in
 > Fermi Explorer's own reference analysis**. Splitting a low-thrust maneuver into repeated
-> apsis-centered arcs over many revolutions **is likewise standard**: **SMART-1** escaped
+> apsis-centered arcs over many revolutions **is likewise standard practice**: **SMART-1** escaped
 > geostationary-transfer orbit on repeated perigee- and apogee-centered thrust arcs, and
 > multi-revolution apsis-arc structures **are routine in low-thrust trajectory optimization**. What
 > the present analysis contributes is **the quantified closure of this mission class by that

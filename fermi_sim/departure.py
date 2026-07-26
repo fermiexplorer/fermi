@@ -64,6 +64,10 @@ _SPIRAL_FIT_C1 = 0.999997
 # to ~25 m/s up to e=0.7 (validated in audit_departure.py; coefficients from tools/fit_spiral.py).
 _SPIRAL_FIT_CE1 = 85.4   # m/s
 _SPIRAL_FIT_CE2 = 284.8  # m/s
+# Fraction of the circular speed the constant-tangential spiral actually spends to reach C3=0
+# (parabolic escape), vs the r→∞ Edelbaum asymptote of v_circ. Mildly acceleration-dependent
+# (~0.95 at a≈1e-4, ~0.94 at the design band, ~0.87 at a≈5e-3); 0.93 holds the SEP band to ≲1 %.
+_C3_ESCAPE_FRAC = 0.93
 
 
 def lowthrust_departure_dv(
@@ -95,17 +99,21 @@ def earth_escape_revs(thrust_n: float, mass_kg: float, perigee_km: float = 590.0
     tangential thrust at acceleration a = thrust/mass. ANALYTIC near-circular result (derived; see
     tmp/ro/revcount.py, audit_departure.py):
 
-        N = mu / (8·pi·a·r_p²)        t_escape = v_circ(r_p) / a
+        N = mu / (8·pi·a·r_p²)        t_escape ≈ 0.93·v_circ(r_p) / a
 
-    Matches the geocentric RK integration to ~0.2 %. Design-responsive (a = thrust/wet mass) and
-    instant — this is the many-revolution Earth-escape that the solar-scale views can't show.
+    The revolution count matches the geocentric RK integration to ~0.2 %. The time is the C3=0
+    (parabolic) escape, which the constant-tangential spiral reaches at a Δv of ~0.93·v_circ — NOT
+    the full v_circ (that is the r→∞ Edelbaum asymptote, which overstates the escape time by ~7.6 %
+    and disagrees with the engine's own spiral_escape_dv and the GMAT column). The 0.93 fraction is
+    mildly acceleration-dependent (~0.95 at a≈1×10⁻⁴, ~0.94 at the a≈3×10⁻⁴ design band, ~0.87 at
+    a≈5×10⁻³); 0.93 holds the SEP band to ≲1 %. Design-responsive (a = thrust/wet mass) and instant.
     """
     a = thrust_n / max(mass_kg, 1.0)
     if a <= 0.0:
         return 0.0, 0.0
     r_p = c.R_EARTH + perigee_km * 1e3
     n = c.MU_EARTH / (8.0 * math.pi * a * r_p * r_p)
-    t_yr = (math.sqrt(c.MU_EARTH / r_p) / a) / c.YEAR
+    t_yr = (_C3_ESCAPE_FRAC * math.sqrt(c.MU_EARTH / r_p) / a) / c.YEAR
     return n, t_yr
 
 
@@ -360,11 +368,13 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     plane change v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential
     aim), and the tax covers the in-plane overhead (pump-down arcs + gravity losses),
     calibrated against :func:`perihelion_pumped_vinf` at the design corridor
-    (Δv − v∞ ≈ 2.0 km/s at a₀ = 2.5×10⁻⁴, v∞ ≈ 23.6 km/s). The flat tax is a single-point
-    calibration: audited mispricing grows to several km/s for targets far from the
-    corridor (low targets pay a near-fixed pump-down; high targets ride the finisher).
-    Unlike the outward-spiral budget this does NOT borrow Earth's orbital velocity — v∞
-    is built heliocentrically at perihelion.
+    (Δv − v∞ ≈ 2.0 km/s at a₀ = 2.5×10⁻⁴, v∞ ≈ 23.6 km/s). The flat tax is exact ONLY near
+    the AC corridor (v∞ ≈ 23–25 km/s): re-integrating the policy at the design a₀, the true
+    campaign overhead (Δv − v∞) is ~13.5 km/s at v∞=8, ~11.7 at v∞=10, ~7.8 at v∞=15, falling
+    through 2.0 at v∞≈23.6 and to ≈0 by v∞=30. So this two-leg budget UNDERPRICES low-v∞
+    targets by ~10 km/s — it is valid only for the AC-class corridor it ships for (shipped code
+    never evaluates it below ~23 km/s). Unlike the outward-spiral budget this does NOT borrow
+    Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
     """
     r_p = c.R_EARTH + peri_alt_km * 1e3
     r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3

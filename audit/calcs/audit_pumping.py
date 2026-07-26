@@ -342,6 +342,20 @@ def run() -> None:
     check("stall band above the design point: 3.0e-4 strands (non-monotone)", v_stall < tgt,
           f"{v_stall/1e3:.2f} km/s")
 
+    # 13b. Power-CAP non-monotonicity (pins the page's caveat: the closure is non-monotone in the
+    #      delivered concentration exactly as it is in a0/Isp — it reaches at 2.0x/2.5x/3.5x/4.0x but
+    #      STRANDS at 1.5x/3.0x/3.25x and at the physical uncapped ~5.67x). Guards against a future
+    #      "halving the cap always survives" regression, and keeps the 4x figure honest as a validated
+    #      working point, not a smooth floor. (Regression drift guard, like the page-table-row pins.)
+    def _reach(cap):
+        v, _, yr, _ = perihelion_pumped_vinf(a0_design, tgt, ISP_S, RP_MIN_AU, cap, 200.0)
+        return v >= tgt * 0.999
+    reach_caps = [c_ for c_ in (2.0, 2.5, 3.5, 4.0) if _reach(c_)]
+    stall_caps = [c_ for c_ in (1.5, 3.0, 3.25, 5.67) if not _reach(c_)]
+    check("power cap is non-monotone: 2.0/2.5/3.5/4.0x reach, 1.5/3.0/3.25/5.67x stall",
+          len(reach_caps) == 4 and len(stall_caps) == 4,
+          f"reach={reach_caps}, stall={stall_caps}")
+
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the
     #     dv split ~8.3 retro + ~17.3 prograde. Re-integrated independently.

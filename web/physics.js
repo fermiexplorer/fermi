@@ -78,11 +78,15 @@
   }
   // Earth-escape spiral: revolutions & time to spiral from circular LEO to C3=0 at a=thrust/mass.
   // Analytic near-circular result N = mu/(8*pi*a*r_p^2), t = v_circ/a (matches integration ~0.2%).
+  // C3=0 escape costs ~0.93·v_circ under constant-tangential thrust (not the r→∞ Edelbaum
+  // asymptote v_circ, which overstates the escape TIME by ~7.6 %); mildly accel-dependent, 0.93
+  // holds the SEP band to ≲1 %. Mirror of fermi_sim.departure._C3_ESCAPE_FRAC.
+  const C3_ESCAPE_FRAC = 0.93;
   function earthEscapeRevs(thrustN, massKg, periAltKm) {
     const a = thrustN / Math.max(massKg, 1);
     if (a <= 0) return { revs: 0, tYr: 0 };
     const rp = R_EARTH + periAltKm * 1e3;
-    return { revs: MU_EARTH / (8 * Math.PI * a * rp * rp), tYr: (Math.sqrt(MU_EARTH / rp) / a) / YEAR };
+    return { revs: MU_EARTH / (8 * Math.PI * a * rp * rp), tYr: (C3_ESCAPE_FRAC * Math.sqrt(MU_EARTH / rp) / a) / YEAR };
   }
   // Heliocentric spiral-out: revolutions around the Sun raising the orbit from r0 (~1 AU) to solar
   // escape. N = mu_sun/(8*pi*a*r0^2). The cruise after is a straight coast, so this is the total
@@ -254,8 +258,10 @@
   // pumped_departure_dv): Earth escape to C3≈0 at the orbit-energy speed √(μ⊕/a) + the
   // heliocentric pumping campaign at v∞ + v∞·|sin β| (plane change — the campaign is
   // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
-  // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor;
-  // single-point calibration — misprices grow away from it). No Earth-velocity borrow.
+  // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor).
+  // The flat tax is exact ONLY near the AC corridor (v∞ ≈ 23–25 km/s): the true overhead is
+  // ~10–13 km/s at v∞ ≈ 8–10, so this budget UNDERPRICES low-v∞ targets — valid only for the
+  // AC-class corridor it ships for. No Earth-velocity borrow.
   function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = 2000) {
     const rp = R_EARTH + periAltKm * 1e3;
     const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;

@@ -110,6 +110,25 @@ def run() -> None:
           not s_cap["reached"] and s_cap["passes"] == 3,
           f"passes={s_cap['passes']}, v_p={s_cap['v_peri_final']/1e3:.0f} km/s")
 
+    # 8. Aperture-transit timescales the page quotes (regression on a build-141 error that
+    #    called the transit "milliseconds" — wrong by ~500×). At a = 10^3 g₀, Δv = 5 km/s,
+    #    v_rel = 57 km/s: the transit time is Δv/a AND, independently, bore/ v_rel — the two
+    #    must agree, and it is ~0.5 s, NOT milliseconds. A 0.5 m coil pitch is ~8.8 µs/stage.
+    a_g = 1e3 * c.G0
+    dv_kick, v_rel, pitch = 5.0e3, 57.0e3, 0.5
+    t_from_accel = dv_kick / a_g                       # Δv/a
+    bore = dv_kick * v_rel / a_g                        # L = Δv·v/a
+    t_from_bore = bore / v_rel                          # L / v_rel
+    check("aperture transit is ~0.5 s (Δv/a), not milliseconds",
+          close(t_from_accel, 0.51, abs_=0.02) and t_from_accel > 0.1,
+          f"t = {t_from_accel*1e3:.0f} ms  (bore {bore/1e3:.1f} km)")
+    check("bore/v_rel and Δv/a give the same transit time (<1%)",
+          rel_err(t_from_bore, t_from_accel) < 1e-2,
+          f"{t_from_bore:.4f} vs {t_from_accel:.4f} s")
+    check("half-metre coil pitch is ~8.8 µs per stage",
+          close(pitch / v_rel * 1e6, 8.8, abs_=0.1),
+          f"{pitch / v_rel * 1e6:.1f} µs")
+
 
 if __name__ == "__main__":
     from _util import summary

@@ -76,6 +76,20 @@ def run() -> None:
     check("run_analysis verdict states pure solar closes via pumping",
           "PURE SOLAR-ELECTRIC CLOSES" in analysis and "perihelion" in analysis.lower())
 
+    # 8. Ecliptic-crossing arrival year is ~79k everywhere (engine 79,252 yr); the retracted
+    #    ~80,000-yr rounding must not reappear in REPORT's closing paragraph.
+    check("REPORT states ecliptic crossing as ~79k, not ~80k",
+          "80,000 yr at the ecliptic" not in report and "79,000 yr at the ecliptic" in report)
+
+    # 9. Synchrotron aperture-transit prose: the transit is ~0.5 s (t = Δv/a), NOT "milliseconds"
+    #    (a build-141 error wrong by ~500×), and the coupling is gigawatt-class at probe scale, not
+    #    "terawatt per transit". Pins the corrected copy so the physics claim can't silently drift back.
+    check("index.html synchrotron transit is ~0.5 s, not milliseconds",
+          "crossed in milliseconds" not in idx and "crossed in about half a second" in idx)
+    check("index.html synchrotron coupling is gigawatt-class, not terawatt-per-transit",
+          "terawatt-class coupling" not in idx and "terawatt-class pulse" not in idx
+          and "gigawatt-class coupling" in idx)
+
 
 if __name__ == "__main__":
     from _util import summary

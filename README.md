@@ -81,7 +81,7 @@ python3 -m venv .venv
 # web<->python parity (Node, 35 checks)
 node audit/calcs/audit_webjs.mjs
 
-# UI behaviour: every slider drives the right outputs, in the right direction (80 checks)
+# UI behaviour: every slider drives the right outputs, in the right direction (82 checks)
 .venv/bin/python audit/calcs/ui_sliders.py
 
 # NASA GMAT cross-validation of the departure model (downloads GMAT; Linux/WSL)
