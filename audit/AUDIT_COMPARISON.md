@@ -242,7 +242,8 @@ either solution**: the cheap intercept lies far outside any mission horizon, and
 horizon-constrained arrival costs more than going to α Centauri itself (PSI: 19.74 vs
 13.85 km/s impulsive) — so α² Lib is excluded as a mission target, appears only in the
 relaxed-clock survey tables, and its row carries the ⚠ unverified-kinematics flag
-(`RV_DISPUTED` in the star-table generator).
+(`RV_DISPUTED` in the star-table generator,
+[`tools/make_starmap_data.py`](https://github.com/fermiexplorer/fermi/blob/main/tools/make_starmap_data.py)).
 
 **Rule of thumb for reading these tables: α tells you whether the power system can do it at all;
 Δv tells you whether the vehicle can afford it. Both must pass.**
