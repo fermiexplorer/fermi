@@ -81,10 +81,16 @@ def min_speed_arrival(state: StateVector) -> InterceptSolution:
 
 
 def ecliptic_crossing_time(state: StateVector) -> float:
-    """Time at which AC's trajectory crosses the ecliptic plane (z = 0).
+    """Time at which the trajectory crosses the ecliptic plane (z = 0).
 
     Arriving here makes V_p purely in-plane, so the entire departure can borrow
     Earth's in-ecliptic orbital velocity -- no costly plane change.
+
+    The return value is a SIGNED time: negative means the crossing happened
+    |t| seconds in the PAST (the star already crossed the plane) -- an answer,
+    not an error, so no guard rejects it; callers wanting only future crossings
+    filter on t > 0 (as the star-table generator does). For AC's catalogued
+    state (below the ecliptic, moving up) the crossing is in the future.
     """
     vz = float(state.v[2])
     if vz == 0.0:

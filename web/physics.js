@@ -29,6 +29,8 @@
     return { vinf: Math.hypot(inPlane, v[2]), tiltDeg: Math.atan2(v[2], inPlane) * 180 / Math.PI };
   }
   function tangentialT() { return dot(R0, R0) / (-dot(R0, VAC)); }
+  // SIGNED time (mirror of fermi_sim ecliptic_crossing_time): negative = the crossing is in the
+  // past. For AC's catalogued state (below the ecliptic, moving up) it is in the future.
   function eclipticCrossingT() { return -R0[2] / VAC[2]; }
 
   function vInfEarth(vinfSun, tiltDeg) {
