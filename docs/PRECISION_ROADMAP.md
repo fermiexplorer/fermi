@@ -58,15 +58,19 @@ caching), removing the corridor restriction.
 **Re-baselines:** pumped-budget parity checks; the two-leg budget quotes in the
 page/REPORT if the in-corridor value shifts.
 
-## Stage 3 — Optimised pumping schedule  *(unscheduled)*
+## Stage 3 — Optimised pumping schedule  *(scheduled: [#4](https://github.com/fermiexplorer/fermi/issues/4))*
 
 **Today:** the bang-bang policy costs ~7% more Δv than PSI's optimised schedule
 (25.6 vs 24.0 km/s) and is non-monotonic in a₀/Isp/power-cap (islands and stall
-bands, pinned by `audit/calcs/audit_pumping.py`).
+bands, pinned by `audit/calcs/audit_pumping.py`). A third, smaller cost rides
+the same heuristic: the bang-bang on/off/sign decision is taken once per RK4
+step, so burn-arc edges are quantized by O(dt) — bounded < 0.5% by the
+step-convergence audit check (external ledger F5l).
 
-**Tightened:** a trajectory-optimised burn schedule (direct collocation or CasADi
-class) that removes the phasing gaps and the ~7% premium; the bang-bang stays as
-the audit cross-check.
+**Tightened:** a trajectory-optimised burn schedule (direct collocation or
+equivalent) with switching times as decision variables — removing the ~7%
+premium, the phasing gaps, and the arc-edge quantization in one rewrite; the
+bang-bang integrator stays as the independent audit cross-check.
 
 ## Stage 4 — 3-D pumping campaign  *(unscheduled)*
 
