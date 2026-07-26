@@ -129,6 +129,7 @@ def main() -> None:
     print(
         f"  -> array+engine+tank = {s['subsystems_kg']:.0f} kg of the {255:.0f} kg dry mass;"
         f" {s['bus_payload_remainder_kg']:.0f} kg left for bus + payload + margin."
+        + ("" if s["closes"] else "  ** DOES NOT CLOSE: subsystems exceed the dry mass **")
     )
     print("\nPropellant fraction ~0.4-0.5 xenon is comfortably feasible today.")
 

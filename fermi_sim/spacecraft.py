@@ -47,6 +47,10 @@ def minimal_dry_mass(
     propellant + tank + structure mass spirals without bound (the rocket-equation
     wall) and the design does NOT close. Returns ``None`` in that case.
     """
+    for nm, val in (("active_kg", active_kg), ("payload_kg", payload_kg), ("dv", dv),
+                    ("isp_s", isp_s), ("tank_frac", tank_frac), ("struct_frac", struct_frac)):
+        if not math.isfinite(val):
+            raise ValueError(f"minimal_dry_mass: {nm} must be finite, got {val!r}")
     K = math.exp(dv / exhaust_velocity(isp_s)) - 1.0
     ft, ks = tank_frac, struct_frac
     D = 1.0 - K * (ft + ks * (ft + 1.0))
@@ -153,6 +157,9 @@ class SolarArchitecture:
             "tank_mass_kg": tank_mass,
             "subsystems_kg": subsystems,  # array + engine + tank
             "bus_payload_remainder_kg": self.dry_mass - subsystems,
+            # explicit closure verdict: subsystems must FIT inside the fixed dry mass —
+            # a negative remainder means the design does not close (external finding F7g)
+            "closes": self.dry_mass - subsystems >= 0.0,
             "thrust_mN": thrust * 1e3,
             "burn_years": t_burn / c.YEAR,
             "wet_mass_kg": self.dry_mass + m_prop,

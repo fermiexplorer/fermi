@@ -304,6 +304,10 @@
   // with structure = ks·(active + (propCoef+1)·m_p) and m_p = dry_eff·(MR−1). propCoef = dry mass added
   // per kg of propellant (tank fraction, plus fuel-cell reactant on the web). Denominator ≤0 ⇒ diverges.
   function minimalDryMass(activeKg, payloadKg, dv, isp, propCoef, structFrac) {
+    // non-finite input would make D = NaN, which SKIPS the D<=0 sentinel and returns a false
+    // "converges" full of NaN — treat it as diverged instead (transitive-closure finding S3)
+    if (![activeKg, payloadKg, dv, isp, propCoef, structFrac].every(Number.isFinite))
+      return { converges: false, dryEff: Infinity, mProp: Infinity, structure: Infinity, wet: Infinity };
     const K = Math.exp(dv / expv(isp)) - 1, ks = structFrac, gp = propCoef;
     const D = 1 - K * (gp + ks * (gp + 1));
     if (D <= 0) return { converges: false, dryEff: Infinity, mProp: Infinity, structure: Infinity, wet: Infinity };
