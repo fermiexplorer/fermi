@@ -985,29 +985,41 @@
   <p><b>The physical setup.</b> One or more <b>coil-accelerator stations</b> orbit the Sun on a
   circular orbit of radius r<sub>p</sub> (they orbit like anything else at that radius — nothing
   hovers; "station" means only that the infrastructure stays in the inner system and is reused). The
-  probe is placed on a bound, highly eccentric heliocentric orbit whose <b>perihelion coincides with
-  that radius</b>. On each perihelion transit it passes through a station's bore, the drive coils fire
-  in sequence, and it leaves with a small prograde velocity increment Δv. Its orbital energy rises, so
-  it returns on a larger, longer-period ellipse — and the cycle repeats. When the accumulated
-  perihelion speed reaches √(v∞² + v<sub>esc</sub>²) the orbit is hyperbolic and the probe departs on
-  its interstellar asymptote.</p>
+  probe is placed on a bound heliocentric orbit whose <b>perihelion coincides with that radius</b>. On
+  each perihelion transit it passes through a station's bore, the drive coils fire in sequence, and it
+  leaves with a small prograde velocity increment Δv. Its orbital energy rises, so it returns on a
+  larger, longer-period ellipse — and the cycle repeats. When the accumulated perihelion speed reaches
+  √(v∞² + v<sub>esc</sub>²) the orbit is hyperbolic and the probe departs on its interstellar
+  asymptote. Two conditions govern the whole scheme: each increment must be large enough that the
+  <em>final</em> one can jump from bound straight past that target (Δv per pass ≥
+  Δv<sub>final,min</sub>, below), and <b>how the probe is fed to the station in the first place decides
+  almost everything</b> — as the numbers below show.</p>
   <p><b>How the coils couple to the probe.</b> The accelerating element is a sequence of <b>pulsed
-  drive coils</b> — a linear induction motor, coilgun class. Their travelling field induces currents
-  in a <b>conductive (ideally superconducting) armature</b> carried by the probe, and the field acts
-  on those induced currents to push it along the bore. The coupling is <b>non-contact</b>: nothing
-  touches, which is what makes a hypervelocity transit survivable. Three consequences follow directly:</p>
+  drive coils</b>, switched in turn as the probe passes. Each coil's field rises far faster than
+  current can decay in the probe's <b>conductive armature</b>, so flux is excluded from the armature
+  and the induced currents are repelled — a <em>reaction</em> coilgun, not an induction motor: at a
+  ~57 km/s transit a half-metre coil pitch gives ~8 µs per stage, thousands of times shorter than the
+  armature's own L/R decay, so there is no slip regime to speak of. The coupling is
+  <b>non-contact</b>: nothing touches, which is what makes a hypervelocity transit survivable at all.
+  Consequences that follow directly:</p>
   <ul>
     <li><b>Coils, not rails.</b> A railgun's projectile completes a current circuit by sliding between
-      two rails; at a ~57 km/s transit that contact becomes a plasma armature and destroys the rails.
-      Non-contact induction is the only workable coupling at these speeds.</li>
-    <li><b>The probe cannot be a bare mass.</b> Eddy currents induced in an ordinary structure are far
-      too weak to give useful force, and a ferromagnetic slug saturates near ~2 T and can only be
-      pulled toward a coil rather than pushed cleanly through and released. So the probe carries a
-      purpose-built armature — a few percent of its mass. It is "passive" in the sense that carries
-      <b>no propellant and no departure power</b>, not in the sense of carrying nothing.</li>
-    <li><b>Force comes from the coils, path curvature comes from gravity.</b> The coils only add energy
+      two rails; at ~57 km/s that contact becomes a plasma armature and erodes the rails. Non-contact
+      coupling is what makes the transit survivable.</li>
+    <li><b>The probe cannot be a bare mass.</b> Currents induced in ordinary structure are too diffuse
+      to give useful force, so the probe carries a purpose-built low-resistance armature — a few
+      percent of its mass. Iron is not the answer either: its Curie point (~1,043 K) sits <em>below</em>
+      the equilibrium temperature at these radii, so a ferromagnetic slug would simply stop being
+      ferromagnetic. The probe is "passive" in carrying <b>no propellant and no departure power</b>,
+      not in carrying nothing — and the armature's temperature margin is a genuine open item.</li>
+    <li><b>Force comes from the coils, path curvature comes from gravity.</b> The coils add energy only
       during the transit; between transits the probe is in free fall and the Sun's gravity alone brings
       it back. Nothing steers it magnetically.</li>
+    <li><b>The bore is long and the power is pulsed.</b> A 5 km/s increment delivered during a 57 km/s
+      transit needs <code>L ≈ Δv·v/a</code> of bore — tens of kilometres at survivable acceleration
+      (~29 km at 10³ g), crossed in milliseconds. The station's hard problem is therefore <em>pulsed
+      energy storage and switching</em>, not average generation: the campaign's mean power is modest,
+      but each transit demands terawatt-class coupling for a few milliseconds.</li>
   </ul>
   <p>Each increment is delivered at perihelion, where the probe is moving fastest, so a given Δv buys
   the most orbital energy (the specific energy gained is v·Δv + ½Δv²). Because the probe carries no
@@ -1030,8 +1042,11 @@
       v<sub>p,target</sub> = √(v∞² + v<sub>esc</sub>²). A kick that clears escape but lands <em>below</em>
       that is fatal: the probe is flung away too slow, with no second chance. The minimum possible
       final kick is Δv<sub>final,min</sub> = v<sub>p,target</sub> − v<sub>esc</sub> — ~6.2 km/s at 1 AU
-      but only ~1.4 km/s at 10 R<sub>☉</sub>, for the ~23.6 km/s design cruise (deep stations make the endgame
-      easy). Unless a single kick of Δv<sub>final,min</sub> is feasible in one aperture transit, the
+      but only ~1.4 km/s at 10 R<sub>☉</sub>, for the ~23.6 km/s design cruise (deep stations make the
+      endgame easy). Note this is a <em>parabolic</em> limit: it is the kick needed by a probe arriving
+      with essentially zero energy, i.e. after an infinitely slow fall. A probe fed from a 1 AU aphelion
+      arrives already bound-and-fast and needs ~5.8 km/s in that final transit, not 1.4. Unless a single
+      kick of that size is feasible in one aperture transit, the
       final leg therefore <b>needs a staged chain of Sun-orbiting stations posted progressively along
       the departure trajectory</b>, each providing a further push as the now-hyperbolic probe passes —
       a linear accelerator unrolled along the escape asymptote. The last bound kick then only needs to
@@ -1040,9 +1055,15 @@
       the deep-solar flux), and every added station is one more hypervelocity aperture transit that
       must be phased to a one-shot hyperbolic flyby.</li>
   </ul>
-  <p>Engine results for the ~23.6 km/s design cruise (fixed equal kicks, circular start at the
-  station; the calculator's <b>Perihelion synchrotron</b> option recomputes this live from the station
-  and kick sliders):</p>
+  <p>Engine results for the ~23.6 km/s design cruise (fixed equal kicks, the calculator's
+  <b>Perihelion synchrotron</b> option recomputes them live from the station and kick sliders). These
+  start the probe on a <b>circular orbit at the station</b> — the pessimistic case, and the one that
+  makes the recirculating count large: a circular orbit at 10 R<sub>☉</sub> moves at 138 km/s, whereas
+  a probe simply <em>falling</em> from 1 AU reaches that same perihelion at 191 km/s — already within
+  ~6 km/s of escaping at the target v∞. The twelve-kick campaign below is therefore mostly the cost of
+  having discarded that infall speed; feed the probe on an infalling ellipse instead and one or two
+  kicks suffice. This is exactly why the strong form (below) is a one-kick gateway, not a
+  recirculator:</p>
   <table class="chain">
     <tr><th>Station r<sub>p</sub></th><th class="v">Kick/pass</th><th class="v">Passes</th><th class="v">Accel phase</th><th class="v">Longest orbit</th><th>Verdict</th></tr>
     <tr><td>10 R<sub>☉</sub></td><td class="v">5 km/s</td><td class="v">12</td><td class="v">1.5 yr</td><td class="v">1.1 yr</td><td><b>leaves at v∞ 33 km/s — feasible</b></td></tr>
@@ -1052,7 +1073,9 @@
   </table>
   <p><b>Why the naïve version loses to its own engineering.</b> A compact station cannot hover at
   perihelion — it must orbit, and since the probe's period changes after every kick, rendezvous is
-  preserved only on a discrete ladder of integer-resonant ellipses, not a free Δv slider. The
+  preserved only on a discrete ladder of integer-resonant ellipses, not the free Δv the slider and the
+  table above assume (those idealise the phasing away — reading the energetics, not the scheduling).
+  The
   accelerator need not be a <em>single</em> station: a constellation of k stations spaced around the
   same perihelion orbit multiplies the rendezvous opportunities per probe orbit by k, softening the
   resonance ladder into a much denser grid (the limit — a full circumsolar ring of stations — removes
@@ -1063,14 +1086,19 @@
   at the near-parabolic rendezvous speed ≈ (√2−1)·v<sub>circ</sub> — <b>57 km/s at 10 R<sub>☉</sub></b> — where a
   missed aperture is a destructive collision, and it absorbs the opposite momentum impulse of every kick.
   Insertion onto the station-grazing orbit is itself a Jupiter/Venus-tour-class job.</p>
-  <p><b>The strong form is a gateway, not a merry-go-round.</b> Because escape terminates recirculation
-  and deep stations make Δv<sub>final,min</sub> small, the architecture is at its best delivering
-  <em>one terminal kick per probe</em> — a reusable powered solar-Oberth gateway at ~4–10 R<sub>☉</sub> through
-  which a whole fleet of passive probes is dispatched, each on a single pass (with the terminal push
-  split, if need be, across a short staged chain of stations along the departure line). Recirculating one probe
-  for dozens of equal kicks is mostly a mathematical curiosity: equal kicks usually escape below target,
-  and the schedule balloons. The lasso's real economic win survives in the gateway form: the energy
-  lives in reusable infrastructure, not in propellant thrown away with every launch.</p>
+  <p><b>The strong form is a gateway, not a merry-go-round.</b> The infall arithmetic above forces the
+  conclusion: a probe dropped from 1 AU onto a ~10 R<sub>☉</sub> perihelion arrives 191 km/s and needs
+  only a single ~6 km/s kick — one transit, no recirculation — to leave at the target v∞. So the
+  architecture is at its best delivering <em>one terminal kick per probe</em>: a reusable powered
+  solar-Oberth gateway at ~4–10 R<sub>☉</sub> through which a whole fleet of passive probes is
+  dispatched, each on a single infalling pass (with the push split, if need be, across a short staged
+  chain of stations along the departure line). Recirculating one probe for dozens of equal kicks — the
+  table's circular-start case — is mostly a curiosity: it exists only because a circular start throws
+  away the infall speed, and even then equal kicks usually escape below target and the schedule
+  balloons. The lasso's real economic win is in the gateway form: the energy lives in reusable
+  infrastructure, not in propellant thrown away with every launch. The genuinely hard parts move with
+  it — getting each probe onto a deep-perihelion infall (a Jupiter/Venus-tour-class job on its own) and
+  building a station that survives ~460× Earth flux and delivers a terawatt-class pulse per transit.</p>
   <p class="src">Relation to perihelion pumping: same Oberth physics, opposite power architecture — the
   pump carries its thruster and buys energy from sunlight (closes today, slowly), the lasso leaves the
   accelerator at home and buys energy from infrastructure (fleet-scale, but demands the deep-solar
@@ -1672,7 +1700,7 @@ function render(){
     i:`INPUTS — station=${fmt(val('srp'))} R☉ · kick=${val('skick').toFixed(1)} km/s · arrival T`,
     s:'the "lasso": passes, accelerating-phase time, and the escape-termination verdict',
     d:'An externally powered EM station at perihelion applies one impulsive prograde kick per pass; the probe is passive (no onboard propellant or power for departure) and flies an exact Kepler ellipse back to the station between kicks. Two facts control everything: the orbital period GROWS after every kick (the last bound orbit can dominate the schedule), and ESCAPE TERMINATES RECIRCULATION — the kick that clears solar escape must land at ≥ v_p,target = √(v∞² + v_esc²) or the probe leaves too slow and never returns. Deep stations lower the final-kick requirement (Δv_final,min) but face a harsher thermal/rendezvous environment.',
-    c:`station: r_p = ${fmt(val('srp'))} R☉ · v_esc = ${fmt(r.syn.vEsc/1e3,0)} km/s · circular v = ${fmt((r.syn.vEsc/Math.SQRT2)/1e3,0)} km/s\ntarget perihelion speed: v_p,target = √(v∞² + v_esc²) = √(${fmt(r.vinfSun/1e3,1)}² + ${fmt(r.syn.vEsc/1e3,0)}²) = ${fmt(r.syn.vTarget/1e3,0)} km/s\nΔv_final,min = v_p,target − v_esc = ${fmt(r.syn.dvFinalMin/1e3,2)} km/s   (smallest possible LAST kick)\ncampaign: ${fmt(r.syn.passes,0)} kicks of ${val('skick').toFixed(1)} km/s · accel phase ${fmt(r.syn.timeYr,2)} yr · longest single orbit ${fmt(r.syn.maxPeriodYr,2)} yr\nstation energy delivered = ${fmt(r.syn.energySpec/1e9,2)} GJ/kg of probe\nstation↔probe rendezvous speed ≈ (√2−1)·v_circ = ${fmt(r.syn.rendezvousVel/1e3,0)} km/s  (worst case — the near-escape passes; early passes are slower. A missed aperture is a destructive collision)\n⇒ ${r.syn.reached?`leaves at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s ≥ the ${fmt(r.vinfSun/1e3,1)} required — FEASIBLE`:(r.syn.escapedBelow?`the escaping kick lands at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s < ${fmt(r.vinfSun/1e3,1)} required — GONE TOO SLOW (escape terminates recirculation)`:'did not reach the target — raise the kick or deepen the station')}`});
+    c:`station: r_p = ${fmt(val('srp'))} R☉ · v_esc = ${fmt(r.syn.vEsc/1e3,0)} km/s · circular v = ${fmt((r.syn.vEsc/Math.SQRT2)/1e3,0)} km/s\ntarget perihelion speed: v_p,target = √(v∞² + v_esc²) = √(${fmt(r.vinfSun/1e3,1)}² + ${fmt(r.syn.vEsc/1e3,0)}²) = ${fmt(r.syn.vTarget/1e3,0)} km/s\nΔv_final,min = v_p,target − v_esc = ${fmt(r.syn.dvFinalMin/1e3,2)} km/s   (smallest possible LAST kick)\ncampaign: ${fmt(r.syn.passes,0)} kicks of ${val('skick').toFixed(1)} km/s · accel phase ${fmt(r.syn.timeYr,2)} yr · longest single orbit ${fmt(r.syn.maxPeriodYr,2)} yr\nspecific KE imparted to the probe at perihelion = ${fmt(r.syn.energySpec/1e9,2)} GJ/kg (the coils' work; absorbing the equal-and-opposite recoil momentum is a separate, unmodelled stationkeeping cost)\nstation↔probe rendezvous speed ≈ (√2−1)·v_circ = ${fmt(r.syn.rendezvousVel/1e3,0)} km/s  (worst case — the near-escape passes; early passes are slower. A missed aperture is a destructive collision)\n⇒ ${r.syn.reached?`leaves at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s ≥ the ${fmt(r.vinfSun/1e3,1)} required — FEASIBLE`:(r.syn.escapedBelow?`the escaping kick lands at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s < ${fmt(r.vinfSun/1e3,1)} required — GONE TOO SLOW (escape terminates recirculation)`:'did not reach the target — raise the kick or deepen the station')}`});
   K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
     d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
     c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
