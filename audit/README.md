@@ -7,8 +7,9 @@ optimisation, a separate propagator, or an independent AI re-implementation) and
 
 **Start here → [`AUDIT_COMPARISON.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md)**
 — every source side by side, which results are trustworthy and which are single-sourced, why the
-numbers differ where they do, and why our pumping campaign is 4.9 revolutions while PSI's is 12
-*years* (different units — see §0 there).
+numbers differ where they do, and why the bang-bang gate's campaign is 4.9 revolutions while PSI's
+is 12 *years* (different units — see §0 there; the flown default since issue #4 is our own
+anchored optimised schedule, 23.14 km/s at the same 12-yr custody, 3.5% under PSI's optimum).
 
 > **The result the whole audit record supports:** the same vehicle needs **~100–140 W/kg** as an
 > outward spiral but only **~15–21 W/kg** pumped — **~6×, from the trajectory alone, not the power
@@ -22,8 +23,8 @@ numbers differ where they do, and why our pumping campaign is 4.9 revolutions wh
 
 | Audit | Source / method | Scope | Latest verdict | Agreement | Docs |
 |---|---|---|---|---|---|
-| **In-repo suite** | Python, different method than engine | ephemeris → power gate → pumping → synchrotron → data → docs | **130 / 130 pass** | exact | [calcs/](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) · [run_audits.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) |
-| **Web parity** | Node, `web/physics.js` vs Python | every shared function incl. pumping | **35 / 35 pass** | ~13 sig figs | [audit_webjs.mjs](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) |
+| **In-repo suite** | Python, different method than engine | ephemeris → power gate → pumping → synchrotron → data → docs | **160 / 160 pass** | exact | [calcs/](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) · [run_audits.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) |
+| **Web parity** | Node, `web/physics.js` vs Python | every shared function incl. pumping | **40 / 40 pass** | ~13 sig figs | [audit_webjs.mjs](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) |
 | **UI behaviour** | Playwright slider sweep | every control drives the right output | **82 / 82 pass** | — | [ui_sliders.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/ui_sliders.py) |
 | **NASA GMAT** | flight-proven propagator (separate codebase) | departure energetics | **PASS** | ≤ 0.01 % | [README](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/scripts) · [outputs](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out) |
 | **Codex** | hand vectors + rocket equation (v01–v04) | geometry, intercept, departure, xenon | verdict holds | ≤ 0.1 % | [v04](https://github.com/fermiexplorer/fermi/blob/main/audit/codex/codex-conclusions-v04.md) · [all runs](https://github.com/fermiexplorer/fermi/tree/main/audit/codex) |
@@ -52,7 +53,8 @@ for the independence chain.
 - **Fable-pumping** vouches for the **pumping mechanism, endpoints, and thresholds**, re-derived
   from the policy spec with two integrators — it did not have the PSI PDF, only our reproduction.
 - **PSI** is the **origin** of the pumping closure and an independent confirmation of our geometry;
-  its optimised Δv is single-sourced (see
+  its 12-yr optimised Δv is now independently confirmed (and beaten by 3.5%) by our own
+  optimised-schedule integrator (see
   [`AUDIT_COMPARISON.md` §4](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only)).
 
 ## Directory map

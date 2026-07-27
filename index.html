@@ -652,7 +652,7 @@
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s spiral (+5 km/s conservative offset ⇒ ~30 in the calculator)</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Reference baseline</b> of the methodology below. Simplest, meets the 2029 schedule, no alignment needed — but power-gated; the calculator defaults to the pumped architecture.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
-    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~31–34 km/s total (7.6 escape + ~24 helio; +2 pumping tax with the bang-bang policy)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~9.6 yr powered-flight custody (PSI-optimised ~12 yr)</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <b>The calculator's default architecture.</b> <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
+    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~31–35 km/s total (7.6 escape + ~24 helio; −0.5 pumping tax with the anchored optimised schedule)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody (optimised schedule; the bang-bang gate flies it in ~9.6 yr for ~2.5 km/s more)</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <b>The calculator's default architecture.</b> <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
     <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R<sub>☉</sub>); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td>Probe bypasses the rocket equation entirely; escape terminates recirculation, so the strong form is a <b>one-kick gateway reused across a fleet</b>. <a href="#synchrotron">See the synchrotron section</a>.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
@@ -953,33 +953,43 @@
   enough energy (which is why a one-pass electric Oberth fails), but repeated passes through the same
   deep perihelion — each adding a small prograde kick where v is highest and power is quadrupled, in
   the manner of a synchrotron — can.</p>
-  <p>The manoeuvre is integrated in the engine
-  (<code>perihelion_pumped_vinf</code> — a bang-bang policy: one-way pump-down latch, escape-guarded
-  staircase, continuous finisher; power law P(r)=P₁·min((1 AU/r)², 4)) and cross-checked against
+  <p>The manoeuvre is integrated in the engine two ways: a <em>bang-bang</em> policy
+  (<code>perihelion_pumped_vinf</code> — one-way pump-down latch, escape-guarded
+  staircase, continuous finisher; power law P(r)=P₁·min((1 AU/r)², 4)) that serves as the
+  conservative feasibility <b>gate</b>, and an <em>anchored optimised schedule</em>
+  (<code>pump_schedule.scheduled_pumped_vinf</code> — the same physics under a 4-parameter
+  switching schedule with event-located arc edges, optimised per a₀) that the calculator
+  <b>flies and prices</b>. Both are cross-checked against
   <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI's</a>
   optimised-schedule integration:</p>
   <table class="chain">
     <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
-    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short)</td><td class="v">contiguous closure above ~2.24×10⁻⁴</td><td>edge agrees</td></tr>
-    <tr><td><b>2.5×10⁻⁴</b> (design)</td><td class="v">≈0 km/s</td><td class="v"><b>23.66 km/s</b> · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>design cruise reached — power wall defeated</b></td></tr>
-    <tr><td>5×10⁻⁴</td><td class="v">3.1 km/s</td><td class="v">23.8 km/s · 6.3 yr</td><td class="v">—</td><td>agrees</td></tr>
+    <tr><td>1.5×10⁻⁴</td><td class="v">0.0 km/s</td><td class="v">15.5 km/s (60 yr, short; bang-bang)</td><td class="v">contiguous closure above ~2.24×10⁻⁴</td><td>edge agrees</td></tr>
+    <tr><td><b>2.5×10⁻⁴</b> (design, <b>optimised — flown</b>)</td><td class="v">≈0 km/s</td><td class="v"><b>23.64 km/s</b> · Δv <b>23.14</b> · 12.0 yr · 5.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>beats PSI's published 12-yr optimum by 3.5%</b></td></tr>
+    <tr><td>2.5×10⁻⁴ (design, bang-bang gate)</td><td class="v">≈0 km/s</td><td class="v">23.66 km/s · Δv 25.6 · 9.6 yr · 4.9 revs</td><td class="v">(their fast profile: 28.2 · 4.9 yr)</td><td>design cruise reached — power wall defeated</td></tr>
+    <tr><td>5×10⁻⁴</td><td class="v">3.1 km/s</td><td class="v">23.8 km/s · 6.3 yr (bang-bang)</td><td class="v">—</td><td>agrees</td></tr>
   </table>
   <p class="src">The bang-bang policy's success is <em>not monotonic</em> in a₀: the contiguous working
   region starts at a₀ ≈ 2.24×10⁻⁴, but a phasing-dependent success island exists near 1.75–1.88×10⁻⁴
-  and stall bands at 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴. The calculator therefore flies the campaign at
-  the <em>validated design profile</em>, a₀ = min(vehicle a₀, 2.5×10⁻⁴): a stronger vehicle throttles
-  down to it (more thrust could close faster but the policy is validated in the design corridor), and
-  a weaker vehicle is integrated at its own a₀ and gated by the result. The campaign terminates on the
-  first step past the target, so the achieved v∞ sits just above it (23.66, 23.8 against a 23.64
-  target).</p>
+  and stall bands at 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴. The optimised schedules close every one of those
+  gaps on the tested a₀ grid (1.6, 1.9, 2.24, 2.5, 3.0×10⁻⁴ all reach the design cruise — the strand
+  band and stall window are properties of the bang-bang heuristic, not of the physics). The calculator
+  gates feasibility on the bang-bang integration at the <em>validated design profile</em>,
+  a₀ = min(vehicle a₀, 2.5×10⁻⁴): a stronger vehicle throttles down to it, and a weaker vehicle is
+  integrated at its own a₀ and gated by the result. When the gate passes, the campaign actually flown
+  and priced is the anchored optimised schedule (the 12-yr custody optimum at the design a₀). The
+  bang-bang integration terminates on the first step past the target, so its achieved v∞ sits just
+  above it (23.66, 23.8 against a 23.64 target).</p>
   <p>The <b>α ≳ 100 W/kg pure-solar threshold — and the "Min solar α" columns in the tables below — are
   outward-spiral requirements</b>; with pumping, pure solar closes at today's α, roughly wherever the
   vehicle's a₀ clears the ≈ 2.24×10⁻⁴ m/s² line. The target <em>rankings</em> do not move:
   LSPM J2146+3813 stays the cheapest destination (Δv ~19.7 km/s, cruise 8.7 km/s at its crossing — low
   enough that it needs <em>no pumping at all</em>), with λ Ser the best solar-type second. A complete SEP budget from
-  LEO for an AC-class cruise totals <b>~31–34 km/s</b> (bang-bang policy: 7.6 km/s Earth escape +
-  ~23–24 heliocentric + ~2 km/s pumping tax ≈ 33; the lower ~31 is PSI's optimised-schedule total,
-  30.5–31.6 km/s, not the bang-bang figure the calculator flies). The <b>Δv column in the star tables below is a
+  LEO for an AC-class cruise totals <b>~31–32 km/s</b> with the anchored optimised schedule the
+  calculator flies (7.6 km/s Earth escape + ~23.7 heliocentric − 0.5 km/s pumping "tax" — the
+  Oberth-efficient campaign spends <em>less</em> Δv than the v∞ it buys — + ~1 km/s plane change
+  ≈ 31.8 at the default aim; the bang-bang gate would price the same aim near ~34, and PSI's
+  optimised-schedule total is 30.5–31.6 km/s). The <b>Δv column in the star tables below is a
   different quantity</b>: the closed-form Earth-borrow spiral (~25–26 km/s for AC-class), applied
   identically to every candidate. It is the basis for <em>ranking</em> targets against one another;
   absolute departure budgets are the two-leg figures given here and in the calculator.</p>
@@ -990,17 +1000,20 @@
   selection</b>, since it is the closing pure-solar architecture at today's α — prices departure with the
   matching two-leg budget — √(μ⊕/a) Earth escape + v∞ + a v∞·|sin β| plane change (the campaign is
   flown in-plane, so the out-of-plane aim is bought separately) + a v∞-dependent pumping tax
-  interpolated from the integrated campaign (2.0 km/s at the 23.64 km/s AC anchor, rising to
-  ~13.5 km/s for 8 km/s targets) — and gates feasibility on the integrated staircase at the vehicle's own
-  a₀ = F/m<sub>wet</sub>.</p>
+  interpolated from the integrated optimised campaign (<b>−0.5 km/s</b> at the 23.64 km/s AC anchor
+  — negative because the deep-perihelion arcs buy energy at better than 1:1 — rising to ~10.6 km/s
+  for 8 km/s targets, where the campaign is all overhead) — and gates feasibility on the integrated
+  bang-bang staircase at the vehicle's own a₀ = F/m<sub>wet</sub>.</p>
   <p class="src">Caveats: the 4× perihelion power cap is a validated working point, not a conservative
   floor. It assumes a derating-free, actively thermally-managed (Parker-class) array — a real GaAs array
   at the 0.42 AU floor runs ~125–140 K above its 1-AU point and, at ~0.2%/K, delivers an effective
   concentration nearer ~3×. And the bang-bang closure is non-monotonic in the cap exactly as it is in
   a₀ and Isp: at the design a₀ it reaches at 2.0×, 2.5×, 3.5× and 4.0× but STRANDS at 1.5×, 3.0×, 3.25×
   and at the physical uncapped ~5.5× (= (1 AU / 0.423 AU)²), so the campaign must be flown at a validated
-  cap rather than "as much concentration as possible" (an optimised schedule removes these gaps). Flying
-  a validated 2.0× cap costs ~1.1 km/s and roughly doubles the powered campaign, 9.6 → 18.3 yr. The
+  cap rather than "as much concentration as possible" (the optimised schedules remove exactly these
+  gaps on the tested a₀ grid — see above; the cap sensitivity is a bang-bang-gate property). Flying
+  the gate at a validated 2.0× cap costs ~1.1 km/s and roughly doubles its powered campaign,
+  9.6 → 18.3 yr. The
   0.42 AU repeated-pass thermal environment is a MESSENGER-class
   qualification item (the trajectory itself respects the floor — minimum solar distance 0.423 AU, with
   the osculating perihelion latching ~0.2% under it); the contiguous working region starts at
@@ -1581,6 +1594,14 @@ function compute(){
       pumpInfo=perihelionPumpedVinf(a0, tgt);
       if(a0v>FERMI.PUMP_DESIGN_A0) pumpInfo={...pumpInfo, throttled:true};
       achievableVinf=pumpInfo.vinf;
+      // SHIPPED CAMPAIGN (issue #4): a throttled vehicle flies the ANCHORED OPTIMISED
+      // schedule (12-yr custody optimum; beats the bang-bang above by ~10% on Δv). The
+      // bang-bang integration above stays as the conservative feasibility GATE and the
+      // independent cross-check; the campaign shown/priced is the optimised one.
+      if(pumpInfo.throttled && pumpInfo.reaches){
+        const oc=FERMI.optCampaignFor(tgt);
+        if(oc) pumpInfo={...oc, throttled:true, optimized:true};
+      }
     } else achievableVinf = sepAchievableVinf(pwrW, wet, dryEff, isp, eta, 1, 0);
   } else if(ga==='synchro'){
     // the "lasso": external EM-station kicks — the probe's own power/α does not bind; the
@@ -1701,7 +1722,7 @@ function render(){
   } else if(radio('ga')==='pumped'){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
       `Step 2 — low-thrust Earth escape to C3 ≈ 0 (no Earth-velocity borrow; cost = orbit-energy speed):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
-      `Step 3 — heliocentric pumping campaign (retrograde arcs to 0.42 AU, then perihelion burns; in-plane):\n  Δv_pump = v∞ + tax(v∞) = ${fmt(vinfK,2)} + ${fmt(FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} = ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} km/s   (tax interpolated from the integrated bang-bang campaign; 2.0 at the 23.64 km/s AC anchor)\n`+
+      `Step 3 — heliocentric pumping campaign (retrograde arcs to ~0.47 AU, then perihelion burns; in-plane):\n  Δv_pump = v∞ + tax(v∞) = ${fmt(vinfK,2)} ${FERMI.pumpTaxFor(r.vinfSun)<0?'−':'+'} ${fmt(Math.abs(FERMI.pumpTaxFor(r.vinfSun))/1e3,2)} = ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} km/s\n  (tax from the ANCHORED OPTIMISED schedule — negative here: Oberth leverage, the campaign costs\n   less Δv than the cruise speed it buys; −0.51 at the 23.64 km/s anchor)\n`+
       `Step 4 — out-of-plane aim (the campaign is in-plane, so the tilt is bought separately):\n  Δv_plane = v∞·|sin β| = ${fmt(vinfK,2)}·|sin ${fmt(tiltA,2)}°| = ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} km/s\n`+
       `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} + ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see "Power-limited v∞" for the a₀ feasibility gate)`;
   } else {
@@ -1737,13 +1758,13 @@ function render(){
     c:dvSteps});
   K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
     s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the chase-cam view draws)',
-    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled bang-bang thrust). Oberth: LEO spiral + dive + the perihelion kick (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station kicks are EXTERNAL energy and excluded from the onboard total (the drawn delivery spiral stands in for the un-modelled insertion).',
+    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled thrust under the flown schedule — the anchored optimised one when the vehicle is throttled to the design profile, else the bang-bang gate geometry). Oberth: LEO spiral + dive + the perihelion kick (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station kicks are EXTERNAL energy and excluded from the onboard total (the drawn delivery spiral stands in for the un-modelled insertion).',
     c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (onboard, this architecture)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (this architecture, with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? (r.massConverges?fmt(r.achievableVinf/1e3,1)+' km/s':'n/a (mass diverges)') : (r.ga==='synchro'?'n/a (external)':'n/a (assist)')),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
     d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to 4× the 1-AU power + Oberth leverage) and closes at today’s α — its gate is the integrated pumping staircase at the vehicle’s a₀ = F/m_wet, whose contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s². NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
     c:(r.pumpInfo
-       ? `pumped achievable v∞ (bang-bang policy, RK4, ${r.pumpInfo.throttled?`flown at the validated design profile a₀ = 2.5×10⁻⁴ m/s² — the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} is throttled down to it (the policy is validated in the design corridor; extra thrust could close faster but is not needed)`:`a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²`}) = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\npumping campaign: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
+       ? `${r.pumpInfo.optimized?`gate: bang-bang integration at the design a₀ (conservative cross-check) — REACHES\ncampaign flown: the ANCHORED OPTIMISED schedule (12-yr custody optimum, issue #4;\n  beats the bang-bang cross-check by ~10% on Δv and PSI's published 12-yr optimum by 3.5%)`:`pumped achievable v∞ (bang-bang policy, RK4, a₀ = F/m_wet = ${(r.thrust/r.wet).toExponential(2)} m/s²)`} = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n${r.pumpInfo.optimized?'optimised campaign':'pumping campaign'}: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s${r.pumpInfo.throttled?`\n(the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} m/s² is throttled to the validated 2.5×10⁻⁴ design profile)`:''}\n⇒ ${r.powerFeasible?'reaches the floor — the pumping staircase closes at this a₀':'STALLS below the floor — the contiguous working region starts at a₀ ≈ 2.24×10⁻⁴ m/s² (raise power, cut mass, or aim later)'}`
        : r.ga==='pumped' && r.pwr==='solar'
        ? `mass diverges at this Δv/Isp, so the pumping gate was not evaluated (the 0 shown is a sentinel, not a computed v∞) — fix the mass closure first`
        : r.ga==='direct'
@@ -1807,7 +1828,7 @@ function render(){
     v:(r.pumpInfo?fmt(r.pumpInfo.revs,1):(r.syn?fmt(r.syn.passes,0):fmt(sRev,2))), i:inl('pwr','eta','isp','dry','pay','prop'),
     s:(r.pumpInfo?'N☉ — heliocentric revolutions of the pumping campaign':(r.syn?'N☉ — recirculation passes through the station':'N☉ — heliocentric loops while spiralling to solar escape')),
     d:(r.pumpInfo
-      ? 'How many times the probe loops the Sun during the perihelion-pumping campaign: retrograde arcs near apoapsis pump perihelion down to 0.42 AU, then each perihelion pass adds a prograde boost until escape. The campaign is flown at the validated design profile a₀ = min(F/m_wet, 2.5×10⁻⁴ m/s²) — ~5 revolutions at the design point (stronger vehicles throttle down to it; weaker ones need more, or stall) — in contrast to the sub-revolution outward spiral of the direct architecture.'
+      ? 'How many times the probe loops the Sun during the perihelion-pumping campaign: retrograde arcs near apoapsis pump perihelion down to 0.42 AU, then each perihelion pass adds a prograde boost until escape. The campaign is flown at the validated design profile a₀ = min(F/m_wet, 2.5×10⁻⁴ m/s²) — ~5.9 revolutions with the anchored optimised schedule at the design point (stronger vehicles throttle down to it; weaker ones need more, or stall) — in contrast to the sub-revolution outward spiral of the direct architecture.'
       : r.syn
       ? 'How many times the probe recirculates through the station — one perihelion pass per kick. Each ellipse is larger than the last; the final kick sends it out for good.'
       : 'How many times the probe loops the Sun while the ion raises its heliocentric orbit from 1 AU to solar-escape speed. The Sun is far heavier and 1 AU far larger, so this is typically LESS THAN ONE full turn — the craft barely loops the Sun once before coasting straight to Alpha Centauri (contrast the hundreds of loops around Earth).'),
@@ -2105,7 +2126,8 @@ function buildModel(c){
   if(SIM.massConverges===false || !isFinite(SIM.wet) || !isFinite(SIM.dryEff)) return null;
   const alt=val('alt');
   // ARCHITECTURE-AWARE heliocentric phase: direct/jupiter = tangential burn to v∞ (the reference
-  // spiral); pumped = the bang-bang pumping policy (power-scaled thrust, multi-rev); oberth = coast
+  // spiral); pumped = the flown pumping schedule (power-scaled thrust, multi-rev; anchored
+  // optimised geometry when throttled to the design profile, else bang-bang); oberth = coast
   // dive to perihelion + impulsive kick; synchro = transfer to the station orbit + impulsive kicks
   // each perihelion pass. All start with the same LEO spiral; for oberth/synchro the un-modelled
   // insertion tour is drawn as a position-continuous jump-cut onto the dive/transfer ellipse.
@@ -2120,8 +2142,14 @@ function buildModel(c){
   // dry floor INCLUDES the payload (dryEff) — flooring at the payload-exclusive bus mass
   // let the integrator burn the payload as propellant (audit finding, build 133)
   const thrust=SIM.thrust, wet=SIM.wet, dry=Math.max(1,SIM.dryEff||SIM.dry||wet*0.5), isp=SIM.isp||3000;
-  // pumped campaign is flown at the validated design profile: a0_eff = min(vehicle a0, PUMP_DESIGN_A0)
-  const thrustPump=Math.min(thrust, FERMI.PUMP_DESIGN_A0*wet);
+  // pumped campaign is flown at the validated design profile: a0_eff = min(vehicle a0, PUMP_DESIGN_A0),
+  // MASS-NORMALISED exactly like the engine (accel = a0_eff·min(1/r²,cap)/m_norm, m_norm(0)=1 at
+  // SOI exit, propellant flow at the campaign Isp 2800) — issue #4 animation-truth fix. Tying the
+  // campaign accel to the vehicle's LEO wet mass + its own Isp instead flew it ~36% off the design
+  // profile and the anchored optimised schedule (tuned at 2.5e-4) stranded ~1 km/s short. The
+  // vehicle's real propellant (massNow, its own Isp) is still tracked for the burnout-mass display.
+  let a0Pump=Math.min(thrust/wet, FERMI.PUMP_DESIGN_A0), pumpM=1;
+  const VE_PUMP=FERMI.PUMP_DESIGN_ISP?FERMI.PUMP_DESIGN_ISP*G0:2800*G0;
   const mdot=thrust/(G0*isp), mp=Math.max(0,wet-dry), aSI=YEAR*YEAR/AU;   // mdot kg/s; m/s²→AU/yr²
   const vinf=c.vinfKmS/AUyr, Et=0.5*vinf*vinf;
   const w=2*Math.PI, Ep=t=>[Math.cos(w*t),Math.sin(w*t)], Ev=t=>[-w*Math.sin(w*t),w*Math.cos(w*t)];
@@ -2152,6 +2180,7 @@ function buildModel(c){
     const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
     const ha=Math.atan2(r[1],r[0]); if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
     if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR); tSoiT=t;
+      if(arch==='pumped'){ a0Pump=Math.min(thrust/massNow, FERMI.PUMP_DESIGN_A0); pumpM=1; }   // design-profile re-anchor (see above)
       if(arch!=='direct'&&arch!=='jupiter') helioOnly=true; }
     const outer=iSoi>=0, vsNow=Math.hypot(v[0],v[1])||1e-12;
     // per-architecture heliocentric control (thrust direction, magnitude, impulses)
@@ -2177,12 +2206,20 @@ function buildModel(c){
         const h2=r[0]*v[1]-r[1]*v[0], ecc=Math.sqrt(Math.max(0,1+2*Eh*h2*h2/(MUs*MUs)));
         const psl=h2*h2/MUs, rpo=psl/(1+ecc), rd=(r[0]*v[0]+r[1]*v[1])>=0?1:-1;
         const nu=ecc>1e-6?rd*Math.acos(Math.max(-1,Math.min(1,(psl/rs-1)/ecc))):0;
-        if(rpo<=0.42) pumpedDown=true;
-        if(!pumpedDown) dir = ecc<0.05?(r[0]>0?-1:0):(Math.abs(Math.abs(nu)-Math.PI)<Math.PI/3?-1:0);
-        else if(Eh<EGUARD) dir=Math.abs(nu)<70*Math.PI/180?1:0;
+        // schedule geometry: the ANCHORED OPTIMISED schedule when that is the campaign the
+        // calculator flies/prices (throttled vehicles — see compute()), else the bang-bang
+        // gate geometry. Values mirror fermi_sim.pump_schedule.OPTIMIZED_SCHEDULES[2.5e-4].
+        const os=(SIM.pumpInfo&&SIM.pumpInfo.optimized)
+          ?{tr:31.357722220958863*Math.PI/180, tp:67.12243839049353*Math.PI/180,
+            eg:-60452731.70963464*Math.pow(YEAR/AU,2), rl:0.4740166735677317}
+          :{tr:Math.PI/3, tp:70*Math.PI/180, eg:EGUARD, rl:0.42};
+        if(rpo<=os.rl) pumpedDown=true;
+        if(!pumpedDown) dir = ecc<0.05?(r[0]>0?-1:0):(Math.abs(Math.abs(nu)-Math.PI)<os.tr?-1:0);
+        else if(Eh<os.eg) dir=Math.abs(nu)<os.tp?1:0;
         else dir=1;
-        const Fp=thrustPump*Math.min(1/(rs*rs),4);                    // power-scaled thrust (design profile × min(1/r²,4))
-        am=(Fp/massNow)*aSI; burning=dir!==0;
+        // power-scaled accel at the design profile, mass-normalised (mirrors the engine:
+        // accel = a0_eff·min(1/r²,cap)/m_norm — m_norm falls at the campaign Isp below)
+        am=(a0Pump*Math.min(1/(rs*rs),4)/pumpM)*aSI; burning=dir!==0;
       } else { burning=false; dir=0; if(burn){ burn=false; iBurn=iBurn<0?X.length:iBurn; } }
     } else {                                                          // oberth / synchro: coast + impulses
       if(!jumped){
@@ -2229,7 +2266,9 @@ function buildModel(c){
     const inner=iSoi<0;
     const dt=inner?dtBase:((arch==='direct'||arch==='jupiter')?dtBase*200:Math.min(dtBase*200, Math.max(2e-5, 0.02*rs/vsNow)));
     if(burning && (arch==='direct'||arch==='jupiter'||arch==='pumped')){ dvTot += (am!=null?am:aMag(t))*dt;   // ∫ a dt (AU/yr) — onboard only
-      if(arch==='pumped'&&outer){ const Fp=thrustPump*Math.min(1/(rs*rs),4); massNow=Math.max(dry, massNow-Fp/(G0*isp)*dt*YEAR); } }
+      if(arch==='pumped'&&outer){ const capF=Math.min(1/(rs*rs),4);
+        pumpM=Math.max(0.05, pumpM-(a0Pump*capF/VE_PUMP)*dt*YEAR);                     // campaign mass (normalised, Isp 2800 — the engine's md)
+        massNow=Math.max(dry, massNow-(am/aSI)*massNow/(G0*isp)*dt*YEAR); } }
     const a1=acc(r,v,t,burning,dir,am);
     const r2=[r[0]+.5*dt*v[0],r[1]+.5*dt*v[1]], v2=[v[0]+.5*dt*a1[0],v[1]+.5*dt*a1[1]], a2=acc(r2,v2,t+.5*dt,burning,dir,am);
     const r3=[r[0]+.5*dt*v2[0],r[1]+.5*dt*v2[1]], v3=[v[0]+.5*dt*a2[0],v[1]+.5*dt*a2[1]], a3=acc(r3,v3,t+.5*dt,burning,dir,am);

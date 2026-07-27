@@ -93,7 +93,7 @@ fermi_sim/               PYTHON ENGINE — source of truth  (~1160 LOC)
   departure.py   (598)   ** the heavy one ** — see §5
 run_analysis.py  (345)   integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — ~139 checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — ~160 checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -137,12 +137,25 @@ This is where the novel and contested physics lives. Functions to scrutinise:
   design point (e.g. reaches at cap 2.0/2.5/3.5/4.0×, strands at 1.5/3.0/3.25×).
   Confirm this is real physics of the bang-bang schedule, not a bug.
 - **`pumped_departure_dv`** — the two-leg budget: √(μ⊕/a) escape + v∞ +
-  v∞·|sinβ| plane change + a **v∞-dependent pump tax** (`pump_tax_for`): a
-  piecewise-linear table swept from the campaign integrator at the design a₀
-  (13.5 km/s at v∞ = 8, 2.0 at the pinned 23.64 km/s AC anchor, 0 by ~28;
-  validity [8, 29] km/s, refuses below). **Check:** the table against your own
-  integration at off-knot targets (the suite pins < 0.3 km/s); the anchor pin;
-  the a₀-dependence caveat in [§8](#8-known-numerical-limitations-of-the-implementation).
+  v∞·|sinβ| plane change + a **v∞-dependent pump tax** (`pump_tax_for`, two
+  schedules): the default `"optimized"` table is swept from the **anchored
+  optimised campaign** (10.6 km/s at v∞ = 8, **−0.509** at the pinned
+  23.64 km/s AC anchor — negative: the Oberth-efficient campaign spends less Δv
+  than the v∞ it buys; validity [8, 26] km/s, refuses outside); the
+  `"bangbang"` table is the cross-check (2.0 at the anchor, validity [8, 29]).
+  **Check:** each table against your own integration at off-knot targets (the
+  suite pins the bang-bang < 0.3 km/s and replays the optimised anchor); the
+  sign of the optimised anchor; the a₀-dependence caveat in
+  [§8](#8-known-numerical-limitations-of-the-implementation).
+- **`fermi_sim/pump_schedule.py`** — the optimised-campaign integrator (issue
+  #4): a 4-parameter switching schedule (retro/prograde arc half-widths, escape
+  guard, perihelion latch) with **bisection-located switch events**, 5-state
+  mass-coupled RK4, baked per-a₀ optima (`OPTIMIZED_SCHEDULES`), and the
+  anchored campaign/tax tables (`OPT_CAMPAIGN_TABLE`, `TAX_OPT_TABLE`).
+  **Check:** replay any baked entry through `scheduled_pumped_vinf` and confirm
+  the tuple reproduces; energy bookkeeping via `return_diag` (thrust work ==
+  specific-energy gain); that the optimum never loses to the bang-bang gate;
+  the headline **23.14 km/s @ 12.0 yr vs PSI's published 23.97 @ 12 yr**.
 - **`sep_achievable_vinf`** — the conservative solar-power-fade feasibility gate
   (1/r² thrust, adaptive-step mass-coupled RK4; step-halving convergence is
   suite-pinned < 0.5%, and the integrator matches an independent adaptive RK45
@@ -181,10 +194,11 @@ Reproduce these independently (astropy, hand calculation, your own integrator):
 | Ecliptic crossing arrival | ~79,252 yr |
 | Min-Δv arrival | ~72,800 yr |
 | Low-thrust spiral departure Δv (AC-class) | ~25–26 km/s |
-| Pumped two-leg budget (LEO) | ~31–34 km/s (bang-bang) |
+| Pumped two-leg budget (LEO) | ~31–32 km/s (anchored optimised schedule; the bang-bang gate prices ~34) |
 | GTO-start Earth-escape leg | ~4.0 km/s |
-| Pumping @ a₀=2.5e-4, Isp=2800 | v∞ 23.66, Δv 25.6, 9.6 yr, ~4.9 revs |
-| Pumping contiguous working region | a₀ ≳ 2.24×10⁻⁴ m/s² (non-monotone below) |
+| Pumping @ a₀=2.5e-4, Isp=2800 (bang-bang gate) | v∞ 23.66, Δv 25.6, 9.6 yr, ~4.9 revs |
+| Pumping @ a₀=2.5e-4, Isp=2800 (anchored optimised) | v∞ 23.64, **Δv 23.14**, 12.0 yr, ~5.9 revs (PSI's published 12-yr optimum: 23.97) |
+| Pumping contiguous working region (bang-bang) | a₀ ≳ 2.24×10⁻⁴ m/s² (non-monotone below; per-a₀ optimised schedules close every tested gap) |
 | Whole-vehicle α to close pumping | ~15–21 W/kg |
 | Whole-vehicle α to close outward spiral | ~100 W/kg |
 | Synchrotron @ 10 R☉, 5 km/s | 12 kicks → leaves at ~33 km/s |
@@ -236,26 +250,31 @@ has two labelled halves:
 Every entry has a tracked fix; the staged plan is
 [`docs/PRECISION_ROADMAP.md`](../docs/PRECISION_ROADMAP.md).
 
-- **The pump-tax table is swept at the design a₀ only.**
-  *Defect:* `pump_tax_for`'s overhead table is integrated at a₀ = 2.5×10⁻⁴; the
-  true overhead is a₀-dependent (measured at the AC target: 1.96 km/s at the
-  design a₀ vs 2.39 km/s at 5×10⁻⁴ — ~±0.4 km/s across the flyable band), so
-  budgets for vehicles flying a different effective a₀ carry that approximation.
+- **The pump-tax tables are swept at the design a₀ only.**
+  *Defect:* both `pump_tax_for` tables (the anchored-optimised default and the
+  bang-bang cross-check) are integrated at a₀ = 2.5×10⁻⁴; the true overhead is
+  a₀-dependent (bang-bang, measured at the AC target: 1.96 km/s at the design
+  a₀ vs 2.39 km/s at 5×10⁻⁴ — ~±0.4 km/s across the flyable band), so budgets
+  for vehicles flying a different effective a₀ carry that approximation.
   *Materiality claim (test this):* the calculator throttles every stronger
-  vehicle to the design a₀ (the profile the table matches), and weaker vehicles
+  vehicle to the design a₀ (the profile the tables match), and weaker vehicles
   are gated by direct integration before any budget is shown; ±0.4 km/s is ~1%
-  of the two-leg total. Tracked fix: the optimised schedule re-anchors the tax
-  ([issue #4](https://github.com/fermiexplorer/fermi/issues/4)).
+  of the two-leg total. (Per-a₀ optimised schedules exist for a 5-point grid —
+  `OPTIMIZED_SCHEDULES` — but the shipped tax/campaign tables are the design-a₀
+  anchored ones.)
 - **Per-step bang-bang switch quantization in `perihelion_pumped_vinf`.**
-  *Defect:* the burn on/off/sign decision is taken once per RK4 step from
-  start-of-step osculating elements, so burn-arc edges are fuzzy by O(dt).
+  *Defect:* in the bang-bang GATE, the burn on/off/sign decision is taken once
+  per RK4 step from start-of-step osculating elements, so burn-arc edges are
+  fuzzy by O(dt).
   *Materiality claim (test this):* directly measured by a per-stage-switching
   A/B — 0.12% Δv / 0.00% v∞ at the design point, verdict unchanged; the verdict
   flips only at the bisected working-region edge, where any perturbation flips
-  it. Tracked fix: switching times become decision variables in
-  [issue #4](https://github.com/fermiexplorer/fermi/issues/4).
+  it. The flown default campaign does not carry this defect: the optimised path
+  (`pump_schedule.scheduled_pumped_vinf`,
+  [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
+  switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further ~150 assertions; a passing run is **not** a
+The independent suite has a further ~160 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -268,7 +287,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (~139 checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (~160 checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the

@@ -76,11 +76,18 @@ question is entirely about how you build the 24 km/s.*
 > mechanism is integrated in the engine (`perihelion_pumped_vinf`) at the validated design
 > profile (a₀ = 2.5×10⁻⁴ m/s², Isp 2800 s); the contiguous working region starts at
 > a₀ ≈ 2.24×10⁻⁴ — success below is phasing-dependent and NON-monotonic, so gate designs
-> by integration, not by a threshold. The α ≳ 100 W/kg condition in §2 therefore applies
+> by integration, not by a threshold. The campaign the calculator flies and prices is the
+> **anchored optimised schedule** (`pump_schedule.scheduled_pumped_vinf` — a 4-parameter,
+> event-located switching schedule, optimised per a₀): at the design a₀ it buys the
+> 23.64 km/s cruise for **Δv 23.14 km/s in a 12.0-yr campaign** — 3.5% under PSI's
+> published 12-yr optimum (23.97) — and it closes every bang-bang island/stall gap on the
+> tested a₀ grid; the bang-bang integration stays as the conservative feasibility gate
+> (Δv 25.6, 9.6 yr). The α ≳ 100 W/kg condition in §2 therefore applies
 > to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~31–34 km/s (7.6 km/s Earth escape + ~23–24 heliocentric
-> + ~2 km/s bang-bang policy tax; PSI's optimised schedule totals 30.5–31.6); a GTO
+> The full SEP total from LEO is ~31–32 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
+> − 0.5 km/s optimised-schedule tax + ~1 km/s plane change; the bang-bang gate would price
+> it near ~34, and PSI's optimised total is 30.5–31.6); a GTO
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. See the live
 > page's "Perihelion pumping" section.
 

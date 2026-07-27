@@ -107,28 +107,49 @@ _PUMP_TAX_TABLE = (
 PUMP_TAX_VINF_MIN = 8.0e3
 
 
-def pump_tax_for(v_inf: float) -> float:
-    """Campaign-overhead tax (m/s) for a target v∞, interpolated from _PUMP_TAX_TABLE.
+def _interp_table(table, v):
+    for i in range(len(table) - 1):
+        x0, y0 = table[i]
+        x1, y1 = table[i + 1]
+        if v <= x1:
+            return y0 + (v - x0) * (y1 - y0) / (x1 - x0)
+    return table[-1][1]
 
-    Validity [8, 29] km/s (the design-a₀ sweep range); above 29 km/s returns 0
-    (the overhead has vanished by ~28; the campaign itself stalls above ~29 at the
-    design a₀ — callers gate feasibility separately via perihelion_pumped_vinf).
-    Raises below 8 km/s (outside the swept model).
+
+def pump_tax_for(v_inf: float, schedule: str = "optimized") -> float:
+    """Campaign-overhead tax (m/s) for a target v∞ — Δv − v∞ of the pumping campaign.
+
+    ``schedule="optimized"`` (the default budget, issue #4): the anchored 12-yr
+    optimised schedule's overhead curve (pump_schedule.TAX_OPT_TABLE). Monotone
+    declining, 10.6 km/s at v∞ = 8, and NEGATIVE past ~23 km/s (−0.51 at the
+    23.64 anchor) — the Oberth signature: the campaign buys the cruise for less
+    Δv than the cruise speed. Validity [8, 26] km/s; raises outside (below 8 is
+    outside the swept model; above 26 the anchored campaign does not reach —
+    use the bang-bang table or integrate directly).
+
+    ``schedule="bangbang"``: the bang-bang policy's overhead (the independent
+    cross-check; 13.5 km/s at v∞ = 8, 2.0 at the 23.64 anchor, 0 by ~28;
+    validity [8, 29], clamped ≥ 0, returns 0 above 29).
     """
     if not math.isfinite(v_inf):
         raise ValueError(f"pump_tax_for: v_inf must be finite, got {v_inf!r}")
     if v_inf < PUMP_TAX_VINF_MIN:
         raise ValueError(
             f"pump_tax_for: v_inf {v_inf/1e3:.1f} km/s is below the swept range "
-            f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — integrate perihelion_pumped_vinf directly.")
-    if v_inf >= _PUMP_TAX_TABLE[-1][0]:
-        return 0.0
-    for i in range(len(_PUMP_TAX_TABLE) - 1):
-        x0, y0 = _PUMP_TAX_TABLE[i]
-        x1, y1 = _PUMP_TAX_TABLE[i + 1]
-        if v_inf <= x1:
-            return max(y0 + (v_inf - x0) * (y1 - y0) / (x1 - x0), 0.0)
-    return 0.0
+            f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — integrate the campaign directly.")
+    if schedule == "optimized":
+        from .pump_schedule import TAX_OPT_TABLE
+        if v_inf > TAX_OPT_TABLE[-1][0]:
+            raise ValueError(
+                f"pump_tax_for: v_inf {v_inf/1e3:.1f} km/s is beyond the anchored optimised "
+                "campaign's reach (26 km/s) — use schedule='bangbang' (valid to 29) or "
+                "integrate scheduled_pumped_vinf directly.")
+        return _interp_table(TAX_OPT_TABLE, v_inf)
+    if schedule == "bangbang":
+        if v_inf >= _PUMP_TAX_TABLE[-1][0]:
+            return 0.0
+        return max(_interp_table(_PUMP_TAX_TABLE, v_inf), 0.0)
+    raise ValueError(f"pump_tax_for: unknown schedule {schedule!r}")
 
 
 def lowthrust_departure_dv(
@@ -456,12 +477,15 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential aim), and the
     tax covers the in-plane overhead (pump-down arcs + gravity losses).
 
-    The tax is v∞-DEPENDENT (issue #3): interpolated from :func:`pump_tax_for`'s table,
-    swept from :func:`perihelion_pumped_vinf` at the design profile — 13.5 km/s at v∞=8,
-    7.8 at 15, 2.0 at the pinned 23.64 km/s AC anchor, 0 by ~28. Validity [8, 29] km/s;
-    below 8 km/s raises (outside the swept model). Passing ``pump_tax`` explicitly
-    overrides the table (audit/what-if use). Unlike the outward-spiral budget this does
-    NOT borrow Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
+    The tax is v∞-DEPENDENT and, since issue #4, priced by the ANCHORED OPTIMISED
+    schedule (:func:`pump_tax_for`, default ``schedule="optimized"``): 10.6 km/s at
+    v∞ = 8, falling through zero near 23 and NEGATIVE at the 23.64 km/s AC anchor
+    (−0.51 — Oberth leverage: the campaign costs less Δv than the cruise it buys).
+    Validity [8, 26] km/s; raises outside. The bang-bang overhead table remains
+    available as ``schedule="bangbang"`` (the independent cross-check; 2.0 at the
+    anchor). Passing ``pump_tax`` explicitly overrides both (audit/what-if use).
+    Unlike the outward-spiral budget this does NOT borrow Earth's orbital velocity —
+    v∞ is built heliocentrically at perihelion.
     """
     for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg), ("peri_alt_km", peri_alt_km)):
         if not math.isfinite(val):

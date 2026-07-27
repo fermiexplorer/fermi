@@ -358,30 +358,83 @@ def run() -> None:
           len(reach_caps) == 4 and len(stall_caps) == 4,
           f"reach={reach_caps}, stall={stall_caps}")
 
-    # 13c. v_inf-DEPENDENT tax model (issue #3): the budget prices any target in the swept
-    #      [8, 29] km/s range via the interpolated overhead table, refuses below it, and the
-    #      AC-corridor anchor is pinned to the shipped 2.0 km/s calibration.
+    # 13c. v_inf-DEPENDENT tax model (issues #3/#4): the budget prices targets through TWO
+    #      schedule tables — the anchored-optimised default ([8, 26] km/s, negative past ~23:
+    #      the Oberth-efficient campaign spends less than the v_inf it buys) and the bang-bang
+    #      cross-check ([8, 29] km/s, anchored 2.0 km/s at the corridor). Both refuse below 8.
     from fermi_sim.departure import pump_tax_for
     try:
         pump_tax_for(7.0e3)
-        guard_fired = False
+        guard_low = False
     except ValueError:
-        guard_fired = True
-    check("pump tax refuses v_inf below the swept range (8 km/s)",
-          guard_fired, "ValueError raised at 7 km/s")
-    check("AC-corridor anchor is pinned to the shipped calibration (tax(23.64) = 2.000 km/s)",
-          abs(pump_tax_for(23.64e3) - 2000.0) < 1e-9, f"{pump_tax_for(23.64e3):.1f} m/s")
-    # the alpha2-Lib case that the old flat tax mispriced (34.7 vs integrated ~41.0) now
-    # prices correctly through the closed form: escape + v_inf + plane + tax(14.5)
-    alib = pumped_departure_dv(14.5e3, -47.0, 400.0)
-    check("closed-form budget reproduces the integrated alpha2-Lib total (~41.0 km/s)",
-          abs(alib - 41.0e3) < 0.25e3, f"{alib/1e3:.2f} km/s")
+        guard_low = True
+    check("pump tax refuses v_inf below the swept range (8 km/s, both schedules)",
+          guard_low, "ValueError raised at 7 km/s")
+    try:
+        pump_tax_for(27.0e3)          # optimised table ends at 26 — must refuse, not extrapolate
+        guard_hi = False
+    except ValueError:
+        guard_hi = True
+    check("optimised tax refuses v_inf above its swept range (26 km/s)",
+          guard_hi, "ValueError raised at 27 km/s")
+    check("bang-bang anchor is pinned to the shipped calibration (tax_bb(23.64) = 2.000 km/s)",
+          abs(pump_tax_for(23.64e3, "bangbang") - 2000.0) < 1e-9,
+          f"{pump_tax_for(23.64e3, 'bangbang'):.1f} m/s")
+    check("optimised anchor is negative (Oberth: campaign dv < v_inf bought): tax(23.64) = -0.509",
+          abs(pump_tax_for(23.64e3) - (-509.0)) < 1e-9, f"{pump_tax_for(23.64e3):.1f} m/s")
+    # the alpha2-Lib case that the old flat tax mispriced (34.7 vs integrated ~41.0) prices
+    # correctly through the closed form under the BANG-BANG tax it was integrated with
+    alib_bb = pumped_departure_dv(14.5e3, -47.0, 400.0,
+                                  pump_tax=pump_tax_for(14.5e3, "bangbang"))
+    check("closed-form budget reproduces the integrated alpha2-Lib total (~41.0 km/s, bang-bang)",
+          abs(alib_bb - 41.0e3) < 0.25e3, f"{alib_bb/1e3:.2f} km/s")
+    check("optimised schedule prices alpha2-Lib below the bang-bang total",
+          pumped_departure_dv(14.5e3, -47.0, 400.0) < alib_bb,
+          f"{pumped_departure_dv(14.5e3, -47.0, 400.0)/1e3:.2f} < {alib_bb/1e3:.2f} km/s")
     # fit-vs-integrator at OFF-knot targets (interp must track the campaign to < 0.3 km/s)
     for v_t in (12.5e3, 20.5e3, 27.5e3):
         vi_t, dv_t, _, _ = perihelion_pumped_vinf(a0_design, v_t, max_yr=200.0)
-        err = abs(pump_tax_for(v_t) - (dv_t - vi_t))
-        check(f"tax table tracks the integrator at v_inf {v_t/1e3:.1f} km/s (<0.3 km/s)",
+        err = abs(pump_tax_for(v_t, "bangbang") - (dv_t - vi_t))
+        check(f"bang-bang tax table tracks the integrator at v_inf {v_t/1e3:.1f} km/s (<0.3 km/s)",
               err < 300.0, f"err {err:.0f} m/s")
+
+    # 13d. OPTIMISED schedule (issue #4): the shipped default campaign is the baked 12-yr
+    #      custody optimum at the design a0. Re-integrate it here (fine dt, event-located
+    #      switches) and pin the baked tuple, energy bookkeeping, and the a0-grid closures
+    #      that the bang-bang policy failed (1.9e-4 strand band, 3.0e-4 stall window).
+    from fermi_sim.pump_schedule import OPTIMIZED_SCHEDULES, DESIGN_A0, scheduled_pumped_vinf
+    sch_d, baked_d = OPTIMIZED_SCHEDULES[DESIGN_A0]
+    v_o, dv_o, yr_o, rv_o, diag_o = scheduled_pumped_vinf(
+        DESIGN_A0, baked_d[0], sch_d, return_diag=True)
+    check("optimised anchor replay reaches the target (design a0, fine dt)",
+          v_o >= baked_d[0] * 0.999, f"{v_o/1e3:.3f} km/s")
+    check("optimised anchor replay reproduces the baked dv (23.136 km/s)",
+          abs(dv_o - baked_d[1]) < 25.0, f"{dv_o:.1f} vs baked {baked_d[1]:.1f} m/s")
+    check("optimised anchor replay reproduces the baked custody (~12.0 yr) and revs (~5.9)",
+          abs(yr_o - baked_d[2]) < 0.15 and abs(rv_o - baked_d[3]) < 0.15,
+          f"{yr_o:.2f} yr, {rv_o:.2f} revs")
+    check("optimised campaign beats the bang-bang policy on dv (23.1 < 25.6 km/s)",
+          dv_o < 25.0e3, f"{dv_o/1e3:.2f} km/s vs bang-bang 25.63")
+    check("optimised replay overhead matches the baked tax anchor (-0.509 km/s, <30 m/s)",
+          abs((dv_o - v_o) - (-509.0)) < 30.0, f"{dv_o - v_o:.1f} m/s")
+    # energy bookkeeping: thrust work (a.v dt, first-order) must equal the specific-energy
+    # gain — the only non-conservative force is the thrust (work-energy theorem)
+    check("optimised campaign conserves energy: thrust work == specific-energy gain (<1%)",
+          abs(diag_o["work"] - diag_o["E_gain"]) / diag_o["E_gain"] < 0.01,
+          f"work {diag_o['work']:.4e} vs dE {diag_o['E_gain']:.4e} J/kg")
+    check("optimised campaign respects the 0.42 AU thermal floor (min r >= 0.41 AU)",
+          diag_o["min_r_au"] >= 0.41, f"min r {diag_o['min_r_au']:.3f} AU")
+    # the a0-grid closures the bang-bang policy failed: 1.9e-4 (old strand band, coarse-dt
+    # drift guard — fine-dt REACH was verified when the table was baked) and 3.0e-4 (old
+    # stall window, fine dt)
+    sch_19, baked_19 = OPTIMIZED_SCHEDULES[1.9e-4]
+    v_19, _, _, _ = scheduled_pumped_vinf(1.9e-4, baked_19[0], sch_19, _dt_scale=3)
+    check("optimised schedule closes the old 1.9e-4 strand band (coarse-dt replay)",
+          v_19 >= baked_19[0] * 0.999, f"{v_19/1e3:.2f} km/s")
+    sch_30, baked_30 = OPTIMIZED_SCHEDULES[3.0e-4]
+    v_30, _, _, _ = scheduled_pumped_vinf(3.0e-4, baked_30[0], sch_30)
+    check("optimised schedule closes the old 3.0e-4 stall window (fine-dt replay)",
+          v_30 >= baked_30[0] * 0.999, f"{v_30/1e3:.2f} km/s")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the

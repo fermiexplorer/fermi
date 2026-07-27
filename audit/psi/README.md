@@ -32,6 +32,12 @@ here with attribution as the independent external cross-assessment of this proje
   (2.13 retrograde pump-down + 3 perihelion passes + finisher; Δv split 8.3 retro +
   17.3 prograde). The +1.66 km/s premium of our policy is almost entirely in the cruder
   retrograde pump-down; the prograde legs agree to ~2%.
+- Their optimised-schedule result independently confirmed — and slightly beaten — by our
+  own optimiser (`fermi_sim/pump_schedule.py` + `tools/optimize_pump_schedule.py`,
+  issue #4): at the same 12-yr custody our anchored optimised schedule costs
+  **Δv 23.14 km/s vs their published 23.97** (−3.5%) under identical physics assumptions;
+  our unconstrained frontier point (22.84 at 28.5 yr) is consistent with their 22.9 km/s
+  single-method lower anchor.
 - Contiguous working-region edge a₀ ≈ 2.24×10⁻⁴ m/s² (validated by three independent
   integrators; success below is phasing-dependent and non-monotonic — see
   `audit/fable/fable-pumping-synchrotron-audit.md`).

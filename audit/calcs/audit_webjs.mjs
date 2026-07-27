@@ -44,11 +44,12 @@ const REF = {
   pump_yr_ref: 9.634918223784087,
   // ...and the a0=5e-4 case
   pump_vinf_hi_ref: 23828.096843458618,
-  // pumped-architecture departure budget (tmp/ro/dump_pump_dep.py): √(μ⊕/a) escape + v∞ + 2 km/s tax
-  pump_dep_dv_ref: 33312.598648385014,
-  pump_dep_dv_gto_ref: 29668.687196355662,
+  // pumped-architecture departure budget (tmp/ro/i4_refs.py): √(μ⊕/a) escape + v∞ + tax(v∞)
+  // (tax = anchored-optimised schedule table; −509 m/s at the 23.64 km/s anchor)
+  pump_dep_dv_ref: 30803.598648385014,
+  pump_dep_dv_gto_ref: 27159.687196355662,
   // ...with the out-of-plane aim charged: v∞·|sin(−2.48°)| plane-change term
-  pump_dep_dv_tilt_ref: 34335.51684033977,
+  pump_dep_dv_tilt_ref: 31826.516840339773,
   // perihelion synchrotron (tmp/ro/test_synchro.py): 10 R☉ station, 5 km/s kicks, target 23.64 km/s
   syn_passes_ref: 12,
   syn_time_yr_ref: 1.5082462693332792,
@@ -103,6 +104,15 @@ check("pumped v∞ @a0=5e-4 (m/s)", F.perihelionPumpedVinf(5e-4, 23.64e3).vinf, 
 check("pumped departure Δv budget (23.64 km/s, tilt 0, LEO 400) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 400), REF.pump_dep_dv_ref, 1e-9);
 check("pumped departure Δv budget (GTO-like 590x35786) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 590, 35786), REF.pump_dep_dv_gto_ref, 1e-9);
 check("pumped departure Δv budget charges the plane change (tilt −2.48°) (m/s)", F.pumpedDepartureDv(23.64e3, -2.48, 400), REF.pump_dep_dv_tilt_ref, 1e-9);
+// Dual-schedule pumping tax (issue #4): optimised default + bang-bang cross-check, both
+// interpolated from tables baked out of fermi_sim.pump_schedule / departure integrations.
+check("pump tax, optimised schedule, at the 23.64 km/s anchor (m/s)", F.pumpTaxFor(23.64e3), -509.0, 1e-12);
+check("pump tax, bang-bang schedule, at the 23.64 km/s anchor (m/s)", F.pumpTaxBangbang(23.64e3), 2000.0, 1e-12);
+// Optimised campaign lookup (OPT_CAMPAIGN_TABLE interpolation) matches the Python campaign_at.
+const oc = F.optCampaignFor(23.71e3);
+check("optimised campaign Δv at v∞=23.71 km/s (m/s)", oc.dv, 23171.20909090909, 1e-12);
+check("optimised campaign custody at v∞=23.71 km/s (yr)", oc.years, 12.039818181818182, 1e-12);
+check("optimised campaign revolutions at v∞=23.71 km/s", oc.revs, 5.865545454545455, 1e-12);
 
 // Perihelion synchrotron ("lasso idea"): externally powered recirculating accelerator.
 const syn = F.synchrotronEscape(10, 5e3, 23.64e3);

@@ -2,6 +2,12 @@
 
 Issue: https://github.com/fermiexplorer/fermi/issues/4
 Roadmap: `docs/PRECISION_ROADMAP.md` Stage 3
+Status: **SHIPPED** (build 156). Measured record: 12-yr custody optimum at the
+design a₀ = Δv 23.14 km/s (bang-bang gate 25.63; PSI's published 12-yr optimum
+23.97 — beaten by 3.5%); frontier ≤10 yr → 23.49, unconstrained → 22.84 @
+28.5 yr; per-a₀ schedules close every bang-bang island/stall gap on the tested
+grid; tax re-anchored (−0.509 at the AC anchor), default budget 34.3 → 31.8;
+suite 160/160, parity 40/40, UI 82/82.
 
 ## Problem
 

@@ -41,24 +41,28 @@ piecewise-linear table swept from the campaign integrator at the design a₀
 half-grid interpolation error ≤ 79 m/s, suite-pinned < 0.3 km/s at off-knot
 targets). The 23.64 km/s knot is pinned to the shipped 2.0 km/s calibration, so
 every published AC budget is unchanged. Residual: the table is swept at the
-design a₀ only (~±0.4 km/s a₀-dependence) — re-anchored by Stage 3 (#4).
+design a₀ only (~±0.4 km/s a₀-dependence) — Stage 3 (#4, shipped) re-anchored
+the pricing to the optimised schedule and kept this table as the cross-check.
 
-## Stage 3 — Optimised pumping schedule  *(scheduled: [#4](https://github.com/fermiexplorer/fermi/issues/4))*
+## Stage 3 — Optimised pumping schedule  *(shipped: [#4](https://github.com/fermiexplorer/fermi/issues/4))*
 
-**Today:** the bang-bang policy costs ~7% more Δv than PSI's optimised schedule
-(25.6 vs 24.0 km/s) and is non-monotonic in a₀/Isp/power-cap (islands and stall
-bands, pinned by `audit/calcs/audit_pumping.py`). A third, smaller cost rides
-the same heuristic: the bang-bang on/off/sign decision is taken once per RK4
-step, so burn-arc edges are quantized by O(dt) — directly measured at **0.12%
-Δv at the design a₀** (verdict unchanged; a per-stage-switching variant flips
-the verdict only at the bisected working-region edge, where any perturbation
-does), and bounded < 0.5% by the step-convergence audit check (external ledger
-F5l).
-
-**Tightened:** a trajectory-optimised burn schedule (direct collocation or
-equivalent) with switching times as decision variables — removing the ~7%
-premium, the phasing gaps, and the arc-edge quantization in one rewrite; the
-bang-bang integrator stays as the independent audit cross-check.
+`fermi_sim/pump_schedule.py` integrates the campaign under a 4-parameter
+switching schedule (retro/prograde arc half-widths, escape energy guard,
+perihelion latch) with **bisection-located switch events** (~1e-3 dt — retiring
+the F5l arc-edge quantization on the flown path), optimised per a₀ by
+Nelder-Mead multi-start (`tools/optimize_pump_schedule.py`), every baked number
+re-integrated at full engine resolution. Results: the anchored 12-yr-custody
+optimum at the design a₀ costs **Δv 23.14 km/s (bang-bang gate: 25.63; PSI's
+published 12-yr optimum: 23.97 — beaten by 3.5%)**; the unconstrained frontier
+reaches 22.84 at 28.5 yr; per-a₀ schedules **close every bang-bang island/stall
+gap** on the tested grid (1.6/1.9/2.24/2.5/3.0×10⁻⁴ all REACH — the
+non-monotonicity was a fixed-arc phasing artifact). The calculator flies and
+prices the anchored optimised campaign (tax at the AC anchor: **−0.509 km/s**,
+Oberth-negative; two-leg default budget 34.3 → 31.8 km/s); the bang-bang
+integrator stays as the feasibility gate and independent cross-check, and
+`audit/calcs/audit_pumping.py` replays the anchor, the grid closures, the
+energy bookkeeping, and optimum-beats-gate. Residual: the shipped tax/campaign
+tables remain design-a₀-anchored (Stage 2's residual, unchanged in kind).
 
 ## Stage 4 — 3-D pumping campaign  *(unscheduled)*
 

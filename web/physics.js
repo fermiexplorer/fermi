@@ -299,11 +299,17 @@
   // heliocentric pumping campaign at v∞ + v∞·|sin β| (plane change — the campaign is
   // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
   // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor).
-  // The tax is v∞-DEPENDENT (issue #3, mirror of fermi_sim._PUMP_TAX_TABLE): piecewise-linear
-  // knots swept from perihelionPumpedVinf at the design profile — 13.5 km/s at v∞=8, 2.0 at
-  // the pinned 23.64 AC anchor, 0 by ~28. Validity [8, 29] km/s (below 8 throws — outside the
-  // swept model; unreachable from the page, whose v∞ floor is 23.27). No Earth-velocity borrow.
+  // The tax is v∞-DEPENDENT and priced by the ANCHORED OPTIMISED schedule (issue #4, mirror
+  // of fermi_sim.pump_schedule.TAX_OPT_TABLE): 10.6 km/s at v∞=8, NEGATIVE past ~23 (−0.51
+  // at the 23.64 AC anchor — Oberth leverage: the campaign costs less Δv than the cruise it
+  // buys). Validity [8, 26] km/s; throws outside. The bang-bang overhead stays available as
+  // pumpTaxBangbang (the independent cross-check; 2.0 at the anchor, valid to 29).
   const PUMP_TAX_VINF_MIN = 8e3;
+  const TAX_OPT_TABLE = [
+    [8000, 10562], [9000, 9704], [10000, 8863], [11000, 8038], [12000, 7229],
+    [13000, 6439], [14000, 5665], [15000, 4911], [16000, 4176], [17000, 3462],
+    [18000, 2770], [19000, 2104], [20000, 1467], [21000, 864], [22000, 300],
+    [23000, -213], [23640, -509], [24000, -661], [25000, -1014], [26000, -1223]];
   const PUMP_TAX_TABLE = [
     [8000, 13505.8], [9000, 12434.7], [10000, 11727.2], [11000, 10874.8],
     [12000, 10100.8], [13000, 9215.6], [14000, 8558.2], [15000, 7785.7],
@@ -311,16 +317,45 @@
     [20000, 4122.8], [21000, 3562.5], [22000, 2907.1], [23000, 2345.5],
     [23640, 2000.0], [24000, 1760.2], [25000, 1246.3], [26000, 786.1],
     [27000, 394.8], [28000, 85.4], [29000, 0.0]];
-  function pumpTaxFor(vinf) {
-    if (!Number.isFinite(vinf) || vinf < PUMP_TAX_VINF_MIN)
-      throw new Error("pumpTaxFor: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is below the swept "
-        + "8 km/s range — integrate perihelionPumpedVinf directly.");
-    const T = PUMP_TAX_TABLE;
-    if (vinf >= T[T.length - 1][0]) return 0;
+  const _lerp = (T, v) => {
     for (let i = 0; i < T.length - 1; i++)
-      if (vinf <= T[i + 1][0])
-        return Math.max(T[i][1] + (vinf - T[i][0]) * (T[i + 1][1] - T[i][1]) / (T[i + 1][0] - T[i][0]), 0);
-    return 0;
+      if (v <= T[i + 1][0])
+        return T[i][1] + (v - T[i][0]) * (T[i + 1][1] - T[i][1]) / (T[i + 1][0] - T[i][0]);
+    return T[T.length - 1][1];
+  };
+  function pumpTaxFor(vinf) {
+    if (!Number.isFinite(vinf) || vinf < PUMP_TAX_VINF_MIN || vinf > 26e3)
+      throw new Error("pumpTaxFor: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is outside the "
+        + "anchored optimised campaign's [8, 26] km/s range — use pumpTaxBangbang or integrate.");
+    return _lerp(TAX_OPT_TABLE, vinf);
+  }
+  function pumpTaxBangbang(vinf) {
+    if (!Number.isFinite(vinf) || vinf < PUMP_TAX_VINF_MIN)
+      throw new Error("pumpTaxBangbang: v_inf below the swept 8 km/s range.");
+    if (vinf >= 29e3) return 0;
+    return Math.max(_lerp(PUMP_TAX_TABLE, vinf), 0);
+  }
+  // Per-target campaign under the anchored design schedule (mirror of
+  // fermi_sim.pump_schedule.OPT_CAMPAIGN_TABLE): [v_target, overhead, years, revs].
+  const OPT_CAMPAIGN_TABLE = [
+    [23000, -213.2, 12.004, 5.842], [23250, -332.1, 12.014, 5.850],
+    [23500, -446.5, 12.026, 5.858], [23640, -508.5, 12.036, 5.863],
+    [23750, -556.1, 12.042, 5.867], [24000, -660.6, 12.061, 5.876],
+    [24250, -759.3, 12.083, 5.884], [24500, -851.7, 12.113, 5.894],
+    [24750, -937.0, 12.149, 5.903], [25000, -1014.3, 12.202, 5.913],
+    [25250, -1082.5, 12.279, 5.923], [25500, -1140.4, 12.408, 5.935],
+    [25750, -1187.6, 12.641, 5.946], [26000, -1222.5, 13.188, 5.959]];
+  function optCampaignFor(vinf) {
+    const T = OPT_CAMPAIGN_TABLE;
+    if (!Number.isFinite(vinf) || vinf < T[0][0] || vinf > T[T.length - 1][0]) return null;
+    for (let i = 0; i < T.length - 1; i++)
+      if (vinf <= T[i + 1][0]) {
+        const f = (vinf - T[i][0]) / (T[i + 1][0] - T[i][0]);
+        return { vinf, dv: vinf + T[i][1] + f * (T[i + 1][1] - T[i][1]),
+                 years: T[i][2] + f * (T[i + 1][2] - T[i][2]),
+                 revs: T[i][3] + f * (T[i + 1][3] - T[i][3]), reaches: true };
+      }
+    return null;
   }
   function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = null) {
     if (pumpTax == null) pumpTax = pumpTaxFor(vinf);
@@ -360,7 +395,7 @@
     PUMP_DESIGN_A0, PUMP_DESIGN_ISP,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, pumpTaxFor, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, pumpTaxFor, pumpTaxBangbang, optCampaignFor, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

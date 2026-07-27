@@ -30,34 +30,39 @@ PSI from [`audit/psi/`](https://github.com/fermiexplorer/fermi/tree/main/audit/p
 
 ## 0. Read this first — "why do we get 4.9 and PSI gets 12?"
 
-**They are different units.** Our **4.9 is revolutions**; PSI's **12 is years**. Comparing them
-directly is an apples-to-oranges trap that this table exists to prevent:
+**They are different units.** The bang-bang gate's **4.9 is revolutions**; PSI's **12 is years**.
+Comparing them directly is an apples-to-oranges trap that this table exists to prevent:
 
 | | Revolutions around the Sun | Campaign duration | Δv |
 |---|---|---|---|
-| **Fermi engine** (bang-bang policy) | **4.9 revs** | 9.6 yr | 25.63 km/s |
-| **Fable** (adversarial, 2 integrators) | 4.88 revs | 9.6–9.7 yr | 25.61 km/s |
+| **Fermi engine — anchored optimised schedule** (the flown default, issue #4) | **5.9 revs** | **12.0 yr** | **23.14 km/s** |
+| **Fermi engine** (bang-bang gate / cross-check) | 4.9 revs | 9.6 yr | 25.63 km/s |
+| **Fable** (adversarial, 2 integrators, bang-bang) | 4.88 revs | 9.6–9.7 yr | 25.61 km/s |
 | **PSI** (optimised schedule) | ~5–6 perihelion passes | **12 yr** | 23.97 km/s |
-| *(drawn animation)* | *~3.5 revs* | *8.6 yr* | *(schematic)* |
+| *(drawn animation)* | *~4.9 revs* | *~10 yr* | *(schematic)* |
 
-So the honest comparison is **4.9 revs / 9.6 yr (ours) vs ~5–6 passes / 12 yr (PSI)** — the
-revolution counts are close; the *durations and Δv* differ, and they differ **by design**:
+So the honest comparison is now **like-for-like at 12 years**: our optimised schedule buys the
+same cruise for **23.14 km/s vs PSI's 23.97** (−3.5%). The bang-bang rows differ from PSI's
+**by design**:
 
-1. **Ours burns harder per arc.** Our bang-bang policy applies full available thrust whenever its
-   gate opens, so each perihelion pass adds a bigger energy step. Bigger steps ⇒ slightly fewer,
+1. **The gate burns harder per arc.** The bang-bang policy applies full available thrust whenever
+   its gate opens, so each perihelion pass adds a bigger energy step. Bigger steps ⇒ slightly fewer,
    fatter revolutions and a shorter campaign (9.6 yr), paid for with **more Δv (25.63)**.
-2. **PSI's optimiser is patient.** It spreads gentler arcs over more revolutions/time, staying
-   closer to the impulsive ideal at each pass, so it reaches the same v∞ for **less Δv (23.97)** —
-   at the cost of **12 years** of powered flight. PSI names this explicitly as the *patience trade*:
-   in their own words, patience is worth ≈4 km/s (their faster variant costs 28.2 km/s in 4.9 **years** —
-   another number whose numeric coincidence with our 4.9 *revolutions* is pure accident).
-3. **Neither is "wrong."** Ours is a deliberately cruder, independent reconstruction whose job is to
-   *validate the mechanism*; PSI's is an optimised schedule. Ours lands exactly where PSI's own
-   patience curve predicts — between their patient (12 yr / 23.97) and fast (4.9 yr / 28.2) profiles.
-   **PSI's is the more optimal trajectory**; ours is the independent check that the mechanism is real.
-4. **The third number** (~3.5 revs in the on-page animation) is the drawn 3-body schematic, which
-   starts from the *actual post-Earth-escape state* rather than the engine's clean 1 AU circular
-   start. Same policy, different entry conditions — labelled "(drawn)" in the UI for that reason.
+2. **Optimised schedules are patient.** They spread gentler arcs over more revolutions/time, staying
+   closer to the impulsive ideal at each pass, so they reach the same v∞ for less Δv — PSI's 12-yr
+   schedule costs **23.97**, and our anchored optimised schedule (4 free switching parameters,
+   event-located arc edges, Nelder-Mead per a₀) costs **23.14** at the same 12-yr custody. PSI names
+   the underlying trade explicitly as the *patience trade*: in their own words, patience is worth
+   ≈4 km/s (their faster variant costs 28.2 km/s in 4.9 **years** — a number whose numeric
+   coincidence with the gate's 4.9 *revolutions* is pure accident).
+3. **Neither is "wrong."** The bang-bang is a deliberately cruder, independent reconstruction whose
+   job is to *validate the mechanism* (and it stays the calculator's feasibility gate); the optimised
+   schedule is what the calculator flies and prices. The gate lands exactly where PSI's own patience
+   curve predicts — between their patient (12 yr / 23.97) and fast (4.9 yr / 28.2) profiles.
+4. **The last row** (~4.9 revs / ~10 yr in the on-page animation) is the drawn 3-body schematic,
+   which starts from the *actual post-Earth-escape state* rather than the engine's clean 1 AU
+   circular start. Same schedule, different entry conditions — labelled "(drawn)" in the UI for
+   that reason.
 
 The phase-by-phase breakdown behind these numbers is in [§4](#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only);
 if the **α** figures are what you are comparing, read [§2b](#2b-α-specific-power--the-same-symbol-in-three-different-senses)
@@ -171,6 +176,7 @@ structure and payload dilute the dry mass.*
 | **PSI — LEO 100 & 150 kg** (68 % propellant) | **19.5 W/kg** | derived here from PSI's own §5.1/§5.2 sizing (a₀ 2.5×10⁻⁴, Isp 2800, η 0.55) |
 | **PSI — GTO 100 & 80 kg** (64 % propellant) | **17.3 W/kg** | same derivation |
 | **Fermi page — published pumping band** | **15–21 W/kg** | our band; **brackets PSI's implied 17.3–19.5** ✔ |
+| Fermi — anchored optimised campaign (issue #4) | **14.5 W/kg** | Δv 23.14 ⇒ R = e^(23136/27459) = 2.32 ⇒ α = 6.24·2.32 — the flown campaign needs slightly *less* than the published band's floor (the band is kept at the PSI-implied 15–21; 14.5 is extra margin, not a new headline) |
 | Fermi page — default vehicle (2 kW GaAs) | ~120 W/kg | the shipped default is *far above* what pumping needs |
 | Fermi — nuclear-electric closure | ~23 W/kg | constant-power route |
 | *(retracted)* 13 W/kg | **impossible** | R = 2.08 ⇒ Δv capacity 20.1 km/s < the 23.97 required (Fable audit finding; band corrected 13–25 → 15–21) |
@@ -234,9 +240,11 @@ is 8 km/s; below it the budget refuses.
 
 *(On the band: the project's headline "~15–21 W/kg" is the **PSI-implied** vehicle-α band, which
 brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slightly higher —
-21.7 W/kg at the AC design point, just above the top of the band: same physics, ~1 W/kg of sizing
-conservatism, and the headline is kept at 15–21 because that is the PSI-implied figure the project
-cites. α² Lib's 27.8 W/kg is higher for a different reason — its integrated low-cruise campaign
+21.7 W/kg at the AC design point, just above the top of the band — while the anchored optimised
+campaign the calculator flies since issue #4 lands slightly lower (14.5 W/kg): same physics,
+±1 W/kg of schedule quality around the band, and the headline is kept at 15–21 because that is
+the PSI-implied figure the project cites (the optimised campaign's 14.5 is margin below it).
+α² Lib's 27.8 W/kg is higher for a different reason — its integrated low-cruise campaign
 carries ~8 km/s of in-plane overhead, which inflates the mass ratio that multiplies into vehicle α.)*
 
 **Naming & kinematic caveat (α² Lib = SIMBAD "alf02 Lib" = PSI's "Alpha-2 Librae").** All rows
@@ -312,10 +320,10 @@ The ~6× in α is not free — it is bought with Δv, time and thermal risk:
 
 | Price | Value |
 |---|---|
-| Extra Δv vs the impulsive ideal | pumped campaign 25.6 km/s (ours) / 23.97 (PSI optimised) vs a 13.9 km/s impulsive floor |
-| Powered-flight duration | 9.6 yr (ours) – 12 yr (PSI) vs ~0.5–2 yr for a spiral |
+| Extra Δv vs the impulsive ideal | pumped campaign 23.14 km/s (ours, optimised) / 23.97 (PSI optimised) / 25.6 (bang-bang gate) vs a 13.9 km/s impulsive floor |
+| Powered-flight duration | 12 yr (ours optimised, and PSI) – 9.6 yr (bang-bang gate) vs ~0.5–2 yr for a spiral |
 | Thermal qualification | repeated 0.42 AU passes — MESSENGER-class, and the 4× harvest cap is optimistic |
-| Policy fragility | success is non-monotonic in a₀; the campaign must be flown at a validated profile |
+| Policy fragility | bang-bang success is non-monotonic in a₀ (the gate must be flown at a validated profile); the per-a₀ optimised schedules close every tested gap |
 
 ### Corroboration
 
@@ -368,19 +376,28 @@ The four "core" bots never tested pumping (it postdates their builds). Pumping i
 three sources only, and the distinction between *mechanism* (well-corroborated) and *optimality*
 (single-source) is the key trust point.
 
-| Quantity | **Engine** (bang-bang) | Fable-adversarial | PSI (optimised) |
-|---|---|---|---|
-| Design-point v∞ (km/s) | **23.66** | 23.66–23.67 (2 integrators) | 23.64 |
-| Design-point Δv (km/s) | **25.63** | 25.61 | **23.97** |
-| Powered campaign (yr) | **9.63** | 9.6–9.7 | 12.0 |
-| Revolutions / passes | **4.89 revs** | 4.88 revs | ~5–6 passes |
-| — retrograde pump-down | **2.13 revs** | (reproduced) | ~4 gentler revs |
-| — prograde perihelion passes | **3** | (reproduced) | ~5–6 |
-| Δv split (retro + prograde) | **8.3 + 17.3** | reproduced | — |
-| Working-region edge a₀ (m/s²) | **2.24×10⁻⁴** | 2.239×10⁻⁴ (bisection) | 2.5×10⁻⁴ design |
-| Non-monotonic islands/stalls | **yes** | yes (3 integrators) | (not characterised) |
-| Outward-spiral ceilings (km/s) | **0 / 3.0 / 16.7** | confirms | 0 / 3.4 / 17.0 |
-| Certified heliocentric lower bound | — | — | **16.56** |
+| Quantity | **Engine** (bang-bang gate) | **Engine** (anchored optimised, issue #4) | Fable-adversarial | PSI (optimised) |
+|---|---|---|---|---|
+| Design-point v∞ (km/s) | **23.66** | 23.64 | 23.66–23.67 (2 integrators) | 23.64 |
+| Design-point Δv (km/s) | **25.63** | **23.14** | 25.61 | **23.97** |
+| Powered campaign (yr) | **9.63** | **12.0** | 9.6–9.7 | 12.0 |
+| Revolutions / passes | **4.89 revs** | 5.86 revs | 4.88 revs | ~5–6 passes |
+| — retrograde pump-down | **2.13 revs** | (gentler, wider arcs) | (reproduced) | ~4 gentler revs |
+| — prograde perihelion passes | **3** | ~4 | (reproduced) | ~5–6 |
+| Δv split (retro + prograde) | **8.3 + 17.3** | — | reproduced | — |
+| Working-region edge a₀ (m/s²) | **2.24×10⁻⁴** | (grid closes 1.6–3.0×10⁻⁴) | 2.239×10⁻⁴ (bisection) | 2.5×10⁻⁴ design |
+| Non-monotonic islands/stalls | **yes** | **no — per-a₀ schedules close every tested gap** | yes (3 integrators) | (not characterised) |
+| Outward-spiral ceilings (km/s) | **0 / 3.0 / 16.7** | — | confirms | 0 / 3.4 / 17.0 |
+| Certified heliocentric lower bound | — | — | — | **16.56** |
+
+The **anchored optimised** column is the campaign the calculator flies and prices since issue #4:
+a 4-parameter switching schedule (retro/prograde arc half-widths, escape guard, perihelion latch)
+with event-located (bisected) arc edges, optimised per a₀ by Nelder-Mead multi-start
+(`tools/optimize_pump_schedule.py`), every published number re-integrated at full engine
+resolution (`fermi_sim/pump_schedule.py`). At the PSI-comparable 12-yr custody it reaches the
+same cruise for **23.14 km/s — 3.5% under PSI's published 23.97**; the unconstrained frontier
+point is 22.84 km/s at 28.5 yr. The bang-bang column stays as the independent
+feasibility gate and cross-check (the optimum is audited to never lose to it).
 
 **What is well-corroborated:** the *mechanism* (retrograde pump-down to 0.42 AU, then prograde
 perihelion staircase), the *closure at today's α*, the *design-point endpoints*, the *outward-
@@ -389,17 +406,21 @@ structure*. Engine and Fable agree to <0.2 % using two integrators each, and PSI
 mechanism and the ceilings.
 
 **What is single-sourced (lower trust):**
-- **PSI's optimised Δv 23.97 km/s and its 22.9 km/s lower anchor.** No other source has reproduced
-  PSI's optimiser. PSI itself flags this honestly: their intended cross-check (a direct-collocation
-  solver) **did not converge**, so 22.9 is a single-method (Pontryagin) result, not a bound.
-- **Our +7 % premium (25.63 vs 23.97).** This is a *deliberate* policy difference, not an error: our
-  bang-bang schedule is cruder than PSI's optimised one. The instrumented split (§4 table) shows the
-  premium is almost entirely in the retrograde pump-down (our 8.3 km/s vs the ~6.9 km/s impulsive
-  minimum); the prograde legs agree to ~2 %.
+- **PSI's 22.9 km/s lower anchor.** PSI itself flags this honestly: their intended cross-check (a
+  direct-collocation solver) **did not converge**, so 22.9 is a single-method (Pontryagin) result,
+  not a bound. Our optimised schedule's 12-yr result (23.14) now sits between their published
+  optimum (23.97) and that anchor, consistent with both; our unconstrained frontier point (22.84
+  at 28.5 yr) dips slightly below their anchor, which is unsurprising for a longer custody.
+- **The bang-bang +7 % premium (25.63 vs 23.97).** This is a *deliberate* policy difference, not an
+  error: the bang-bang schedule is cruder by construction. The instrumented split (§4 table) shows
+  the premium is almost entirely in the retrograde pump-down (its 8.3 km/s vs the ~6.9 km/s
+  impulsive minimum); the prograde legs agree to ~2 %.
 
-**Which is more optimal?** PSI's, unambiguously — that is what an optimiser is for. Ours is a
-validation reconstruction, and it lands exactly on PSI's own patience-trade curve (between their
-12-yr/23.97 patient profile and their faster/28.2 variant).
+**Which is more optimal?** Since issue #4, ours — the anchored optimised schedule beats PSI's
+published 12-yr optimum by 3.5% under identical physics assumptions (and the audit suite replays
+it end-to-end). The bang-bang reconstruction still lands exactly on PSI's own patience-trade
+curve (between their 12-yr/23.97 patient profile and their faster/28.2 variant), which is what
+validates the mechanism independently of any optimiser.
 
 ---
 
@@ -486,14 +507,16 @@ recommendation, and the independent confirmation of the intercept geometry and t
 | **A — triangulated** | ephemeris, intercept geometry, impulsive floor, low-thrust spiral, C3, xenon sizing, power gate | 4 blind AI bots + GMAT + PSI, ≤0.2 % (most ≤0.01 %), multiple methods | **Yes**, to Fermi-estimate fidelity |
 | **B — dual-source mechanism** | pumping mechanism, design endpoints, thresholds, spiral ceilings, synchrotron model | Engine + Fable (2 integrators each) + PSI on mechanism | **Yes** for the *mechanism and thresholds* |
 | **B — α closure band** | pumping closes at α ≈ 15–21 W/kg | our band **brackets** the 17.3–19.5 W/kg implied by PSI's own published mass model (§2b) | **Yes** — corroborated in both sources' numbers |
-| **C — single-source** | PSI's optimised 23.97 / 22.9 km/s schedule; our exact bang-bang Δv premium | one optimiser each; PSI's own cross-check didn't converge | **Directionally** — the closure holds; the exact optimum is not independently confirmed |
+| **C — optimised schedules** | PSI's optimised 23.97 / 22.9 km/s; our anchored optimised 23.14 (12 yr) | two independent optimisers now agree the 12-yr optimum sits at ~23–24 km/s (ours 3.5% under theirs); PSI's own cross-check didn't converge; the audit suite replays ours end-to-end | **Yes** for the 12-yr closure level; the exact unconstrained optimum remains method-dependent |
 | **D — superseded** | the old ~20 km/s "modest xenon" SEP budget | Grok/Codex flagged it; replaced by the ~30 km/s + pumping model | **No** — historical only |
 
 **Bottom line.** The *feasibility verdict and the geometry* are as solid as a first-order study
 gets — six independent, mutually-blind sources agree. The *pumping mechanism* is corroborated by
-two independent reconstructions plus PSI. The one genuinely single-sourced claim is *PSI's exact
-optimised Δv*, which PSI itself does not present as a proven bound. Nothing in the audit record
-overturns the closure; the honest caveats are all about *how cheaply* pumping closes, not *whether*.
+two independent reconstructions plus PSI, and the *12-yr optimised closure level* is now confirmed
+by two independent optimisers (ours and PSI's, agreeing to 3.5%). The remaining single-method
+claim is the exact *unconstrained* optimum (PSI's 22.9 anchor; our frontier's 22.84 at 28.5 yr —
+consistent, but each from one optimiser). Nothing in the audit record overturns the closure; the
+honest caveats are all about *how cheaply* pumping closes, not *whether*.
 
 ---
 
