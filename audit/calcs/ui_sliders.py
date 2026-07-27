@@ -82,12 +82,12 @@ def run(page):
           100 < base["pwrW"]/base["dryEff"] < 135, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
     # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
     # show the validated reference campaign, and be pinned regardless of the Isp slider.
-    check("default pumped campaign is the anchored optimised schedule (~5.9 revs, ~12 yr, ~23.2 dv)",
+    check("default pumped campaign is the anchored THERMAL schedule (~7.9 revs, ~12 yr, ~24.5 dv)",
           base["pumpInfo"] is not None
           and base["pumpInfo"].get("optimized") is True
-          and abs(base["pumpInfo"]["revs"] - 5.87) < 0.2
-          and abs(base["pumpInfo"]["years"] - 12.0) < 0.3
-          and abs(base["pumpInfo"]["dv"]/1e3 - 23.17) < 0.2,
+          and abs(base["pumpInfo"]["revs"] - 7.89) < 0.2
+          and abs(base["pumpInfo"]["years"] - 12.05) < 0.3
+          and abs(base["pumpInfo"]["dv"]/1e3 - 24.47) < 0.2,
           str(base["pumpInfo"] and (round(base["pumpInfo"]["revs"],2), round(base["pumpInfo"]["years"],2))))
     # ENVELOPE PIN: the pumped campaign is flown at min(a0, 2.5e-4)/Isp 2800, so moving the Isp
     # slider must NOT change the campaign (the default vehicle a0 >> 2.5e-4, so it is throttled).
@@ -161,9 +161,9 @@ def run(page):
     # plane-change penalty — ~30 km/s at the optimum, NOT the optimistic 25 km/s Earth-borrow spiral.
     check("direct design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
           abs(direct["dvDesign"]/1e3 - 29.8) < 0.6, f"{direct['dvDesign']/1e3:.2f}")
-    # Pumped default: √(μ⊕/a) escape + v∞ + plane change + optimised tax (−0.5) ≈ 31.8 km/s
-    check("pumped default design Δv is the two-leg budget (~31.8 km/s)",
-          abs(base["dvDesign"]/1e3 - 31.8) < 0.6, f"{base['dvDesign']/1e3:.2f}")
+    # Pumped default: √(μ⊕/a) escape + v∞ + plane change + thermal tax (+0.76) ≈ 33.1 km/s
+    check("pumped default design Δv is the two-leg budget (~33.1 km/s)",
+          abs(base["dvDesign"]/1e3 - 33.1) < 0.6, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 

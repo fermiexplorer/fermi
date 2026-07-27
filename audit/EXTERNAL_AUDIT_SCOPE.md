@@ -90,10 +90,12 @@ fermi_sim/               PYTHON ENGINE — source of truth  (~1160 LOC)
   intercept.py   (106)   aim geometry; tangential min; ecliptic crossing
   trajectory.py   (80)   Jupiter assist; solar-Oberth; time-to-AC
   spacecraft.py  (238)   rocket eq; minimal dry mass; power/array sizing; fuel cell
-  departure.py   (598)   ** the heavy one ** — see §5
-run_analysis.py  (345)   integrated report; produces the shipped headline numbers
+  departure.py   (~650)  ** the heavy one ** — see §5
+  pump_schedule.py (~340) optimised pumping schedules + baked campaign/tax tables — see §5
+  thermal.py     (~150)  DERIVED perihelion power curve (array energy balance) — see §5
+run_analysis.py  (~360)  integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — ~160 checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — ~172 checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -126,16 +128,30 @@ docs/REPORT.md           tender feasibility report (prose conclusions)
 ### `fermi_sim/departure.py` (598 LOC) — HIGHEST PRIORITY
 This is where the novel and contested physics lives. Functions to scrutinise:
 
-- **`perihelion_pumped_vinf`** — the headline result. A multi-revolution
+- **`perihelion_pumped_vinf`** — the mechanism validator. A multi-revolution
   bang-bang escape: retrograde arcs drop perihelion to a 0.42 AU thermal floor,
-  then prograde perihelion burns (power capped at 4× the 1-AU rating) staircase
-  the orbit energy. **Check:** energy/work-energy closure; that the 4× cap is
-  never exceeded; the thermal floor is respected; the reported v∞/Δv/revs at the
-  design point (a₀=2.5e-4, Isp=2800). **Non-obvious property to verify
-  yourself:** the closure is **non-monotonic** — in a₀, in Isp, *and* in the
-  power cap. There are success "islands" below and stall "bands" above the
-  design point (e.g. reaches at cap 2.0/2.5/3.5/4.0×, strands at 1.5/3.0/3.25×).
-  Confirm this is real physics of the bang-bang schedule, not a bug.
+  then prograde perihelion burns staircase the orbit energy. Power model
+  selectable: the legacy `"cap"` step (min((1 AU/r)², 4) — the PSI-comparable
+  cross-check) or the derived `"thermal"` curve. **Check:** energy/work-energy
+  closure; the power law is never exceeded; the thermal floor is respected;
+  the reported v∞/Δv/revs at the design point (a₀=2.5e-4, Isp=2800, cap
+  model). **Non-obvious property to verify yourself:** fixed-geometry closure
+  is **non-monotonic** — in a₀, in Isp, *and* in the power model. At the 4×
+  cap there are success "islands" below and stall "bands" above the design
+  point (reaches at cap 2.0/2.5/3.5/4.0×, strands at 1.5/3.0/3.25×), and
+  under the derived thermal curve the fixed geometries strand at the design
+  a₀ itself (bang-bang reaches only ~20 km/s there). Confirm this is real
+  schedule-phasing physics, not a bug.
+- **`fermi_sim/thermal.py`** — the DERIVED perihelion power curve (issue #5):
+  flat sun-normal panel, two-sided emission, extracted electricity removed
+  from the heat load, self-consistent η(T): cap_eff(r) = (1/r²)·η(T(r))/η(T₁ₐᵤ)
+  — **3.54× at the 0.42 AU floor** (T = 492 K), replacing the previously
+  assumed 4× step. **Check:** the energy balance against your own solve (the
+  suite uses an independent bisection); the thermo-optical inputs (α 0.92,
+  ε 0.85/face, GaAs 0.2 %/K) against published cell data; the Si sensitivity
+  case (0.45 %/K ⇒ cap_eff collapses to 0.08× — the campaign is
+  cell-technology-critical); the fixed-grid interpolation the integrators
+  consume vs the exact function.
 - **`pumped_departure_dv`** — the two-leg budget: √(μ⊕/a) escape + v∞ +
   v∞·|sinβ| plane change + a **v∞-dependent pump tax** (`pump_tax_for`, two
   schedules): the default `"optimized"` table is swept from the **anchored
@@ -194,11 +210,13 @@ Reproduce these independently (astropy, hand calculation, your own integrator):
 | Ecliptic crossing arrival | ~79,252 yr |
 | Min-Δv arrival | ~72,800 yr |
 | Low-thrust spiral departure Δv (AC-class) | ~25–26 km/s |
-| Pumped two-leg budget (LEO) | ~31–32 km/s (anchored optimised schedule; the bang-bang gate prices ~34) |
+| Derived thermal power curve | cap_eff(0.42 AU) = 3.54, T(0.42 AU) = 492 K; Si case collapses to 0.08× |
+| Pumped two-leg budget (LEO) | ~33 km/s (anchored optimised schedule, derived thermal curve; ~31.8 at the idealised 4× cap) |
 | GTO-start Earth-escape leg | ~4.0 km/s |
-| Pumping @ a₀=2.5e-4, Isp=2800 (bang-bang gate) | v∞ 23.66, Δv 25.6, 9.6 yr, ~4.9 revs |
-| Pumping @ a₀=2.5e-4, Isp=2800 (anchored optimised) | v∞ 23.64, **Δv 23.14**, 12.0 yr, ~5.9 revs (PSI's published 12-yr optimum: 23.97) |
-| Pumping contiguous working region (bang-bang) | a₀ ≳ 2.24×10⁻⁴ m/s² (non-monotone below; per-a₀ optimised schedules close every tested gap) |
+| Pumping @ a₀=2.5e-4, Isp=2800 (bang-bang @ 4× — cross-check) | v∞ 23.66, Δv 25.6, 9.6 yr, ~4.9 revs |
+| Pumping @ a₀=2.5e-4 (anchored optimised @ 4× — PSI-comparable) | v∞ 23.64, Δv 23.14, 12.0 yr, ~5.9 revs (PSI's published 12-yr optimum: 23.97) |
+| Pumping @ a₀=2.5e-4 (**flown default**: anchored optimised, thermal) | v∞ 23.65, **Δv 24.44**, 12.0 yr, ~7.9 revs |
+| Pumping contiguous working region (bang-bang @ 4×) | a₀ ≳ 2.24×10⁻⁴ m/s² (non-monotone below; per-a₀ optimised schedules close every tested gap, under both power models) |
 | Whole-vehicle α to close pumping | ~15–21 W/kg |
 | Whole-vehicle α to close outward spiral | ~100 W/kg |
 | Synchrotron @ 10 R☉, 5 km/s | 12 kicks → leaves at ~33 km/s |
@@ -223,7 +241,7 @@ undisclosed assumption, that is a finding.
 | AC (and every star) moves in a **straight line at constant velocity** | all intercept geometry | error is *second-order* (the measured 6-D velocity absorbs all first-order motion): ½·a_rel·t² with a_rel = differential galactic tide + mutual Sun↔AC gravity (the larger term) ≈ **6–10 AU at 80 kyr** — 0.2–0.4% of the 2600 AU allowance; grows to ~1000–2600 AU by the 1–1.3 Myr beyond-AC horizons (roadmap Stage 6) |
 | **Two-body dynamics** (Sun + one body) | all trajectory integrators | no planetary perturbations or galactic tides |
 | Campaign integrators are **2-D in-plane** | pumping + SEP gate | out-of-plane aim charged separately as v∞·\|sin β\| (roadmap Stage 4) |
-| Solar power = **1/r² exactly**, 4× perihelion cap | pumping power model | the cap is a thermal assumption — a real hot array derates toward ~3× (disclosed on the page) |
+| Solar flux = **1/r² exactly**; perihelion multiple = cap_eff(r) from a flat-panel energy balance (issue #5) | pumping power model | the derate curve is DERIVED, but its thermo-optical inputs (α 0.92, ε 0.85/face, GaAs 0.2 %/K, sun-normal, no active cooling) are representative published values, not a qualified-hardware model; the old 4× step survives only as the audit comparator |
 | **Constant thruster efficiency** (η ≈ 0.55–0.6), continuous mass flow | all propulsion sizing | no throttle/efficiency curves |
 | **Bang-bang pumping policy** | pumping Δv, campaign shape | ~7% above the optimal schedule; source of the non-monotone islands (roadmap Stage 3) |
 | **No relativity** | everywhere | v ≪ c throughout; exact for this regime |
@@ -274,7 +292,7 @@ Every entry has a tracked fix; the staged plan is
   [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
   switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further ~160 assertions; a passing run is **not** a
+The independent suite has a further ~172 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -287,7 +305,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (~160 checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (~172 checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the

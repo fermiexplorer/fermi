@@ -35,9 +35,14 @@ here with attribution as the independent external cross-assessment of this proje
 - Their optimised-schedule result independently confirmed — and slightly beaten — by our
   own optimiser (`fermi_sim/pump_schedule.py` + `tools/optimize_pump_schedule.py`,
   issue #4): at the same 12-yr custody our anchored optimised schedule costs
-  **Δv 23.14 km/s vs their published 23.97** (−3.5%) under identical physics assumptions;
-  our unconstrained frontier point (22.84 at 28.5 yr) is consistent with their 22.9 km/s
-  single-method lower anchor.
+  **Δv 23.14 km/s vs their published 23.97** (−3.5%) under identical physics assumptions
+  (their idealised 4× perihelion power cap); our unconstrained frontier point (22.84 at
+  28.5 yr) is consistent with their 22.9 km/s single-method lower anchor.
+- Note on comparability (issue #5): the calculator's shipped default now prices the
+  campaign under a power curve DERIVED from the array's own energy balance
+  (`fermi_sim/thermal.py`; cap_eff(0.42 AU) = 3.54, not 4×), costing 24.44 km/s at the
+  same custody. All numbers compared against PSI in this repo are computed at their 4×
+  assumption unless explicitly labelled thermal.
 - Contiguous working-region edge a₀ ≈ 2.24×10⁻⁴ m/s² (validated by three independent
   integrators; success below is phasing-dependent and non-monotonic — see
   `audit/fable/fable-pumping-synchrotron-audit.md`).

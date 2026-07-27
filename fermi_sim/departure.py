@@ -116,20 +116,25 @@ def _interp_table(table, v):
     return table[-1][1]
 
 
-def pump_tax_for(v_inf: float, schedule: str = "optimized") -> float:
+def pump_tax_for(v_inf: float, schedule: str = "thermal") -> float:
     """Campaign-overhead tax (m/s) for a target v∞ — Δv − v∞ of the pumping campaign.
 
-    ``schedule="optimized"`` (the default budget, issue #4): the anchored 12-yr
-    optimised schedule's overhead curve (pump_schedule.TAX_OPT_TABLE). Monotone
-    declining, 10.6 km/s at v∞ = 8, and NEGATIVE past ~23 km/s (−0.51 at the
-    23.64 anchor) — the Oberth signature: the campaign buys the cruise for less
-    Δv than the cruise speed. Validity [8, 26] km/s; raises outside (below 8 is
-    outside the swept model; above 26 the anchored campaign does not reach —
-    use the bang-bang table or integrate directly).
+    ``schedule="thermal"`` (the default budget, issue #5): the anchored 12-yr
+    optimised schedule's overhead curve under the DERIVED thermal power model
+    (pump_schedule.TAX_OPT_THERMAL_TABLE; fermi_sim/thermal.py — cap_eff(0.42)
+    = 3.54 for the GaAs energy balance, replacing the assumed 4× step).
+    Monotone declining, 11.6 km/s at v∞ = 8, +0.785 at the 23.64 anchor.
+    Validity [8, 26] km/s; raises outside.
 
-    ``schedule="bangbang"``: the bang-bang policy's overhead (the independent
-    cross-check; 13.5 km/s at v∞ = 8, 2.0 at the 23.64 anchor, 0 by ~28;
-    validity [8, 29], clamped ≥ 0, returns 0 above 29).
+    ``schedule="optimized"`` (issue #4, the cap-model comparator): the same
+    anchored-optimisation construction under the legacy min((1/r)², 4) power
+    step — the PSI-comparable working point. 10.6 km/s at v∞ = 8, NEGATIVE
+    past ~23 km/s (−0.51 at the anchor — the Oberth signature the thermal
+    derate removes). Validity [8, 26] km/s; raises outside.
+
+    ``schedule="bangbang"``: the bang-bang policy's overhead under the cap
+    model (the crude independent cross-check; 13.5 km/s at v∞ = 8, 2.0 at the
+    23.64 anchor, 0 by ~28; validity [8, 29], clamped ≥ 0, returns 0 above 29).
     """
     if not math.isfinite(v_inf):
         raise ValueError(f"pump_tax_for: v_inf must be finite, got {v_inf!r}")
@@ -137,14 +142,15 @@ def pump_tax_for(v_inf: float, schedule: str = "optimized") -> float:
         raise ValueError(
             f"pump_tax_for: v_inf {v_inf/1e3:.1f} km/s is below the swept range "
             f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — integrate the campaign directly.")
-    if schedule == "optimized":
-        from .pump_schedule import TAX_OPT_TABLE
-        if v_inf > TAX_OPT_TABLE[-1][0]:
+    if schedule in ("thermal", "optimized"):
+        from .pump_schedule import TAX_OPT_TABLE, TAX_OPT_THERMAL_TABLE
+        table = TAX_OPT_THERMAL_TABLE if schedule == "thermal" else TAX_OPT_TABLE
+        if v_inf > table[-1][0]:
             raise ValueError(
                 f"pump_tax_for: v_inf {v_inf/1e3:.1f} km/s is beyond the anchored optimised "
                 "campaign's reach (26 km/s) — use schedule='bangbang' (valid to 29) or "
                 "integrate scheduled_pumped_vinf directly.")
-        return _interp_table(TAX_OPT_TABLE, v_inf)
+        return _interp_table(table, v_inf)
     if schedule == "bangbang":
         if v_inf >= _PUMP_TAX_TABLE[-1][0]:
             return 0.0
@@ -248,9 +254,36 @@ def gnc_steering_factor(sigma_deg: float) -> float:
     return 1.0 / math.cos(math.radians(max(0.0, min(89.0, sigma_deg))))
 
 
+def _pump_power_factor(power_model: str, power_cap: float):
+    """The pumping power multiple P(r)/P(1 AU) as a callable of r (metres).
+
+    ``"thermal"`` — the DERIVED curve from the first-principles array energy
+    balance (issue #5): cap_eff(r) = (1/r²)·η(T(r))/η(T_1AU), GaAs defaults,
+    interpolated from :func:`fermi_sim.thermal.cap_eff_table` (``power_cap``
+    is ignored — the derate curve IS the cap; ~3.54× at the 0.42 AU floor).
+    ``"cap"`` — the legacy assumed step model min((1 AU/r)², power_cap), kept
+    as the independent audit comparator and the PSI-comparable working point.
+    """
+    AU = c.AU
+    if power_model == "cap":
+        return lambda r_m: min((AU / r_m) ** 2, power_cap)
+    if power_model == "thermal":
+        from .thermal import cap_eff_interp
+        global _THERMAL_CAP
+        if _THERMAL_CAP is None:
+            _THERMAL_CAP = cap_eff_interp()
+        cap = _THERMAL_CAP
+        return lambda r_m: cap(r_m / AU)
+    raise ValueError(f"power_model must be 'thermal' or 'cap', got {power_model!r}")
+
+
+_THERMAL_CAP = None          # lazy singleton: the GaAs cap_eff(r) interpolation table
+
+
 def perihelion_pumped_vinf(
     a0: float, v_inf_target: float, isp_s: float = 2800.0,
     rp_min_au: float = 0.42, power_cap: float = 4.0, max_yr: float = 60.0,
+    power_model: str = "cap",
 ):
     """Multi-revolution PERIHELION-PUMPING escape from a 1 AU circular heliocentric orbit.
     The conventional outward spiral saturates below the cruise floor because solar power
@@ -300,6 +333,7 @@ def perihelion_pumped_vinf(
         raise ValueError("perihelion_pumped_vinf: rp_min_au must be in (0, 1) AU — the campaign starts at 1 AU")
     if power_cap < 1.0:
         raise ValueError("perihelion_pumped_vinf: power_cap is a multiple of the 1-AU rating and must be >= 1")
+    pf = _pump_power_factor(power_model, power_cap)
     mu, AU = c.MU_SUN, c.AU
     ve = isp_s * c.G0
     target_E = 0.5 * v_inf_target ** 2
@@ -316,7 +350,7 @@ def perihelion_pumped_vinf(
                                                  # phase (else the policy dithers)
 
     def accel_mag(r):
-        return a0 * min((AU / r) ** 2, power_cap) / m
+        return a0 * pf(r) / m
 
     while t < max_t:
         r = math.hypot(x, y)
@@ -379,7 +413,7 @@ def perihelion_pumped_vinf(
         vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
         if thrust_dir:
             dv += amag * dt
-            m = max(0.05, m - (a0 * min((AU / r) ** 2, power_cap) / ve) * dt)
+            m = max(0.05, m - (a0 * pf(r) / ve) * dt)
         ang = math.atan2(y, x)
         d_ang = ang - ang_prev
         if d_ang > math.pi:
@@ -477,13 +511,15 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential aim), and the
     tax covers the in-plane overhead (pump-down arcs + gravity losses).
 
-    The tax is v∞-DEPENDENT and, since issue #4, priced by the ANCHORED OPTIMISED
-    schedule (:func:`pump_tax_for`, default ``schedule="optimized"``): 10.6 km/s at
-    v∞ = 8, falling through zero near 23 and NEGATIVE at the 23.64 km/s AC anchor
-    (−0.51 — Oberth leverage: the campaign costs less Δv than the cruise it buys).
-    Validity [8, 26] km/s; raises outside. The bang-bang overhead table remains
-    available as ``schedule="bangbang"`` (the independent cross-check; 2.0 at the
-    anchor). Passing ``pump_tax`` explicitly overrides both (audit/what-if use).
+    The tax is v∞-DEPENDENT and, since issue #5, priced by the ANCHORED OPTIMISED
+    schedule under the DERIVED THERMAL power model (:func:`pump_tax_for`, default
+    ``schedule="thermal"``; fermi_sim/thermal.py — cap_eff(0.42 AU) = 3.54 from
+    the GaAs array energy balance, replacing the assumed 4× step): 11.6 km/s at
+    v∞ = 8, +0.785 at the 23.64 km/s AC anchor. Validity [8, 26] km/s; raises
+    outside. The cap-model optimised table (``schedule="optimized"``, −0.51 at
+    the anchor — the PSI-comparable working point) and the bang-bang table
+    (``schedule="bangbang"``, 2.0 at the anchor — the crude cross-check) remain
+    available. Passing ``pump_tax`` explicitly overrides all (audit/what-if use).
     Unlike the outward-spiral budget this does NOT borrow Earth's orbital velocity —
     v∞ is built heliocentrically at perihelion.
     """

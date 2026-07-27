@@ -33,10 +33,10 @@ It answers:
 | Required heliocentric cruise speed v∞ | ~23–24 km/s |
 | Min departure Δv from LEO (impulsive floor) | ~14 km/s @ ~73,000 yr arrival |
 | Direct SEP departure Δv (conservative model) | ~25 km/s spiral + 5 km/s offset ≈ ~30 km/s |
-| **Pumped SEP departure Δv (default architecture)** | ~31–32 km/s two-leg total (anchored optimised schedule; Δv 23.14 campaign beats PSI's 12-yr optimum by 3.5%); closes at today's α (~15–21 W/kg) |
+| **Pumped SEP departure Δv (default architecture)** | ~33 km/s two-leg total (anchored optimised schedule under a DERIVED thermal power curve, cap_eff(0.42 AU)=3.54; at PSI's idealised 4× cap the same construction gives 23.14 vs their 23.97 — 3.5% better); closes at today's α (~15–21 W/kg) |
 | Best departure window | direct optimum ~72,800 yr; pumped optimum at the ~79,250 yr ecliptic crossing |
 | Departure aim | ~2.4° off the ecliptic (direct optimum); 0° at the crossing |
-| Reference vehicles | pumped default ~47 kg wet @2 kW GaAs; conservative direct ~600 kg wet @5 kW silicon |
+| Reference vehicles | pumped default ~50 kg wet @2 kW GaAs; conservative direct ~600 kg wet @5 kW silicon |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn

@@ -98,20 +98,27 @@ makes this stage worth doing.
 attraction for the nearest systems) for the long-horizon star tables;
 AC-mission numbers are unaffected.
 
-## Stage 7 — Thermal derating derived, not assumed  *(scheduled: [#5](https://github.com/fermiexplorer/fermi/issues/5))*
+## Stage 7 — Thermal derating derived, not assumed  *(shipped: [#5](https://github.com/fermiexplorer/fermi/issues/5))*
 
-**Today:** the pumping power model caps perihelion concentration at an assumed
-`power_cap = 4.0` — disclosed as a derating-free, Parker-class-managed working
-point (realistic GaAs at the 0.42 AU floor delivers nearer ~3× effective), with
-a measured factor-of-two feasibility margin (a 2.0× cap still closes: +1.1 km/s,
-9.6 → 18.3 yr) and the non-monotone closure pattern pinned in the audit suite.
-The consequence of the thermal limit is modelled; the limit itself is not.
-
-**Tightened:** a first-principles perihelion-array energy balance — T(r) from
-absorbed vs radiated flux (α/ε, off-pointing as the control), η(T) from the
-cell coefficient — yielding a continuous `cap_eff(r)` that the campaign
-integrator consumes in place of `min((1 AU/r)², cap)`; the constant-cap form
-stays as the audit comparator. Coordinate with Stage 3 (#4).
+`fermi_sim/thermal.py` derives the perihelion power multiple from a
+first-principles flat-panel energy balance — (α − η(T))·S(r) = (εf+εb)·σ·T⁴
+self-consistently with η(T) linear in the cell coefficient — giving
+**cap_eff(0.42 AU) = 3.54** (T = 492 K, −186 K vs 1 AU; GaAs 0.2 %/K, α 0.92,
+ε 0.85/face), which both campaign integrators consume as `power_model="thermal"`
+(the shipped default; a fixed 1024-point log-radius table mirrored in JS keeps
+parity to ~1e-11). The suite verifies the balance by an INDEPENDENT bisection
+solve. Results: silicon (0.45 %/K) **collapses to 0.08×** at the floor — the
+campaign is cell-technology-critical; both fixed-geometry schedules STRAND at
+the design a₀ under the derived curve (bang-bang reaches only 20.1 km/s), and
+per-a₀ re-optimisation closes the design point and the whole tested grid again
+(`OPTIMIZED_SCHEDULES_THERMAL`); the flown 12-yr anchored campaign costs
+**24.44 km/s** (+1.3 vs the idealised 4× cap — inside the previously measured
+2×-cap sensitivity bracket), tax anchor +0.785 km/s, default two-leg budget
+31.8 → **33.1 km/s**, implied vehicle α 15.2 W/kg (inside the published 15–21
+band). The constant-cap form stays as `power_model="cap"` — the audit
+comparator and the PSI-comparable working point. Residual: the thermo-optical
+inputs are representative published values, not a qualified-hardware model
+(disclosed in `audit/EXTERNAL_AUDIT_SCOPE.md` §7).
 
 ---
 

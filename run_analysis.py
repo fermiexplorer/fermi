@@ -260,10 +260,10 @@ def main() -> None:
     print("The outward-spiral saturation (sec 7) is a property of the TRAJECTORY CLASS, not of solar")
     print("power (PSI-TR-2026-0714, archived in audit/psi/). Perihelion pumping inverts the spiral:")
     print("retrograde arcs near apoapsis drop")
-    print("perihelion to 0.42 AU (the thermal cap), then prograde arcs at perihelion (power 4x the")
-    print("1-AU rating + max Oberth leverage) staircase the energy up over a few revolutions.")
-    print("Integrated with a bang-bang policy (escape-guarded staircase + continuous finisher),")
-    print("power P(r) = P1*min((1AU/r)^2, 4):\n")
+    print("perihelion to 0.42 AU (the thermal floor), then prograde arcs at perihelion (power ~3.5x")
+    print("the 1-AU rating under the DERIVED thermal curve + max Oberth leverage) staircase the")
+    print("energy up over a few revolutions. Cross-check rows below: the bang-bang policy at the")
+    print("idealised cap, power P(r) = P1*min((1AU/r)^2, 4):\n")
     tgt = 23.64e3
     for a0 in (1.5e-4, 2.5e-4, 5.0e-4):
         v, dv, yr, revs = perihelion_pumped_vinf(a0, tgt)
@@ -271,26 +271,34 @@ def main() -> None:
         print(f"   a0={a0:.1e} m/s^2: v_inf {v/KMS:5.2f} km/s  dv {dv/KMS:5.2f}  "
               f"{yr:4.1f} yr  {revs:4.1f} revs   {tag}")
     from fermi_sim.pump_schedule import optimized_pumped_vinf, DESIGN_A0
-    ov, odv, oyr, orv = optimized_pumped_vinf(DESIGN_A0)
-    print(f"\n   ANCHORED OPTIMISED schedule (flown default) at a0={DESIGN_A0:.1e}: "
-          f"v_inf {ov/KMS:5.2f} km/s  dv {odv/KMS:5.2f}  {oyr:4.1f} yr  {orv:4.1f} revs")
+    from fermi_sim.thermal import cap_eff, cell_temperature
+    ov, odv, oyr, orv = optimized_pumped_vinf(DESIGN_A0)          # thermal default
+    cv, cdv, cyr, crv = optimized_pumped_vinf(DESIGN_A0, power_model="cap")
+    print(f"\n   ANCHORED OPTIMISED schedule (flown default; DERIVED thermal power curve,")
+    print(f"   cap_eff(0.42 AU) = {cap_eff(0.42):.2f}, T(0.42 AU) = {cell_temperature(0.42):.0f} K) "
+          f"at a0={DESIGN_A0:.1e}:")
+    print(f"      v_inf {ov/KMS:5.2f} km/s  dv {odv/KMS:5.2f}  {oyr:4.1f} yr  {orv:4.1f} revs")
+    print(f"   (same construction at the idealised 4x cap -- the PSI-comparable point: "
+          f"dv {cdv/KMS:5.2f}, {cyr:4.1f} yr)")
     print(
         "\n=> Pumping defeats the 1/r^2 power wall. At a0=2.5e-4 (~vehicle alpha 15-21 W/kg for\n"
         "   the mass ratios the maneuver itself allows -- TODAY'S hardware) the cruise floor is\n"
-        "   reached where the outward spiral saturates near zero. The contiguous working region\n"
-        "   starts at a0 ~ 2.24e-4; below it the bang-bang policy is PHASING-SENSITIVE, not simply\n"
-        "   dead (a success island near 1.75-1.88e-4, strand bands at 1.9-2.2e-4 and ~2.9-3.1e-4\n"
-        "   where the escaping pass strands below target -- gate designs by integration, and note\n"
-        "   a stronger vehicle can always throttle to a working profile). The optimised schedules\n"
-        "   close every one of those gaps on the tested a0 grid.\n"
-        "   The bang-bang GATE spends ~25.6 km/s; the ANCHORED OPTIMISED schedule the calculator\n"
-        "   flies spends 23.14 (12-yr custody optimum; beats PSI's published 12-yr optimum, 23.97,\n"
-        "   by 3.5%). The sec-7b alpha >~ 100 W/kg threshold applies to the OUTWARD-SPIRAL class\n"
-        "   only. The full SEP two-leg total from LEO is ~31-32 km/s with the optimised schedule\n"
-        "   (7.6 Earth escape + ~23.7 helio - 0.5 tax + ~1 plane change; the bang-bang gate would\n"
-        "   price it near ~34), indicating our closed-form low-thrust budget (~25-26 for AC)\n"
-        "   underprices the heliocentric leg; a GTO drop-off cuts the Earth leg 7.6 -> ~4.0 km/s\n"
-        "   and closes a ~100 kg vehicle."
+        "   reached where the outward spiral saturates near zero. Campaign success is\n"
+        "   PHASING-SENSITIVE for fixed-geometry schedules (at the 4x cap: bang-bang islands and\n"
+        "   stall bands around the a0 ~ 2.24e-4 edge; under the derived thermal curve the fixed\n"
+        "   geometries strand at the design a0 itself) -- but per-a0 RE-OPTIMISED schedules close\n"
+        "   every tested gap, so gate designs by integrating the anchored schedule.\n"
+        "   THE POWER MULTIPLE IS DERIVED, NOT ASSUMED (issue #5): the GaAs array energy balance\n"
+        "   gives cap_eff(0.42 AU) = 3.54 (equilibrium 492 K, ~0.2%/K derate; silicon at 0.45%/K\n"
+        "   COLLAPSES to 0.08x -- GaAs-class cells are load-bearing). The flown campaign spends\n"
+        "   24.44 km/s at 12-yr custody; at the idealised 4x cap the same construction gives\n"
+        "   23.14 (beats PSI's published 12-yr optimum, 23.97, by 3.5%), and the bang-bang\n"
+        "   cross-check 25.6. The sec-7b alpha >~ 100 W/kg threshold applies to the\n"
+        "   OUTWARD-SPIRAL class only. The full SEP two-leg total from LEO is ~33 km/s with the\n"
+        "   flown thermal schedule (7.6 Earth escape + ~23.7 helio + 0.8 tax + ~1 plane change;\n"
+        "   ~31.8 under the idealised 4x cap), indicating our closed-form low-thrust budget\n"
+        "   (~25-26 for AC) underprices the heliocentric leg; a GTO drop-off cuts the Earth leg\n"
+        "   7.6 -> ~4.0 km/s and closes a ~100 kg vehicle."
     )
 
     # ---------------------------------------------------------------
@@ -331,9 +339,10 @@ def main() -> None:
         "  masses (alpha ~20-30 W/kg) an outward-spiral pure solar-electric does NOT reach the\n"
         "  ~23.4 km/s cruise.\n"
         "* Closing architectures:\n"
-        "    - SEP + PERIHELION PUMPING (the adopted default): closes pure solar at today's alpha;\n"
-        "      two-leg budget ~31-32 km/s from LEO with the anchored optimised schedule (7.6 escape\n"
-        "      + ~23.7 helio - 0.5 tax + ~1 plane change; the bang-bang gate prices it near ~34).\n"
+        "    - SEP + PERIHELION PUMPING (the adopted default): closes pure solar at today's alpha\n"
+        "      UNDER THE DERIVED THERMAL POWER CURVE (cap_eff(0.42 AU) = 3.54, not an assumed 4x);\n"
+        "      two-leg budget ~33 km/s from LEO with the anchored optimised schedule (7.6 escape\n"
+        "      + ~23.7 helio + 0.8 thermal tax + ~1 plane change; ~31.8 at the idealised 4x cap).\n"
         "    - NUCLEAR-ELECTRIC ion (constant power): closes at LOW alpha (~23 W/kg) with near-term\n"
         "      specific masses but an optimistic ~40 W/kg reactor; ~5 kW + gridded ion -> ~25.4 km/s.\n"
         "    - HIGH-ALPHA SOLAR-ELECTRIC: pure solar DOES close above alpha ~ 100 W/kg -- an ultralight\n"

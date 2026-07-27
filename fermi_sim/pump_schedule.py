@@ -14,8 +14,11 @@ remains the output of a direct integration, never of the optimiser's own bookkee
 The bang-bang policy stays untouched in departure.py as the independent cross-check
 (the optimum must never lose to it).
 
-Physics (identical to the bang-bang integrator): P(r) = P1 * min((1 AU/r)^2, power_cap),
-accel = a0 * min((1/r)^2, cap) * (m0/m), thrust tangential (+-), 2-D heliocentric,
+Physics (identical to the bang-bang integrator): P(r)/P(1 AU) is the selected
+power model — power_model="thermal" (the DERIVED cap_eff(r) curve from
+fermi_sim.thermal, the shipped default since issue #5) or "cap" (the legacy
+min((1 AU/r)^2, power_cap) step, the PSI-comparable audit comparator) — with
+accel = a0 * factor(r) * (m0/m), thrust tangential (+-), 2-D heliocentric,
 5-state RK4 (mass coupled), adaptive dt = min(max(600, 0.002*period_r), 5 d).
 
 Schedule parameters (angles in degrees, energies J/kg, radii AU):
@@ -121,19 +124,84 @@ OPT_CAMPAIGN_TABLE = (
 )
 
 
-def campaign_at(v_inf_target: float):
+# ---------------------------------------------------------------------------
+# THERMAL power model (issue #5): the same optimisation repeated under the
+# DERIVED cap_eff(r) curve (fermi_sim/thermal.py; cap_eff(0.42 AU) = 3.54 for
+# the GaAs defaults, vs the assumed 4.0x step). Under the derived curve the
+# fixed-geometry campaigns STRAND at the design a0 (bang-bang reaches only
+# 20.1 km/s, the cap4-optimised schedule 16.0) — but per-a0 re-optimisation
+# closes the design point and the whole tested grid again, re-confirming that
+# the closure gaps are schedule-phasing artifacts, not physics. These tables
+# are THE SHIPPED DEFAULT since issue #5; the cap-model tables above remain
+# the PSI-comparable working point and the audit comparator.
+#
+# Thermal custody frontier at the design a0 (tmp/ro/i5_frontier.py):
+#   <=10 yr -> 24.83 km/s; <=12 yr -> 24.44 (ANCHOR — same 12-yr custody
+#   policy as issue #4); <=15 yr -> 24.18; <=30 yr -> 23.41; ~60 yr -> 23.08.
+# ---------------------------------------------------------------------------
+ANCHORED_THERMAL = Schedule(23.095223778657733, 84.43328139555737,
+                            -25134228.462172244, 0.42)
+OPTIMIZED_SCHEDULES_THERMAL = {
+    1.6e-4: (Schedule(15.0, 101.4162518335059, -24998194.8755305, 0.42),
+             (23617.4, 25554.2, 60.004, 15.957)),
+    1.9e-4: (Schedule(21.47079760431209, 85.09319776015022, -24160816.362550657, 0.42),
+             (23646.9, 24219.2, 56.192, 10.871)),
+    2.24e-4: (Schedule(20.734042270919232, 72.14808273560996, -25615253.582493924, 0.42),
+              (23688.0, 23434.8, 53.518, 9.826)),
+    2.5e-4: (ANCHORED_THERMAL, (23651.0, 24436.6, 12.003, 7.886)),
+    3.0e-4: (Schedule(15.0, 63.41161854875453, -31665055.80569147, 0.6881837234531991),
+             (23665.5, 21905.2, 56.794, 6.857)),
+}
+
+# Overhead (dv - v_inf, m/s) of the ANCHORED THERMAL schedule at en-route
+# targets (campaign_overhead_curve, power_model="thermal"; tmp/ro/i5_bake.py).
+# Monotone declining but POSITIVE everywhere — the thermal derate removes the
+# cap-model's Oberth-negative signature (+0.785 km/s at the AC anchor).
+# Validity [8, 26] km/s (27 km/s is not reached within 60 yr).
+TAX_OPT_THERMAL_TABLE = (
+    (8000.0, 11634.6), (9000.0, 10771.2), (10000.0, 9924.1), (11000.0, 9093.6),
+    (12000.0, 8280.2), (13000.0, 7484.8), (14000.0, 6708.4), (15000.0, 5952.5),
+    (16000.0, 5218.9), (17000.0, 4510.1), (18000.0, 3829.1), (19000.0, 3179.7),
+    (20000.0, 2567.3), (21000.0, 1998.3), (22000.0, 1482.0), (23000.0, 1031.2),
+    (23640.0, 785.3), (24000.0, 664.5), (25000.0, 410.2), (26000.0, 299.6),
+)
+
+# Per-target campaign under the ANCHORED THERMAL schedule across the page's
+# aim range (tmp/ro/i5_bake.py): (v_target m/s, overhead m/s, years, revs).
+OPT_CAMPAIGN_THERMAL_TABLE = (
+    (23000.0, 1031.2, 11.975, 7.869),
+    (23250.0, 930.7, 11.999, 7.877),
+    (23500.0, 835.8, 12.02, 7.883),
+    (23640.0, 785.3, 12.038, 7.887),
+    (23750.0, 746.9, 12.051, 7.89),
+    (24000.0, 664.5, 12.094, 7.899),
+    (24250.0, 589.1, 12.148, 7.906),
+    (24500.0, 521.4, 12.214, 7.913),
+    (24750.0, 461.8, 12.307, 7.921),
+    (25000.0, 410.2, 12.458, 7.929),
+    (25250.0, 367.3, 12.704, 7.938),
+    (25500.0, 333.9, 13.156, 7.946),
+    (25750.0, 311.0, 14.306, 7.954),
+    (26000.0, 299.6, 20.603, 7.963),
+)
+
+
+def campaign_at(v_inf_target: float, power_model: str = "thermal"):
     """Anchored-schedule campaign at an arbitrary aim in [23.0, 26.0] km/s.
 
-    Linear interpolation over OPT_CAMPAIGN_TABLE; returns a dict
-    {vinf, dv, years, revs} (vinf = the target — the campaign is read off at
-    the exact crossing) or None outside the table's range (callers fall back
-    to the bang-bang integrator).
+    Linear interpolation over the anchored campaign table of the requested
+    power model ("thermal" — the shipped default — or "cap", the
+    PSI-comparable comparator); returns a dict {vinf, dv, years, revs}
+    (vinf = the target — the campaign is read off at the exact crossing) or
+    None outside the table's range (callers fall back to the bang-bang
+    integrator).
     """
-    if not (OPT_CAMPAIGN_TABLE[0][0] <= v_inf_target <= OPT_CAMPAIGN_TABLE[-1][0]):
+    table = {"thermal": OPT_CAMPAIGN_THERMAL_TABLE, "cap": OPT_CAMPAIGN_TABLE}[power_model]
+    if not (table[0][0] <= v_inf_target <= table[-1][0]):
         return None
-    for i in range(len(OPT_CAMPAIGN_TABLE) - 1):
-        x0, o0, y0, r0 = OPT_CAMPAIGN_TABLE[i]
-        x1, o1, y1, r1 = OPT_CAMPAIGN_TABLE[i + 1]
+    for i in range(len(table) - 1):
+        x0, o0, y0, r0 = table[i]
+        x1, o1, y1, r1 = table[i + 1]
         if v_inf_target <= x1:
             f = (v_inf_target - x0) / (x1 - x0)
             return {"vinf": v_inf_target, "dv": v_inf_target + o0 + f * (o1 - o0),
@@ -141,14 +209,16 @@ def campaign_at(v_inf_target: float):
     return None
 
 
-def optimized_pumped_vinf(a0: float, v_inf_target: float = 23.64e3):
-    """Baked optimised-campaign result for an exactly-baked a0 (see the table).
+def optimized_pumped_vinf(a0: float, v_inf_target: float = 23.64e3,
+                          power_model: str = "thermal"):
+    """Baked optimised-campaign result for an exactly-baked a0 (see the tables).
 
     Returns (v_inf m/s, dv m/s, years, revs) from the baked fine-grained
-    integration, or None if a0 is not a baked key (callers fall back to the
-    bang-bang integrator, which remains the general-a0 gate).
+    integration under the requested power model, or None if a0 is not a baked
+    key (callers fall back to integrating at the vehicle's own a0).
     """
-    for k, (sch, res) in OPTIMIZED_SCHEDULES.items():
+    table = {"thermal": OPTIMIZED_SCHEDULES_THERMAL, "cap": OPTIMIZED_SCHEDULES}[power_model]
+    for k, (sch, res) in table.items():
         if abs(a0 - k) <= 1e-9 and abs(v_inf_target - 23.64e3) < 1.0:
             return res
     return None
@@ -180,6 +250,7 @@ def _decide(x, y, vx, vy, latched, sch, mu, AU):
 def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_BANG,
                           isp_s: float = 2800.0, power_cap: float = 4.0,
                           max_yr: float = 60.0, _dt_scale: float = 1.0,
+                          power_model: str = "cap",
                           return_diag: bool = False):
     """Integrate the pumping campaign under an explicit :class:`Schedule`.
 
@@ -198,6 +269,8 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
         raise ValueError("scheduled_pumped_vinf: a0, v_inf_target, isp_s, max_yr must be "
                          "positive and power_cap >= 1")
     sch.validate()
+    from .departure import _pump_power_factor
+    pf = _pump_power_factor(power_model, power_cap)
 
     mu, AU = c.MU_SUN, c.AU
     ve = isp_s * c.G0
@@ -215,8 +288,8 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
             X, Y, VX, VY, M = s
             rr = math.hypot(X, Y)
             vv = math.hypot(VX, VY) or 1.0
-            am = (a0 * min((AU / rr) ** 2, power_cap) / max(M, 0.05) * d) if d else 0.0
-            md = (-(a0 * min((AU / rr) ** 2, power_cap)) / ve) if d else 0.0
+            am = (a0 * pf(rr) / max(M, 0.05) * d) if d else 0.0
+            md = (-(a0 * pf(rr)) / ve) if d else 0.0
             g = -mu / rr ** 3
             return (VX, VY, g * X + am * VX / vv, g * Y + am * VY / vv, md)
         s = state
@@ -228,7 +301,7 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
         out = (out[0], out[1], out[2], out[3], max(out[4], 0.05))
         if d:
             rr = math.hypot(s[0], s[1])
-            return out, (a0 * min((AU / rr) ** 2, power_cap) / max(s[4], 0.05)) * dt
+            return out, (a0 * pf(rr) / max(s[4], 0.05)) * dt
         return out, 0.0
 
     def _result(E):
@@ -274,7 +347,7 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
             # thrust work dE = a·v dt (first-order at the step head — audit-grade bookkeeping);
             # the thrust is along ±v̂ so a·v = d·|a|·|v|: retrograde arcs REMOVE energy
             r_h = math.hypot(s0[0], s0[1])
-            am_h = a0 * min((AU / r_h) ** 2, power_cap) / max(s0[4], 0.05)
+            am_h = a0 * pf(r_h) / max(s0[4], 0.05)
             work += d0 * am_h * math.hypot(s0[2], s0[3]) * dt
         x, y, vx, vy, m = s1
         dv += dv1
@@ -290,7 +363,8 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
 
 
 def campaign_overhead_curve(a0: float, sch: Schedule, v_targets, isp_s: float = 2800.0,
-                            power_cap: float = 4.0, max_yr: float = 60.0):
+                            power_cap: float = 4.0, max_yr: float = 60.0,
+                            power_model: str = "cap"):
     """Overhead (Δv − v∞) of ONE campaign under ``sch`` at every target in ``v_targets``.
 
     A single integration toward the highest target records, at the first upward
@@ -305,6 +379,8 @@ def campaign_overhead_curve(a0: float, sch: Schedule, v_targets, isp_s: float = 
     if not targets:
         return []
     top = targets[-1]
+    from .departure import _pump_power_factor
+    pf = _pump_power_factor(power_model, power_cap)
     mu, AU = c.MU_SUN, c.AU
     out = []
     idx = 0
@@ -323,8 +399,8 @@ def campaign_overhead_curve(a0: float, sch: Schedule, v_targets, isp_s: float = 
             X, Y, VX, VY, M = s
             rr = math.hypot(X, Y)
             vv = math.hypot(VX, VY) or 1.0
-            am = (a0 * min((AU / rr) ** 2, power_cap) / max(M, 0.05) * d) if d else 0.0
-            md = (-(a0 * min((AU / rr) ** 2, power_cap)) / ve) if d else 0.0
+            am = (a0 * pf(rr) / max(M, 0.05) * d) if d else 0.0
+            md = (-(a0 * pf(rr)) / ve) if d else 0.0
             g = -mu / rr ** 3
             return (VX, VY, g * X + am * VX / vv, g * Y + am * VY / vv, md)
         s = state
@@ -336,7 +412,7 @@ def campaign_overhead_curve(a0: float, sch: Schedule, v_targets, isp_s: float = 
         o = (o[0], o[1], o[2], o[3], max(o[4], 0.05))
         if d:
             rr = math.hypot(s[0], s[1])
-            return o, (a0 * min((AU / rr) ** 2, power_cap) / max(s[4], 0.05)) * dt
+            return o, (a0 * pf(rr) / max(s[4], 0.05)) * dt
         return o, 0.0
 
     while t < max_t and idx < len(targets):

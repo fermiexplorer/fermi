@@ -68,6 +68,16 @@ Node (any recent version) is used only for the web-parity audit.
 
 ## Running Tests
 
+**BATCH work into ONE stage-based script per task — never a stream of one-off
+commands.** Every individual command that is not auto-approved blocks the
+pipeline waiting for approval (potentially for hours). When a task needs
+multiple steps (measure → optimise → bake → verify), write a SINGLE
+stage-based script (e.g. `tmp/ro/i7_all.py` with clearly labelled stages that
+run in sequence and print a per-stage report) and run it with one approval —
+infinitely better than N approval prompts. Split into separate scripts only
+when a later stage genuinely depends on a human decision about an earlier
+stage's output.
+
 **ALWAYS run verification through scripts — never as chains of one-off suite
 commands or filter pipes.** Verification is READ-ONLY, so it is invoked via
 zero-argument launchers in `tmp/ro/` (auto-approved); the tracked logic lives
@@ -82,7 +92,7 @@ Individual suites, for reference (verify.py invokes these):
 
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
-.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (130 checks)
+.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (~170 checks)
 node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 .venv/bin/python audit/calcs/ui_playwright.py  # render the page in Chromium + screenshot
 .venv/bin/python run_analysis.py      # print the integrated analysis

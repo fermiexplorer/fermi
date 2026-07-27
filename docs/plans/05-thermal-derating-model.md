@@ -2,6 +2,16 @@
 
 Issue: https://github.com/fermiexplorer/fermi/issues/5
 Roadmap: `docs/PRECISION_ROADMAP.md` Stage 7
+Status: **SHIPPED**. Measured record: cap_eff(0.42 AU) = 3.54 (T = 492 K;
+GaAs 0.2 %/K, α 0.92, ε 0.85/face; balance verified by independent bisection);
+Si sensitivity case collapses to 0.08× — cell-technology-critical; both fixed
+geometries strand at the design a₀ under the derived curve and per-a₀
+re-optimisation closes the full grid (`OPTIMIZED_SCHEDULES_THERMAL`); flown
+12-yr anchored campaign Δv 24.44 km/s (+1.3 vs the idealised 4× — inside the
+2×-cap sensitivity bracket, as predicted below); tax anchor +0.785; default
+budget 31.8 → 33.1 km/s; implied vehicle α 15.2 W/kg (inside the 15–21 band).
+The cap model stays as `power_model="cap"`, the audit comparator and
+PSI-comparable working point.
 
 ## Problem
 

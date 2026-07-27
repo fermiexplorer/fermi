@@ -74,20 +74,24 @@ question is entirely about how you build the 24 km/s.*
 > perihelion to 0.42 AU, burn at perihelion where power is up to 4× the 1-AU rating) reaches
 > the full cruise speed at today's vehicle α (~15–21 W/kg), no reactor or assist required. The
 > mechanism is integrated in the engine (`perihelion_pumped_vinf`) at the validated design
-> profile (a₀ = 2.5×10⁻⁴ m/s², Isp 2800 s); the contiguous working region starts at
-> a₀ ≈ 2.24×10⁻⁴ — success below is phasing-dependent and NON-monotonic, so gate designs
-> by integration, not by a threshold. The campaign the calculator flies and prices is the
-> **anchored optimised schedule** (`pump_schedule.scheduled_pumped_vinf` — a 4-parameter,
-> event-located switching schedule, optimised per a₀): at the design a₀ it buys the
-> 23.64 km/s cruise for **Δv 23.14 km/s in a 12.0-yr campaign** — 3.5% under PSI's
-> published 12-yr optimum (23.97) — and it closes every bang-bang island/stall gap on the
-> tested a₀ grid; the bang-bang integration stays as the conservative feasibility gate
-> (Δv 25.6, 9.6 yr). The α ≳ 100 W/kg condition in §2 therefore applies
-> to the outward-spiral class only, and the recommended architecture is
+> profile (a₀ = 2.5×10⁻⁴ m/s², Isp 2800 s); success at off-design a₀ is phasing-dependent
+> and NON-monotonic, so gate designs by integration, not by a threshold. The perihelion
+> power multiple is **derived, not assumed** (`fermi_sim/thermal.py`, issue #5): the GaAs
+> array energy balance gives **cap_eff(0.42 AU) = 3.54** (equilibrium 492 K, ~0.2 %/K
+> derate; silicon at ~0.45 %/K collapses to 0.08× — GaAs-class cells are load-bearing).
+> The campaign the calculator gates, flies and prices is the **anchored optimised
+> schedule** under that derived curve (`pump_schedule.scheduled_pumped_vinf` — a
+> 4-parameter, event-located switching schedule, optimised per a₀): at the design a₀ it
+> buys the 23.64 km/s cruise for **Δv 24.44 km/s in a 12.0-yr campaign**. At the
+> idealised 4× cap (PSI's assumption) the same construction gives **23.14 — 3.5% under
+> PSI's published 12-yr optimum (23.97)**; per-a₀ re-optimised schedules close every
+> fixed-geometry island/stall gap on the tested grid, and the bang-bang integration stays
+> as the crude cross-check (Δv 25.6, 9.6 yr, at 4×). The α ≳ 100 W/kg condition in §2
+> therefore applies to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~31–32 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
-> − 0.5 km/s optimised-schedule tax + ~1 km/s plane change; the bang-bang gate would price
-> it near ~34, and PSI's optimised total is 30.5–31.6); a GTO
+> The full SEP total from LEO is ~33 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
+> + 0.8 km/s thermal-derated tax + ~1 km/s plane change; ~31.8 at the idealised 4× cap,
+> where PSI's optimised total is 30.5–31.6); a GTO
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. See the live
 > page's "Perihelion pumping" section.
 

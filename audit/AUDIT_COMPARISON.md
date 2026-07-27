@@ -33,17 +33,20 @@ PSI from [`audit/psi/`](https://github.com/fermiexplorer/fermi/tree/main/audit/p
 **They are different units.** The bang-bang gate's **4.9 is revolutions**; PSI's **12 is years**.
 Comparing them directly is an apples-to-oranges trap that this table exists to prevent:
 
-| | Revolutions around the Sun | Campaign duration | Δv |
-|---|---|---|---|
-| **Fermi engine — anchored optimised schedule** (the flown default, issue #4) | **5.9 revs** | **12.0 yr** | **23.14 km/s** |
-| **Fermi engine** (bang-bang gate / cross-check) | 4.9 revs | 9.6 yr | 25.63 km/s |
-| **Fable** (adversarial, 2 integrators, bang-bang) | 4.88 revs | 9.6–9.7 yr | 25.61 km/s |
-| **PSI** (optimised schedule) | ~5–6 perihelion passes | **12 yr** | 23.97 km/s |
-| *(drawn animation)* | *~4.9 revs* | *~10 yr* | *(schematic)* |
+| | Revolutions around the Sun | Campaign duration | Δv | Power model |
+|---|---|---|---|---|
+| **Fermi engine — anchored optimised schedule** (the flown default, issues #4/#5) | **7.9 revs** | **12.0 yr** | **24.44 km/s** | **derived thermal curve** (cap_eff(0.42) = 3.54) |
+| Fermi engine — same construction at the idealised cap (PSI-comparable) | 5.9 revs | 12.0 yr | **23.14 km/s** | assumed 4× step |
+| **Fermi engine** (bang-bang cross-check) | 4.9 revs | 9.6 yr | 25.63 km/s | assumed 4× step |
+| **Fable** (adversarial, 2 integrators, bang-bang) | 4.88 revs | 9.6–9.7 yr | 25.61 km/s | assumed 4× step |
+| **PSI** (optimised schedule) | ~5–6 perihelion passes | **12 yr** | 23.97 km/s | assumed 4× step |
+| *(drawn animation)* | *~7.9 revs* | *~12 yr* | *(schematic)* | derived thermal curve |
 
-So the honest comparison is now **like-for-like at 12 years**: our optimised schedule buys the
-same cruise for **23.14 km/s vs PSI's 23.97** (−3.5%). The bang-bang rows differ from PSI's
-**by design**:
+So there are TWO comparisons to keep straight. **Like-for-like at 12 years under PSI's own 4×
+assumption**: our optimised schedule buys the same cruise for **23.14 km/s vs PSI's 23.97**
+(−3.5%). **What the calculator actually ships** (issue #5): the same optimisation under the
+power curve *derived* from the array's energy balance — 3.54× at the floor, not 4× — which
+costs **24.44 km/s** at the same custody. The bang-bang rows differ from PSI's **by design**:
 
 1. **The gate burns harder per arc.** The bang-bang policy applies full available thrust whenever
    its gate opens, so each perihelion pass adds a bigger energy step. Bigger steps ⇒ slightly fewer,
@@ -176,7 +179,8 @@ structure and payload dilute the dry mass.*
 | **PSI — LEO 100 & 150 kg** (68 % propellant) | **19.5 W/kg** | derived here from PSI's own §5.1/§5.2 sizing (a₀ 2.5×10⁻⁴, Isp 2800, η 0.55) |
 | **PSI — GTO 100 & 80 kg** (64 % propellant) | **17.3 W/kg** | same derivation |
 | **Fermi page — published pumping band** | **15–21 W/kg** | our band; **brackets PSI's implied 17.3–19.5** ✔ |
-| Fermi — anchored optimised campaign (issue #4) | **14.5 W/kg** | Δv 23.14 ⇒ R = e^(23136/27459) = 2.32 ⇒ α = 6.24·2.32 — the flown campaign needs slightly *less* than the published band's floor (the band is kept at the PSI-implied 15–21; 14.5 is extra margin, not a new headline) |
+| Fermi — anchored optimised campaign, idealised 4× cap (issue #4) | 14.5 W/kg | Δv 23.14 ⇒ R = e^(23136/27459) = 2.32 ⇒ α = 6.24·2.32 |
+| **Fermi — flown campaign under the derived thermal curve (issue #5)** | **15.2 W/kg** | Δv 24.44 ⇒ R = e^(24437/27459) = 2.44 ⇒ α = 6.24·2.44 — the shipped default lands *inside* the published band |
 | Fermi page — default vehicle (2 kW GaAs) | ~120 W/kg | the shipped default is *far above* what pumping needs |
 | Fermi — nuclear-electric closure | ~23 W/kg | constant-power route |
 | *(retracted)* 13 W/kg | **impossible** | R = 2.08 ⇒ Δv capacity 20.1 km/s < the 23.97 required (Fable audit finding; band corrected 13–25 → 15–21) |
@@ -240,10 +244,11 @@ is 8 km/s; below it the budget refuses.
 
 *(On the band: the project's headline "~15–21 W/kg" is the **PSI-implied** vehicle-α band, which
 brackets PSI's own mass model. The engine's cruder bang-bang sizing lands slightly higher —
-21.7 W/kg at the AC design point, just above the top of the band — while the anchored optimised
-campaign the calculator flies since issue #4 lands slightly lower (14.5 W/kg): same physics,
-±1 W/kg of schedule quality around the band, and the headline is kept at 15–21 because that is
-the PSI-implied figure the project cites (the optimised campaign's 14.5 is margin below it).
+21.7 W/kg at the AC design point, just above the top of the band — the idealised-cap optimised
+campaign slightly lower (14.5), and the campaign the calculator actually flies since issue #5
+(the anchored schedule under the derived thermal curve) lands at **15.2 W/kg, inside the band**:
+same physics, ±1 W/kg of schedule/power-model quality around the band, and the headline is kept
+at 15–21 because that is the PSI-implied figure the project cites.
 α² Lib's 27.8 W/kg is higher for a different reason — its integrated low-cruise campaign
 carries ~8 km/s of in-plane overhead, which inflates the mass ratio that multiplies into vehicle α.)*
 
@@ -320,10 +325,10 @@ The ~6× in α is not free — it is bought with Δv, time and thermal risk:
 
 | Price | Value |
 |---|---|
-| Extra Δv vs the impulsive ideal | pumped campaign 23.14 km/s (ours, optimised) / 23.97 (PSI optimised) / 25.6 (bang-bang gate) vs a 13.9 km/s impulsive floor |
-| Powered-flight duration | 12 yr (ours optimised, and PSI) – 9.6 yr (bang-bang gate) vs ~0.5–2 yr for a spiral |
-| Thermal qualification | repeated 0.42 AU passes — MESSENGER-class, and the 4× harvest cap is optimistic |
-| Policy fragility | bang-bang success is non-monotonic in a₀ (the gate must be flown at a validated profile); the per-a₀ optimised schedules close every tested gap |
+| Extra Δv vs the impulsive ideal | flown campaign 24.44 km/s (derived thermal curve) / 23.14 (ours at the idealised 4×) / 23.97 (PSI, at 4×) / 25.6 (bang-bang, at 4×) vs a 13.9 km/s impulsive floor |
+| Powered-flight duration | 12 yr (ours and PSI, optimised) – 9.6 yr (bang-bang) vs ~0.5–2 yr for a spiral |
+| Thermal qualification | repeated 0.42 AU passes — MESSENGER-class; the harvest multiple is now DERIVED from the array energy balance (cap_eff 3.54× at the floor, T = 492 K; issue #5), and silicon-class cells collapse (0.08×) — GaAs is load-bearing |
+| Policy fragility | fixed-geometry success is non-monotonic in a₀ (and the fixed geometries strand at the design a₀ under the derived curve); per-a₀ re-optimised schedules close every tested gap |
 
 ### Corroboration
 
@@ -375,6 +380,11 @@ None of these are engine errors; each has a specific, benign cause.
 The four "core" bots never tested pumping (it postdates their builds). Pumping is corroborated by
 three sources only, and the distinction between *mechanism* (well-corroborated) and *optimality*
 (single-source) is the key trust point.
+
+All columns in this table are at the **idealised 4× power cap** — the assumption PSI's numbers
+are published under, kept here for like-for-like comparison. The calculator's shipped default
+since issue #5 is the same anchored optimisation under the **derived thermal curve**
+(cap_eff(0.42) = 3.54): Δv **24.44** km/s, 12.0 yr, 7.9 revs.
 
 | Quantity | **Engine** (bang-bang gate) | **Engine** (anchored optimised, issue #4) | Fable-adversarial | PSI (optimised) |
 |---|---|---|---|---|
@@ -507,7 +517,8 @@ recommendation, and the independent confirmation of the intercept geometry and t
 | **A — triangulated** | ephemeris, intercept geometry, impulsive floor, low-thrust spiral, C3, xenon sizing, power gate | 4 blind AI bots + GMAT + PSI, ≤0.2 % (most ≤0.01 %), multiple methods | **Yes**, to Fermi-estimate fidelity |
 | **B — dual-source mechanism** | pumping mechanism, design endpoints, thresholds, spiral ceilings, synchrotron model | Engine + Fable (2 integrators each) + PSI on mechanism | **Yes** for the *mechanism and thresholds* |
 | **B — α closure band** | pumping closes at α ≈ 15–21 W/kg | our band **brackets** the 17.3–19.5 W/kg implied by PSI's own published mass model (§2b) | **Yes** — corroborated in both sources' numbers |
-| **C — optimised schedules** | PSI's optimised 23.97 / 22.9 km/s; our anchored optimised 23.14 (12 yr) | two independent optimisers now agree the 12-yr optimum sits at ~23–24 km/s (ours 3.5% under theirs); PSI's own cross-check didn't converge; the audit suite replays ours end-to-end | **Yes** for the 12-yr closure level; the exact unconstrained optimum remains method-dependent |
+| **C — optimised schedules** | PSI's optimised 23.97 / 22.9 km/s; our anchored optimised 23.14 (12 yr, at 4×) | two independent optimisers now agree the 12-yr optimum sits at ~23–24 km/s (ours 3.5% under theirs); PSI's own cross-check didn't converge; the audit suite replays ours end-to-end | **Yes** for the 12-yr closure level; the exact unconstrained optimum remains method-dependent |
+| **C — thermal derating** (issue #5) | cap_eff(0.42) = 3.54; flown campaign 24.44 @ 12 yr; Si collapses (0.08×) | single first-principles model (energy balance verified by an independent bisection in the suite; representative α/ε/coefficient inputs) — no external source has reviewed the derate curve yet | **Yes** for the sign and scale of the derate; the exact curve inherits the thermo-optical inputs |
 | **D — superseded** | the old ~20 km/s "modest xenon" SEP budget | Grok/Codex flagged it; replaced by the ~30 km/s + pumping model | **No** — historical only |
 
 **Bottom line.** The *feasibility verdict and the geometry* are as solid as a first-order study

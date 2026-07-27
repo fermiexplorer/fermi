@@ -33,15 +33,17 @@ def _clip(p):
     )
 
 
-def _cost(p, a0, tgt, dt_scale, max_yr):
+def _cost(p, a0, tgt, dt_scale, max_yr, power_model):
     sch = _clip(p)
-    v, dv, yr, _ = scheduled_pumped_vinf(a0, tgt, sch, max_yr=max_yr, _dt_scale=dt_scale)
+    v, dv, yr, _ = scheduled_pumped_vinf(a0, tgt, sch, max_yr=max_yr, _dt_scale=dt_scale,
+                                         power_model=power_model)
     if v >= tgt * 0.999:
         return dv
     return dv + 1.0e5 + 10.0 * (tgt - v)
 
 
-def optimize_at(a0, tgt=TGT, max_yr=60.0, verbose=True, seeds=None, maxiter=160):
+def optimize_at(a0, tgt=TGT, max_yr=60.0, verbose=True, seeds=None, maxiter=160,
+                power_model="cap"):
     if seeds is None:
         seeds = [
             [60.0, 70.0, -3.0, RP_FLOOR_AU],      # the bang-bang geometry
@@ -50,7 +52,8 @@ def optimize_at(a0, tgt=TGT, max_yr=60.0, verbose=True, seeds=None, maxiter=160)
         ]
     best_p, best_c = None, float("inf")
     for s0 in seeds:
-        res = minimize(_cost, s0, args=(a0, tgt, 3.0, max_yr), method="Nelder-Mead",
+        res = minimize(_cost, s0, args=(a0, tgt, 3.0, max_yr, power_model),
+                       method="Nelder-Mead",
                        options={"maxiter": maxiter, "xatol": 0.5, "fatol": 5.0})
         if res.fun < best_c:
             best_c, best_p = res.fun, res.x
@@ -58,7 +61,8 @@ def optimize_at(a0, tgt=TGT, max_yr=60.0, verbose=True, seeds=None, maxiter=160)
             print(f"  seed {s0}: coarse cost {res.fun/1e3:.3f} km/s "
                   f"-> {_clip(res.x)}")
     sch = _clip(best_p)
-    fine = scheduled_pumped_vinf(a0, tgt, sch, max_yr=max_yr)   # full resolution
+    fine = scheduled_pumped_vinf(a0, tgt, sch, max_yr=max_yr,
+                                 power_model=power_model)   # full resolution
     return sch, fine
 
 

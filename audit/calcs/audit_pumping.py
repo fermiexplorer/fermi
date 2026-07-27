@@ -380,8 +380,9 @@ def run() -> None:
     check("bang-bang anchor is pinned to the shipped calibration (tax_bb(23.64) = 2.000 km/s)",
           abs(pump_tax_for(23.64e3, "bangbang") - 2000.0) < 1e-9,
           f"{pump_tax_for(23.64e3, 'bangbang'):.1f} m/s")
-    check("optimised anchor is negative (Oberth: campaign dv < v_inf bought): tax(23.64) = -0.509",
-          abs(pump_tax_for(23.64e3) - (-509.0)) < 1e-9, f"{pump_tax_for(23.64e3):.1f} m/s")
+    check("cap-model optimised anchor is negative (Oberth: campaign dv < v_inf bought): -0.509",
+          abs(pump_tax_for(23.64e3, "optimized") - (-509.0)) < 1e-9,
+          f"{pump_tax_for(23.64e3, 'optimized'):.1f} m/s")
     # the alpha2-Lib case that the old flat tax mispriced (34.7 vs integrated ~41.0) prices
     # correctly through the closed form under the BANG-BANG tax it was integrated with
     alib_bb = pumped_departure_dv(14.5e3, -47.0, 400.0,
@@ -435,6 +436,75 @@ def run() -> None:
     v_30, _, _, _ = scheduled_pumped_vinf(3.0e-4, baked_30[0], sch_30)
     check("optimised schedule closes the old 3.0e-4 stall window (fine-dt replay)",
           v_30 >= baked_30[0] * 0.999, f"{v_30/1e3:.2f} km/s")
+
+    # 13e. DERIVED THERMAL power model (issue #5): the shipped default replaces the assumed
+    #      4x cap with cap_eff(r) from the array's own energy balance. Verify the balance by
+    #      an INDEPENDENT bisection solve (not the module's fixed-point), pin the derived
+    #      curve, the Si sensitivity collapse, the design-point closure under the re-optimised
+    #      anchored schedule, and the motivating fact that the fixed geometries strand.
+    from fermi_sim.thermal import (GAAS, SI, SOLAR_CONST_1AU, SIGMA_SB,
+                                   cap_eff, cell_temperature)
+    from fermi_sim.pump_schedule import ANCHORED_THERMAL, OPTIMIZED_SCHEDULES_THERMAL
+
+    def _t_bisect(r_au, m):
+        # independent solve: f(T) = (alpha - eta(T))*S - eps*sigma*T^4, bisected on [100, 2000]
+        s_flux = SOLAR_CONST_1AU / (r_au * r_au)
+        eps = m.eps_front + m.eps_back
+
+        def f(t):
+            eta = max(0.0, m.eta_ref * (1.0 - m.beta * (t - m.t_ref)))
+            return (m.alpha_s - eta) * s_flux - eps * SIGMA_SB * t ** 4
+
+        lo, hi = 100.0, 2000.0
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if f(mid) > 0.0:
+                lo = mid
+            else:
+                hi = mid
+        return 0.5 * (lo + hi)
+
+    t_ind = _t_bisect(0.42, GAAS)
+    t_mod = cell_temperature(0.42)
+    check("thermal balance closes: independent bisection matches the module solve (<0.1 K)",
+          abs(t_ind - t_mod) < 0.1, f"{t_ind:.3f} vs {t_mod:.3f} K")
+    check("derived cap is 1 at 1 AU by construction and ~3.54 at the 0.42 AU floor",
+          cap_eff(1.0) == 1.0 and abs(cap_eff(0.42) - 3.536) < 0.005,
+          f"cap_eff(1)={cap_eff(1.0):.6f}, cap_eff(0.42)={cap_eff(0.42):.4f}")
+    check("Si sensitivity case COLLAPSES at the floor (0.45%/K kills the harvest)",
+          cap_eff(0.42, SI) < 0.2, f"cap_eff(0.42, Si) = {cap_eff(0.42, SI):.3f}")
+    # the motivating measurement: under the derived curve the FIXED geometries strand at
+    # the design a0 (bang-bang reaches only ~20 km/s) — re-optimisation is what closes it
+    v_bbth, _, _, _ = perihelion_pumped_vinf(a0_design, tgt, power_model="thermal")
+    check("bang-bang geometry STRANDS at the design a0 under the derived thermal cap",
+          v_bbth < tgt * 0.99, f"{v_bbth/1e3:.2f} km/s")
+    sch_t, baked_t = OPTIMIZED_SCHEDULES_THERMAL[a0_design]
+    v_t, dv_t2, yr_t, rv_t, diag_t = scheduled_pumped_vinf(
+        a0_design, tgt, sch_t, power_model="thermal", return_diag=True)
+    check("re-optimised anchored schedule CLOSES the design point under thermal (12-yr custody)",
+          v_t >= tgt * 0.999 and abs(yr_t - 12.0) < 0.15, f"v {v_t/1e3:.3f}, {yr_t:.2f} yr")
+    check("thermal anchor replay reproduces the baked campaign (dv 24.437, ~7.9 revs)",
+          abs(dv_t2 - 24436.6) < 25.0 and abs(rv_t - 7.886) < 0.15,
+          f"dv {dv_t2:.1f}, {rv_t:.2f} revs")
+    check("thermal derate costs ~+1.3 km/s vs the idealised 4x cap at the same custody",
+          23136.0 < dv_t2 < 25000.0 and dv_t2 - 23136.0 > 1000.0,
+          f"{dv_t2/1e3:.2f} vs 23.14 km/s")
+    check("thermal replay overhead matches the baked tax anchor (+0.785 km/s, <30 m/s)",
+          abs((dv_t2 - v_t) - 785.3) < 30.0, f"{dv_t2 - v_t:.1f} m/s")
+    check("thermal campaign conserves energy: thrust work == specific-energy gain (<1%)",
+          abs(diag_t["work"] - diag_t["E_gain"]) / diag_t["E_gain"] < 0.01,
+          f"work {diag_t['work']:.4e} vs dE {diag_t['E_gain']:.4e} J/kg")
+    check("thermal campaign respects the 0.42 AU floor (min r >= 0.41 AU)",
+          diag_t["min_r_au"] >= 0.41, f"min r {diag_t['min_r_au']:.3f} AU")
+    check("thermal budget anchor: escape + v_inf + tax = 32.10 km/s (tax +785.3 at 23.64)",
+          abs(pumped_departure_dv(23.64e3, 0.0, 400.0) - 32097.9) < 1.0
+          and abs(pump_tax_for(23.64e3) - 785.3) < 1e-9,
+          f"{pumped_departure_dv(23.64e3, 0.0, 400.0):.1f} m/s")
+    # the old bang-bang strand band (1.9e-4) closes under its per-a0 thermal schedule too
+    sch_19t, baked_19t = OPTIMIZED_SCHEDULES_THERMAL[1.9e-4]
+    v_19t, _, _, _ = scheduled_pumped_vinf(1.9e-4, tgt, sch_19t, power_model="thermal")
+    check("per-a0 thermal schedule closes the 1.9e-4 strand band (fine replay)",
+          v_19t >= tgt * 0.999, f"{v_19t/1e3:.2f} km/s")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the
