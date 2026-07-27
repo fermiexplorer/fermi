@@ -23,8 +23,9 @@ here with attribution as the independent external cross-assessment of this proje
 
 ## Our cross-validation of it (engine + adversarial audits)
 
-- Outward-spiral ceilings: ours 0 / 3.1 / 16.7 km/s vs theirs 0 / 3.4 / 17.0 at
-  a₀ = 1.5/5/10×10⁻⁴ (their own two-integrator band is 2.7%).
+- Outward-spiral ceilings: ours 0 / 3.0 / 16.7 km/s vs theirs 0 / 3.4 / 17.0 at
+  a₀ = 1.5/5/10×10⁻⁴ (their own two-integrator band is 2.7%; ours computed under
+  PSI's mass-normalised parameterisation a = a₀·(1 AU/r)²·(m₀/m), Isp 2800).
 - Pumping mechanism reproduced with an independent bang-bang policy
   (`fermi_sim.departure.perihelion_pumped_vinf`): 23.66 km/s at the design point,
   Δv 25.63 (theirs 23.97 optimized), 9.6 yr (theirs 12.0), 4.9 revolutions

@@ -229,7 +229,7 @@ def main() -> None:
         "\n=> At CONSERVATIVE specific masses pure SOLAR-electric does NOT close. The binding variable\n"
         "   is the whole-vehicle specific power alpha = power/dry_mass, NOT the kilowatts. The pure-\n"
         "   electric path that closes at near-term specific masses is NUCLEAR-ELECTRIC (constant power):\n"
-        "   ~5 kW reactor @ ~40 W/kg + gridded ion (Isp ~3000 s) -> v_inf ~24.8 km/s, ~64% xenon."
+        "   ~5 kW reactor @ ~40 W/kg + gridded ion (Isp ~3000 s) -> v_inf ~25.4 km/s, ~64% xenon."
     )
 
     # ---------------------------------------------------------------
@@ -327,7 +327,7 @@ def main() -> None:
         "    - SEP + PERIHELION PUMPING (the adopted default): closes pure solar at today's alpha;\n"
         "      two-leg budget ~31-34 km/s from LEO (7.6 escape + ~23-24 helio + ~2 policy tax).\n"
         "    - NUCLEAR-ELECTRIC ion (constant power): closes at LOW alpha (~23 W/kg) with near-term\n"
-        "      specific masses but an optimistic ~40 W/kg reactor; ~5 kW + gridded ion -> ~24.8 km/s.\n"
+        "      specific masses but an optimistic ~40 W/kg reactor; ~5 kW + gridded ion -> ~25.4 km/s.\n"
         "    - HIGH-ALPHA SOLAR-ELECTRIC: pure solar DOES close above alpha ~ 100 W/kg -- an ultralight\n"
         "      ~50 kg micro-probe (>=~300 W/kg array + ~2 kg/kW thruster, Isp ~3000 s) burns briefly\n"
         "      near 1 AU and dodges the fade (-> ~37 km/s). Far-term tech, but no reactor, no assist.\n"

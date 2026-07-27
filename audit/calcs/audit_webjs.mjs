@@ -33,9 +33,9 @@ const REF = {
   injection_pointing_dv_ref: 132.0702276157546,
   gnc_steering_factor_ref: 1.0038198375433474,
   // conservative 1/r² power-limited achievable v∞ (m/s): 20 kW, 1600 kg wet, 300 kg dry, Isp 1585, η0.5
-  sep_achievable_vinf_ref: 19547.62063596138,
+  sep_achievable_vinf_ref: 19597.861456321258,   // re-baselined: adaptive-dt + mass-coupled RK4 (issue #2)
   // constant-power (nuclear-electric, fade_exp=0) achievable v∞ (m/s), same args — the EP-only escape
-  sep_achievable_vinf_nep_ref: 31112.327059089537,
+  sep_achievable_vinf_nep_ref: 31204.07693667548, // re-baselined: adaptive-dt + mass-coupled RK4 (issue #2)
   // cruise time for v_inf = 24 km/s (yr)
   time_24kms_yr: 46072,
   // perihelion pumping (multi-rev escape, tmp/ro/dump_pump_ref.py): a0=2.5e-4 m/s², target 23.64 km/s

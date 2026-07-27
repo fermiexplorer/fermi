@@ -450,16 +450,22 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
 
 
 def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s: float,
-                        eff: float = 0.5, r0_au: float = 1.0, fade_exp: float = 2.0) -> float:
+                        eff: float = 0.5, r0_au: float = 1.0, fade_exp: float = 2.0,
+                        _dt_scale: float = 1.0) -> float:
     """Maximum heliocentric excess speed v∞ (m/s) a solar-electric probe can actually reach from a
     1-AU circular heliocentric orbit, accounting for the 1/r² SOLAR-POWER FADE that throttles the
     thrust as the probe recedes. This is the decisive conservative feasibility quantity: because
     power ∝ 1/r², the achievable v∞ SATURATES — extra propellant burnt far out adds little, so
-    practical SEP masses fall below the ~23.4 km/s cruise floor.
+    practical SEP masses fall below the ~23.3 km/s cruise floor.
 
-    F(r) = 2·η·P0/(v_e·r²) (thrust prograde), ṁ = F/v_e, RK4 in SI. Integrate from 1-AU circular
-    until the propellant is spent OR the probe coasts far enough that power is negligible, then
-    v∞ = sqrt(2·E) for the specific orbital energy E (0 if it never reaches escape).
+    F(r) = 2·η·P0/(v_e·r²) (thrust prograde), ṁ = −F/v_e, RK4 in SI with the MASS as the fifth
+    state component (all four stages see a consistently advanced mass) and an adaptive step —
+    dt = min(max(600, 0.002·period), 5 days) from the local osculating period, the scheme the
+    pumping integrator uses (issue #2; retires the fixed 50,000 s step and the first-order
+    after-step mass update). Integrate from 1-AU circular until the propellant is spent OR the
+    probe coasts far enough that power is negligible, then v∞ = sqrt(2·E) for the specific
+    orbital energy E (0 if it never reaches escape). ``_dt_scale`` multiplies dt (audit hook
+    for the step-halving convergence check; not part of the public contract).
     """
     for nm, val in (("power_w", power_w), ("wet_kg", wet_kg), ("dry_pay_kg", dry_pay_kg),
                     ("isp_s", isp_s), ("eff", eff), ("r0_au", r0_au), ("fade_exp", fade_exp)):
@@ -476,42 +482,43 @@ def sep_achievable_vinf(power_w: float, wet_kg: float, dry_pay_kg: float, isp_s:
     rx, ry = r0, 0.0
     vx, vy = 0.0, math.sqrt(mu / r0)         # circular at 1 AU
     m = wet_kg
-    dt = 5.0e4                                # s
     t = 0.0
     R_FAR = 80.0 * c.AU                       # beyond here power is negligible — stop, read v∞
     T_CAP = 400.0 * c.YEAR
 
-    def deriv(state, mass):
-        x, y, vxx, vyy = state
+    def deriv(state):
+        x, y, vxx, vyy, mass = state
         r = math.hypot(x, y) or 1.0
         sp = math.hypot(vxx, vyy) or 1.0
         # fade_exp=2 → solar 1/r² power fade; fade_exp=0 → constant power (nuclear-electric)
         Fm = F0 * (r0 / r) ** fade_exp if mass > dry_pay_kg else 0.0
         ag = -mu / (r * r * r)
-        return [vxx, vyy, ag * x + Fm * vxx / sp / mass, ag * y + Fm * vyy / sp / mass]
+        return [vxx, vyy, ag * x + Fm * vxx / sp / mass, ag * y + Fm * vyy / sp / mass, -Fm / ve]
 
     while t < T_CAP:
         r = math.hypot(rx, ry)
         if r > R_FAR:
             break
-        s = [rx, ry, vx, vy]
-        k1 = deriv(s, m)
-        s2 = [s[i] + 0.5 * dt * k1[i] for i in range(4)]
-        k2 = deriv(s2, m)
-        s3 = [s[i] + 0.5 * dt * k2[i] for i in range(4)]
-        k3 = deriv(s3, m)
-        s4 = [s[i] + dt * k3[i] for i in range(4)]
-        k4 = deriv(s4, m)
+        # adaptive step: a fixed fraction of the r-based Kepler period (the scheme the
+        # pumping integrator uses — NOT the osculating-a period, which diverges as the
+        # orbit nears escape while r is still small), floored at 600 s, capped at 5 days
+        period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * r0) ** 3 / mu)
+        dt = min(max(600.0, 0.002 * period), 5.0 * 86400.0) * _dt_scale
+        s = [rx, ry, vx, vy, m]
+        k1 = deriv(s)
+        s2 = [s[i] + 0.5 * dt * k1[i] for i in range(5)]
+        k2 = deriv(s2)
+        s3 = [s[i] + 0.5 * dt * k2[i] for i in range(5)]
+        k3 = deriv(s3)
+        s4 = [s[i] + dt * k3[i] for i in range(5)]
+        k4 = deriv(s4)
         rx += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
         ry += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
         vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
         vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3])
-        if m > dry_pay_kg:
-            Fm = F0 * (r0 / math.hypot(rx, ry)) ** fade_exp
-            m -= (Fm / ve) * dt
-            if m < dry_pay_kg:
-                m = dry_pay_kg
-        else:                                  # propellant spent — decide the outcome and stop
+        m += dt / 6 * (k1[4] + 2 * k2[4] + 2 * k3[4] + k4[4])
+        if m <= dry_pay_kg:                    # propellant spent — clamp, decide outcome, stop
+            m = dry_pay_kg
             rr = math.hypot(rx, ry)
             ee = 0.5 * (vx * vx + vy * vy) - mu / rr
             if ee < 0.0 or rr > 8.0 * c.AU:

@@ -30,7 +30,7 @@ of the *trajectory class*, not of solar power. **Five architectures close:**
    α (~15–21 W/kg)** — no reactor, no assist, no far-term array (external assessment
    PSI‑TR‑2026‑0714, prepared for the mission; archived in `audit/psi/`).
 2. **Nuclear-electric ion** — the constant-power fallback (no 1/r² fade): ~5 kW fission
-   reactor + gridded ion → ~24.8 km/s, mass closes; a step-change (flying a reactor).
+   reactor + gridded ion → ~25.4 km/s, mass closes; a step-change (flying a reactor).
 3. **High-α solar-electric** (outward spiral) — the same direct architecture *without*
    pumping closes too, but only for an ultralight micro-probe whose specific power clears
    α ≳ 100 W/kg (a far-term array); at today's bus α it saturates below the floor.
@@ -94,7 +94,7 @@ extra propellant burnt far out adds almost nothing:
 
 | Power source | 5 kW | 10 kW | 20 kW |
 |---|---|---|---|
-| **Solar (1/r² fade)** | 0.0 km/s | 0.0 km/s | 14.4 km/s |
+| **Solar (1/r² fade)** | 0.0 km/s | 0.0 km/s | 14.5 km/s |
 | **Required floor** | — 23.3 km/s — | | |
 
 At *conservative* specific masses those designs land **below the 23.3 km/s floor** — but the
@@ -108,12 +108,14 @@ the achievable v∞ approaches the impulsive-from-1-AU limit (~38 km/s). The fea
 
 | Vehicle α (W/kg) | Achievable v∞ | |
 |---|---|---|
-| ~60 | ~5 km/s | ✗ |
-| **~100** | **~24 km/s** | **← threshold** |
-| ~155 | 37 km/s | ✓ |
-| ~200 | 38 km/s (saturates) | ✓ |
+| ~35 | ~3 km/s | ✗ |
+| ~74 | ~13 km/s | ✗ |
+| **~100** | **~23 km/s** | **← threshold just above** |
+| ~140 | 36 km/s | ✓ |
+| ~155 | 37 km/s (saturating) | ✓ |
 
-So **an outward-spiral solar-electric closes above α ≈ 100 W/kg.** The **high-α reference point uses
+(The rows are the engine's frontier grid — `run_analysis.py` §7b — at Isp 2300, 2 kW.)
+So **an outward-spiral solar-electric closes just above α ≈ 100 W/kg.** The **high-α reference point uses
 ultra-thin GaAs** (~1000 W/kg array — Alta-Devices-class epitaxial-liftoff cells, demonstrated at cell
 level; lightweight blanket is the far-term step) paired with a **near-term ~4 kg/kW thruster** → α ≈
 130, v∞ ≈ 30 km/s, ~40 kg wet. Crucially the 1000 W/kg array makes the array the demonstrated lever and
@@ -152,7 +154,7 @@ design:
 |---|---|
 | Power | ~5 kW fission reactor @ ~40 W/kg (Kilopower→JIMO class) |
 | Thruster | gridded ion, Isp ~3000 s |
-| Achievable v∞ | **~24.8 km/s ≥ 23.3 floor ✓** |
+| Achievable v∞ | **~25.4 km/s ≥ 23.3 floor ✓** |
 | Xenon fraction | ~64% |
 | Dry-bus margin | ~+64 kg (mass closes) |
 

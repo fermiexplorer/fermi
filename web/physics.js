@@ -127,7 +127,8 @@
   function gncSteeringFactor(sigmaDeg) { return 1 / Math.cos(Math.max(0, Math.min(89, sigmaDeg)) * Math.PI / 180); }
   // CONSERVATIVE solar-electric feasibility: max heliocentric v∞ a SEP probe can reach from a 1-AU
   // circular orbit, with thrust faded as 1/r² (array power). Saturates → practical SEP falls below
-  // the ~23.4 km/s cruise floor (the 1/r² power-fade analysis). RK4 in SI; cached by argument key.
+  // the ~23.3 km/s cruise floor (the 1/r² power-fade analysis). RK4 in SI with MASS as the fifth
+  // state component and an adaptive step (mirror of fermi_sim, issue #2); cached by argument key.
   // FIFO cap on the memo tables so a long slider-drag session can't grow them without bound (each
   // entry is tiny, but the key space is effectively unbounded); evict the oldest key past the cap.
   const CACHE_CAP = 4096;
@@ -138,25 +139,33 @@
     if (mp <= 0 || powerW <= 0 || ve <= 0) return 0;
     const key = [powerW, wetKg, dryPayKg, ispS, eff, r0Au, fadeExp].map(x => +(+x).toFixed(3)).join(',');
     if (_sepCache[key] !== undefined) return _sepCache[key];
-    const mu = MU_SUN, r0 = r0Au * AU, F0 = 2 * eff * powerW / ve, dt = 5e4, TCAP = 400 * YEAR;
+    const mu = MU_SUN, r0 = r0Au * AU, F0 = 2 * eff * powerW / ve, TCAP = 400 * YEAR;
     let rx = r0, ry = 0, vx = 0, vy = Math.sqrt(mu / r0), m = wetKg, t = 0;
-    const dr = (s, mass) => { const x = s[0], y = s[1], vxx = s[2], vyy = s[3];
+    const dr = (s) => { const x = s[0], y = s[1], vxx = s[2], vyy = s[3], mass = s[4];
       const r = Math.hypot(x, y) || 1, sp = Math.hypot(vxx, vyy) || 1, g = -mu / (r * r * r);
       const Fm = mass > dryPayKg ? F0 * (r0 / r) ** fadeExp : 0;     // solar fadeExp=2 (1/r²); nuclear=0 (constant)
-      return [vxx, vyy, g * x + Fm * vxx / sp / mass, g * y + Fm * vyy / sp / mass]; };
+      return [vxx, vyy, g * x + Fm * vxx / sp / mass, g * y + Fm * vyy / sp / mass, -Fm / ve]; };
     while (t < TCAP) {
       const r = Math.hypot(rx, ry);
       if (r > 80 * AU) break;
-      const s = [rx, ry, vx, vy], k1 = dr(s, m);
-      const s2 = s.map((v, i) => v + 0.5 * dt * k1[i]), k2 = dr(s2, m);
-      const s3 = s.map((v, i) => v + 0.5 * dt * k2[i]), k3 = dr(s3, m);
-      const s4 = s.map((v, i) => v + dt * k3[i]), k4 = dr(s4, m);
+      // adaptive step: fraction of the r-based Kepler period (mirror of fermi_sim — NOT
+      // the osculating-a period, which diverges near escape), floored 600 s, capped 5 days
+      const period = 2 * Math.PI * Math.sqrt(Math.max(r, 0.1 * r0) ** 3 / mu);
+      const dt = Math.min(Math.max(600, 0.002 * period), 5 * 86400);
+      const s = [rx, ry, vx, vy, m], k1 = dr(s);
+      const s2 = s.map((v, i) => v + 0.5 * dt * k1[i]), k2 = dr(s2);
+      const s3 = s.map((v, i) => v + 0.5 * dt * k2[i]), k3 = dr(s3);
+      const s4 = s.map((v, i) => v + dt * k3[i]), k4 = dr(s4);
       rx += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
       ry += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
       vx += dt / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
       vy += dt / 6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
-      if (m > dryPayKg) { const Fm = F0 * (r0 / Math.hypot(rx, ry)) ** fadeExp; m -= Fm / ve * dt; if (m < dryPayKg) m = dryPayKg; }
-      else { const rr = Math.hypot(rx, ry), ee = 0.5 * (vx * vx + vy * vy) - mu / rr; if (ee < 0 || rr > 8 * AU) break; }
+      m += dt / 6 * (k1[4] + 2 * k2[4] + 2 * k3[4] + k4[4]);
+      if (m <= dryPayKg) {                     // propellant spent — clamp, decide outcome, stop
+        m = dryPayKg;
+        const rr = Math.hypot(rx, ry), ee = 0.5 * (vx * vx + vy * vy) - mu / rr;
+        if (ee < 0 || rr > 8 * AU) break;
+      }
       t += dt;
     }
     const r = Math.hypot(rx, ry), E = 0.5 * (vx * vx + vy * vy) - mu / r;

@@ -216,6 +216,16 @@ def run() -> None:
     check("same probe on SOLAR (1/r² fade) does NOT reach the floor — power law is decisive",
           sol_same < nep_rk4 and sol_same < 23.4e3, f"solar {sol_same/1e3:.2f} vs nep {nep_rk4/1e3:.2f} km/s")
 
+    # --- Step-halving convergence (issue #2): the adaptive scheme must be converged — halving
+    #     dt moves the achievable v∞ by < 0.5% for both the solar and constant-power cases. ---
+    for label, cfg in (("SEP", (20000.0, 1600.0, 300.0, 1585.0, 0.5, 1.0, 2.0)),
+                       ("NEP", (5000.0, 717.0, 256.0, 3000.0, 0.55, 1.0, 0.0))):
+        full = sep_achievable_vinf(*cfg)
+        half = sep_achievable_vinf(*cfg, _dt_scale=0.5)
+        check(f"SEP gate is step-converged ({label}: halving dt moves v∞ < 0.5%)",
+              rel_err(max(full, 1.0), max(half, 1.0)) < 0.005,
+              f"{full/1e3:.4f} vs {half/1e3:.4f} km/s")
+
 
 if __name__ == "__main__":
     run()

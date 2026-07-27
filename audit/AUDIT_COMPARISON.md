@@ -124,15 +124,18 @@ epoch or aim** than the engine's reference (75 kyr / 58 kyr slider vs the 72.8 k
 the engine by 0.2–0.7 % (all reconciled in §3). All unmarked (non-², non-³) cells agree with the
 engine to **≤0.2 %, most to ≤0.01 %.**
 
-### α-conditional power gate (Fable's independent RK45 vs the engine's fixed-dt RK4)
+### α-conditional power gate (Fable's independent RK45 vs the engine)
 
 | Gate case | **Engine** | Fable | Δ |
 |---|---|---|---|
-| High-α solar default v∞ (km/s) | **30.30** | 30.34 | 0.15 % |
-| Low-α solar v∞ (km/s) | **14.42** | 14.45 | 0.19 % |
-| Nuclear-electric 5 kW v∞ (km/s) | **25.24** | 25.25 | 0.05 % |
+| High-α solar default v∞ (km/s) | **30.34** | 30.34 | 0.001 % |
+| Low-α solar v∞ (km/s) | **14.47** | 14.45 | 0.09 % |
+| Nuclear-electric 5 kW v∞ (km/s) | **25.25** | 25.25 | 0.003 % |
 
 Same feasibility verdicts across two integrators — the α ≳ 100 W/kg outward-spiral gate is real.
+The engine column is the issue-#2 integrator (adaptive step, mass-coupled RK4); its agreement
+with Fable's independent adaptive RK45 tightened from 0.05–0.19 % to 0.001–0.09 %, confirming
+the earlier gaps were the retired fixed-step + first-order-mass error.
 
 ---
 
@@ -317,7 +320,7 @@ The ~6× in α is not free — it is bought with Δv, time and thermal risk:
 
 | Claim | Engine | Fable (adversarial) | PSI |
 |---|---|---|---|
-| Outward spiral saturates below the floor | ✓ 0 / 3.1 / 16.7 km/s | ✓ confirms | ✓ 0 / 3.4 / 17.0 km/s |
+| Outward spiral saturates below the floor | ✓ 0 / 3.0 / 16.7 km/s | ✓ confirms | ✓ 0 / 3.4 / 17.0 km/s |
 | Pumping reaches the floor at the design a₀ | ✓ 23.66 km/s | ✓ 23.66–23.67 | ✓ 23.64 km/s |
 | Vehicle α needed for pumping | ✓ 15–21 W/kg | ✓ band verified, 13 refuted | ✓ 17.3–19.5 implied (§2b) |
 | Outward-spiral α for AC-class | ✓ ~100–140 W/kg | ✓ gate reproduced (RK45) | ✓ cites "roughly 100 W/kg" |
@@ -375,7 +378,7 @@ three sources only, and the distinction between *mechanism* (well-corroborated) 
 | Δv split (retro + prograde) | **8.3 + 17.3** | reproduced | — |
 | Working-region edge a₀ (m/s²) | **2.24×10⁻⁴** | 2.239×10⁻⁴ (bisection) | 2.5×10⁻⁴ design |
 | Non-monotonic islands/stalls | **yes** | yes (3 integrators) | (not characterised) |
-| Outward-spiral ceilings (km/s) | **0 / 3.1 / 16.7** | confirms | 0 / 3.4 / 17.0 |
+| Outward-spiral ceilings (km/s) | **0 / 3.0 / 16.7** | confirms | 0 / 3.4 / 17.0 |
 | Certified heliocentric lower bound | — | — | **16.56** |
 
 **What is well-corroborated:** the *mechanism* (retrograde pump-down to 0.42 AU, then prograde
