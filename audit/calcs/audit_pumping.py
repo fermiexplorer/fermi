@@ -358,18 +358,30 @@ def run() -> None:
           len(reach_caps) == 4 and len(stall_caps) == 4,
           f"reach={reach_caps}, stall={stall_caps}")
 
-    # 13c. Corridor guard: the flat 2 km/s tax is calibrated only for v_inf ~ 23-25 km/s;
-    #      below PUMP_TAX_VINF_MIN the true overhead is ~8-13 km/s, so the budget must REFUSE
-    #      rather than silently underprice (the alpha2-Lib mispricing class of error).
+    # 13c. v_inf-DEPENDENT tax model (issue #3): the budget prices any target in the swept
+    #      [8, 29] km/s range via the interpolated overhead table, refuses below it, and the
+    #      AC-corridor anchor is pinned to the shipped 2.0 km/s calibration.
+    from fermi_sim.departure import pump_tax_for
     try:
-        pumped_departure_dv(14.5e3, -47.0, 400.0)
+        pump_tax_for(7.0e3)
         guard_fired = False
     except ValueError:
         guard_fired = True
-    check("pumped_departure_dv refuses v_inf below the calibrated corridor (20 km/s)",
-          guard_fired, "ValueError raised at 14.5 km/s")
-    check("pumped_departure_dv still prices the AC corridor (23.64 km/s)",
-          pumped_departure_dv(23.64e3, 0.0, 400.0) > 30e3, "in-corridor call works")
+    check("pump tax refuses v_inf below the swept range (8 km/s)",
+          guard_fired, "ValueError raised at 7 km/s")
+    check("AC-corridor anchor is pinned to the shipped calibration (tax(23.64) = 2.000 km/s)",
+          abs(pump_tax_for(23.64e3) - 2000.0) < 1e-9, f"{pump_tax_for(23.64e3):.1f} m/s")
+    # the alpha2-Lib case that the old flat tax mispriced (34.7 vs integrated ~41.0) now
+    # prices correctly through the closed form: escape + v_inf + plane + tax(14.5)
+    alib = pumped_departure_dv(14.5e3, -47.0, 400.0)
+    check("closed-form budget reproduces the integrated alpha2-Lib total (~41.0 km/s)",
+          abs(alib - 41.0e3) < 0.25e3, f"{alib/1e3:.2f} km/s")
+    # fit-vs-integrator at OFF-knot targets (interp must track the campaign to < 0.3 km/s)
+    for v_t in (12.5e3, 20.5e3, 27.5e3):
+        vi_t, dv_t, _, _ = perihelion_pumped_vinf(a0_design, v_t, max_yr=200.0)
+        err = abs(pump_tax_for(v_t) - (dv_t - vi_t))
+        check(f"tax table tracks the integrator at v_inf {v_t/1e3:.1f} km/s (<0.3 km/s)",
+              err < 300.0, f"err {err:.0f} m/s")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the

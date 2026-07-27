@@ -137,15 +137,18 @@ This is where the novel and contested physics lives. Functions to scrutinise:
   design point (e.g. reaches at cap 2.0/2.5/3.5/4.0×, strands at 1.5/3.0/3.25×).
   Confirm this is real physics of the bang-bang schedule, not a bug.
 - **`pumped_departure_dv`** — the two-leg budget: √(μ⊕/a) escape + v∞ +
-  v∞·|sinβ| plane change + a flat **2 km/s "pump tax."** The tax is calibrated
-  only for the AC corridor (v∞ ≈ 23–25 km/s) and the corridor is **enforced at
-  runtime**: the function raises below `PUMP_TAX_VINF_MIN` (20 km/s) in both
-  languages. **Check:** the guard actually fires; the in-corridor calibration
-  (Δv − v∞ ≈ 2.0 km/s at the design point) against your own integration.
+  v∞·|sinβ| plane change + a **v∞-dependent pump tax** (`pump_tax_for`): a
+  piecewise-linear table swept from the campaign integrator at the design a₀
+  (13.5 km/s at v∞ = 8, 2.0 at the pinned 23.64 km/s AC anchor, 0 by ~28;
+  validity [8, 29] km/s, refuses below). **Check:** the table against your own
+  integration at off-knot targets (the suite pins < 0.3 km/s); the anchor pin;
+  the a₀-dependence caveat in [§8](#8-known-numerical-limitations-of-the-implementation).
 - **`sep_achievable_vinf`** — the conservative solar-power-fade feasibility gate
-  (1/r² thrust, RK4). **Check:** the fixed 50,000 s timestep (see
-  [§8](#8-known-numerical-limitations-of-the-implementation)); whether the saturation verdict is robust
-  to step size. This gate decides "does pure solar close?"
+  (1/r² thrust, adaptive-step mass-coupled RK4; step-halving convergence is
+  suite-pinned < 0.5%, and the integrator matches an independent adaptive RK45
+  to 0.001–0.09%). **Check:** the convergence claims yourself; whether the
+  saturation verdict is robust near the threshold. This gate decides "does pure
+  solar close?"
 - **`spiral_escape_dv`**, **`lowthrust_departure_dv`** (closed-form fit),
   **`earth_escape_revs`**, **`impulsive_dv_from_leo`**, **`synchrotron_escape`**.
   **Check:** the closed-form departure fit vs a real integration; the C3=0
@@ -233,25 +236,26 @@ has two labelled halves:
 Every entry has a tracked fix; the staged plan is
 [`docs/PRECISION_ROADMAP.md`](../docs/PRECISION_ROADMAP.md).
 
-- **Fixed 50,000 s timestep in `sep_achievable_vinf`.**
-  *Defect:* the achievable-v∞ result differs by up to ~3% from a finer-step
-  integration, and that error propagates to the page gate numbers, the star
-  tables' "Min solar α" column, and the α ≈ 100 W/kg outward-spiral threshold.
-  *Materiality claim (test this):* the gate's verdict — conservative solar
-  saturates far below the 23.3 km/s floor — has margin much wider than 3%, so no
-  conclusion flips. Scheduled fix: adaptive timestep,
-  [issue #2](https://github.com/fermiexplorer/fermi/issues/2).
-- **Flat 2 km/s pump tax in `pumped_departure_dv`, corridor-enforced.**
-  *Defect:* the tax models the campaign overhead as a constant, which is only
-  correct for v∞ ≈ 23–25 km/s (the true overhead is ~8–13 km/s at v∞ ≈ 8–15).
-  The function raises below `PUMP_TAX_VINF_MIN` (20 km/s) in both languages, so
-  the wrong regime is unreachable rather than modelled.
-  *Materiality claim (test this):* every shipped caller sits inside the corridor
-  (the AC aim's v∞ floor is 23.27 km/s), and the guard fires outside it.
-  Scheduled fix: v∞-dependent overhead model,
-  [issue #3](https://github.com/fermiexplorer/fermi/issues/3).
+- **The pump-tax table is swept at the design a₀ only.**
+  *Defect:* `pump_tax_for`'s overhead table is integrated at a₀ = 2.5×10⁻⁴; the
+  true overhead is a₀-dependent (measured at the AC target: 1.96 km/s at the
+  design a₀ vs 2.39 km/s at 5×10⁻⁴ — ~±0.4 km/s across the flyable band), so
+  budgets for vehicles flying a different effective a₀ carry that approximation.
+  *Materiality claim (test this):* the calculator throttles every stronger
+  vehicle to the design a₀ (the profile the table matches), and weaker vehicles
+  are gated by direct integration before any budget is shown; ±0.4 km/s is ~1%
+  of the two-leg total. Tracked fix: the optimised schedule re-anchors the tax
+  ([issue #4](https://github.com/fermiexplorer/fermi/issues/4)).
+- **Per-step bang-bang switch quantization in `perihelion_pumped_vinf`.**
+  *Defect:* the burn on/off/sign decision is taken once per RK4 step from
+  start-of-step osculating elements, so burn-arc edges are fuzzy by O(dt).
+  *Materiality claim (test this):* directly measured by a per-stage-switching
+  A/B — 0.12% Δv / 0.00% v∞ at the design point, verdict unchanged; the verdict
+  flips only at the bisected working-region edge, where any perturbation flips
+  it. Tracked fix: switching times become decision variables in
+  [issue #4](https://github.com/fermiexplorer/fermi/issues/4).
 
-The independent suite has a further ~139 assertions; a passing run is **not** a
+The independent suite has a further ~150 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---

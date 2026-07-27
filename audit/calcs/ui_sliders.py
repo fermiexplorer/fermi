@@ -148,7 +148,10 @@ def run(page):
     check("T=79k is ~0° (ecliptic crossing)", a79["tiltAbs"] < 0.5, f"{a79['tiltAbs']:.2f}")
     check("T=58k costs more Δv than optimum", a58["dvDesign"] > base["dvDesign"] + 200)
     check("T=100k costs more Δv than optimum", a100["dvDesign"] > base["dvDesign"] + 200)
-    check("Δv is flat between 73k and 79k (<2%)", abs(a79["dvDesign"]-base["dvDesign"])/base["dvDesign"] < 0.02)
+    # re-baselined for the v∞-dependent pump tax (issue #3): the tax falls as v∞ rises, which
+    # steepens the 73k→79k slope from ~2.0% (flat tax) to ~2.6% — still "flat" vs the >10%
+    # swings at the 58k/100k extremes, which is the behaviour this check actually pins
+    check("Δv is flat between 73k and 79k (<3%)", abs(a79["dvDesign"]-base["dvDesign"])/base["dvDesign"] < 0.03)
     check("pumped fuel optimum stays ~79.3k regardless of aim", abs(a58["minFuelYr"]-79250) < 600 and abs(a100["minFuelYr"]-79250) < 600)
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 

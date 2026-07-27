@@ -989,8 +989,9 @@
   thrusters. In the calculator, the <b>Perihelion-pumped SEP</b> architecture — <b>the default
   selection</b>, since it is the closing pure-solar architecture at today's α — prices departure with the
   matching two-leg budget — √(μ⊕/a) Earth escape + v∞ + a v∞·|sin β| plane change (the campaign is
-  flown in-plane, so the out-of-plane aim is bought separately) + a 2 km/s pumping tax calibrated at
-  the design corridor — and gates feasibility on the integrated staircase at the vehicle's own
+  flown in-plane, so the out-of-plane aim is bought separately) + a v∞-dependent pumping tax
+  interpolated from the integrated campaign (2.0 km/s at the 23.64 km/s AC anchor, rising to
+  ~13.5 km/s for 8 km/s targets) — and gates feasibility on the integrated staircase at the vehicle's own
   a₀ = F/m<sub>wet</sub>.</p>
   <p class="src">Caveats: the 4× perihelion power cap is a validated working point, not a conservative
   floor. It assumes a derating-free, actively thermally-managed (Parker-class) array — a real GaAs array
@@ -1700,9 +1701,9 @@ function render(){
   } else if(radio('ga')==='pumped'){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
       `Step 2 — low-thrust Earth escape to C3 ≈ 0 (no Earth-velocity borrow; cost = orbit-energy speed):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
-      `Step 3 — heliocentric pumping campaign (retrograde arcs to 0.42 AU, then perihelion burns; in-plane):\n  Δv_pump = v∞ + 2.0 km/s tax = ${fmt(vinfK,2)} + 2.0 = ${fmt(vinfK+2,2)} km/s   (tax calibrated on the integrated bang-bang policy at this corridor)\n`+
+      `Step 3 — heliocentric pumping campaign (retrograde arcs to 0.42 AU, then perihelion burns; in-plane):\n  Δv_pump = v∞ + tax(v∞) = ${fmt(vinfK,2)} + ${fmt(FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} = ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} km/s   (tax interpolated from the integrated bang-bang campaign; 2.0 at the 23.64 km/s AC anchor)\n`+
       `Step 4 — out-of-plane aim (the campaign is in-plane, so the tilt is bought separately):\n  Δv_plane = v∞·|sin β| = ${fmt(vinfK,2)}·|sin ${fmt(tiltA,2)}°| = ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} km/s\n`+
-      `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+2,2)} + ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see "Power-limited v∞" for the a₀ feasibility gate)`;
+      `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} + ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see "Power-limited v∞" for the a₀ feasibility gate)`;
   } else {
     dvSteps=`Reference frames: v∞, v_dep, v_esc,☉ and v_E are HELIOCENTRIC (vs the Sun); v∞,E, v_circ and v_esc,LEO are vs EARTH; Δv is what the engine supplies.\n\n`+
       `Step 1 — aim geometry from T (heliocentric, vs Sun):\n  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (probe coast speed vs Sun), out-of-plane tilt β = ${fmt(tiltA,2)}°\n`+
@@ -1725,7 +1726,7 @@ function render(){
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:(radio('ga')==='pumped'
-      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + 2 km/s tax). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
+      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + a v∞-dependent tax interpolated from the integrated campaign — 2.0 km/s at the AC anchor). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
       : radio('ga')==='direct'
       ? 'Conservative pure-EP budget: the closed-form Earth-escape spiral + a +5 km/s heliocentric-leg offset (the conservative model does not grant the full Earth-velocity borrow) + pointing margins. Sizes the propellant. NOTE: this is NOT the feasibility test — whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'
       : radio('ga')==='jupiter'

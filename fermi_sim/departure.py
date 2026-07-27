@@ -88,11 +88,47 @@ _SPIRAL_FIT_CE2 = 284.8  # m/s
 # (parabolic escape), vs the r→∞ Edelbaum asymptote of v_circ. Mildly acceleration-dependent
 # (~0.95 at a≈1e-4, ~0.94 at the design band, ~0.87 at a≈5e-3); 0.93 holds the SEP band to ≲1 %.
 _C3_ESCAPE_FRAC = 0.93
-# Lower edge (m/s) of the corridor where pumped_departure_dv's flat 2 km/s tax is honest —
-# below this the integrated campaign overhead is ~8-13 km/s and the flat tax underprices,
-# so the function refuses (see its docstring). The AC aim geometry never goes below the
-# 23.27 km/s tangential floor, so shipped callers sit comfortably inside.
-PUMP_TAX_VINF_MIN = 20.0e3
+# Pumping-campaign overhead tax(v∞) = Δv − v∞, swept from perihelion_pumped_vinf at the
+# validated design profile (a₀ = 2.5e-4, Isp 2800; tmp/ro/i3_sweep.py, issue #3). Piecewise-
+# linear knots at 1 km/s spacing; half-grid interpolation error ≤ 79 m/s vs the integrator.
+# The 23.64 km/s knot is PINNED to the shipped 2.0 km/s corridor calibration (raw integration
+# gives 1.97 — the pin is +30 m/s conservative and keeps every published AC budget stable).
+# 29-30 km/s clamp to 0 (measured −0.1, a discretisation artifact); the campaign STALLS above
+# ~29 km/s at the design a₀, so the table ends there. Below 8 km/s is outside the sweep and
+# pumped_departure_dv refuses (PUMP_TAX_VINF_MIN).
+_PUMP_TAX_TABLE = (
+    (8000.0, 13505.8), (9000.0, 12434.7), (10000.0, 11727.2), (11000.0, 10874.8),
+    (12000.0, 10100.8), (13000.0, 9215.6), (14000.0, 8558.2), (15000.0, 7785.7),
+    (16000.0, 6914.6), (17000.0, 6224.6), (18000.0, 5570.4), (19000.0, 4859.5),
+    (20000.0, 4122.8), (21000.0, 3562.5), (22000.0, 2907.1), (23000.0, 2345.5),
+    (23640.0, 2000.0), (24000.0, 1760.2), (25000.0, 1246.3), (26000.0, 786.1),
+    (27000.0, 394.8), (28000.0, 85.4), (29000.0, 0.0),
+)
+PUMP_TAX_VINF_MIN = 8.0e3
+
+
+def pump_tax_for(v_inf: float) -> float:
+    """Campaign-overhead tax (m/s) for a target v∞, interpolated from _PUMP_TAX_TABLE.
+
+    Validity [8, 29] km/s (the design-a₀ sweep range); above 29 km/s returns 0
+    (the overhead has vanished by ~28; the campaign itself stalls above ~29 at the
+    design a₀ — callers gate feasibility separately via perihelion_pumped_vinf).
+    Raises below 8 km/s (outside the swept model).
+    """
+    if not math.isfinite(v_inf):
+        raise ValueError(f"pump_tax_for: v_inf must be finite, got {v_inf!r}")
+    if v_inf < PUMP_TAX_VINF_MIN:
+        raise ValueError(
+            f"pump_tax_for: v_inf {v_inf/1e3:.1f} km/s is below the swept range "
+            f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — integrate perihelion_pumped_vinf directly.")
+    if v_inf >= _PUMP_TAX_TABLE[-1][0]:
+        return 0.0
+    for i in range(len(_PUMP_TAX_TABLE) - 1):
+        x0, y0 = _PUMP_TAX_TABLE[i]
+        x1, y1 = _PUMP_TAX_TABLE[i + 1]
+        if v_inf <= x1:
+            return max(y0 + (v_inf - x0) * (y1 - y0) / (x1 - x0), 0.0)
+    return 0.0
 
 
 def lowthrust_departure_dv(
@@ -408,40 +444,34 @@ def synchrotron_escape(
 
 
 def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
-                        apo_alt_km: float | None = None, pump_tax: float = 2000.0) -> float:
+                        apo_alt_km: float | None = None,
+                        pump_tax: float | None = None) -> float:
     """First-order total departure Δv (m/s) for the PERIHELION-PUMPED architecture, as a
     two-leg budget: (1) low-thrust Earth escape to C3 ≈ 0, costed at the orbit-energy speed
     √(μ⊕/a) of the starting orbit (the classic Edelbaum spiral-to-escape result; ~7.7 km/s
     from 400 km LEO, ~4.0 km/s from a GTO-like ellipse — conservative vs the integrated
     spiral by ~0.25–0.45 km/s), then (2) the heliocentric pumping campaign, priced
-    v∞ + v∞·|sin β| + ``pump_tax``: the campaign is integrated in-plane, so the
-    out-of-plane component of the aim (tilt β) is charged separately as a first-order
-    plane change v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential
-    aim), and the tax covers the in-plane overhead (pump-down arcs + gravity losses),
-    calibrated against :func:`perihelion_pumped_vinf` at the design corridor
-    (Δv − v∞ ≈ 2.0 km/s at a₀ = 2.5×10⁻⁴, v∞ ≈ 23.6 km/s). The flat tax is exact ONLY near
-    the AC corridor (v∞ ≈ 23–25 km/s): re-integrating the policy at the design a₀, the true
-    campaign overhead (Δv − v∞) is ~13.5 km/s at v∞=8, ~11.7 at v∞=10, ~7.8 at v∞=15, falling
-    through 2.0 at v∞≈23.6 and to ≈0 by v∞=30. So this two-leg budget UNDERPRICES low-v∞
-    targets by ~10 km/s. The corridor is therefore ENFORCED: v_inf below
-    ``PUMP_TAX_VINF_MIN`` (20 km/s) raises ValueError — price such targets by integrating
-    :func:`perihelion_pumped_vinf` at the target (its returned dv IS the campaign leg,
-    v∞ + true overhead). Above the corridor the flat tax overprices slightly
-    (conservative), so no upper guard. Unlike the outward-spiral budget this does NOT
-    borrow Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
+    v∞ + v∞·|sin β| + tax(v∞): the campaign is integrated in-plane, so the out-of-plane
+    component of the aim (tilt β) is charged separately as a first-order plane change
+    v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential aim), and the
+    tax covers the in-plane overhead (pump-down arcs + gravity losses).
+
+    The tax is v∞-DEPENDENT (issue #3): interpolated from :func:`pump_tax_for`'s table,
+    swept from :func:`perihelion_pumped_vinf` at the design profile — 13.5 km/s at v∞=8,
+    7.8 at 15, 2.0 at the pinned 23.64 km/s AC anchor, 0 by ~28. Validity [8, 29] km/s;
+    below 8 km/s raises (outside the swept model). Passing ``pump_tax`` explicitly
+    overrides the table (audit/what-if use). Unlike the outward-spiral budget this does
+    NOT borrow Earth's orbital velocity — v∞ is built heliocentrically at perihelion.
     """
-    for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg), ("peri_alt_km", peri_alt_km),
-                    ("pump_tax", pump_tax)):
+    for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg), ("peri_alt_km", peri_alt_km)):
         if not math.isfinite(val):
             raise ValueError(f"pumped_departure_dv: {nm} must be finite, got {val!r}")
     if apo_alt_km is not None and not math.isfinite(apo_alt_km):
         raise ValueError(f"pumped_departure_dv: apo_alt_km must be finite or None, got {apo_alt_km!r}")
-    if v_inf < PUMP_TAX_VINF_MIN:
-        raise ValueError(
-            f"pumped_departure_dv: v_inf {v_inf/1e3:.1f} km/s is below the calibrated corridor "
-            f"({PUMP_TAX_VINF_MIN/1e3:.0f} km/s) — the flat {pump_tax/1e3:.1f} km/s tax underprices the "
-            "campaign there (true overhead ~8-13 km/s). Integrate perihelion_pumped_vinf at this "
-            "target instead; its returned dv is the correctly-priced campaign leg.")
+    if pump_tax is None:
+        pump_tax = pump_tax_for(v_inf)          # raises below the 8 km/s validity floor
+    elif not math.isfinite(pump_tax):
+        raise ValueError(f"pumped_departure_dv: pump_tax must be finite or None, got {pump_tax!r}")
     r_p = c.R_EARTH + peri_alt_km * 1e3
     r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3
     a = 0.5 * (r_p + r_a)

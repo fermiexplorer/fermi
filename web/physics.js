@@ -299,17 +299,31 @@
   // heliocentric pumping campaign at v∞ + v∞·|sin β| (plane change — the campaign is
   // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
   // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor).
-  // The flat tax is exact ONLY near the AC corridor (v∞ ≈ 23–25 km/s): the true overhead is
-  // ~10–13 km/s at v∞ ≈ 8–10, so this budget UNDERPRICES low-v∞ targets. The corridor is
-  // ENFORCED (mirror of fermi_sim PUMP_TAX_VINF_MIN): below 20 km/s the function throws —
-  // price such targets by integrating perihelionPumpedVinf (its dv IS the campaign leg).
-  // Unreachable from the page: the AC aim's v∞ floor is 23.27 km/s. No Earth-velocity borrow.
-  const PUMP_TAX_VINF_MIN = 20e3;
-  function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = 2000) {
-    if (vinf < PUMP_TAX_VINF_MIN)
-      throw new Error("pumpedDepartureDv: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is below the "
-        + "calibrated 20 km/s corridor — the flat tax underprices there; integrate "
-        + "perihelionPumpedVinf at this target instead.");
+  // The tax is v∞-DEPENDENT (issue #3, mirror of fermi_sim._PUMP_TAX_TABLE): piecewise-linear
+  // knots swept from perihelionPumpedVinf at the design profile — 13.5 km/s at v∞=8, 2.0 at
+  // the pinned 23.64 AC anchor, 0 by ~28. Validity [8, 29] km/s (below 8 throws — outside the
+  // swept model; unreachable from the page, whose v∞ floor is 23.27). No Earth-velocity borrow.
+  const PUMP_TAX_VINF_MIN = 8e3;
+  const PUMP_TAX_TABLE = [
+    [8000, 13505.8], [9000, 12434.7], [10000, 11727.2], [11000, 10874.8],
+    [12000, 10100.8], [13000, 9215.6], [14000, 8558.2], [15000, 7785.7],
+    [16000, 6914.6], [17000, 6224.6], [18000, 5570.4], [19000, 4859.5],
+    [20000, 4122.8], [21000, 3562.5], [22000, 2907.1], [23000, 2345.5],
+    [23640, 2000.0], [24000, 1760.2], [25000, 1246.3], [26000, 786.1],
+    [27000, 394.8], [28000, 85.4], [29000, 0.0]];
+  function pumpTaxFor(vinf) {
+    if (!Number.isFinite(vinf) || vinf < PUMP_TAX_VINF_MIN)
+      throw new Error("pumpTaxFor: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is below the swept "
+        + "8 km/s range — integrate perihelionPumpedVinf directly.");
+    const T = PUMP_TAX_TABLE;
+    if (vinf >= T[T.length - 1][0]) return 0;
+    for (let i = 0; i < T.length - 1; i++)
+      if (vinf <= T[i + 1][0])
+        return Math.max(T[i][1] + (vinf - T[i][0]) * (T[i + 1][1] - T[i][1]) / (T[i + 1][0] - T[i][0]), 0);
+    return 0;
+  }
+  function pumpedDepartureDv(vinf, tiltDeg, periAltKm, apoAltKm, pumpTax = null) {
+    if (pumpTax == null) pumpTax = pumpTaxFor(vinf);
     const rp = R_EARTH + periAltKm * 1e3;
     const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
     const plane = vinf * Math.abs(Math.sin(tiltDeg * Math.PI / 180));
@@ -346,7 +360,7 @@
     PUMP_DESIGN_A0, PUMP_DESIGN_ISP,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, pumpedDepartureDv, pumpTaxFor, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

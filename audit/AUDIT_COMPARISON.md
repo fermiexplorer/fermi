@@ -222,11 +222,12 @@ low-cruise campaign overhead make its budget substantially **worse**:
 | AC (crossing) | 23.9 | 0.0 | 33.5 | 70 % | 21.1 W/kg |
 | AC (design) | 23.6 | 1.0 | 34.2 | 71 % | 21.7 W/kg |
 
-¹ α² Lib's campaign leg is **integrated** (`perihelion_pumped_vinf` at its 14.5 km/s target:
-Δv 22.7 km/s = v∞ + ~8.1 km/s of in-plane overhead), because the flat 2 km/s pump tax is
-calibrated only for the v∞ ≈ 23–25 km/s corridor — the low-cruise overhead is ~4× larger, and
-`pumped_departure_dv` refuses targets below 20 km/s for exactly this reason
-(`PUMP_TAX_VINF_MIN`). The AC rows sit inside the corridor and use the flat-tax budget.
+¹ α² Lib's campaign leg is priced by the **v∞-dependent tax** (`pump_tax_for`, a table
+interpolated from the integrated campaign at the design a₀ — issue #3): tax(14.5) ≈ 8.2 km/s,
+so the closed-form budget gives 40.9 km/s, matching the direct integration (41.0) to ~0.1 km/s.
+The AC rows use the same table at its **pinned 2.0 km/s anchor** (v∞ = 23.64), which keeps every
+published AC budget identical to the original corridor calibration. The table's validity floor
+is 8 km/s; below it the budget refuses.
 
 *(α² Lib's low cruise does close at a₀ as small as 8×10⁻⁵ — but that campaign runs ~60 yr over
 ~15 revolutions: the patience trade taken to its limit.)*

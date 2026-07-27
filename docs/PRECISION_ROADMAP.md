@@ -23,40 +23,25 @@ plan (NN = issue number). Unscheduled stages get theirs when picked up.
 
 ---
 
-## Stage 1 — Adaptive timestep in the SEP power gate  *(scheduled: [#2](https://github.com/fermiexplorer/fermi/issues/2))*
+## Stage 1 — Adaptive timestep in the SEP power gate  *(shipped: [#2](https://github.com/fermiexplorer/fermi/issues/2), build 154)*
 
-**Today:** `sep_achievable_vinf` integrates with a fixed 50,000 s step (result up
-to ~3% off a finer-step integration), and its mass is Euler-updated once per step
-while the state is fourth-order — all four RK4 stages see the start-of-step mass
-(worst case ~1% more, at high power and ~80% propellant fraction). The verdict it
-produces (conservative solar saturates far below the 23.3 km/s floor) has margin
-far wider than either error, so no conclusion changes — but the achievable-v∞
-*values* it prints (page gate numbers, the star tables' "Min solar α" column, the
-α ≈ 100 W/kg outward-spiral threshold) carry them.
+`sep_achievable_vinf` integrates with an adaptive step (`dt = min(max(600,
+0.002·period_r), 5 days)`, r-based Kepler period) and the mass folded into the
+RK4 state vector (5th component, ṁ = −F/vₑ); step-halving convergence is
+asserted in `audit/calcs/audit_departure.py` (< 0.5%, measured 1.4×10⁻⁶–1.9×10⁻³).
+Validation: the integrator matches Fable's independent adaptive RK45 to
+0.001–0.09%. The pumping integrator was measured and deliberately left as-is
+(mass coupling moves its campaign only 0.06% v∞ / 0.10% Δv).
 
-**Tightened:** adaptive step `dt = min(max(600, 0.002·period), 5 days)` — the
-scheme the pumping integrator already uses — with mass folded into the RK4 state
-vector (5th component, ṁ = −F/vₑ), plus a step-halving convergence assertion in
-`audit/calcs/audit_departure.py`.
+## Stage 2 — v∞-dependent pumped-campaign pricing  *(shipped: [#3](https://github.com/fermiexplorer/fermi/issues/3))*
 
-**Re-baselines:** parity REF values for the two SEP checks; the star tables'
-`amin` column; the α-threshold numbers quoted on the page/REPORT if they move.
-
-## Stage 2 — v∞-dependent pumped-campaign pricing  *(scheduled: [#3](https://github.com/fermiexplorer/fermi/issues/3))*
-
-**Today:** `pumped_departure_dv` prices the campaign leg as v∞ + a flat 2 km/s
-tax, calibrated at the AC corridor (v∞ ≈ 23–25 km/s). The true in-plane overhead
-is ~8 km/s at v∞ = 15 and ~13 km/s at v∞ = 8, so the flat tax is wrong off-corridor
-— now **enforced**: the function raises below `PUMP_TAX_VINF_MIN` (20 km/s), and
-off-corridor targets are priced by integrating `perihelion_pumped_vinf` directly
-(as `audit/AUDIT_COMPARISON.md` §2b does for α² Lib).
-
-**Tightened:** replace the flat tax with a calibrated overhead curve tax(v∞)
-fitted against the integrator across v∞ = 8–30 km/s (or integrate on demand with
-caching), removing the corridor restriction.
-
-**Re-baselines:** pumped-budget parity checks; the two-leg budget quotes in the
-page/REPORT if the in-corridor value shifts.
+`pumped_departure_dv` prices the campaign leg as v∞ + `pump_tax_for(v∞)` — a
+piecewise-linear table swept from the campaign integrator at the design a₀
+(13.5 km/s at v∞ = 8 falling to 0 by ~28; validity [8, 29] km/s, refuses below;
+half-grid interpolation error ≤ 79 m/s, suite-pinned < 0.3 km/s at off-knot
+targets). The 23.64 km/s knot is pinned to the shipped 2.0 km/s calibration, so
+every published AC budget is unchanged. Residual: the table is swept at the
+design a₀ only (~±0.4 km/s a₀-dependence) — re-anchored by Stage 3 (#4).
 
 ## Stage 3 — Optimised pumping schedule  *(scheduled: [#4](https://github.com/fermiexplorer/fermi/issues/4))*
 
