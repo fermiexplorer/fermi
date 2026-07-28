@@ -73,10 +73,16 @@ commands.** Every individual command that is not auto-approved blocks the
 pipeline waiting for approval (potentially for hours). When a task needs
 multiple steps (measure → optimise → bake → verify), write a SINGLE
 stage-based script (e.g. `tmp/ro/i7_all.py` with clearly labelled stages that
-run in sequence and print a per-stage report) and run it with one approval —
-infinitely better than N approval prompts. Split into separate scripts only
-when a later stage genuinely depends on a human decision about an earlier
-stage's output.
+invoke the sub-steps under the cover, run in sequence, and print a per-stage
+report) and run it with one approval — infinitely better than N approval
+prompts. Split into separate scripts only when a later stage genuinely
+depends on a human decision about an earlier stage's output.
+
+**NEVER pipe command output (`| grep`, `| tail`, `| head`, `| wc`) — the
+owner denies those.** A script must do its own filtering/summarising and
+print a concise report (PASS/FAIL lines, a short summary block) so its raw
+output needs no post-processing. If an existing script is too chatty, fix the
+script's reporting rather than piping its output.
 
 **ALWAYS run verification through scripts — never as chains of one-off suite
 commands or filter pipes.** Verification is READ-ONLY, so it is invoked via
@@ -206,7 +212,7 @@ For process management (find PID, kill, restart), ALWAYS write a tmp script.
 ### What IS allowed
 
 - Single commands with simple arguments
-- ONE output pipe for filtering: `cmd | head`, `cmd | tail`, `cmd | grep`, `cmd | wc`
+- NO output pipes — not even a single `| head` / `| grep` (denied; scripts summarise their own output)
 - `git -C path <subcommand>`
 
 ### WSL-specific bans
