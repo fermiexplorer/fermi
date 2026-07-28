@@ -194,12 +194,12 @@
   #tabbar { position: sticky; top: 0; z-index: 60; display: flex; gap: 6px;
     padding: 8px 18px 0; background: #0d1117; border-bottom: 1px solid var(--line);
     overflow-x: auto; scrollbar-width: thin; }
-  .tabbtn { background: #161d26; color: #9aa7b4; border: 1px solid var(--line);
+  .tabbtn { background: #253141; color: #c4cdd6; border: 1px solid #3d4a5c;
     border-bottom: none; border-radius: 8px 8px 0 0; padding: 8px 16px;
     font: 600 13.5px/1.2 inherit; font-family: inherit; cursor: pointer; white-space: nowrap; }
-  .tabbtn:hover { color: var(--ink); }
-  .tabbtn.active { color: var(--ink); background: #24303d;
-    box-shadow: inset 0 -2px 0 var(--accent); }
+  .tabbtn:hover { color: var(--ink); background: #2d3c50; }
+  .tabbtn.active { color: #ffffff; background: #35526e; border-color: #4c6e91;
+    box-shadow: inset 0 -3px 0 var(--accent); }
   body.tabbed .tabpane { display: none; }
   body.tabbed .tabpane.show { display: block; }
   @media (max-width: 700px){ .tabbtn { padding: 7px 10px; font-size: 12.5px; } }
