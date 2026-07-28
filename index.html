@@ -202,6 +202,10 @@
     box-shadow: inset 0 -3px 0 var(--accent); }
   body.tabbed .tabpane { display: none; }
   body.tabbed .tabpane.show { display: block; }
+  /* DISARMED interactive charts must not trap touch swipes: Plotly styles its layers with
+     touch-action:none inline, so an !important override re-enables the browser's native
+     vertical pan until the chart is armed by a tap (see the scroll/swipe guard script) */
+  .zoomguard:not(.armed), .zoomguard:not(.armed) * { touch-action: pan-y !important; }
   @media (max-width: 700px){ .tabbtn { padding: 7px 10px; font-size: 12.5px; } }
 .prelim { margin-top: 10px; background: #3a2a10; border: 1px solid #6b5320; border-left: 4px solid #d29922;
   color: #f0c674; border-radius: 6px; padding: 9px 13px; font-size: 13px; line-height: 1.45; }
@@ -473,7 +477,7 @@
       </div>
       <div class="viz3drow">
         <div class="camcell">
-          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; click first, then scroll to zoom (an unclicked chart lets the page scroll past); the grid re-scales by decade.">?</span></div>
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; click (tap) first, then scroll/pinch to zoom — an untouched chart lets the page scroll past; the grid re-scales by decade.">?</span></div>
           <div class="chart prim" id="chartOrbit3d"></div>
         </div>
         <div class="camcell">
@@ -1213,8 +1217,8 @@
     <span id="starTlabel"></span>
   </div>
   <div id="starmap"></div>
-  <p class="src">Drag to rotate; click the map first, then scroll to zoom (an unclicked map lets the page
-  scroll past it). Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
+  <p class="src">Drag to rotate; click (tap) the map first, then scroll or pinch to zoom — an untouched map
+  lets the page scroll past it. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
   colours = spectral class (blue-white A/F → yellow G → orange K → red M); dotted trails = the headline
   approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 10 mas with full 6-D kinematics
   (~120,000 stars, complete to ~315 ly, plus the region's giants — V ≤ 2.5 — out to ~1,000 ly; radial
@@ -2418,7 +2422,7 @@ function chase3dInit(){
   el.appendChild(ren.domElement);
   el.style.position = 'relative';                                      // anchor for the overlay labels
   const lbl = document.createElement('div');
-  lbl.textContent = 'chase cam — drag to rotate · click, then scroll to zoom · double-click to reset';
+  lbl.textContent = 'chase cam — drag to rotate · click/tap, then scroll to zoom · double-click to reset';
   lbl.style.cssText = 'position:absolute;top:6px;left:8px;font:11px system-ui,sans-serif;color:#7d8896;pointer-events:none;z-index:2';
   el.appendChild(lbl);
   const revlbl = document.createElement('div');                        // live revolution counter (top-right)
@@ -3659,24 +3663,48 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
   if (m) showTab(m.t, m.el); else showTab('calc');
 })();
 
-// ---- Wheel-scroll guard for the interactive 3-D views: page scrolling must never get
-// captured by a chart the cursor merely passes over. Each wheel-zooming chart starts
-// DISARMED: a capture-phase listener stops the wheel event before Plotly's own handler can
-// preventDefault it, so the browser performs its normal page scroll. CLICKING (pointerdown
-// on) the chart arms it — wheel then zooms as the chart tooltips describe — and moving the
-// cursor off the chart disarms it again. Listeners sit on the container divs, so Plotly
+// ---- Scroll/swipe guard for the interactive 3-D views: page scrolling must never get
+// captured by a chart the cursor (or a touch swipe) merely passes over. Each zooming chart
+// starts DISARMED: capture-phase listeners stop wheel AND touch gestures before Plotly's
+// handlers can preventDefault them, and a CSS override (touch-action: pan-y while
+// disarmed) re-enables the browser's native vertical swipe over the chart. ARMING: a mouse
+// click, or on touch a TAP (short press without movement). DISARMING: the cursor leaving
+// the chart, or any touch/click outside it. Listeners sit on the container divs, so Plotly
 // re-renders inside them never detach the guard.
 (function(){
+  const guards = [];
   ['chartOrbit3d','follow3d','velSpeed','velDv','starmap'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el._zoomArmed = false;
-    el.addEventListener('wheel', e => {
-      if (!el._zoomArmed) e.stopImmediatePropagation();   // no preventDefault → page scrolls
-    }, { capture: true, passive: false });
-    el.addEventListener('pointerdown', () => { el._zoomArmed = true; }, true);
-    el.addEventListener('mouseleave', () => { el._zoomArmed = false; }, true);
+    el.classList.add('zoomguard');
+    const arm = () => { el.classList.add('armed'); el._zoomArmed = true; };
+    const disarm = () => { el.classList.remove('armed'); el._zoomArmed = false; };
+    disarm();
+    // block the zoom/rotate gestures from reaching Plotly while disarmed (no preventDefault
+    // → the browser performs its normal page scroll); pointermove is blocked for touch only
+    // so mouse hover labels keep working before the chart is armed
+    ['wheel','touchstart','touchmove'].forEach(tp =>
+      el.addEventListener(tp, e => { if (!el._zoomArmed) e.stopImmediatePropagation(); },
+        { capture: true, passive: false }));
+    el.addEventListener('pointermove', e => {
+      if (!el._zoomArmed && e.pointerType !== 'mouse') e.stopImmediatePropagation();
+    }, true);
+    let t0 = 0, x0 = 0, y0 = 0;
+    el.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse') { arm(); return; }
+      t0 = Date.now(); x0 = e.clientX; y0 = e.clientY;
+    }, true);
+    el.addEventListener('pointerup', e => {
+      if (e.pointerType !== 'mouse' && Date.now() - t0 < 600
+          && Math.hypot(e.clientX - x0, e.clientY - y0) < 12) arm();   // a TAP arms touch
+    }, true);
+    el.addEventListener('mouseleave', () => disarm(), true);
+    guards.push({ el, disarm });
   });
+  // touch has no mouseleave: any press outside a chart disarms it again
+  document.addEventListener('pointerdown', e => {
+    guards.forEach(g => { if (!g.el.contains(e.target)) g.disarm(); });
+  }, true);
 })();
 </script>
 </body>
