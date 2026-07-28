@@ -20,7 +20,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 # default control values (must match index.html)
 DEFAULTS = {
     "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
-    "enginekg": 4, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 1000, "rtg": 40, "rp": 6,
+    "enginekg": 6, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 91, "rtg": 40, "rp": 6,
     "srp": 10, "skick": 5,
 }
 RADIO_DEFAULTS = {"pwr": "solar", "ga": "pumped"}
@@ -72,14 +72,17 @@ def run(page):
           f"loaded wkgsolar={native['wkgsolar']} enginekg={native['enginekg']} isp={native['isp']}")
 
     base = comp()
-    # The DEFAULT is now the high-α solar feasible design (build 68): 400 W/kg array + 3 kg/kW thruster
-    # + Isp 3000 → vehicle α ≈ 118 W/kg → pure solar CLOSES with a ~3-4 km/s margin.
-    check("default high-α solar IS feasible", base["feasible"] is True, base["infeasReason"])
+    # The DEFAULT is the pumped architecture at TODAY'S SILICON components (issue #7):
+    # 91 W/kg array + 6 kg/kW thruster + Isp 3000, 2 kW → ~162 kg wet, vehicle α ≈ 38 W/kg,
+    # a₀ ≈ 4.2e-4 (throttled to the 2.5e-4 design profile) — real-hardware defaults close.
+    check("default (today's silicon, pumped) IS feasible", base["feasible"] is True, base["infeasReason"])
     check("default is pure solar-electric (power-feasible)", base["powerFeasible"] is True)
     check("default achievable v∞ clears the floor", base["achievableVinf"] >= base["vinf"],
           f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
-    check("default vehicle α is in the closing corner (~100-130 W/kg)",
-          100 < base["pwrW"]/base["dryEff"] < 135, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
+    check("default vehicle α is today's-hardware class (~35-40 W/kg)",
+          33 < base["pwrW"]/base["dryEff"] < 43, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
+    check("default pumped vehicle is the ~162 kg silicon design",
+          abs(base["wet"] - 162) < 10, f"{base['wet']:.1f} kg wet")
     # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
     # show the validated reference campaign, and be pinned regardless of the Isp slider.
     check("default pumped campaign is the anchored THERMAL schedule (~7.9 revs, ~12 yr, ~24.5 dv)",
@@ -299,6 +302,32 @@ def run(page):
           deep["active"] == "method" and deep["shown"], str(deep))
     page.evaluate("() => { history.replaceState(null, '', location.pathname); }")
     page.click('#tabbar .tabbtn[data-tab="calc"]')
+    page.wait_for_timeout(200)
+
+    # --- Per-architecture presets (issue #7): a REAL user click on an architecture radio
+    # loads the component set that architecture closes with; sliders remain adjustable.
+    # (Normalize to the default state first — a click on an ALREADY-selected radio fires
+    # no input event, so each probe below is a genuine state change.) ---
+    comp()
+    page.click('input[name=ga][value="direct"]')
+    page.wait_for_timeout(200)
+    pd = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
+                       " e:+document.getElementById('enginekg').value, feas:compute().feasible})")
+    check("selecting DIRECT loads the far-term preset (1000 W/kg, 4 kg/kW) and closes",
+          pd["w"] == 1000 and pd["e"] == 4 and pd["feas"] is True, str(pd))
+    page.click('input[name=ga][value="pumped"]')
+    page.wait_for_timeout(200)
+    pp = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
+                       " e:+document.getElementById('enginekg').value, feas:compute().feasible})")
+    check("selecting PUMPED loads today's silicon preset (91 W/kg, 6 kg/kW) and closes",
+          pp["w"] == 91 and pp["e"] == 6 and pp["feas"] is True, str(pp))
+    page.click('input[name=pwr][value="nuclear"]')
+    page.wait_for_timeout(200)
+    pn = page.evaluate("() => ({kw:+document.getElementById('pwrkw').value,"
+                       " rtg:+document.getElementById('rtg').value, feas:compute().feasible})")
+    check("selecting NUCLEAR loads the 5 kW / 40 W/kg closing corner and closes",
+          pn["kw"] == 5 and pn["rtg"] == 40 and pn["feas"] is True, str(pn))
+    page.click('input[name=pwr][value="solar"]')
     page.wait_for_timeout(200)
 
 def main():

@@ -36,7 +36,7 @@ It answers:
 | **Pumped SEP departure Δv (default architecture)** | ~33 km/s two-leg total (anchored optimised schedule under a DERIVED thermal power curve, cap_eff(0.42 AU)=3.54; at PSI's idealised 4× cap the same construction gives 23.14 vs their 23.97 — 3.5% better); closes at today's α (~15–21 W/kg) |
 | Best departure window | direct optimum ~72,800 yr; pumped optimum at the ~79,250 yr ecliptic crossing |
 | Departure aim | ~2.4° off the ecliptic (direct optimum); 0° at the crossing |
-| Reference vehicles | pumped default ~50 kg wet @2 kW GaAs; conservative direct ~600 kg wet @5 kW silicon |
+| Reference vehicles | pumped default ~162 kg wet @2 kW today's silicon (91 W/kg); direct spiral needs the far-term high-α preset (~43 kg wet @1000 W/kg); conservative direct ~600 kg wet @5 kW silicon |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn
