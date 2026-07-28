@@ -473,7 +473,7 @@
       </div>
       <div class="viz3drow">
         <div class="camcell">
-          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; scroll to zoom; the grid re-scales by decade.">?</span></div>
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; click first, then scroll to zoom (an unclicked chart lets the page scroll past); the grid re-scales by decade.">?</span></div>
           <div class="chart prim" id="chartOrbit3d"></div>
         </div>
         <div class="camcell">
@@ -1213,7 +1213,8 @@
     <span id="starTlabel"></span>
   </div>
   <div id="starmap"></div>
-  <p class="src">Drag to rotate, scroll to zoom. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
+  <p class="src">Drag to rotate; click the map first, then scroll to zoom (an unclicked map lets the page
+  scroll past it). Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
   colours = spectral class (blue-white A/F → yellow G → orange K → red M); dotted trails = the headline
   approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 10 mas with full 6-D kinematics
   (~120,000 stars, complete to ~315 ly, plus the region's giants — V ≤ 2.5 — out to ~1,000 ly; radial
@@ -2417,7 +2418,7 @@ function chase3dInit(){
   el.appendChild(ren.domElement);
   el.style.position = 'relative';                                      // anchor for the overlay labels
   const lbl = document.createElement('div');
-  lbl.textContent = 'chase cam — drag to rotate · scroll to zoom · double-click to reset';
+  lbl.textContent = 'chase cam — drag to rotate · click, then scroll to zoom · double-click to reset';
   lbl.style.cssText = 'position:absolute;top:6px;left:8px;font:11px system-ui,sans-serif;color:#7d8896;pointer-events:none;z-index:2';
   el.appendChild(lbl);
   const revlbl = document.createElement('div');                        // live revolution counter (top-right)
@@ -2822,7 +2823,7 @@ function drawZoom3d(c,st){
     {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
     {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
     {type:'scatter3d',mode:'markers',x:[(R0[0]+VAC[0]*eclipticCrossingT())/AU],y:[(R0[1]+VAC[1]*eclipticCrossingT())/AU],z:[0],marker:{color:'#e6edf3',size:5,symbol:'diamond-open'},name:'AC ⨯ ecliptic (~79k yr)'},
-  ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · scroll to zoom, drag to rotate`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · drag to rotate, click then scroll to zoom`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
     scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:groupCam('chartOrbit3d'),
@@ -3401,7 +3402,7 @@ function drawStarMap(tMyr){
   }
   const R=72, ax={range:[-R,R],color:'#9aa7b4',gridcolor:'#1d242d',tickfont:{size:9}};
   Plotly.react('starmap',traces,{
-    title:{text:`Solar neighbourhood at t = +${(tMyr*1000).toFixed(0)} kyr — drag to rotate`,font:{size:13,color:'#e6edf3'}},
+    title:{text:`Solar neighbourhood at t = +${(tMyr*1000).toFixed(0)} kyr — drag to rotate · click, then scroll to zoom`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,
     margin:{l:0,r:0,t:34,b:0},uirevision:'starmap',
     scene:{aspectmode:'cube',bgcolor:'#161b22',
