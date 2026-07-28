@@ -321,10 +321,14 @@ def main() -> None:
               f"accel {s['time_yr']:5.1f} yr  max orbit {s['max_period_yr']:5.1f} yr  "
               f"dv_final_min {s['dv_final_min']/KMS:4.2f}   {tag}")
     print(
-        "\n=> Deep stations win the endgame (dv_final_min ~1.4 km/s at 10 Rs vs ~6.2 at 1 AU) but face\n"
-        "   continuous deep-solar exposure, ~57 km/s aperture rendezvous, phase-resonant orbit\n"
-        "   ladders, and kick recoil. Equal kicks usually escape BELOW target; the strong form is a\n"
-        "   ONE-KICK GATEWAY at ~4-10 Rs reused across a fleet of passive probes."
+        "\n=> EXPLORATORY CONCEPT, NOT A CANDIDATE ARCHITECTURE: the deep-solar station\n"
+        "   infrastructure does not exist and is not costed; the model is priced to show WHY the\n"
+        "   scheme fails in its single-probe form. Deep stations win the endgame (dv_final_min\n"
+        "   ~1.4 km/s at 10 Rs vs ~6.2 at 1 AU) but face continuous deep-solar exposure, ~57 km/s\n"
+        "   aperture rendezvous, phase-resonant orbit ladders, and kick recoil. Equal kicks usually\n"
+        "   escape BELOW target (escape terminates recirculation - the probe is stranded); the only\n"
+        "   coherent form is a ONE-KICK GATEWAY at ~4-10 Rs amortised across a fleet of passive\n"
+        "   probes."
     )
 
     # ---------------------------------------------------------------

@@ -92,6 +92,16 @@ def run() -> None:
           "terawatt-class coupling" not in idx and "terawatt-class pulse" not in idx
           and "gigawatt-class coupling" in idx)
 
+    # 9b. The synchrotron is presented as an EXPLORATORY concept, not a candidate mission
+    #     architecture (owner decision): the labeling must survive on the selector, the
+    #     architecture table, the section header, and the analysis verdict.
+    check("index.html labels the synchrotron exploratory in the architecture table",
+          "Exploratory only — not a candidate for this mission" in idx)
+    check("index.html synchrotron section opens with the exploratory status",
+          "exploratory concept — not a candidate for this mission" in idx)
+    check("run_analysis synchrotron verdict is labelled exploratory",
+          "EXPLORATORY CONCEPT, NOT A CANDIDATE ARCHITECTURE" in analysis)
+
     # 10. Thermal-era cross-file facts (issue #5). The derived cap 3.54 and the flown
     #     campaign dv 24.44 must appear on the headline surfaces; the old default budget
     #     bands must not reappear as the current default.

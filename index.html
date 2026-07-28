@@ -308,7 +308,7 @@
       <div class="radios">
         <label><input type="radio" name="ga" value="pumped" checked> Perihelion-pumped SEP (multi-rev — default)</label>
         <label><input type="radio" name="ga" value="direct"> Direct from LEO (no assist)</label>
-        <label><input type="radio" name="ga" value="synchro"> Perihelion synchrotron — the “lasso” (EM station)</label>
+        <label><input type="radio" name="ga" value="synchro"> Perihelion synchrotron — the “lasso” (exploratory — needs deep-solar infrastructure)</label>
         <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist</label>
         <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
       </div>
@@ -322,7 +322,11 @@
         <input type="range" id="srp" min="4" max="215" step="1" value="10">
         <label>Kick per pass <b><span id="o_skick">5.0</span> km/s</b></label>
         <input type="range" id="skick" min="0.5" max="10" step="0.5" value="5">
-        <div class="hint">Velocity increment added per perihelion transit. A Sun-orbiting coil
+        <div class="hint"><b>Exploratory concept, not a candidate mission architecture:</b> it requires
+          a deep-solar EM-station infrastructure that does not exist, and the model's own verdict is
+          that equal-kick recirculation usually strands the probe (see below) — it is priced here to
+          show <em>why</em>, and what the workable fleet-scale form would be. Velocity increment added
+          per perihelion transit: a Sun-orbiting coil
           accelerator (or a constellation of them, which eases the rendezvous phasing) drives the probe
           through its bore by induction — non-contact, no capture — and the probe coasts back on a
           larger ellipse for the next pass. Escape terminates recirculation: the final increment must
@@ -704,7 +708,7 @@
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
     <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~33 km/s total (7.6 escape + ~24.4 helio — the +0.8 pumping tax is computed under the DERIVED thermal power curve, not an assumed cap)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody (anchored optimised schedule under the derived thermal power model)</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <b>The calculator's default architecture.</b> <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
-    <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R<sub>☉</sub>); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td>Probe bypasses the rocket equation entirely; escape terminates recirculation, so the strong form is a <b>one-kick gateway reused across a fleet</b>. <a href="#synchrotron">See the synchrotron section</a>.</td></tr>
+    <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R<sub>☉</sub>); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td><b>Exploratory only — not a candidate for this mission.</b> The probe bypasses the rocket equation, but the required infrastructure does not exist, and the model's own verdict is that equal-kick recirculation usually strands the probe (escape terminates recirculation); the only coherent form is a <b>one-kick gateway amortised across a whole fleet</b>. Priced here to show why. <a href="#synchrotron">See the synchrotron section</a>.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
   hardware or a timing constraint. Direct SEP carries the most Δv but is the only option with no alignment
@@ -1091,6 +1095,12 @@
   (which this vehicle cannot perform).</p>
 
   <h4 id="synchrotron">The perihelion synchrotron — the “lasso idea” (externally powered recirculating accelerator)</h4>
+  <p class="src"><b>Status: exploratory concept — not a candidate for this mission.</b> It is priced
+  here because the calculator's job is to price every architecture against the same aim geometry,
+  including ones that lose. The verdict, computed below: the required deep-solar infrastructure does
+  not exist, single-probe recirculation usually <em>strands</em> the probe (escape terminates it),
+  and the only form the numbers support is a one-kick gateway whose cost is amortised across a whole
+  fleet.</p>
   <p><a href="#pumping">Perihelion pumping</a> (above) still spends onboard propellant. This
   architecture — the <em>“lasso idea”</em> — removes even that, by moving the accelerator off the
   spacecraft entirely.</p>
@@ -1736,7 +1746,9 @@ function render(){
   // mass/fuel/profile narrative and show only the (already-correct) infeasibility reason.
   const massShown = r.massConverges && isFinite(r.wet) && isFinite(r.dry);
   const feasLine = r.feasible
-    ? `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`
+    ? (r.ga==='synchro'
+      ? `<div class="sline"><b style="color:#d29922">✓ MODEL CLOSES — exploratory concept, not a feasibility claim.</b> The kick schedule reaches the target, but the verdict is <b>conditional on a deep-solar EM-station infrastructure that does not exist</b> (and is not costed here — the mass below is the probe side only); single-probe recirculation is the fragile case, and the coherent form is a one-kick gateway amortised across a fleet (<a href="#synchrotron">see the section verdict</a>). Minimal derived dry mass <b>${fmt(r.dry)} kg</b>, <b>${fmt(r.wet)} kg</b> wet (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`
+      : `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`)
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine + (massShown ? (
     `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+
@@ -1855,7 +1867,7 @@ function render(){
     i:`INPUTS — station=${fmt(val('srp'))} R☉ · kick=${val('skick').toFixed(1)} km/s · arrival T`,
     s:'the "lasso": passes, accelerating-phase time, and the escape-termination verdict',
     d:'An externally powered EM station at perihelion applies one impulsive prograde kick per pass; the probe is passive (no onboard propellant or power for departure) and flies an exact Kepler ellipse back to the station between kicks. Two facts control everything: the orbital period GROWS after every kick (the last bound orbit can dominate the schedule), and ESCAPE TERMINATES RECIRCULATION — the kick that clears solar escape must land at ≥ v_p,target = √(v∞² + v_esc²) or the probe leaves too slow and never returns. Deep stations lower the final-kick requirement (Δv_final,min) but face a harsher thermal/rendezvous environment.',
-    c:`station: r_p = ${fmt(val('srp'))} R☉ · v_esc = ${fmt(r.syn.vEsc/1e3,0)} km/s · circular v = ${fmt((r.syn.vEsc/Math.SQRT2)/1e3,0)} km/s\ntarget perihelion speed: v_p,target = √(v∞² + v_esc²) = √(${fmt(r.vinfSun/1e3,1)}² + ${fmt(r.syn.vEsc/1e3,0)}²) = ${fmt(r.syn.vTarget/1e3,0)} km/s\nΔv_final,min = v_p,target − v_esc = ${fmt(r.syn.dvFinalMin/1e3,2)} km/s   (smallest possible LAST kick)\ncampaign: ${fmt(r.syn.passes,0)} kicks of ${val('skick').toFixed(1)} km/s · accel phase ${fmt(r.syn.timeYr,2)} yr · longest single orbit ${fmt(r.syn.maxPeriodYr,2)} yr\nspecific KE imparted to the probe at perihelion = ${fmt(r.syn.energySpec/1e9,2)} GJ/kg (the coils' work; absorbing the equal-and-opposite recoil momentum is a separate, unmodelled stationkeeping cost)\nstation↔probe rendezvous speed ≈ (√2−1)·v_circ = ${fmt(r.syn.rendezvousVel/1e3,0)} km/s  (worst case — the near-escape passes; early passes are slower. A missed aperture is a destructive collision)\n⇒ ${r.syn.reached?`leaves at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s ≥ the ${fmt(r.vinfSun/1e3,1)} required — FEASIBLE`:(r.syn.escapedBelow?`the escaping kick lands at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s < ${fmt(r.vinfSun/1e3,1)} required — GONE TOO SLOW (escape terminates recirculation)`:'did not reach the target — raise the kick or deepen the station')}`});
+    c:`station: r_p = ${fmt(val('srp'))} R☉ · v_esc = ${fmt(r.syn.vEsc/1e3,0)} km/s · circular v = ${fmt((r.syn.vEsc/Math.SQRT2)/1e3,0)} km/s\ntarget perihelion speed: v_p,target = √(v∞² + v_esc²) = √(${fmt(r.vinfSun/1e3,1)}² + ${fmt(r.syn.vEsc/1e3,0)}²) = ${fmt(r.syn.vTarget/1e3,0)} km/s\nΔv_final,min = v_p,target − v_esc = ${fmt(r.syn.dvFinalMin/1e3,2)} km/s   (smallest possible LAST kick)\ncampaign: ${fmt(r.syn.passes,0)} kicks of ${val('skick').toFixed(1)} km/s · accel phase ${fmt(r.syn.timeYr,2)} yr · longest single orbit ${fmt(r.syn.maxPeriodYr,2)} yr\nspecific KE imparted to the probe at perihelion = ${fmt(r.syn.energySpec/1e9,2)} GJ/kg (the coils' work; absorbing the equal-and-opposite recoil momentum is a separate, unmodelled stationkeeping cost)\nstation↔probe rendezvous speed ≈ (√2−1)·v_circ = ${fmt(r.syn.rendezvousVel/1e3,0)} km/s  (worst case — the near-escape passes; early passes are slower. A missed aperture is a destructive collision)\n⇒ ${r.syn.reached?`leaves at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s ≥ the ${fmt(r.vinfSun/1e3,1)} required — the MODEL CLOSES (probe side only; the deep-solar station infrastructure is assumed, not costed — exploratory)`:(r.syn.escapedBelow?`the escaping kick lands at v∞ = ${fmt(r.syn.vInfFinal/1e3,1)} km/s < ${fmt(r.vinfSun/1e3,1)} required — GONE TOO SLOW (escape terminates recirculation)`:'did not reach the target — raise the kick or deepen the station')}`});
   K.push({l:'Navigation margins', v:'+'+fmt((r.gncMargin+r.injMargin)/1e3,2)+' km/s', i:`injection pointing=${fmt(r.injErr,1)}° · GNC pointing=${r.gncErr}°`, s:'Δv added for injection + GNC pointing errors',
     d:'Extra Δv the ion engine must supply for two pointing inaccuracies: the LEO injection direction error (a re-aim correction, 2·v_circ·sin(σ/2)) and the GNC thrust-pointing error during the spiral (a cosine steering loss, ÷cos σ). Both raise the propellant via the rocket equation. Set either slider to 0 for a perfect-pointing baseline.',
     c:`ideal departure Δv (perfect pointing) = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + injection (${fmt(r.injErr,1)}°):  2·v_circ·sin(σ/2) = ${fmt(r.injMargin/1e3,3)} km/s\n  + GNC (${r.gncErr}°):  Δv_spiral·(sec σ − 1) = ${fmt(r.gncMargin/1e3,3)} km/s\n  ⇒ required Δv = ${fmt(r.dvDesign/1e3,2)} km/s   (see “Departure Δv”)`});
@@ -1945,8 +1957,8 @@ function render(){
   const xf=r.mp/r.wet;
   if(massShown) b.push([xf<0.7?'ok':(xf<0.85?'mid':'no'), `${r.propName} fraction ${fmt(100*xf)}%`]);
   else b.push(['no', `${r.propName} fraction n/a — mass diverges`]);
-  if(r.syn) b.push([r.syn.reached?'ok':'no', r.syn.reached
-      ? `✓ Lasso: ${fmt(r.syn.passes,0)} station kicks, probe carries no departure propellant`
+  if(r.syn) b.push([r.syn.reached?'mid':'no', r.syn.reached
+      ? `△ Lasso (exploratory): ${fmt(r.syn.passes,0)} station kicks close the model — conditional on deep-solar infrastructure that does not exist`
       : '✗ Lasso: escaping kick lands below target — gone too slow (escape terminates recirculation)']);
   if(r.pwr==='solar' && !r.syn) b.push([r.powerFeasible?'ok':'no', r.powerFeasible
       ? (r.ga==='pumped'?'✓ Solar + pumping: closes at today’s α (burns at 0.42 AU, ~3.5× power)':'✓ Solar: ~tens of kg, energy free near Sun')
