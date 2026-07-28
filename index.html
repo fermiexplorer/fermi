@@ -189,6 +189,20 @@
     text-align: left; white-space: normal; overflow-wrap: break-word; }
   .method table.chain td.tot { color: var(--ink); font-weight: 600; }
   a { color: var(--accent); }
+  /* ---- top-level tabs (issue #6): sticky bar, always visible while scrolling; a tab may
+     span several sections (panes are class-marked). Without JS all panes stay visible. ---- */
+  #tabbar { position: sticky; top: 0; z-index: 60; display: flex; gap: 6px;
+    padding: 8px 18px 0; background: #0d1117; border-bottom: 1px solid var(--line);
+    overflow-x: auto; scrollbar-width: thin; }
+  .tabbtn { background: #161d26; color: #9aa7b4; border: 1px solid var(--line);
+    border-bottom: none; border-radius: 8px 8px 0 0; padding: 8px 16px;
+    font: 600 13.5px/1.2 inherit; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .tabbtn:hover { color: var(--ink); }
+  .tabbtn.active { color: var(--ink); background: #24303d;
+    box-shadow: inset 0 -2px 0 var(--accent); }
+  body.tabbed .tabpane { display: none; }
+  body.tabbed .tabpane.show { display: block; }
+  @media (max-width: 700px){ .tabbtn { padding: 7px 10px; font-size: 12.5px; } }
 .prelim { margin-top: 10px; background: #3a2a10; border: 1px solid #6b5320; border-left: 4px solid #d29922;
   color: #f0c674; border-radius: 6px; padding: 9px 13px; font-size: 13px; line-height: 1.45; }
 .prelim b { color: #ffd479; }
@@ -248,6 +262,17 @@
   <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md" target="_blank" rel="noopener noreferrer">audit cross-comparison</a>.</p>
 </header>
 
+<!-- Top-level tabs (issue #6). Panes are CLASS-marked (pane-calc/method/stars/verify) so one
+     tab can span several sections without moving content; hash routing in the tab script keeps
+     every published section anchor working (docs/DOC_MAINTENANCE.md anchor-pinning rule). -->
+<nav id="tabbar" aria-label="Page sections">
+  <button class="tabbtn active" type="button" data-tab="calc">Calculator</button>
+  <button class="tabbtn" type="button" data-tab="method">Methodology</button>
+  <button class="tabbtn" type="button" data-tab="stars">Star atlas &amp; beyond AC</button>
+  <button class="tabbtn" type="button" data-tab="verify">Verification &amp; references</button>
+</nav>
+
+<div class="tabpane pane-calc show">
 <!-- persistent toolbar: NOT part of the collapsible parameters panel -->
 <div class="ctrlbar">
   <button id="homebtn" type="button" title="Home — load the latest build with default parameters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 11 H18 V20 H14 V14 H10 V20 H6 V11 H3 Z" fill="currentColor"/></svg>Home</button>
@@ -506,8 +531,9 @@
     </div>
   </main>
 </div>
+</div><!-- /pane-calc -->
 
-<section class="method">
+<section class="method tabpane pane-method show">
   <h2>How the numbers are computed</h2>
   <p>This is a first-order ("Fermi") feasibility model. Every formula below is implemented in the
   live calculator above and cross-checked against a validated Python engine (<code>fermi_sim</code>).</p>
@@ -739,6 +765,9 @@
     <li>Costs are out of scope here (treated as a soft constraint); this tool optimises performance and mass.</li>
     <li>The <b>chase-cam</b> (the large default view) integrates the <em>selected architecture's</em> campaign in a restricted three-body model (RK4, real falling mass): direct/Jupiter as a tangential burn to v∞, <b>pumped as the multi-revolution pumping rosette</b>, Oberth as a dive + perihelion kick, synchrotron as the station recirculation. The <b>overview 3-D and the 2-D panels</b> draw a simpler <em>architecture-blind reference</em> escape (one continuous tangential spiral to v∞, rotated onto the AC asymptote) — so for the pumped/Oberth/synchrotron architectures they intentionally show the schematic reference path while the chase cam shows the real campaign; they agree only for the direct architecture. All views are <em>log-scaled</em> in distance (1 AU → AC) and render only the <em>flown</em> path. The many-revolution part of the real mission is the <em>geocentric</em> Earth-escape spiral at &lt;0.01 AU — far below these views' zoom — so at solar-system scale the heliocentric escape reads correctly.</li>
   </ul>
+</section>
+
+<section class="method tabpane pane-verify show">
   <h4>Audits &amp; independent verification</h4>
   <p>Every headline number is cross-checked several independent ways — a value is only trusted when it
   agrees across methods:</p>
@@ -846,7 +875,9 @@
       (f) primary-source validation of the cell, thruster and tank assumptions. File findings against
       <code>audit/</code>.</li>
   </ol>
+</section>
 
+<section class="method tabpane pane-method show">
   <h4>How the calculator works — what drives what</h4>
   <p>There is <strong>no hidden state and no "run" step</strong>: every time you move a control the whole chain
   below recomputes in one pass. The dependency graph, in order:</p>
@@ -1166,7 +1197,9 @@
   pump carries its thruster and buys energy from sunlight (closes today, slowly), the lasso leaves the
   accelerator at home and buys energy from infrastructure (fleet-scale, but demands the deep-solar
   station). The calculator's architecture selector lets you price both against the same aim geometry.</p>
+</section>
 
+<section class="method tabpane pane-stars show">
   <h4>Beyond Alpha Centauri — nearby-star encounters over the next million years</h4>
   <p>Alpha Centauri is the target <em>because</em> of the 100,000-year requirement — it is the nearest system
   today. Relax the clock and the answer changes, because the stars move: some are inbound, and the cheapest
@@ -1389,7 +1422,9 @@
   encounters arriving from farther within 1.5 Myr are possible
   but Gaia-era encounter surveys (<a href="https://doi.org/10.1051/0004-6361/201833456" target="_blank" rel="noopener noreferrer">Bailer-Jones et al. 2018</a>) confirm Gliese 710 remains the record-holder within
   ±1.5 Myr; binary components listed separately by SIMBAD appear separately here.</p>
+</section>
 
+<section class="method tabpane pane-verify show">
   <h4>Repository structure</h4>
   <p>Everything is open-source (MIT) at
   <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a>.
@@ -1405,7 +1440,7 @@
       — this interactive calculator and its shared physics (value-by-value parity-checked against Python).</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/audit" target="_blank" rel="noopener noreferrer"><code>audit/</code></a>
       — independent verification:
-      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (130 Python checks + a Node JS↔Python parity check),
+      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (~187 Python checks + a Node JS↔Python parity check),
       a <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/gmat" target="_blank" rel="noopener noreferrer"><code>gmat/</code></a>
       cross-validation of the departure model against <b>NASA's GMAT</b> propagator (scripts, comparison &amp; raw outputs),
       and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>, <code>fable/</code>.</li>
@@ -2725,7 +2760,7 @@ function drawFollow3d(c,st){
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},margin:{l:0,r:0,t:34,b:0},
     uirevision: camLock?undefined:'follow3dsync',
     scene:{aspectmode:'manual',aspectratio:aspB,bgcolor:'#161b22',xaxis:ax(0),yaxis:ax(1),zaxis:ax(2),
-      camera:sceneCam}},{...CFG,scrollZoom:false});
+      camera:sceneCam}},{...CFG,scrollZoom:true});
 }
 
 // Chase cam (2D): the flown path is projected into the craft's instantaneous frame
@@ -2792,7 +2827,7 @@ function drawZoom3d(c,st){
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
     scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:groupCam('chartOrbit3d'),
       xaxis:ax('x (AU)'),yaxis:ax('y (AU)'),zaxis:ax('z (AU)')}},
-    {...CFG,scrollZoom:false});
+    {...CFG,scrollZoom:true});
 }
 
 // ===== velocity-space & Δv-space vector build-up (two 3D views, km/s) =====
@@ -2877,7 +2912,7 @@ function drawVelSpeed(r,c){
   const phase=t<F.tBurn?'burn (engine ON)':'coast (engine OFF — gravity slows it)';
   Plotly.react('velSpeed',traces,{title:{text:`Speeds — where the craft is going · |V| = ${fmt(mag,1)} km/s · ${phase}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},hovermode:'closest',
-    margin:{l:0,r:0,t:34,b:0},uirevision:'velSpeed',scene:vScene(ctr,Hxy,Hz,'Vx (km/s)','Vy (km/s)','Vz (km/s) — out of ecliptic',groupCam('velSpeed'))},{...CFG,scrollZoom:false});
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velSpeed',scene:vScene(ctr,Hxy,Hz,'Vx (km/s)','Vy (km/s)','Vz (km/s) — out of ecliptic',groupCam('velSpeed'))},{...CFG,scrollZoom:true});
 }
 function drawVelDv(r,c){
   const F=velFrame(r), t=c.es/YEAR, O=[0,0,0], D=dvVecAt(F,t), full=scv(F.vhat,F.dvTot);
@@ -2896,7 +2931,7 @@ function drawVelDv(r,c){
   traces.push({type:'scatter3d',mode:'markers',x:[0],y:[0],z:[0],marker:{color:'#f5d020',size:3},showlegend:false,hoverinfo:'skip'});
   Plotly.react('velDv',traces,{title:{text:`Δv / thrust — where the engine points · Δv = ${fmt(D.mag,1)} / ${fmt(F.dvTot,1)} km/s · ${burning?`thrust ${fmt(aMg,2)} milli-g`:'engine OFF'}`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},hovermode:'closest',
-    margin:{l:0,r:0,t:34,b:0},uirevision:'velDv',scene:vScene(ctr,Hxy,Hz,'Δvx (km/s)','Δvy (km/s)','Δvz (km/s) — out of ecliptic',groupCam('velDv'))},{...CFG,scrollZoom:false});
+    margin:{l:0,r:0,t:34,b:0},uirevision:'velDv',scene:vScene(ctr,Hxy,Hz,'Δvx (km/s)','Δvy (km/s)','Δvz (km/s) — out of ecliptic',groupCam('velDv'))},{...CFG,scrollZoom:true});
 }
 
 // ----- burn timeline (continuous ion thrust, then coast) -----
@@ -3582,6 +3617,66 @@ function drawStarMap(tMyr){
 // Play + Loop are on by default: auto-start the animation on load (skip only for visitors
 // who have asked their OS for reduced motion). The Loop checkbox is checked in the markup.
 if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) togglePlay();
+</script>
+<script>
+// ---- Top-level tabs (issue #6). Panes are class-marked (a tab may span several sections).
+// Without JS every pane stays visible (the markup ships them all with .show and the display
+// rules are gated on body.tabbed); with JS the body is marked tabbed and one tab shows at a
+// time. HASH ROUTING keeps every published section anchor working: a hash that targets an
+// element inside a non-active tab activates that tab first, then scrolls to the element
+// (docs/DOC_MAINTENANCE.md anchor-pinning rule).
+(function(){
+  const TABS = ['calc','method','stars','verify'];
+  document.body.classList.add('tabbed');
+  function showTab(t, scrollEl){
+    document.querySelectorAll('.tabpane').forEach(p =>
+      p.classList.toggle('show', p.classList.contains('pane-' + t)));
+    document.querySelectorAll('#tabbar .tabbtn').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === t));
+    // Plotly charts laid out while their pane was hidden come up mis-sized — resize on reveal
+    document.querySelectorAll('.pane-' + t + ' .js-plotly-plot').forEach(el => {
+      try { Plotly.Plots.resize(el); } catch(e) {}
+    });
+    if (scrollEl) scrollEl.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }
+  function tabForHash(){
+    const h = location.hash && location.hash.length > 1
+      ? decodeURIComponent(location.hash.slice(1)) : '';
+    if (!h) return null;
+    const el = document.getElementById(h);
+    if (!el) return null;
+    const pane = el.closest('.tabpane');
+    if (!pane) return null;
+    const t = TABS.find(t => pane.classList.contains('pane-' + t));
+    return t ? { t, el } : null;
+  }
+  document.querySelectorAll('#tabbar .tabbtn').forEach(b =>
+    b.addEventListener('click', () => showTab(b.dataset.tab)));
+  addEventListener('hashchange', () => { const m = tabForHash(); if (m) showTab(m.t, m.el); });
+  const m = tabForHash();
+  if (m) showTab(m.t, m.el); else showTab('calc');
+})();
+
+// ---- Wheel-scroll guard for the interactive 3-D views: page scrolling must never get
+// captured by a chart the cursor merely passes over. Each wheel-zooming chart starts
+// DISARMED: a capture-phase listener stops the wheel event before Plotly's own handler can
+// preventDefault it, so the browser performs its normal page scroll. CLICKING (pointerdown
+// on) the chart arms it — wheel then zooms as the chart tooltips describe — and moving the
+// cursor off the chart disarms it again. Listeners sit on the container divs, so Plotly
+// re-renders inside them never detach the guard.
+(function(){
+  ['chartOrbit3d','follow3d','velSpeed','velDv','starmap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el._zoomArmed = false;
+    el.addEventListener('wheel', e => {
+      if (!el._zoomArmed) e.stopImmediatePropagation();   // no preventDefault → page scrolls
+    }, { capture: true, passive: false });
+    el.addEventListener('pointerdown', () => { el._zoomArmed = true; }, true);
+    el.addEventListener('mouseleave', () => { el._zoomArmed = false; }, true);
+  });
+})();
 </script>
 </body>
 </html>

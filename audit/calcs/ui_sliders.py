@@ -277,6 +277,30 @@ def run(page):
     check("concentrator + light 2 kg/kW engine DOES close the direct spiral (high α)", conc_light["feasible"] is True,
           f"α={conc_light['pwrW']/conc_light['dryEff']:.0f} W/kg")
 
+    # --- Top-level tabs (issue #6): the calculator pane is the default; panes are
+    # class-marked; a deep link to a section in another tab must activate that tab
+    # (the anchor-pinning rule — published anchors keep working). ---
+    tabs = page.evaluate("""() => ({
+      tabbed: document.body.classList.contains('tabbed'),
+      active: document.querySelector('#tabbar .tabbtn.active')?.dataset.tab,
+      calcShown: !!document.querySelector('.pane-calc.show'),
+      nTabs: document.querySelectorAll('#tabbar .tabbtn').length,
+    })""")
+    check("top-level tabs present, calculator is the default pane",
+          tabs["tabbed"] and tabs["active"] == "calc" and tabs["calcShown"] and tabs["nTabs"] == 4,
+          str(tabs))
+    page.evaluate("() => { location.hash = 'pumping'; }")
+    page.wait_for_timeout(400)
+    deep = page.evaluate("""() => ({
+      active: document.querySelector('#tabbar .tabbtn.active')?.dataset.tab,
+      shown: !!document.getElementById('pumping')?.closest('.tabpane')?.classList.contains('show'),
+    })""")
+    check("cross-tab deep link (#pumping) activates the methodology tab",
+          deep["active"] == "method" and deep["shown"], str(deep))
+    page.evaluate("() => { history.replaceState(null, '', location.pathname); }")
+    page.click('#tabbar .tabbtn[data-tab="calc"]')
+    page.wait_for_timeout(200)
+
 def main():
     srv = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT)],
                            cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
