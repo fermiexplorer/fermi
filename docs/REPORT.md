@@ -25,8 +25,8 @@ so the naive outward spiral does not close at today's α. But the saturation is 
 of the *trajectory class*, not of solar power. **Five architectures close:**
 
 1. **SEP + perihelion pumping** *(recommended; the calculator's default)* — retrograde
-   arcs pump perihelion to 0.42 AU, then prograde perihelion burns (up to 4× the 1-AU
-   power) staircase the energy over a few revolutions. **Closes pure solar at today's
+   arcs pump perihelion to 0.42 AU, then prograde perihelion burns (up to ~3.5× the 1-AU
+   power — the derived thermal limit) staircase the energy over a few revolutions. **Closes pure solar at today's
    α (~15–21 W/kg)** — no reactor, no assist, no far-term array (external assessment
    PSI‑TR‑2026‑0714, prepared for the mission; archived in `audit/psi/`).
 2. **Nuclear-electric ion** — the constant-power fallback (no 1/r² fade): ~5 kW fission
@@ -71,7 +71,7 @@ question is entirely about how you build the 24 km/s.*
 > power wall in §2 is a property of the *trajectory class* (external assessment
 > **PSI‑TR‑2026‑0714**, Physical Superintelligence PBC, prepared for the mission — archived
 > with our cross-validation in `audit/psi/`): **multi-revolution perihelion pumping** (drop
-> perihelion to 0.42 AU, burn at perihelion where power is up to 4× the 1-AU rating) reaches
+> perihelion to 0.42 AU, burn at perihelion where power is up to ~3.5× the 1-AU rating) reaches
 > the full cruise speed at today's vehicle α (~15–21 W/kg), no reactor or assist required. The
 > mechanism is integrated in the engine (`perihelion_pumped_vinf`) at the validated design
 > profile (a₀ = 2.5×10⁻⁴ m/s², Isp 2800 s); success at off-design a₀ is phasing-dependent
@@ -267,8 +267,9 @@ speed below the ~23.3 km/s cruise). Five architectures do close:
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
 ~73,000–75,000 yr (or ~79,000 yr at the ecliptic crossing for the lowest plane-change penalty),
-aimed close to the ecliptic. For the recommended pumped default, feasibility is gated on the
-integrated perihelion-pumping staircase at the vehicle's a₀ = F/m_wet (the contiguous working
-region starts at a₀ ≈ 2.24×10⁻⁴ m/s²), verified by integration rather than a single number.
+aimed close to the ecliptic. For the recommended pumped default, feasibility is gated by
+integrating the anchored pumping schedule at the vehicle's a₀ = F/m_wet under the derived
+thermal power curve — verified by integration rather than a threshold, since off-design
+success is phasing-sensitive.
 For the outward-spiral class, **maximizing α** (light array + light thruster + small
 structure/tank/payload, Isp ~3000 s) is the lever; power then just sets the probe size.

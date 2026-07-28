@@ -32,11 +32,13 @@ def run() -> None:
     # 1. Audit-suite count references must carry no stale earlier counts (the exact live
     #    count is not pinned here — that would be circular and churn on every added check;
     #    _util.summary() is the authority on the live total).
-    for stale in ("41 checks", "55 checks", "73 checks", "86 checks", "90 checks", "126 checks"):
+    for stale in ("41 checks", "55 checks", "73 checks", "86 checks", "90 checks",
+                  "126 checks", "130 checks", "139 checks", "160 checks"):
         check(f"CLAUDE.md/index.html/README carry no stale '{stale}'",
               stale not in claude and stale not in idx and stale not in readme)
-    check("README quotes 35 parity, no stale 20/71 JS/UI",
-          "35 JS-parity" in readme and "20 JS-parity" not in readme and "71 checks" not in readme)
+    check("README parity count is current-generation, no stale 20/35/71 JS/UI",
+          "46 JS-parity" in readme and "35 JS-parity" not in readme
+          and "20 JS-parity" not in readme and "71 checks" not in readme)
 
     # 2. The pumped two-leg total is 31-34 everywhere it appears (no stale 30-32).
     for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme),
@@ -89,6 +91,34 @@ def run() -> None:
     check("index.html synchrotron coupling is gigawatt-class, not terawatt-per-transit",
           "terawatt-class coupling" not in idx and "terawatt-class pulse" not in idx
           and "gigawatt-class coupling" in idx)
+
+    # 10. Thermal-era cross-file facts (issue #5). The derived cap 3.54 and the flown
+    #     campaign dv 24.44 must appear on the headline surfaces; the old default budget
+    #     bands must not reappear as the current default.
+    for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme)):
+        check(f"{nm} states the derived thermal cap 3.54",
+              "3.54" in txt)
+    for nm, txt in (("index.html", idx), ("REPORT.md", report)):
+        check(f"{nm} states the flown thermal campaign dv 24.44",
+              "24.44" in txt)
+    for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme),
+                    ("run_analysis.py", analysis)):
+        check(f"{nm} carries no stale '31–34'/'31-34' default budget band",
+              "31–34 km/s" not in txt and "31-34 km/s" not in txt)
+    # the 4x-cap dv (23.14) may appear ONLY with an idealised/4x/PSI label nearby
+    for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme)):
+        ok = True
+        pos = 0
+        while True:
+            i = txt.find("23.14", pos)
+            if i < 0:
+                break
+            ctx = txt[max(0, i - 400):i + 400].lower()
+            if not ("4×" in txt[max(0, i - 400):i + 400] or "4x" in ctx or "psi" in ctx
+                    or "idealised" in ctx or "idealized" in ctx):
+                ok = False
+            pos = i + 1
+        check(f"{nm} labels every 23.14 km/s mention as the idealised-4x/PSI-comparable figure", ok)
 
 
 if __name__ == "__main__":

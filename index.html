@@ -183,6 +183,10 @@
     text-align: left; color: #c4cdd6; }
   .method table.chain th { color: var(--accent); font-weight: 600; }
   .method table.chain td.v, .method table.chain th.v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* prose variant: tables whose "value" cells hold sentences, not single numbers — the numeric
+     nowrap/right-align rule would balloon those columns and squish the rest (they wrap instead) */
+  .method table.chain.prose td.v, .method table.chain.prose th.v {
+    text-align: left; white-space: normal; overflow-wrap: break-word; }
   .method table.chain td.tot { color: var(--ink); font-weight: 600; }
   a { color: var(--accent); }
 .prelim { margin-top: 10px; background: #3a2a10; border: 1px solid #6b5320; border-left: 4px solid #d29922;
@@ -647,7 +651,7 @@
   for the optional architectures below (a Jupiter flyby needs alignment; a solar Oberth needs a perihelion drop).</p>
 
   <h4>Architecture comparison — direct vs solar Oberth vs gravity assist</h4>
-  <table class="chain">
+  <table class="chain prose">
     <tr><th>Architecture</th><th class="v">Onboard Δv from LEO</th><th>Extra hardware / complexity</th><th>Launch-timing window</th><th>When to choose it</th></tr>
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s spiral (+5 km/s conservative offset ⇒ ~30 in the calculator)</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Reference baseline</b> of the methodology below. Simplest, meets the 2029 schedule, no alignment needed — but power-gated; the calculator defaults to the pumped architecture.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
@@ -740,18 +744,20 @@
   agrees across methods:</p>
   <ul>
     <li><b>Engine ↔ web parity.</b> The browser math (<code>web/physics.js</code>) is checked value-by-value
-      against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, 35 checks —
-      including the perihelion-pumping integrator, which agrees to ~13 significant digits, and the
-      synchrotron recirculation model).</li>
-    <li><b>Independent suite (130 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+      against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, ~46 checks —
+      including the perihelion-pumping integrators and the derived thermal power curve, which agree to
+      ~11–13 significant digits, and the synchrotron recirculation model).</li>
+    <li><b>Independent suite (~187 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
       <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
       brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
       rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
-      sizing from first principles; and the perihelion-pumping manoeuvre by an independent re-integration of
+      sizing from first principles; the perihelion-pumping manoeuvre by an independent re-integration of
       the published policy (4× finer steps, step-convergence proven), the work–energy theorem, exact
-      rocket-equation mass closure, the 0.42 AU thermal floor and 4× power cap as invariants, Oberth
+      rocket-equation mass closure, the 0.42 AU thermal floor and the power law as invariants, Oberth
       localisation of the energy gain, and a bisection of the a₀ failure threshold (2.24×10⁻⁴ m/s²
-      recovered independently); and the perihelion synchrotron by numerical two-body propagation of the
+      recovered independently); the derived thermal derate by an <em>independent bisection</em> of the
+      array energy balance; the optimised campaigns by full fine-resolution replays of every baked
+      schedule; and the perihelion synchrotron by numerical two-body propagation of the
       between-kick ellipses (scipy adaptive RK45), station-energy conservation, the escape-termination
       invariant, Δv<sub>final,min</sub> algebra, and an externally documented worked example reproduced
       exactly.</li>
@@ -966,7 +972,7 @@
   <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI's</a>
   optimised-schedule integration, which — like our cap-model rows — assumes the
   idealised 4× harvest:</p>
-  <table class="chain">
+  <table class="chain prose">
     <tr><th>a₀ (m/s²)</th><th class="v">Outward spiral</th><th class="v">Pumped (this engine)</th><th class="v">Pumped (PSI, optimised)</th><th>Verdict</th></tr>
     <tr><td><b>2.5×10⁻⁴</b> (design, <b>thermal — flown</b>)</td><td class="v">≈0 km/s</td><td class="v"><b>23.65 km/s</b> · Δv <b>24.44</b> · 12.0 yr · 7.9 revs</td><td class="v">— (assumes 4×)</td><td><b>the shipped default: closes under the DERIVED power curve (cap_eff 3.54× at the floor)</b></td></tr>
     <tr><td>2.5×10⁻⁴ (design, optimised @ idealised 4× cap)</td><td class="v">≈0 km/s</td><td class="v">23.64 km/s · Δv <b>23.14</b> · 12.0 yr · 5.9 revs</td><td class="v"><b>23.64</b> · Δv 23.97 · 12.0 yr</td><td><b>like-for-like: beats PSI's published 12-yr optimum by 3.5%</b></td></tr>
@@ -1002,7 +1008,8 @@
   identically to every candidate. It is the basis for <em>ranking</em> targets against one another;
   absolute departure budgets are the two-leg figures given here and in the calculator.</p>
   <p>For the vehicle, the practical corollaries: a <b>GTO drop-off</b> cuts the Earth-escape leg
-  ~7.7 → ~4.0 km/s and closes a ~100 kg spacecraft (a LEO start needs ~113–146 kg), and the required
+  ~7.7 → ~4.0 km/s and closes a ~100 kg spacecraft (a LEO start needs ~15% more wet mass for the
+  extra ~3.6 km/s escape leg — PSI's LEO designs run 100–150 kg), and the required
   Isp ≥ 2800 s at ~0.55 efficiency sits on demonstrated gridded-ion hardware (NSTAR-class), not Hall
   thrusters. In the calculator, the <b>Perihelion-pumped SEP</b> architecture — <b>the default
   selection</b>, since it is the closing pure-solar architecture at today's α — prices departure with the
@@ -1341,7 +1348,7 @@
   λ Ser emits ~2 L<sub>☉</sub> — <b>~500× more capturable power</b>. As a long-term energy asset (the
   Dyson-swarm view of expansion), one λ Ser is worth hundreds of late-M dwarfs — a categorical
   difference, not a marginal one. And it is a star you can point at in the night sky.</p>
-  <table class="chain">
+  <table class="chain prose">
     <tr><th>Factor</th><th>LSPM J2146+3813 (M5V)</th><th>λ Serpentis (G0V)</th></tr>
     <tr><td>Arrival (crossing)</td><td class="v"><b>78 kyr</b> — ~2× sooner</td><td class="v">145 kyr</td></tr>
     <tr><td>Δv budget / cruise @ crossing</td><td class="v">~19.7 km/s / 8.7 km/s</td><td class="v">23.0 km/s / 19.2 km/s</td></tr>
@@ -1754,7 +1761,7 @@ function render(){
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:(radio('ga')==='pumped'
-      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + a v∞-dependent tax interpolated from the integrated campaign — 2.0 km/s at the AC anchor). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
+      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + a v∞-dependent tax interpolated from the integrated anchored campaign under the derived thermal power curve — +0.79 km/s at the AC anchor). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
       : radio('ga')==='direct'
       ? 'Conservative pure-EP budget: the closed-form Earth-escape spiral + a +5 km/s heliocentric-leg offset (the conservative model does not grant the full Earth-velocity borrow) + pointing margins. Sizes the propellant. NOTE: this is NOT the feasibility test — whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'
       : radio('ga')==='jupiter'

@@ -95,7 +95,7 @@ fermi_sim/               PYTHON ENGINE — source of truth  (~1160 LOC)
   thermal.py     (~150)  DERIVED perihelion power curve (array energy balance) — see §5
 run_analysis.py  (~360)  integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — ~172 checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — ~187 checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -292,7 +292,7 @@ Every entry has a tracked fix; the staged plan is
   [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
   switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further ~172 assertions; a passing run is **not** a
+The independent suite has a further ~187 assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -305,7 +305,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (~172 checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (~187 checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the

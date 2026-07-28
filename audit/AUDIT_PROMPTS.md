@@ -116,24 +116,32 @@ Independently:
     the tool or its copy conflates the min-speed and min-Δv arrivals."
 
 ## 11. Perihelion pumping (multi-revolution SEP escape)
-"`fermi_sim/departure.py::perihelion_pumped_vinf` claims a solar-electric probe at initial thrust
-acceleration a₀ = 2.5×10⁻⁴ m/s² (vehicle α ≈ 15–21 W/kg, today's hardware; source assessment
-archived in `audit/psi/`) reaches the full 23.64 km/s cruise v∞ by pumping perihelion down to
-0.42 AU (retrograde arcs near apoapsis) and then burning prograde at perihelion where power
-P(r) = P₁·min((1 AU/r)², 4) is up to 4× the 1-AU rating — defeating the 1/r² outward-spiral
-saturation that the same engine says caps that vehicle near zero.
-Attack it independently: (a) re-integrate the published bang-bang policy with YOUR OWN integrator and
-confirm/refute v∞ 23.66 km/s, Δv 25.6, 9.6 yr, 4.9 revs (2.13 retrograde pump-down revs + 3
-perihelion passes; Δv split 8.3 retro + 17.3 prograde); (b) verify the CONTIGUOUS working-region
-edge a₀ ≈ 2.24×10⁻⁴ m/s² AND the non-monotonic structure below it (success island ~1.75–1.88×10⁻⁴,
-strand bands 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴; Isp-sensitivity too — the policy strands above
-~3425 s at the design a₀, hence the pinned validated profile a₀_eff = min(a₀, PUMP_DESIGN_A0),
-Isp = PUMP_DESIGN_ISP in fermi_sim.constants); (c) check the claimed physics is Oberth + power, not
-integrator artifact: work–energy closure, where the energy is bought (r < 0.8 AU?), thermal floor
-0.42 AU respected; (d) audit the two-leg budget `pumped_departure_dv` = √(μ⊕/a) + v∞ + v∞·|sin β| +
-2 km/s — is the 2 km/s tax honest across a₀ and targets (known to misprice away from the design
-corridor), and is √(μ⊕/a) a fair (conservative) escape leg vs an integrated spiral; (e) challenge
-the 4× power cap and the α ≈ 15–21 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at Isp 2800 s, η 0.55."
+"`fermi_sim` claims a solar-electric probe at initial thrust acceleration a₀ = 2.5×10⁻⁴ m/s²
+(vehicle α ≈ 15–21 W/kg, today's hardware; source assessment archived in `audit/psi/`) reaches the
+full 23.64 km/s cruise v∞ by pumping perihelion down to 0.42 AU (retrograde arcs near apoapsis) and
+then burning prograde at perihelion — defeating the 1/r² outward-spiral saturation that the same
+engine says caps that vehicle near zero. TWO integrators and TWO power models are in play: the
+bang-bang policy (`departure.py::perihelion_pumped_vinf`) and the schedule-parameterized optimised
+campaigns (`pump_schedule.py::scheduled_pumped_vinf`, event-located switches, baked per-a₀ optima);
+the assumed step P(r) = P₁·min((1 AU/r)², 4) (`power_model=\"cap\"`, the cross-check) and the
+DERIVED thermal curve (`thermal.py`: cap_eff(r) from the array energy balance, 3.54× at the floor —
+`power_model=\"thermal\"`, the shipped default).
+Attack it independently: (a) re-integrate the bang-bang policy at the 4× cap with YOUR OWN
+integrator and confirm/refute v∞ 23.66 km/s, Δv 25.6, 9.6 yr, 4.9 revs (2.13 retrograde pump-down
+revs + 3 perihelion passes; Δv split 8.3 retro + 17.3 prograde); (b) verify the CONTIGUOUS
+working-region edge a₀ ≈ 2.24×10⁻⁴ m/s² AND the non-monotonic structure below it (success island
+~1.75–1.88×10⁻⁴, strand bands 1.9–2.2×10⁻⁴ and ~2.9–3.1×10⁻⁴; Isp-sensitivity too), then verify
+the stronger claim that per-a₀ RE-OPTIMISED schedules close every tested gap — including the
+design-a₀ strand under the thermal curve (bang-bang reaches only ~20 km/s there); (c) check the
+claimed physics is Oberth + power, not integrator artifact: work–energy closure, where the energy
+is bought, thermal floor 0.42 AU respected; solve the array energy balance yourself and
+confirm/refute cap_eff(0.42 AU) = 3.54 (T = 492 K; GaAs 0.2 %/K) and the silicon collapse (0.08×);
+(d) audit the two-leg budget `pumped_departure_dv` = √(μ⊕/a) + v∞ + v∞·|sin β| + tax(v∞) — the
+tax tables are swept at the design a₀ only (known to misprice away from the design corridor), and
+is √(μ⊕/a) a fair (conservative) escape leg vs an integrated spiral; (e) challenge the anchored
+12-yr campaign numbers (thermal: Δv 24.44; idealised 4×: 23.14 vs PSI's published 23.97), the
+thermo-optical inputs behind the derate curve, and the α ≈ 15–21 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at
+Isp 2800 s, η 0.55."
 
 ## 12. Perihelion synchrotron — the "lasso idea" (external EM station)
 "`fermi_sim/departure.py::synchrotron_escape` models a passive probe recirculating through an

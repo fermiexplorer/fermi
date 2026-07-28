@@ -23,7 +23,7 @@ anchored optimised schedule, 23.14 km/s at the same 12-yr custody, 3.5% under PS
 
 | Audit | Source / method | Scope | Latest verdict | Agreement | Docs |
 |---|---|---|---|---|---|
-| **In-repo suite** | Python, different method than engine | ephemeris → power gate → pumping/thermal → synchrotron → data → docs | **172 / 172 pass** | exact | [calcs/](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) · [run_audits.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) |
+| **In-repo suite** | Python, different method than engine | ephemeris → power gate → pumping/thermal → synchrotron → data → docs | **187 / 187 pass** | exact | [calcs/](https://github.com/fermiexplorer/fermi/tree/main/audit/calcs) · [run_audits.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) |
 | **Web parity** | Node, `web/physics.js` vs Python | every shared function incl. pumping + thermal | **46 / 46 pass** | ~13 sig figs | [audit_webjs.mjs](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) |
 | **UI behaviour** | Playwright slider sweep | every control drives the right output | **82 / 82 pass** | — | [ui_sliders.py](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/ui_sliders.py) |
 | **NASA GMAT** | flight-proven propagator (separate codebase) | departure energetics | **PASS** | ≤ 0.01 % | [README](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/scripts) · [outputs](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out) |

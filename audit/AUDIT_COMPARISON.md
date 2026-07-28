@@ -550,6 +550,6 @@ and [text/coherence](https://github.com/fermiexplorer/fermi/blob/main/audit/fabl
 [`fermi_sim/`](https://github.com/fermiexplorer/fermi/tree/main/fermi_sim) (source of truth) ·
 [`web/physics.js`](https://github.com/fermiexplorer/fermi/blob/main/web/physics.js) (parity-checked port) ·
 [`run_analysis.py`](https://github.com/fermiexplorer/fermi/blob/main/run_analysis.py) ·
-[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (130 checks) ·
-[`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py) (the pumping guards, incl. the phase split) ·
-[`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (35 parity checks)
+[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (~187 checks) ·
+[`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py) (the pumping guards, incl. the phase split and the thermal balance) ·
+[`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (~46 parity checks)
