@@ -1876,7 +1876,7 @@ function render(){
     c:dvSteps});
   K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
     s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the chase-cam view draws)',
-    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled thrust under the anchored optimised thermal schedule — the one campaign the calculator gates, flies and prices — at a₀ = min(F/m_wet, 2.5×10⁻⁴)). Oberth: LEO spiral + dive + the perihelion kick (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station kicks are EXTERNAL energy and excluded from the onboard total (the drawn delivery spiral stands in for the un-modelled insertion).',
+    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled thrust under the anchored optimised thermal schedule — the one campaign the calculator gates, flies and prices — at a₀ = min(F/m_wet, 2.5×10⁻⁴)). Jupiter: LEO spiral + heliocentric burn, then a jump-cut coasting transfer to 5.2 AU where the flyby impulse is applied AT Jupiter (rendered; phasing not modelled). Oberth: LEO spiral + dive + the perihelion kick at the marked burn point (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station (rendered at its kick point) supplies EXTERNAL energy, excluded from the onboard total; the drawn delivery spiral stands in for the un-modelled insertion.',
     c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (onboard, this architecture)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (this architecture, with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? (r.massConverges?fmt(r.achievableVinf/1e3,1)+' km/s':'n/a (mass diverges)') : (r.ga==='synchro'?'n/a (external)':'n/a (assist)')),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
@@ -2295,6 +2295,11 @@ function buildModel(c){
   // break condition reads it, and an infeasible (stranding) campaign must terminate at the
   // 60-yr horizon rather than spin to the 500k-step ceiling (a multi-second UI freeze)
   let massNow=wet, pumpedDown=false, burnEnded=false, jumped=false, prevRdot=null, kicks=0, dvKicksTot=0, tSoiT=0, failed=(SIM.feasible===false);
+  // assist-body / burn-point marker (no fake renderings: the Jupiter flyby happens AT 5.2 AU
+  // with Jupiter drawn there; the synchrotron station is drawn at its kick point; the Oberth
+  // kick point is marked). markIdx indexes the sample where the event happened.
+  const R_JUPAU=5.2036;
+  let jupPending=false, markIdx=-1, markType=null;
   while(n++<500000){
     const E=Ep(t), de=Math.hypot(r[0]-E[0],r[1]-E[1]), rs=Math.hypot(r[0],r[1]);
     const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
@@ -2314,11 +2319,27 @@ function buildModel(c){
     let dir=1, am=null, burning=burn;
     if(outer && (arch==='direct'||arch==='jupiter')){
       if(burn && (mdot*t*YEAR>=mp || 0.5*vsNow*vsNow-MUs/rs>=Et)){ burn=false; iBurn=X.length;
-        // Jupiter: the flyby boost is drawn as an impulse when the onboard burn ends (schematic —
-        // the phased 5.2 AU flyby is not flown). It completes the remaining energy EXACTLY, so
-        // the drawn escape lands on the cruise v∞ it splices onto (audit finding, build 133).
-        if(arch==='jupiter' && 0.5*vsNow*vsNow-MUs/rs<Et){ const need=Math.sqrt(2*(Et+MUs/rs))-vsNow;
-          if(need>0){ const sc=(vsNow+need)/vsNow; v=[v[0]*sc,v[1]*sc]; } } }
+        // Jupiter: the flyby is flown AT Jupiter's orbit, not wherever the burn happens to end
+        // (audit b154-167: no fake renderings). At burn end the probe JUMP-CUTS onto a coasting
+        // transfer whose apoapsis clears 5.2 AU (the un-modelled phasing/targeting leg — the
+        // same position-continuous jump-cut convention as the Oberth/synchro insertions); the
+        // flyby impulse is applied at the 5.2 AU crossing, where Jupiter is rendered, and
+        // completes the remaining energy EXACTLY so the drawn escape lands on the cruise v∞.
+        if(arch==='jupiter' && 0.5*vsNow*vsNow-MUs/rs<Et){
+          if(rs<R_JUPAU){
+            const th=Math.atan2(r[1],r[0]), tx=-Math.sin(th), ty=Math.cos(th);
+            const aEll=0.5*(rs+R_JUPAU*1.02), vt=Math.sqrt(Math.max(0,MUs*(2/rs-1/aEll)));
+            v=[vt*tx, vt*ty]; jupPending=true;
+          } else {
+            const need=Math.sqrt(2*(Et+MUs/rs))-vsNow;
+            if(need>0){ const sc=(vsNow+need)/vsNow; v=[v[0]*sc,v[1]*sc]; }
+            markIdx=X.length-1; markType='jupiter';
+          } } }
+      if(arch==='jupiter' && jupPending && rs>=R_JUPAU){
+        const need=Math.sqrt(2*(Et+MUs/rs))-vsNow;                    // flyby at Jupiter's orbit
+        if(need>0){ const sc=(vsNow+need)/vsNow; v=[v[0]*sc,v[1]*sc]; }
+        jupPending=false; markIdx=X.length-1; markType='jupiter';
+      }
       burning=burn;
     } else if(!outer){
       // geo phase. Oberth/synchro vehicles carry no departure propellant — their delivery to escape
@@ -2367,13 +2388,15 @@ function buildModel(c){
       if(prevRdot!==null && prevRdot<0 && rdot>=0 && rs<rpArch*1.5 && !burnEnded){  // perihelion passage (radius-guarded — apoapsis rdot wiggle must not fire) → impulse
         const vs2=Math.hypot(v[0],v[1])||1e-9;
         if(arch==='oberth'){ const dvk=Math.max(0, Math.sqrt(2*(Et+MUs/rs))-vs2); dvTot+=dvk; burnEnded=true; iBurn=X.length;
-          const sc=(vs2+dvk)/vs2; v=[v[0]*sc,v[1]*sc]; }
+          const sc=(vs2+dvk)/vs2; v=[v[0]*sc,v[1]*sc];
+          markIdx=X.length-1; markType='kick'; }                       // mark the perihelion burn point
         else {
           // first arrival: the (un-modelled) insertion circularises onto the station orbit, then
           // the recirculation matches the engine model — circular start + one kick per pass
           let vNew;
           if(kicks===0){ const vc=Math.sqrt(MUs/rs), th=Math.atan2(r[1],r[0]);
-            v=[-vc*Math.sin(th), vc*Math.cos(th)]; vNew=vc+kickArch; }
+            v=[-vc*Math.sin(th), vc*Math.cos(th)]; vNew=vc+kickArch;
+            markIdx=X.length-1; markType='station'; }                  // the station IS here: render it
           else vNew=vs2+kickArch;
           // final kick THROTTLED to land exactly on the target energy ONLY when the mission is
           // feasible (the station can modulate); on an infeasible design the probe is genuinely
@@ -2409,7 +2432,7 @@ function buildModel(c){
     // phase-independent gate disagreed, showing a feasible verdict beside a stranded path).
     if(iSoi>=0 && !burnEnded && arch!=='direct' && arch!=='jupiter' && t-tSoiT>60){
       burnEnded=true; if(iBurn<0) iBurn=X.length; }
-    const done=(arch==='direct'||arch==='jupiter')?!burn:burnEnded;
+    const done=(arch==='direct')?!burn:(arch==='jupiter')?((!burn&&!jupPending)||failed):burnEnded;
     if(done && (failed || Math.hypot(r[0],r[1])>3)) break;
   }
   const va=Math.hypot(v[0],v[1])||1, ca=v[0]/va, sa=v[1]/va, u=c.vhat, hn=Math.hypot(u[0],u[1]);
@@ -2440,6 +2463,9 @@ function buildModel(c){
   const planeN=[u[1]*wv[2]-u[2]*wv[1], u[2]*wv[0]-u[0]*wv[2], u[0]*wv[1]-u[1]*wv[0]];   // map3-plane normal (unit)
   _fullKey=key; _full={ pos, rad, earth, geoF, time:TM, iSoi, iBurn, soi, Ng, planeN, arch, failed,
     kicks, dvKicksKm:dvKicksTot*AUyr,
+    // assist-body / burn-point marker in map3 space (Jupiter at the 5.2 AU flyby, the
+    // synchrotron station at its kick point, the Oberth perihelion-burn point)
+    markAt:(markIdx>=0 && markIdx<pos.length)?pos[markIdx]:null, markType,
     geoSimp, helSimp, geoSmooth, helSmooth, earthGeoSmooth, earthHelSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
     revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
     dvTotKm, dvEarthKm, dvHelKm:dvTotKm-dvEarthKm, rEarthAU:R_EARTH/AU, rSunAU:6.957e8/AU,
@@ -2509,9 +2535,10 @@ function chase3dInit(){
   const mkDot = (color)=> new THREE.Mesh(new THREE.SphereGeometry(1,16,12), new THREE.MeshBasicMaterial({color}));
   // Earth: a high-res sphere with a LIT (Lambert) material → a real day/night terminator from the Sun.
   const earthSphere = new THREE.Mesh(new THREE.SphereGeometry(1,48,32), new THREE.MeshLambertMaterial({color:0x3470c8}));
-  const dots = {sun:mkDot(0xf5d020), earth:earthSphere, probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922)};
+  const dots = {sun:mkDot(0xf5d020), earth:earthSphere, probe:mkDot(0xa371f7), ac:mkDot(0xf0883e), icpt:mkDot(0xd29922),
+    body:mkDot(0xd4a373)};   // assist body / burn point (Jupiter, synchrotron station, Oberth kick)
   const sunLight = new THREE.DirectionalLight(0xfff4e2, 1.7), amb = new THREE.AmbientLight(0x2b3756, 0.85);  // Sun + dim night fill
-  scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt, sunLight, sunLight.target, amb);
+  scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt, dots.body, sunLight, sunLight.target, amb);
   _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, sunLight, revlbl, theta:1.0, phi:0, userRot:false};
   // ----- mouse: drag to orbit (overrides auto chase), wheel to zoom uniformly, dbl-click reset -----
   const cv = ren.domElement; cv.style.cursor = 'grab'; let drag = false, lx = 0, ly = 0;
@@ -2683,6 +2710,13 @@ function chase3dDraw(c, st){
   else { place(_t3.dots.ac, [c.ac[0]-blend*earthNow[0],c.ac[1]-blend*earthNow[1],c.ac[2]-blend*earthNow[2]], 0.02);
     place(_t3.dots.icpt, [c.I[0]-blend*earthNow[0],c.I[1]-blend*earthNow[1],c.I[2]-blend*earthNow[2]], 0.015);
     _t3setLine(_t3.actrack, [[c.acNow[0]-blend*earthNow[0],c.acNow[1]-blend*earthNow[1],c.acNow[2]-blend*earthNow[2]],[c.acEnd[0]-blend*earthNow[0],c.acEnd[1]-blend*earthNow[1],c.acEnd[2]-blend*earthNow[2]]], ctr); }
+  // assist body / burn point: Jupiter at the 5.2 AU flyby (tan), synchrotron station /
+  // Oberth kick point (cyan) — drawn where the event actually happens on the flown path
+  if(M.markAt && blend<0.5){
+    _t3.dots.body.material.color.set(M.markType==='jupiter'?0xd4a373:0x4cc2ff);
+    place(_t3.dots.body, [M.markAt[0]-blend*earthNow[0],M.markAt[1]-blend*earthNow[1],M.markAt[2]-blend*earthNow[2]],
+          M.markType==='jupiter'?0.018:0.012);
+  } else _t3.dots.body.scale.set(0,0,0);
   _t3.grid.visible = false;
   _t3.sunLight.position.set(sunFacing[0], sunFacing[1], sunFacing[2]);   // light from the Sun → day/night terminator
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
