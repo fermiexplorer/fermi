@@ -2539,7 +2539,7 @@ function chase3dInit(){
     body:mkDot(0xd4a373)};   // assist body / burn point (Jupiter, synchrotron station, Oberth kick)
   const sunLight = new THREE.DirectionalLight(0xfff4e2, 1.7), amb = new THREE.AmbientLight(0x2b3756, 0.85);  // Sun + dim night fill
   scene.add(grid, flown, actrack, escape, dots.sun, dots.earth, dots.probe, dots.ac, dots.icpt, dots.body, sunLight, sunLight.target, amb);
-  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, sunLight, revlbl, theta:1.0, phi:0, userRot:false};
+  _t3 = {..._t3, ren, scene, cam, dom:el, grid, flown, actrack, escape, dots, sunLight, revlbl, theta:1.0, phi:0, userRot:false, pan:[0,0,0]};
   // ----- mouse: drag to orbit (overrides auto chase), wheel to zoom uniformly, dbl-click reset -----
   const cv = ren.domElement; cv.style.cursor = 'grab'; let drag = false, lx = 0, ly = 0;
   cv.addEventListener('pointerdown', e=>{ drag = true; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing';
@@ -2549,8 +2549,22 @@ function chase3dInit(){
     _t3.phi -= (e.clientX-lx)*0.01; _t3.theta = Math.max(0.12, Math.min(Math.PI-0.12, _t3.theta - (e.clientY-ly)*0.01));
     lx = e.clientX; ly = e.clientY; chase3dRefresh(); });
   cv.addEventListener('pointerup', ()=>{ drag = false; cv.style.cursor = 'grab'; });
-  cv.addEventListener('wheel', e=>{ e.preventDefault(); zoom3dCh = Math.max(0.05, Math.min(40, zoom3dCh*(e.deltaY>0?1.12:0.89))); chase3dRefresh(); }, {passive:false});
-  cv.addEventListener('dblclick', ()=>{ _t3.userRot = false; chase3dRefresh(); });   // back to auto chase
+  cv.addEventListener('wheel', e=>{ e.preventDefault();
+    // CURSOR-ANCHORED zoom: dolly about the world point under the pointer, not the frame
+    // centre — the look-at target pans toward/away from the anchor as the distance scales
+    const f = e.deltaY>0?1.12:0.89;
+    const rect = cv.getBoundingClientRect();
+    const nx = ((e.clientX-rect.left)/Math.max(rect.width,1))*2-1;
+    const ny = -(((e.clientY-rect.top)/Math.max(rect.height,1))*2-1);
+    const pan = _t3.pan||[0,0,0], cam = _t3.cam;
+    const tgt = new THREE.Vector3(pan[0],pan[1],pan[2]);
+    const dir = new THREE.Vector3(nx,ny,0.5).unproject(cam).sub(cam.position).normalize();
+    const fwd = tgt.clone().sub(cam.position); const dist = fwd.length()||1e-9; fwd.normalize();
+    const tt = dist/Math.max(dir.dot(fwd), 0.1);                       // ray ∩ target-depth plane
+    const P = cam.position.clone().add(dir.multiplyScalar(tt));
+    _t3.pan = [P.x+(tgt.x-P.x)*f, P.y+(tgt.y-P.y)*f, P.z+(tgt.z-P.z)*f];
+    zoom3dCh = Math.max(0.05, Math.min(40, zoom3dCh*f)); chase3dRefresh(); }, {passive:false});
+  cv.addEventListener('dblclick', ()=>{ _t3.userRot = false; _t3.pan = [0,0,0]; chase3dRefresh(); });   // back to auto chase (re-centred)
   // Resize the drawing buffer to MATCH the frame whenever the frame itself changes size (layout reflow,
   // window resize, sidebar stack). ResizeObserver is reliable where window.resize misses reflows; setSize
   // with updateStyle=false keeps the canvas CSS-sized at 100% so it can never overflow / take over the page.
@@ -2719,18 +2733,19 @@ function chase3dDraw(c, st){
   } else _t3.dots.body.scale.set(0,0,0);
   _t3.grid.visible = false;
   _t3.sunLight.position.set(sunFacing[0], sunFacing[1], sunFacing[2]);   // light from the Sun → day/night terminator
+  const pan=_t3.pan||[0,0,0];                                          // cursor-zoom pan offset of the look-at target
   if(_t3.userRot){                                                     // drag → free orbit: polar θ from +z, azimuth φ
     const sT=Math.sin(_t3.theta), cT=Math.cos(_t3.theta);
-    _t3.cam.position.set(camDist*sT*Math.cos(_t3.phi), camDist*sT*Math.sin(_t3.phi), camDist*cT); _t3.cam.up.set(0,0,1);
+    _t3.cam.position.set(pan[0]+camDist*sT*Math.cos(_t3.phi), pan[1]+camDist*sT*Math.sin(_t3.phi), pan[2]+camDist*cT); _t3.cam.up.set(0,0,1);
   } else {                                                             // FIXED orientation from the model's path plane
     const B=M.planeN; let f=c.vhat; const fb=dot(f,B); const F0=nz([f[0]-fb*B[0],f[1]-fb*B[1],f[2]-fb*B[2]]);
     const e2=nz(cross(B,F0)), tilt=0.35, cb=Math.cos(tilt), sb=Math.sin(tilt);
     const off=[B[0]*cb+e2[0]*sb, B[1]*cb+e2[1]*sb, B[2]*cb+e2[2]*sb];
-    _t3.cam.position.set(off[0]*camDist, off[1]*camDist, off[2]*camDist);
+    _t3.cam.position.set(pan[0]+off[0]*camDist, pan[1]+off[1]*camDist, pan[2]+off[2]*camDist);
     _t3.cam.up.set(F0[0], F0[1], F0[2]);
   }
   _t3.cam.near = Math.max(camDist*0.002, 1e-9); _t3.cam.far = camDist*50 + Hs*120; _t3.cam.updateProjectionMatrix();
-  _t3.cam.lookAt(0, 0, 0);
+  _t3.cam.lookAt(pan[0], pan[1], pan[2]);
 }
 function chase3dLoop(){ if(_t3.ready) _t3.ren.render(_t3.scene, _t3.cam); requestAnimationFrame(chase3dLoop); }
 
@@ -3806,6 +3821,37 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
 // the chart, or any touch/click outside it. Listeners sit on the container divs, so Plotly
 // re-renders inside them never detach the guard.
 (function(){
+  // Cursor-anchored zoom for ARMED Plotly gl3d scenes: Plotly's native gl3d wheel zoom
+  // dollies about the scene CENTER; this replaces it so the world point under the cursor
+  // stays fixed. Method: reconstruct the camera basis from {eye, center, up}, place the
+  // anchor P on the plane through the center perpendicular to the view at the cursor's
+  // screen offset (gl3d perspective fov ≈ 45°), then scale both eye and center about P.
+  function gl3dZoomAt(gd, ev){
+    const fl = gd._fullLayout, sc = fl && fl.scene;
+    if (!sc || !sc._scene || typeof Plotly === 'undefined') return false;
+    let cam;
+    try { cam = sc._scene.getCamera(); } catch (err) { return false; }
+    const size = fl._size, dom = sc.domain, rect = gd.getBoundingClientRect();
+    const left = rect.left + size.l + size.w * dom.x[0], width = Math.max(1, size.w * (dom.x[1] - dom.x[0]));
+    const top = rect.top + size.t + size.h * (1 - dom.y[1]), height = Math.max(1, size.h * (dom.y[1] - dom.y[0]));
+    const nx = Math.max(-1, Math.min(1, ((ev.clientX - left) / width) * 2 - 1));
+    const ny = Math.max(-1, Math.min(1, -(((ev.clientY - top) / height) * 2 - 1)));
+    const E = [cam.eye.x, cam.eye.y, cam.eye.z], C = [cam.center.x, cam.center.y, cam.center.z];
+    const U = [cam.up.x, cam.up.y, cam.up.z];
+    const sub = (a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+    const mul = (a,s)=>[a[0]*s,a[1]*s,a[2]*s], crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    const len = a=>Math.hypot(a[0],a[1],a[2]);
+    let fwd = sub(C, E); const dist = len(fwd) || 1e-9; fwd = mul(fwd, 1/dist);
+    let right = crs(fwd, U); const rl = len(right) || 1e-9; right = mul(right, 1/rl);
+    const upv = crs(right, fwd);
+    const halfH = dist * Math.tan(Math.PI/8), halfW = halfH * (width / height);
+    const P = add(C, add(mul(right, nx*halfW), mul(upv, ny*halfH)));
+    const f = ev.deltaY > 0 ? 1.12 : 1/1.12;
+    const E2 = add(P, mul(sub(E, P), f)), C2 = add(P, mul(sub(C, P), f));
+    Plotly.relayout(gd, {'scene.camera': {eye:{x:E2[0],y:E2[1],z:E2[2]},
+      center:{x:C2[0],y:C2[1],z:C2[2]}, up:cam.up}});
+    return true;
+  }
   const guards = [];
   ['chartOrbit3d','follow3d','velSpeed','velDv','starmap'].forEach(id => {
     const el = document.getElementById(id);
@@ -3816,10 +3862,16 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
     disarm();
     // block the zoom/rotate gestures from reaching Plotly while disarmed (no preventDefault
     // → the browser performs its normal page scroll); pointermove is blocked for touch only
-    // so mouse hover labels keep working before the chart is armed
+    // so mouse hover labels keep working before the chart is armed. When ARMED, a wheel on
+    // a Plotly gl3d scene is handled HERE (cursor-anchored) instead of by Plotly
+    // (center-anchored); the three.js chase canvas has its own cursor-anchored handler.
     ['wheel','touchstart','touchmove'].forEach(tp =>
-      el.addEventListener(tp, e => { if (!el._zoomArmed) e.stopImmediatePropagation(); },
-        { capture: true, passive: false }));
+      el.addEventListener(tp, e => {
+        if (!el._zoomArmed) { e.stopImmediatePropagation(); return; }
+        if (tp === 'wheel' && el.classList.contains('js-plotly-plot') && gl3dZoomAt(el, e)) {
+          e.preventDefault(); e.stopImmediatePropagation();
+        }
+      }, { capture: true, passive: false }));
     el.addEventListener('pointermove', e => {
       if (!el._zoomArmed && e.pointerType !== 'mouse') e.stopImmediatePropagation();
     }, true);
