@@ -164,8 +164,9 @@ Isp 2800 s, η 0.55) the leading factor is **6.24 W/kg per unit mass-ratio**, so
 | Source | Array specific power | Notes |
 |---|---|---|
 | **PSI** | **60 W/kg** system-level, ×1.25 radiation penalty for a LEO start | PDF §5.1; PPU 6 kg/kW, tank 12 % of propellant |
-| Engine — conservative preset | 91 W/kg (silicon, ~20 % cells) | Starlink-class representative value |
-| Engine — page default | 1000 W/kg (ultra-thin GaAs) | epitaxial-liftoff cells, far-term blanket |
+| **Engine — page default (pumped)** | **91 W/kg** (GaAs-class cells at conservative, Starlink-class packaging mass) | the 0.42 AU passes require GaAs-class ≲0.2 %/K derating — silicon cells strand under the derived thermal curve |
+| Engine — silicon option | 91 W/kg (silicon, ~20 % cells) | same mass class; usable for the non-pumping architectures |
+| Engine — direct-architecture preset | 1000 W/kg (ultra-thin GaAs) | epitaxial-liftoff cells, far-term blanket — the outward spiral demands it |
 | Engine — concentrator preset | 486 W/kg | |
 | Grok | 90.7 W/kg (independently recomputed) | matches the silicon preset |
 
@@ -181,7 +182,8 @@ structure and payload dilute the dry mass.*
 | **Fermi page — published pumping band** | **15–21 W/kg** | our band; **brackets PSI's implied 17.3–19.5** ✔ |
 | Fermi — anchored optimised campaign, idealised 4× cap (issue #4) | 14.5 W/kg | Δv 23.14 ⇒ R = e^(23136/27459) = 2.32 ⇒ α = 6.24·2.32 |
 | **Fermi — flown campaign under the derived thermal curve (issue #5)** | **15.2 W/kg** | Δv 24.44 ⇒ R = e^(24437/27459) = 2.44 ⇒ α = 6.24·2.44 — the shipped default lands *inside* the published band |
-| Fermi page — default vehicle (2 kW GaAs) | ~120 W/kg | the shipped default is *far above* what pumping needs |
+| Fermi page — default vehicle (2 kW, today's-class components) | ~38 W/kg | the shipped pumped default — comfortably above the 15–21 band pumping needs |
+| Fermi page — direct-architecture preset (2 kW far-term GaAs) | ~120 W/kg | what the outward spiral demands (α ≳ 100); loaded only when the direct architecture is selected |
 | Fermi — nuclear-electric closure | ~23 W/kg | constant-power route |
 | *(retracted)* 13 W/kg | **impossible** | R = 2.08 ⇒ Δv capacity 20.1 km/s < the 23.97 required (Fable audit finding; band corrected 13–25 → 15–21) |
 
@@ -550,6 +552,6 @@ and [text/coherence](https://github.com/fermiexplorer/fermi/blob/main/audit/fabl
 [`fermi_sim/`](https://github.com/fermiexplorer/fermi/tree/main/fermi_sim) (source of truth) ·
 [`web/physics.js`](https://github.com/fermiexplorer/fermi/blob/main/web/physics.js) (parity-checked port) ·
 [`run_analysis.py`](https://github.com/fermiexplorer/fermi/blob/main/run_analysis.py) ·
-[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (~187 checks) ·
+[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (190+ checks) ·
 [`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py) (the pumping guards, incl. the phase split and the thermal balance) ·
 [`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (~46 parity checks)

@@ -293,15 +293,15 @@ def perihelion_pumped_vinf(
     perihelion where power is `power_cap`× the 1-AU rating and the Oberth effect is
     strongest. Successive revolutions staircase the orbit energy up to the target.
 
-    Power model:  P(r) = P1 · min((1 AU/r)², power_cap); thrust ∝ P at fixed
-    Isp, so accel = a0 · min((1/r)², cap) · (m0/m).  ``a0`` is the initial thrust
-    acceleration at 1 AU and full mass (m/s²) — the single sizing parameter.
-    The constant ``power_cap`` is a STEP-FUNCTION stand-in for the real, continuous
-    thermal derate curve (cell temperature coefficient, α/ε, emission geometry,
-    pointing); deriving cap_eff(r) from a first-principles energy balance is tracked
-    as issue #5 / roadmap Stage 7. The closure carries a factor-of-two margin on this
-    assumption: a halved cap (2.0×) still reaches the AC target (+1.1 km/s, campaign
-    9.6 → 18.3 yr; audit-pinned in audit_pumping check 13b).
+    Power model — selectable via ``power_model``: ``"cap"`` (default here, the audit
+    comparator) is P(r) = P1 · min((1 AU/r)², power_cap), so accel = a0 · min((1/r)², cap)
+    · (m0/m); ``"thermal"`` uses the DERIVED cap_eff(r) curve from
+    :mod:`fermi_sim.thermal` (issue #5 — shipped; 3.54× at the 0.42 AU floor), under which
+    ``power_cap`` is ignored (still validated ≥ 1 for signature consistency). ``a0`` is
+    the initial thrust acceleration at 1 AU and full mass (m/s²) — the single sizing
+    parameter. The constant-cap closure carries a factor-of-two margin: a halved cap
+    (2.0×) still reaches the AC target (+1.1 km/s, campaign 9.6 → 18.3 yr; audit-pinned
+    in audit_pumping check 13b).
 
     Bang-bang policy, exactly as implemented below (an optimised burn schedule does ~7%
     better on Δv): (1) BOOTSTRAP — from near-circular (ecc < 0.05) burn retrograde only on
@@ -320,8 +320,13 @@ def perihelion_pumped_vinf(
     to a working profile); do not treat 2.25×10⁻⁴ as a simple threshold.
 
     Returns (v_inf_achieved m/s, dv m/s, years, revs). Succeeds if the specific energy
-    reaches v_inf_target²/2 within ``max_yr``. Achieved v∞ can overshoot the target by up
-    to ~1% of v∞ (one time-step of thrust); the overshoot is discretisation, not physics.
+    reaches v_inf_target²/2 within ``max_yr``. Achieved v∞ overshoots the target by one
+    time-step of thrust — ≲0.1% of v∞ in the design corridor, but growing with a0 and
+    shrinking with target (measured +15–30% at a0 = 5×10⁻³ with an 8 km/s target); the
+    overshoot is discretisation, not physics. Off-design note: the mass fraction floors
+    at 0.05, so far-off-design inputs that exhaust the propellant keep thrusting at the
+    floor and can report dv beyond the propellant-consistent ceiling ve·ln(20) — shipped
+    configurations never engage the floor (design point ends at m ≈ 0.41).
     """
     for nm, val in (("a0", a0), ("v_inf_target", v_inf_target), ("isp_s", isp_s),
                     ("rp_min_au", rp_min_au), ("power_cap", power_cap), ("max_yr", max_yr)):

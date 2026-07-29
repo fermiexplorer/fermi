@@ -95,7 +95,7 @@ fermi_sim/               PYTHON ENGINE — source of truth  (~1160 LOC)
   thermal.py     (~150)  DERIVED perihelion power curve (array energy balance) — see §5
 run_analysis.py  (~360)  integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — ~187 checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — 190+ checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -280,6 +280,17 @@ Every entry has a tracked fix; the staged plan is
   of the two-leg total. (Per-a₀ optimised schedules exist for a 5-point grid —
   `OPTIMIZED_SCHEDULES` — but the shipped tax/campaign tables are the design-a₀
   anchored ones.)
+- **Baked campaign/tax tables carry the engine dt's first-order truncation.**
+  *Defect:* the shipped `TAX_OPT[_THERMAL]_TABLE` / `OPT_CAMPAIGN[_THERMAL]_TABLE`
+  knots are integrated at the engine dt convention (min(max(600 s,
+  0.002·period), 5 d)) with per-step switching in `campaign_overhead_curve`;
+  dt-refined runs converge ~8–35 m/s BELOW the shipped overhead values at the
+  top of the aim range (thermal anchor ships +785.3 m/s vs ~764 converged) and
+  ~12 m/s above at low targets in the cap table.
+  *Materiality claim (test this):* the bias is ≤0.11% of any two-leg budget,
+  errs conservative at the AC anchor, and every prose surface quotes the tax
+  to 0.1 km/s, which absorbs it; the audit suite replays the knots at the same
+  convention, so they are internally consistent and tamper-guarded.
 - **Per-step bang-bang switch quantization in `perihelion_pumped_vinf`.**
   *Defect:* in the bang-bang GATE, the burn on/off/sign decision is taken once
   per RK4 step from start-of-step osculating elements, so burn-arc edges are
@@ -292,7 +303,7 @@ Every entry has a tracked fix; the staged plan is
   [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
   switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further ~187 assertions; a passing run is **not** a
+The independent suite has a further 190+ assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -305,7 +316,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (~187 checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (190+ checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the

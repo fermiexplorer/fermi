@@ -36,7 +36,7 @@ It answers:
 | **Pumped SEP departure Δv (default architecture)** | ~33 km/s two-leg total (anchored optimised schedule under a DERIVED thermal power curve, cap_eff(0.42 AU)=3.54; at PSI's idealised 4× cap the same construction gives 23.14 vs their 23.97 — 3.5% better); closes at today's α (~15–21 W/kg) |
 | Best departure window | direct optimum ~72,800 yr; pumped optimum at the ~79,250 yr ecliptic crossing |
 | Departure aim | ~2.4° off the ecliptic (direct optimum); 0° at the crossing |
-| Reference vehicles | pumped default ~162 kg wet @2 kW today's silicon (91 W/kg); direct spiral needs the far-term high-α preset (~43 kg wet @1000 W/kg); conservative direct ~600 kg wet @5 kW silicon |
+| Reference vehicles | pumped default ~162 kg wet @2 kW today's-class hardware (91 W/kg array, GaAs cells — the 0.42 AU passes require GaAs-class derating); direct spiral needs the far-term high-α preset (~43 kg wet @1000 W/kg); conservative direct ~600 kg wet @5 kW silicon |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn
@@ -75,13 +75,13 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (~187 checks: astropy ephemeris, conservation laws, optima, thermal balance, star data, doc consistency)
+# independent audits (190+ checks: astropy ephemeris, conservation laws, optima, thermal balance, star data, doc consistency)
 .venv/bin/python audit/calcs/run_audits.py
 
 # web<->python parity (Node, ~46 checks)
 node audit/calcs/audit_webjs.mjs
 
-# UI behaviour: every slider drives the right outputs, in the right direction (82 checks)
+# UI behaviour: every slider drives the right outputs, in the right direction (~90 checks)
 .venv/bin/python audit/calcs/ui_sliders.py
 
 # NASA GMAT cross-validation of the departure model (downloads GMAT; Linux/WSL)
@@ -107,7 +107,7 @@ The physics is checked **independently** (different method, not self-comparison)
   departure C3 to 2×10⁻⁶ % and the low-thrust Earth-escape spiral time to 0.007 %
   (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
-All ~187 Python checks + ~46 JS-parity checks pass (plus a Playwright UI render test, the
+All 190+ Python checks + ~46 JS-parity checks pass (plus a Playwright UI render test, the
 NASA GMAT cross-validation, and independent Codex, Grok, Gemini & Fable re-implementations
 under `audit/`, which agree to ≤0.2% on every headline number). See
 `audit/AUDIT_PROMPTS.md` for adversarial review prompts.

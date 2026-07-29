@@ -506,6 +506,40 @@ def run() -> None:
     check("per-a0 thermal schedule closes the 1.9e-4 strand band (fine replay)",
           v_19t >= tgt * 0.999, f"{v_19t/1e3:.2f} km/s")
 
+    # 13f. INDEPENDENCE BRIDGE + campaign-table guards (deep-audit b154-167 findings).
+    #      (i) The scheduled integrator's physics is tied to the INDEPENDENTLY re-integrated
+    #      path: run scheduled_pumped_vinf with the BANG_BANG geometry under the cap model
+    #      and require it to agree with perihelion_pumped_vinf (whose physics checks 1-10
+    #      above re-derive with a separate integrator, work-energy closure and step
+    #      convergence). The two implementations differ only in event location (bisected vs
+    #      per-step), measured at ~0.1% dv — so agreement here transfers the independent
+    #      validation onto the scheduled code path that prices the shipped default.
+    from fermi_sim.pump_schedule import BANG_BANG, campaign_overhead_curve, TAX_OPT_THERMAL_TABLE
+    v_sb, dv_sb, yr_sb, _ = scheduled_pumped_vinf(a0_design, tgt, BANG_BANG)
+    v_bb, dv_bb, yr_bb, _ = perihelion_pumped_vinf(a0_design, tgt)
+    check("independence bridge: scheduled(BANG_BANG geometry) matches the validated bang-bang "
+          "integrator (<0.5% dv, <0.2% v_inf)",
+          abs(dv_sb - dv_bb) / dv_bb < 5e-3 and abs(v_sb - v_bb) / v_bb < 2e-3,
+          f"dv {dv_sb:.0f} vs {dv_bb:.0f}, v {v_sb:.0f} vs {v_bb:.0f}")
+    #      (ii) The baked thermal tax/campaign knots must reproduce from a FRESH
+    #      campaign_overhead_curve integration (they were previously baked records with no
+    #      replay guard). Same code path — a drift/tamper guard, not an independent check.
+    from fermi_sim.pump_schedule import ANCHORED_THERMAL, OPT_CAMPAIGN_THERMAL_TABLE
+    knots = [15000.0, 20000.0, 23640.0, 25000.0]
+    fresh = {row[0]: row for row in campaign_overhead_curve(
+        a0_design, ANCHORED_THERMAL, knots, power_model="thermal")}
+    tax_map = dict(TAX_OPT_THERMAL_TABLE)
+    ok_tax = all(abs(fresh[k][1] - tax_map[k]) < 1.0 for k in knots if k in fresh)
+    check("baked thermal tax knots reproduce from a fresh campaign integration (<1 m/s)",
+          len(fresh) == len(knots) and ok_tax,
+          str({k: (round(fresh[k][1], 1), tax_map[k]) for k in knots if k in fresh}))
+    camp_map = {row[0]: row for row in OPT_CAMPAIGN_THERMAL_TABLE}
+    ok_camp = all(abs(fresh[k][2] - camp_map[k][2]) < 0.01
+                  and abs(fresh[k][3] - camp_map[k][3]) < 0.01
+                  for k in (23640.0, 25000.0))
+    check("baked thermal campaign years/revs knots reproduce from the fresh integration",
+          ok_camp, str({k: (round(fresh[k][2], 3), camp_map[k][2]) for k in (23640.0, 25000.0)}))
+
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the
     #     dv split ~8.3 retro + ~17.3 prograde. Re-integrated independently.

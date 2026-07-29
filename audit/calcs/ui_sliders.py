@@ -66,22 +66,33 @@ def run(page):
       return {feasible:r.feasible, achV:r.achievableVinf, floor:r.vinfSun,
               wkgsolar:+document.getElementById('wkgsolar').value,
               enginekg:+document.getElementById('enginekg').value, isp:+document.getElementById('isp').value}; }""")
+    # DRIFT GUARD (deep-audit finding): every behavioural check below resets controls to the
+    # test-local DEFAULTS dict, so an index.html value= drift that stays feasible would pass
+    # unnoticed — compare the NATIVE page attributes against the dict explicitly.
+    native_vals = page.evaluate(
+        "(keys) => Object.fromEntries(keys.map(k => [k, +document.getElementById(k).value]))",
+        list(DEFAULTS.keys()))
+    drift = {k: (native_vals.get(k), v) for k, v in DEFAULTS.items()
+             if abs(native_vals.get(k, float("nan")) - v) > 1e-9}
+    check("native page defaults match the suite's DEFAULTS dict (no silent drift)",
+          not drift, str(drift))
     check("page NATIVE on-load default is FEASIBLE (value= attributes, no reset)",
           native["feasible"] is True,
           f"achV={native['achV']/1e3:.1f} vs floor {native['floor']/1e3:.1f}; "
           f"loaded wkgsolar={native['wkgsolar']} enginekg={native['enginekg']} isp={native['isp']}")
 
     base = comp()
-    # The DEFAULT is the pumped architecture at TODAY'S SILICON components (issue #7):
-    # 91 W/kg array + 6 kg/kW thruster + Isp 3000, 2 kW → ~162 kg wet, vehicle α ≈ 38 W/kg,
-    # a₀ ≈ 4.2e-4 (throttled to the 2.5e-4 design profile) — real-hardware defaults close.
-    check("default (today's silicon, pumped) IS feasible", base["feasible"] is True, base["infeasReason"])
+    # The DEFAULT is the pumped architecture at TODAY'S-CLASS components (issues #7 + deep
+    # audit): 91 W/kg array mass with GaAs-class cells (the 0.42 AU passes require GaAs
+    # derating — silicon cells strand) + 6 kg/kW thruster + Isp 3000, 2 kW → ~162 kg wet,
+    # vehicle α ≈ 38 W/kg, a₀ ≈ 4.2e-4 (throttled to the design profile).
+    check("default (today's-class, pumped) IS feasible", base["feasible"] is True, base["infeasReason"])
     check("default is pure solar-electric (power-feasible)", base["powerFeasible"] is True)
     check("default achievable v∞ clears the floor", base["achievableVinf"] >= base["vinf"],
           f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
     check("default vehicle α is today's-hardware class (~35-40 W/kg)",
           33 < base["pwrW"]/base["dryEff"] < 43, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
-    check("default pumped vehicle is the ~162 kg silicon design",
+    check("default pumped vehicle is the ~162 kg today's-class design",
           abs(base["wet"] - 162) < 10, f"{base['wet']:.1f} kg wet")
     # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
     # show the validated reference campaign, and be pinned regardless of the Isp slider.
@@ -319,8 +330,14 @@ def run(page):
     page.wait_for_timeout(200)
     pp = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
                        " e:+document.getElementById('enginekg').value, feas:compute().feasible})")
-    check("selecting PUMPED loads today's silicon preset (91 W/kg, 6 kg/kW) and closes",
+    check("selecting PUMPED loads the today's-class preset (91 W/kg, 6 kg/kW) and closes",
           pp["w"] == 91 and pp["e"] == 6 and pp["feas"] is True, str(pp))
+    # presets must keep the tech DROPDOWNS in sync with the sliders (deep-audit finding:
+    # the selects used to advertise a component set the sliders did not use)
+    sel = page.evaluate("() => ({sol:document.getElementById('soltech').value,"
+                        " eng:document.getElementById('enginetech').value})")
+    check("pumped preset syncs the tech dropdowns to the shipped component set",
+          sel["sol"] == "30|91" and sel["eng"] == "gridded-today|3000|0.50|6", str(sel))
     page.click('input[name=pwr][value="nuclear"]')
     page.wait_for_timeout(200)
     pn = page.evaluate("() => ({kw:+document.getElementById('pwrkw').value,"

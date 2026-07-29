@@ -181,7 +181,8 @@
   // Returns { vinf (m/s), dv (m/s), years, revs, reaches }. Cached by argument key.
   const _pumpCache = {}, _pumpOrder = [];
   function perihelionPumpedVinf(a0, vInfTarget, ispS = 2800, rpMinAu = 0.42, powerCap = 4, maxYr = 60) {
-    if (![a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].every(Number.isFinite) || a0 <= 0 || vInfTarget <= 0)
+    if (![a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].every(Number.isFinite)
+        || a0 <= 0 || vInfTarget <= 0 || ispS <= 0)
       return { vinf: 0, dv: 0, years: 0, revs: 0, reaches: false };
     const key = [a0, vInfTarget, ispS, rpMinAu, powerCap, maxYr].map(x => "" + x).join(",");
     if (_pumpCache[key] !== undefined) return _pumpCache[key];
@@ -322,7 +323,8 @@
   const _schCache = {}, _schOrder = [];
   function scheduledPumpedVinf(a0, vInfTarget, sch = SCHEDULE_ANCHORED_THERMAL,
                                ispS = 2800, powerCap = 4, maxYr = 60, powerModel = "thermal") {
-    if (![a0, vInfTarget, ispS, powerCap, maxYr].every(Number.isFinite) || a0 <= 0 || vInfTarget <= 0)
+    if (![a0, vInfTarget, ispS, powerCap, maxYr].every(Number.isFinite)
+        || a0 <= 0 || vInfTarget <= 0 || ispS <= 0)
       return { vinf: 0, dv: 0, years: 0, revs: 0, reaches: false };
     const key = [a0, vInfTarget, sch.thRetro, sch.thPro, sch.eGuard, sch.rpLatch,
                  ispS, powerCap, maxYr, powerModel].map(x => "" + x).join(",");
@@ -478,6 +480,13 @@
     return T[T.length - 1][1];
   };
   function pumpTaxFor(vinf, schedule = "thermal") {
+    // schedule names mirror Python pump_tax_for exactly: "thermal" (default) / "optimized"
+    // (cap-model) / "bangbang"; anything else THROWS (a silent fallback priced typos and
+    // "bangbang" off the wrong, sign-flipped table — deep-audit finding)
+    if (schedule === "bangbang") return pumpTaxBangbang(vinf);
+    if (schedule !== "thermal" && schedule !== "optimized")
+      throw new Error("pumpTaxFor: unknown schedule '" + schedule
+        + "' (use 'thermal', 'optimized' or 'bangbang')");
     if (!Number.isFinite(vinf) || vinf < PUMP_TAX_VINF_MIN || vinf > 26e3)
       throw new Error("pumpTaxFor: v_inf " + (vinf / 1e3).toFixed(1) + " km/s is outside the "
         + "anchored optimised campaign's [8, 26] km/s range — use pumpTaxBangbang or integrate.");

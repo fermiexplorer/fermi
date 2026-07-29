@@ -233,7 +233,7 @@
 .vizlegend .vbar { width: 16px; height: 3px; border-radius: 2px; }
 .vizlegend .vlhint { flex-basis: 100%; color: #6e7681; }
   /* ---- quotable section anchors (added to methodology headings by JS) ---- */
-  .method h2, .method h3, .method h4 { scroll-margin-top: 16px; }
+  .method h2, .method h3, .method h4 { scroll-margin-top: 56px; }   /* clears the 41px sticky tabbar */
   .method .anchor { margin-left: 8px; font-weight: 400; color: var(--muted); text-decoration: none;
     opacity: 0; transition: opacity .12s; }
   .method h2:hover .anchor, .method h3:hover .anchor, .method h4:hover .anchor,
@@ -331,9 +331,10 @@
         <label><input type="radio" name="ga" value="oberth"> Solar Oberth (powered perihelion)</label>
       </div>
       <div class="hint" style="margin-top:6px">Selecting an architecture loads the component preset it
-        closes with — <b>today's silicon hardware</b> (91 W/kg array, 6 kg/kW) for every architecture
-        except the direct spiral, whose physics demands a <b>far-term ~1000 W/kg array</b> (α ≳ 100 W/kg).
-        All sliders stay freely adjustable afterwards.</div>
+        closes with — <b>today's-class hardware</b> (91 W/kg array mass with GaAs-class cells, which the
+        0.42 AU passes require, and a 6 kg/kW thruster) for every architecture except the direct spiral,
+        whose physics demands the <b>far-term set</b> (~1000 W/kg array <em>and</em> a 4 kg/kW thruster —
+        α ≳ 100 W/kg). All sliders stay freely adjustable afterwards.</div>
       <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
         drop perihelion to 0.42 AU, then prograde burns at perihelion (~3.5× array power + max Oberth
         leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
@@ -415,7 +416,8 @@
         <label>Ion engine technology</label>
         <select id="enginetech">
           <option value="hall|1585|0.50|5">Hall thruster — conservative (Isp ~1585 s, 50%)</option>
-          <option value="gridded-adv|3000|0.50|4" selected>Advanced gridded — high-α (Isp ~3000 s, 50%, 4 kg/kW)</option>
+          <option value="gridded-today|3000|0.50|6" selected>Gridded ion — today's baseline (Isp ~3000 s, 50%, 6 kg/kW — the pumped default)</option>
+          <option value="gridded-adv|3000|0.50|4">Advanced gridded — light (Isp ~3000 s, 50%, 4 kg/kW — the direct preset)</option>
           <option value="gridded|3000|0.60|6">Gridded ion (Isp ~3000 s, 60%, 6 kg/kW)</option>
           <option value="gridded-opt|3500|0.62|6">Gridded ion — near-optimum (Isp ~3500 s, 62%)</option>
           <option value="vasimr|10000|0.65|8">VASIMR / high-Isp (Isp ~10,000 s — thrust-starved here)</option>
@@ -465,14 +467,14 @@
       <div class="ctrl" id="solarOpts">
         <label>Solar cell technology</label>
         <select id="soltech">
-          <option value="20|91">Silicon (~20%, 91 W/kg — Starlink-class, buy-today)</option>
+          <option value="30|91" selected>GaAs cells, conservative packaging (~30%, 91 W/kg — the pumped default: the 0.42 AU passes need GaAs-class cells, at today's array mass)</option>
+          <option value="20|91">Silicon (~20%, 91 W/kg — Starlink-class; NOTE: silicon cells strand the pumped campaign)</option>
           <option value="30|146">GaAs triple-junction (~30%, 146 W/kg)</option>
           <option value="13|118">Thin-film CIGS (~13%, 118 W/kg, light)</option>
           <option value="30|151">ROSA / advanced rigid (~30%, 151 W/kg)</option>
           <option value="18|306">Thin-film roadmap (~18%, 306 W/kg, ultralight)</option>
           <option value="25|400">Advanced thin-film (~25%, 400 W/kg)</option>
-          <option value="25|486">Solar concentrator (~25% net, 486 W/kg)</option>
-          <option value="30|1000" selected>Ultra-thin GaAs (~30%, 1000 W/kg — high-α default)</option>
+          <option value="30|1000">Ultra-thin GaAs (~30%, 1000 W/kg — far-term; the direct architecture's preset)</option>
         </select>
         <label style="margin-top:8px">Cell / net efficiency <b><span id="o_cellEff">30</span> %</b> <span class="exp">(sets array AREA)</span></label>
         <input type="range" id="cellEff" min="10" max="34" step="1" value="30">
@@ -480,9 +482,10 @@
         <input type="range" id="wkgsolar" min="40" max="1200" step="1" value="91">
         <div class="hint">Array mass = P / (W/kg); area = P/(1361·η). A high W/kg makes the whole vehicle light,
           raising the <b>vehicle specific power α = P/m_dry</b>. Above <b>α ≈ 100 W/kg</b> the burn is short and
-          near 1 AU, so the 1/r² fade barely bites and <b>pure solar closes</b>. The default uses <b>ultra-thin
-          GaAs (~1000 W/kg</b>, Alta-Devices-class cells) — that single light-array lever lets a near-term
-          ~4 kg/kW thruster close it (α ≈ 120 at the pumped default's sizing). See "Vehicle specific power".</div>
+          near 1 AU, so the 1/r² fade barely bites and an <b>outward spiral closes</b> — that far-term regime
+          is the <b>direct architecture's preset</b> (ultra-thin GaAs, ~1000 W/kg, α ≈ 120). The <b>page
+          default</b> (pumped) needs no such stretch: GaAs-class cells at today's conservative <b>91 W/kg</b>
+          array mass, vehicle α ≈ 38. See "Vehicle specific power".</div>
       </div>
       <div class="ctrl" id="fcOpts" style="display:none">
         <label>Fuel-cell reactant</label>
@@ -520,7 +523,7 @@
       </div>
       <div class="viz3drow">
         <div class="camcell">
-          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Drag to rotate; click (tap) first, then scroll/pinch to zoom — an untouched chart lets the page scroll past; the grid re-scales by decade.">?</span></div>
+          <div class="camctl"><label title="Off = world (3rd-party) view, rotation shared with the other unlocked views. On = follow the probe-aligned chase orientation."><input type="checkbox" id="lock_chartOrbit3d"> lock to cam view</label><span class="vinfo" title="3D overview — the Sun, Earth's orbit, the probe's flown path, Alpha Centauri and its track, and the intercept point. Click (on touch: tap) to enable interaction, then drag to rotate and scroll/pinch to zoom — an untouched chart lets the page scroll past; the grid re-scales by decade.">?</span></div>
           <div class="chart prim" id="chartOrbit3d"></div>
         </div>
         <div class="camcell">
@@ -683,7 +686,7 @@
   (The static numbers in this section describe one illustrative <em>conservative, buy-today</em>
   reference configuration — 5 kW silicon array, η 0.50, at the derived ~25 km/s spiral budget; the live
   card below always tracks your current slider settings, which default to the pumped architecture's
-  today's-silicon preset, ~162 kg wet.) The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then
+  today's-class preset (91 W/kg array, GaAs cells), ~162 kg wet.) The ion engine fires <em>continuously</em> from launch — first spiralling out of Earth, then
   thrusting heliocentrically to build the escape velocity — then shuts off for the long coast. All
   burning happens within a few AU of the Sun, where solar power is strongest.</p>
 
@@ -745,11 +748,12 @@
   comfortably feasible today.</p>
   <p><strong>Subsystem sizing.</strong> The solar array AREA <code>= P / (S₀·η_cell / r²)</code> with
   <code>S₀</code> = 1361 W/m² (set by efficiency); its MASS <code>= P / (W/kg)</code>, set directly by the
-  array-specific-power slider. The page default is ultra-thin <em>GaAs</em> (~30% cells, ~1000 W/kg at
-  1 AU — the high-α default); commercial buy-today silicon (~20%, ~91 W/kg, Starlink-class) is the
-  conservative option in the dropdown, and the sliders let you vary cell efficiency and W/kg freely (a
-  concentrator reaches ~486 W/kg). The ion engine + PPU scales at ~4 kg/kW (6 kg/kW for the
-  conservative gridded option) and the xenon tank at ~2.5% of propellant (~8% for classic COPV
+  array-specific-power slider. The page default (pumped) uses <em>GaAs-class cells</em> (~30% — the
+  0.42 AU passes require their ≲0.2%/K derating; silicon cells strand) at today's conservative
+  ~91 W/kg array mass; ultra-thin GaAs (~1000 W/kg, far-term) is the direct architecture's preset,
+  and the sliders let you vary cell efficiency and W/kg freely (a
+  concentrator reaches ~486 W/kg). The ion engine + PPU scales at ~6 kg/kW today (4 kg/kW for the
+  advanced light option) and the xenon tank at ~2.5% of propellant (~8% for classic COPV
   tanks). Dry mass is <em>derived</em> from these pieces — array + engine + tank + structure + payload —
   with nothing left unallocated (see the Dry-mass KPI).</p>
 
@@ -823,7 +827,7 @@
       against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, ~46 checks —
       including the perihelion-pumping integrators and the derived thermal power curve, which agree to
       ~11–13 significant digits, and the synchrotron recirculation model).</li>
-    <li><b>Independent suite (~187 checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+    <li><b>Independent suite (190+ checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
       <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
       brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
       rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
@@ -957,18 +961,21 @@
   </ul>
   <p><b>When is a design impossible?</b> Two hard limits flip it to <span style="color:#f85149">NOT FEASIBLE</span>:</p>
   <ul>
-    <li><b>Power gate</b> (decisive) — the achievable cruise v∞ saturates below the floor. What decides it is the
+    <li><b>Power gate</b> (decisive). For the <em>direct outward spiral</em>, what decides it is the
       whole-vehicle specific power α = power ÷ (dry + payload) mass, <em>not</em> the kilowatts: a heavy, low-α vehicle
-      (today's silicon + Hall thruster, α ≈ 20–30) fails it because the 1/r² fade drags the burn far from the Sun,
-      while the light, high-α <b>default</b> (thin-film array + light thruster, α ≈ 120 at the pumped
-      default's sizing) <b>clears it as pure
-      solar</b> — no reactor, no assist — as does nuclear-electric (constant power, no fade). See "Power-limited v∞".</li>
+      (today's components, α ≈ 20–40) fails it because the 1/r² fade drags the burn far from the Sun,
+      and only the far-term high-α set (thin-film array + light thruster, α ≈ 120 — the direct
+      architecture's preset) <b>clears that spiral as pure solar</b>. The <b>page default</b> (pumped,
+      α ≈ 38 at today's components) clears its own gate instead by burning at perihelion — the gate
+      there is the integrated anchored pumping schedule, not an α threshold. Nuclear-electric
+      (constant power, no fade) closes the spiral from low α. See "Power-limited v∞".</li>
     <li><b>Mass diverges</b> — with the <em>derived</em> minimal dry mass, every kg of propellant drags a fixed
       mass of tank + structure; if that times the mass ratio exceeds 1, the propellant + structure spiral has no
       finite solution (the rocket-equation wall). Reproduce it by dropping <code>Isp</code> toward ~1000 s.</li>
   </ul>
-  <p>In the default ~73k-yr, 2 kW, Isp-3000 s high-α configuration the margins are comfortable, so it reads
-  feasible as pure solar — push those sliders toward heavier/low-α hardware to see the power gate bite.</p>
+  <p>In the default ~73k-yr, 2 kW, Isp-3000 s pumped configuration (today's-class components) the anchored
+  campaign closes with margin, so it reads feasible as pure solar — switch to the <em>direct</em>
+  architecture at the same today's-class components to see the outward-spiral power gate bite.</p>
 
   <h4 id="what-is-alpha">What is α? — specific power, the number that decides electric flight</h4>
   <p><b>Definition.</b> In this project α is the <em>whole-vehicle specific power</em>: installed
@@ -1266,8 +1273,8 @@
     <span id="starTlabel"></span>
   </div>
   <div id="starmap"></div>
-  <p class="src">Drag to rotate; click (tap) the map first, then scroll or pinch to zoom — an untouched map
-  lets the page scroll past it. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
+  <p class="src">Click (on touch: tap) the map to enable interaction, then drag to rotate and scroll or
+  pinch to zoom — an untouched map lets the page scroll past it. Sun ☉ at the origin; grey disc = ecliptic plane (50 ly radius);
   colours = spectral class (blue-white A/F → yellow G → orange K → red M); dotted trails = the headline
   approachers' full 1.5 Myr paths. Catalogue: SIMBAD TAP, parallax ≥ 10 mas with full 6-D kinematics
   (~120,000 stars, complete to ~315 ly, plus the region's giants — V ≤ 2.5 — out to ~1,000 ly; radial
@@ -1299,14 +1306,14 @@
     <tr><td><b>c UMa</b> (corrected)</td><td>G0V · 5.2</td><td class="v">66</td><td class="v">~13</td><td class="v">~1,240</td><td class="v">3.1</td><td class="v">−46.3°</td><td class="v">37.0</td><td class="v">72</td><td class="v">~45</td><td class="v">1.2e27 (313%)</td></tr>
     <tr class="noterow"><td colspan="11">with the validated RV (−15.4, Gaia; a 2023 catalogue error said −38.6) its approach is later and farther than first computed — and it remains the tilt-trap example: cheap cruise, ruinous 46° aim</td></tr>
     <tr><td><b>Altair</b> (α Aql)</td><td>A7V · 0.8</td><td class="v">16.7</td><td class="v">8.65</td><td class="v">138</td><td class="v">16.1</td><td class="v">+20.3°</td><td class="v">26.5</td><td class="v">59</td><td class="v">~60</td><td class="v">5.0e27 (1,296%)</td></tr>
-    <tr class="noterow"><td colspan="11">no ecliptic crossing inside 20 ly — at its min-Δv aim the +20° tilt is priced in (≈ AC's budget); a tilt-free crossing arrival exists just outside, at ~22 ly / 330 kyr, dropping the Δv to 23.2 (see the passes table). At ~13 L☉ the biggest energy prize of the cheap set</td></tr>
+    <tr class="noterow"><td colspan="11">no ecliptic crossing inside 20 ly — at its min-cruise (tangential) aim, 189 kyr, the +20° tilt is priced in (≈ AC's budget); a tilt-free crossing arrival exists just outside, at ~22 ly / 330 kyr, dropping the Δv to 23.2 (see the passes table). At ~13 L☉ the biggest energy prize of the cheap set</td></tr>
   </table>
   <p>The physics: for a future approacher the minimum cruise speed tends to <code>d*/t*</code> — you launch
   toward the encounter point and coast; the star does the closing. But cruise is only half the budget: the
   <b>aim tilt</b> out of the ecliptic sets how much of Earth's 29.8 km/s you can borrow, and the <b>Δv
   budget</b> column (the engine's full LEO low-thrust departure model at each star's optimum, true tilt
   included) is the honest ranking. Stars that never cross the ecliptic nearby are still perfectly
-  evaluable — they just pay the tilt (Altair: +20° at its 138-kyr optimum; a tilt-free arrival exists
+  evaluable — they just pay the tilt (Altair: +20° at its 189-kyr min-cruise optimum; a tilt-free arrival exists
   farther out) — while a large tilt can wipe out a
   cheap cruise (c UMa at −46°, τ Ceti at 44°). Note the escape floor: even a
   ~0 km/s cruise costs ~19 km/s from LEO (Earth spiral + solar escape at 1 AU − the 1.2 km/s spiral-fit
@@ -1318,7 +1325,7 @@
   (ROSA-class array + today's thruster), not the far-term thin-film array AC demands. Red-dwarf
   record-holders inside 100 kyr, for completeness: Ross 248 (3.04 ly @ 36 kyr — closer than AC ever
   gets) and Gliese 445 (~3.4 ly @ 44 kyr) — but both are M dwarfs.</p>
-  <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>558 stars cross the ecliptic plane inside
+  <p><b>Ecliptic-plane crossings:</b> within the catalogue, <b>868 stars cross the ecliptic plane inside
   50 ly of the Sun in the next 1 Myr</b> — so in-plane departure geometry (borrowing Earth's 29.8 km/s with
   no plane change) is never in short supply, whatever the target era. The complete list of crossings
   <b>within 20 ly</b>, ranked by crossing time, with the Sun-distance at the moment of crossing:</p>
@@ -1500,7 +1507,7 @@
       — this interactive calculator and its shared physics (value-by-value parity-checked against Python).</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/audit" target="_blank" rel="noopener noreferrer"><code>audit/</code></a>
       — independent verification:
-      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (~187 Python checks + a Node JS↔Python parity check),
+      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (190+ Python checks + a Node JS↔Python parity check),
       a <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/gmat" target="_blank" rel="noopener noreferrer"><code>gmat/</code></a>
       cross-validation of the departure model against <b>NASA's GMAT</b> propagator (scripts, comparison &amp; raw outputs),
       and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>, <code>fable/</code>.</li>
@@ -1770,7 +1777,7 @@ function render(){
   const feasLine = r.feasible
     ? (r.ga==='synchro'
       ? `<div class="sline"><b style="color:#d29922">✓ MODEL CLOSES — exploratory concept, not a feasibility claim.</b> The kick schedule reaches the target, but the verdict is <b>conditional on a deep-solar EM-station infrastructure that does not exist</b> (and is not costed here — the mass below is the probe side only); single-probe recirculation is the fragile case, and the coherent form is a one-kick gateway amortised across a fleet (<a href="#synchrotron">see the section verdict</a>). Minimal derived dry mass <b>${fmt(r.dry)} kg</b>, <b>${fmt(r.wet)} kg</b> wet (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`
-      : `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top). This is a <b>mass-closure floor at the selected component technology, not an engineered bus</b> — no comms, GNC hardware, thermal or harness line items beyond the structure fraction${r.arraySpecPower>=300?`, and the selected array is far-term ${fmt(r.arraySpecPower)} W/kg (today's arrays are ~10× heavier — the silicon preset the other architectures default to)`:''}.</div>`)
+      : `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top). This is a <b>mass-closure floor at the selected component technology, not an engineered bus</b> — no comms, GNC hardware, thermal or harness line items beyond the structure fraction${r.arraySpecPower>=300?`, and the selected array is far-term ${fmt(r.arraySpecPower)} W/kg (today's arrays are ~10× heavier — the 91 W/kg today's-class preset the other architectures default to)`:''}.</div>`)
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine + (massShown ? (
     `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+
@@ -1869,13 +1876,13 @@ function render(){
     c:dvSteps});
   K.push({l:'Mission Δv (modelled)', v:(_mdvVal?fmt(_mdvVal.dvTotKm,1)+' km/s':'…'), i:inl('T','alt','pwr','eta','isp','kstruct','dry','pay','prop'),
     s:'∫a·dt along the high-fidelity 3-body + falling-mass trajectory (the model the chase-cam view draws)',
-    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled thrust under the flown schedule — the anchored optimised one when the vehicle is throttled to the design profile, else the bang-bang gate geometry). Oberth: LEO spiral + dive + the perihelion kick (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station kicks are EXTERNAL energy and excluded from the onboard total (the drawn delivery spiral stands in for the un-modelled insertion).',
+    d:'The ONBOARD Δv actually expended along the integrated trajectory of the SELECTED architecture — a restricted three-body (Sun + Earth, point masses) integration with the real falling mass. Direct: LEO spiral + heliocentric burn. Pumped: LEO spiral + the multi-revolution pumping campaign (power-scaled thrust under the anchored optimised thermal schedule — the one campaign the calculator gates, flies and prices — at a₀ = min(F/m_wet, 2.5×10⁻⁴)). Oberth: LEO spiral + dive + the perihelion kick (the perihelion-lowering assist tour is drawn as a jump-cut, not flown). Synchrotron: the station kicks are EXTERNAL energy and excluded from the onboard total (the drawn delivery spiral stands in for the un-modelled insertion).',
     c:(_mdvVal?`Earth-escape Δv   = ${fmt(_mdvVal.dvEarthKm,2)} km/s   (low-thrust spiral ≈ v_circ at LEO)\nHeliocentric Δv   = ${fmt(_mdvVal.dvHelKm,2)} km/s   (onboard, this architecture)\nTotal modelled Δv = ${fmt(_mdvVal.dvTotKm,2)} km/s\n— revolutions (falling mass): ${fmt(_mdvVal.revsGeo,0)} around Earth · ${fmt(_mdvVal.revsHel,2)} around the Sun\n— ≤1% smooth approx: ${fmt(_mdvVal.nSeg,0)} segments;  design budget (this architecture, with margins) = ${fmt(r.dvDesign/1e3,1)} km/s`:'integrating the trajectory…')});
   K.push({l:'Power-limited v∞', v:(r.ga==='direct'||r.ga==='pumped'? (r.massConverges?fmt(r.achievableVinf/1e3,1)+' km/s':'n/a (mass diverges)') : (r.ga==='synchro'?'n/a (external)':'n/a (assist)')),
     i:inl('pwr','isp','eta','dry','pay'), s:'achievable heliocentric v∞ under the chosen power law vs the required floor',
     d:'THE conservative feasibility test (the 1/r² solar-power-fade analysis). For SOLAR, array power falls as 1/r² as the probe spirals out — but how much that bites depends on the WHOLE-VEHICLE specific power α = P/m_dry. At low α (heavy vehicle, current-tech masses) an OUTWARD-SPIRAL burn is long and far from the Sun, the fade dominates, and v∞ saturates below the floor; above α ≈ 100 W/kg (an ultralight high-α probe) the burn is short and near 1 AU and pure solar closes. The PERIHELION-PUMPED architecture instead burns close to the Sun (up to ~3.5× the 1-AU power under the derived thermal curve + Oberth leverage) and closes at today’s α — its gate is the anchored pumping schedule integrated at the vehicle’s a₀ = F/m_wet. NUCLEAR-ELECTRIC has CONSTANT power (no fade): it closes at low α (~23 W/kg) too. (Solar-Oberth/Jupiter supply v∞ from the gravity well, so this ceiling does not bind.)',
     c:(r.pumpInfo
-       ? `gate: the ANCHORED OPTIMISED schedule integrated at a₀ = ${(r.thrust/r.wet).toExponential(2)} m/s² under the\n  DERIVED THERMAL power curve (cap_eff(0.42 AU) = 3.54 from the GaAs array energy balance,\n  issue #5 — not the assumed 4×) ⇒ achievable v∞ = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n${r.pumpInfo.optimized?'campaign flown (anchored 12-yr custody optimum)':'pumping campaign'}: ${fmt(r.pumpInfo.years,1)} yr powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s${r.pumpInfo.throttled?`\n(the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} m/s² is throttled to the validated 2.5×10⁻⁴ design profile)`:''}\n⇒ ${r.powerFeasible?'reaches the floor — the pumping campaign closes at this a₀':'STALLS below the floor — off-design a₀ is phasing-sensitive (raise power, cut mass, or aim later)'}`
+       ? `gate: the ANCHORED OPTIMISED schedule integrated at a₀ = ${Math.min(r.thrust/r.wet, FERMI.PUMP_DESIGN_A0).toExponential(2)} m/s² under the\n  DERIVED THERMAL power curve (cap_eff(0.42 AU) = 3.54 from the GaAs array energy balance,\n  issue #5 — not the assumed 4×) ⇒ achievable v∞ = ${fmt(r.achievableVinf/1e3,2)} km/s\nrequired (cruise floor at this arrival)              = ${fmt(r.vinfSun/1e3,2)} km/s\n${r.pumpInfo.optimized?'campaign flown (anchored 12-yr custody optimum)':'pumping campaign'}: ${fmt(r.pumpInfo.years,1)} yr${r.pumpInfo.reaches?'':' (the 60-yr integration cap, not a campaign duration)'} powered · ${fmt(r.pumpInfo.revs,1)} revs · Δv ${fmt(r.pumpInfo.dv/1e3,1)} km/s${r.pumpInfo.throttled?`\n(the vehicle's own a₀ = ${(r.thrust/r.wet).toExponential(2)} m/s² is throttled to the validated 2.5×10⁻⁴ design profile)`:''}\n⇒ ${r.powerFeasible?'reaches the floor — the pumping campaign closes at this a₀':'STALLS below the floor — off-design a₀ is phasing-sensitive (raise power, cut mass, or aim later)'}`
        : r.ga==='pumped' && r.pwr==='solar'
        ? `mass diverges at this Δv/Isp, so the pumping gate was not evaluated (the 0 shown is a sentinel, not a computed v∞) — fix the mass closure first`
        : r.ga==='direct'
@@ -1952,14 +1959,14 @@ function render(){
     d:'The science/instrument mass delivered to Alpha Centauri. It rides on top of the dry bus, so increasing it raises the propellant and the wet mass through the rocket equation (the launcher ultimately carries that extra fuel for it).',
     c:`m_pay = ${fmt(r.pay,1)} kg   (slider input).\nAdded to the dry bus, so it raises the propellant (and wet mass) via the rocket equation.`});
   K.push({l:'Dry mass (derived)', v:fmt(r.dry)+' kg', i:inl('kstruct','pwr','cell','wkgsolar','ekw','tank','isp'), s:'m_dry — minimal dry bus: power source + engine + tank + structure (no margin)',
-    d:'The dry mass is DERIVED, not assumed — it is the minimum that must be there, with no extraneous padding: power source + thruster/PPU + tank + a structure fraction (bus frame, harness, mounts). It is a MASS-CLOSURE FLOOR, not an engineered bus: comms, GNC hardware, thermal control and radiation shielding have no line items beyond the structure fraction. The default pumped vehicle uses today’s silicon components (~160 kg wet); with a far-term 1000 W/kg array (the direct architecture’s preset — its physics demands it) the floor drops startlingly low. Lower it by raising Isp (less propellant → less tank & structure), a lighter power source, or a smaller structure fraction.',
+    d:'The dry mass is DERIVED, not assumed — it is the minimum that must be there, with no extraneous padding: power source + thruster/PPU + tank + a structure fraction (bus frame, harness, mounts). It is a MASS-CLOSURE FLOOR, not an engineered bus: comms, GNC hardware, thermal control and radiation shielding have no line items beyond the structure fraction. The default pumped vehicle uses today’s-class components (91 W/kg array with GaAs cells, 6 kg/kW thruster; ~160 kg wet); with a far-term 1000 W/kg array (the direct architecture’s preset — its physics demands it) the floor drops startlingly low. Lower it by raising Isp (less propellant → less tank & structure), a lighter power source, or a smaller structure fraction.',
     c:`m_dry = power-source + engine + tank + structure\n      = ${fmt(r.psMass)} + ${fmt(r.engineMass)} + ${fmt(r.tankMass)} + ${fmt(r.structureMass)} = ${fmt(r.dry)} kg\n(+ payload ${fmt(r.pay,1)} kg ⇒ m_dry+pay = ${fmt(r.dryEff)} kg in the rocket equation)`});
   K.push({l:'Bus structure', v:fmt(r.structureMass)+' kg', i:inl('kstruct','isp','tank'), s:'m_struct = k_struct·(active + (g+1)·m_p) — frame, harness, mounts',
     d:'The structural mass holding the vehicle together — bus frame, harness, mounts — modelled as a physical fraction k_struct of everything it must carry (power source + engine + tank + propellant). Every kilogram of dry mass is a named part: there is no unallocated margin.',
     c:`m_struct = k_struct · (active + tank + propellant)\n        = ${fmt(r.kstruct)}% · (${fmt(r.active)} + ${fmt(r.tankMass)} + ${fmt(r.mp)}) = ${fmt(r.structureMass)} kg`});
   { const vehWkg=(r.massConverges&&r.dryEff>0)?r.pwrW/r.dryEff:0;
     K.push({l:'Vehicle specific power', v:(r.massConverges?fmt(vehWkg,1)+' W/kg':'n/a'), i:inl('pwr','kstruct','isp','rtg','wkgsolar','cell','ekw'), s:'P / (m_dry + m_pay) — installed power per kg of total dry mass, payload included (the EP "α")',
-    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.3 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, the pumped default (today\'s silicon) sits at ~38, and the direct architecture\'s far-term preset reaches ~120 (the outward spiral needs α ≳ 100).',
+    d:'The whole-vehicle specific power α = installed electrical power ÷ total dry mass — the single figure of merit that decides electric-propulsion feasibility here. It binds because thrust ∝ power (F = 2·η·P/v_e), so acceleration ∝ P/m = α: HIGH α gives a short burn that finishes near 1 AU before the solar array power (∝ 1/r²) fades, while LOW α gives a multi-year burn that spirals far from the Sun where the power has collapsed, so the achievable cruise v∞ saturates below the 23.3 km/s floor. MINIMUM α TO CLOSE: pure solar-electric needs α ≳ 100 W/kg; nuclear-electric (constant power, no 1/r² fade) closes from ~23 W/kg. The power SOURCE sets the ceiling (solar array ~91 W/kg today, reactor ~40), but engine + tank + structure dilute it, so the whole vehicle lands well below — a closing nuclear-electric design is ~20–30 W/kg, the pumped default (today\'s-class components) sits at ~38, and the direct architecture\'s far-term preset reaches ~120 (the outward spiral needs α ≳ 100).',
     c:`P / m_dry+pay = ${fmt(r.pwrW)} W / ${fmt(r.dryEff)} kg = ${fmt(vehWkg,1)} W/kg\nminimum α to close:  pure solar ≳ 100 W/kg   ·   nuclear-electric ≳ ~23 W/kg (constant power, no fade)\n(power source alone: ${fmt(r.pwrW/Math.max(r.psMass,1e-9),0)} W/kg; engine + tank + structure dilute it to the vehicle value)`}); }
   document.getElementById('kpis').innerHTML=K.map(k=>
     `<div class="kpi" id="${kpiSlug(k.l)}" data-k="${k.l}" title="${k.s}">`+
@@ -2284,13 +2291,16 @@ function buildModel(c){
   const X=[r[0]],Y=[r[1]],TM=[0];
   const dtBase=2*Math.PI*Math.sqrt(rLeo*rLeo*rLeo/MUe)/40;
   let burn=true, iSoi=-1, iBurn=-1, geoAng=0, helAng=0, pg=null, ph=null, n=0, dvTot=0, dvEarth=0;
-  let massNow=wet, pumpedDown=false, burnEnded=false, jumped=false, prevRdot=null, kicks=0, dvKicksTot=0, tSoiT=0, failed=false;
+  // failed is decided by the AUTHORITATIVE verdict up front (not after the loop): the loop's
+  // break condition reads it, and an infeasible (stranding) campaign must terminate at the
+  // 60-yr horizon rather than spin to the 500k-step ceiling (a multi-second UI freeze)
+  let massNow=wet, pumpedDown=false, burnEnded=false, jumped=false, prevRdot=null, kicks=0, dvKicksTot=0, tSoiT=0, failed=(SIM.feasible===false);
   while(n++<500000){
     const E=Ep(t), de=Math.hypot(r[0]-E[0],r[1]-E[1]), rs=Math.hypot(r[0],r[1]);
     const ga=Math.atan2(r[1]-E[1],r[0]-E[0]); if(pg!==null && de<=soi*1.05){ let d=ga-pg; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; geoAng+=d; } pg=ga;
     const ha=Math.atan2(r[1],r[0]); if(ph!==null && de>soi){ let d=ha-ph; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; helAng+=d; } ph=ha;
     if(iSoi<0 && de>soi){ iSoi=X.length; dvEarth=dvTot; massNow=Math.max(dry, wet-mdot*t*YEAR); tSoiT=t;
-      if(arch==='pumped'){ a0Pump=Math.min(thrust/massNow, FERMI.PUMP_DESIGN_A0); pumpM=1;     // design-profile re-anchor (see above)
+      if(arch==='pumped'){ a0Pump=Math.min(thrust/wet, FERMI.PUMP_DESIGN_A0); pumpM=1;         // the GATE'S a0 (thrust/wet) — the drawn campaign must fly what is gated/priced (audit b154-167)
         // jump-cut onto the campaign's REFERENCE state: circular at the current radius. The
         // engine's mass-normalised campaign starts 1 AU circular; the post-escape state is
         // already ≈ that, so the trim is small — same position-continuous jump-cut convention
@@ -2415,7 +2425,6 @@ function buildModel(c){
   const acAt=ts=>[(R0[0]+VAC[0]*ts)/AU,(R0[1]+VAC[1]*ts)/AU,(R0[2]+VAC[2]*ts)/AU];
   // the drawn mission "completes" (splices the cruise to AC) IFF the authoritative verdict is
   // feasible — the engine, not this schematic, is the source of truth (audit finding)
-  failed = (SIM.feasible===false);
   const helFineP=failed?pos.slice(Ng):pos.slice(Ng).concat([[c.I[0],c.I[1],c.I[2]]]);
   const helFineT=failed?TM.slice(Ng):TM.slice(Ng).concat([SIM.Tsec/YEAR]); if(!failed) sHel.push(c.Inorm);
   const geoSimp=_simp(geoF.slice(0,Ng), TM.slice(0,Ng), sGeo, 0.01);
@@ -2434,7 +2443,9 @@ function buildModel(c){
     geoSimp, helSimp, geoSmooth, helSmooth, earthGeoSmooth, earthHelSmooth, geoFine:geoF.slice(0,Ng), helFineP, helFineT, acAt,
     revsGeo:geoAng/(2*Math.PI), revsHel:helAng/(2*Math.PI),
     dvTotKm, dvEarthKm, dvHelKm:dvTotKm-dvEarthKm, rEarthAU:R_EARTH/AU, rSunAU:6.957e8/AU,
-    burnoutMassKg:Math.max(dry, wet-mdot*(iBurn>0?TM[Math.min(iBurn,TM.length-1)]:0)*YEAR),
+    // pumped campaigns mostly coast, so continuous-mdot bookkeeping is wrong for them — use the
+    // per-step tracked massNow instead (audit b154-167)
+    burnoutMassKg:(arch==='pumped')?massNow:Math.max(dry, wet-mdot*(iBurn>0?TM[Math.min(iBurn,TM.length-1)]:0)*YEAR),
     I:c.I, Inorm:c.Inorm, vhat:c.vhat };
   return _full;
 }
@@ -2479,7 +2490,7 @@ function chase3dInit(){
   el.appendChild(ren.domElement);
   el.style.position = 'relative';                                      // anchor for the overlay labels
   const lbl = document.createElement('div');
-  lbl.textContent = 'chase cam — drag to rotate · click/tap, then scroll to zoom · double-click to reset';
+  lbl.textContent = 'chase cam — click/tap to enable · drag to rotate · scroll to zoom · double-click to reset';
   lbl.style.cssText = 'position:absolute;top:6px;left:8px;font:11px system-ui,sans-serif;color:#7d8896;pointer-events:none;z-index:2';
   el.appendChild(lbl);
   const revlbl = document.createElement('div');                        // live revolution counter (top-right)
@@ -2884,7 +2895,7 @@ function drawZoom3d(c,st){
     {type:'scatter3d',mode:'markers',x:[c.ac[0]],y:[c.ac[1]],z:[c.ac[2]],marker:{color:'#f0883e',size:6},name:'AC (now)'},
     {type:'scatter3d',mode:'markers',x:[c.I[0]],y:[c.I[1]],z:[c.I[2]],marker:{color:'#d29922',size:5,symbol:'diamond'},name:'intercept (arrival)'},
     {type:'scatter3d',mode:'markers',x:[(R0[0]+VAC[0]*eclipticCrossingT())/AU],y:[(R0[1]+VAC[1]*eclipticCrossingT())/AU],z:[0],marker:{color:'#e6edf3',size:5,symbol:'diamond-open'},name:'AC ⨯ ecliptic (~79k yr)'},
-  ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · drag to rotate, click then scroll to zoom`,font:{size:13,color:'#e6edf3'}},
+  ],{title:{text:`3D overview — ${fmt(R*uf, R<20?1:0)} ${unit} cube · ${note} · click/tap to enable, drag to rotate, scroll to zoom`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:true,legend:{orientation:'h',y:0,font:{size:10}},
     margin:{l:0,r:0,t:34,b:0},uirevision:'zoom3d',
     scene:{aspectmode:'manual',aspectratio:ASPECT,bgcolor:'#161b22',camera:groupCam('chartOrbit3d'),
@@ -3219,13 +3230,18 @@ function stopPlay(){ if(animTimer){ clearInterval(animTimer); animTimer=null; do
 const TECH_SELECTS={enginetech:applyEngineTech, soltech:applySolTech, propsel:applyProp};
 // Per-architecture DEFAULT COMPONENT SETS (issue #7): selecting an architecture loads the
 // component preset it CLOSES with (closure matrix measured in tmp/ro/i7_preset_matrix.py) —
-// today's silicon for everything except the direct outward spiral, whose physics demands a
-// far-term high-α array (α ≳ 100 W/kg). Sliders stay freely adjustable afterwards; presets
-// fire only on USER selection (URL-restored states are left untouched). The nuclear power
-// source loads its ~5 kW / 40 W/kg closing corner.
-const SILICON_PRESET={wkgsolar:91, enginekg:6, tankfrac:2.5, isp:3000, eta:0.5, pwrkw:2};
-const ARCH_PRESETS={pumped:SILICON_PRESET, jupiter:SILICON_PRESET, oberth:SILICON_PRESET,
-  synchro:SILICON_PRESET, direct:{wkgsolar:1000, enginekg:4, tankfrac:2.5, isp:3000, eta:0.5, pwrkw:2}};
+// TODAY'S-CLASS hardware (91 W/kg array mass with GaAs-class cells — the 0.42 AU passes
+// require ≲0.2%/K derating, silicon cells strand — and a 6 kg/kW gridded thruster) for
+// everything except the direct outward spiral, whose physics demands a far-term high-α array
+// (α ≳ 100 W/kg → the 1000 W/kg / 4 kg/kW set). Presets also sync the tech dropdowns so the
+// visible selects always match the sliders. Sliders stay freely adjustable afterwards;
+// presets fire only on USER selection (URL-restored states are left untouched). The nuclear
+// power source loads its ~5 kW / 40 W/kg closing corner.
+const TODAYS_PRESET={wkgsolar:91, enginekg:6, tankfrac:2.5, isp:3000, eta:0.5, pwrkw:2,
+  cellEff:30, soltech:'30|91', enginetech:'gridded-today|3000|0.50|6'};
+const ARCH_PRESETS={pumped:TODAYS_PRESET, jupiter:TODAYS_PRESET, oberth:TODAYS_PRESET,
+  synchro:TODAYS_PRESET, direct:{wkgsolar:1000, enginekg:4, tankfrac:2.5, isp:3000, eta:0.5,
+  pwrkw:2, cellEff:30, soltech:'30|1000', enginetech:'gridded-adv|3000|0.50|4'}};
 const PWR_PRESETS={nuclear:{pwrkw:5, rtg:40, isp:3000, enginekg:6}};
 function applyPreset(p){ for(const k in p) setVal(k, p[k]); }
 document.getElementById('tilt').addEventListener('input',()=>{ document.getElementById('o_tilt').textContent=val('tilt'); drawViz(); stateToURL(); });
@@ -3237,7 +3253,7 @@ document.getElementById('snapopt').addEventListener('click',(e)=>{ e.preventDefa
 function optimizeDesign(){
   const pwr=radio('pwr'), isp0=val('isp'), kw0=val('pwrkw');
   const ispGrid=[1500,2000,2500,3000,3500,4000,4500,5000,6000,8000];
-  const pwrGrid=(pwr==='nuclear')?[2,3,4,5,6,8,10,14]:(pwr==='solar')?[5,10,20,40,80,150]:[kw0];
+  const pwrGrid=(pwr==='nuclear')?[2,3,4,5,6,8,10,14]:(pwr==='solar')?[1,1.5,2,3,5,10,20,40,80,150]:[kw0];
   let best=null;
   for(const kw of pwrGrid){ for(const isp of ispGrid){
     setVal('pwrkw',kw); setVal('isp',isp);
@@ -3476,7 +3492,7 @@ function drawStarMap(tMyr){
   }
   const R=72, ax={range:[-R,R],color:'#9aa7b4',gridcolor:'#1d242d',tickfont:{size:9}};
   Plotly.react('starmap',traces,{
-    title:{text:`Solar neighbourhood at t = +${(tMyr*1000).toFixed(0)} kyr — drag to rotate · click, then scroll to zoom`,font:{size:13,color:'#e6edf3'}},
+    title:{text:`Solar neighbourhood at t = +${(tMyr*1000).toFixed(0)} kyr — click/tap to enable · drag to rotate · scroll to zoom`,font:{size:13,color:'#e6edf3'}},
     paper_bgcolor:'#161b22',font:{color:'#9aa7b4',size:11},showlegend:false,
     margin:{l:0,r:0,t:34,b:0},uirevision:'starmap',
     scene:{aspectmode:'cube',bgcolor:'#161b22',
@@ -3722,8 +3738,11 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
     else window.scrollTo(0, 0);
   }
   function tabForHash(){
-    const h = location.hash && location.hash.length > 1
-      ? decodeURIComponent(location.hash.slice(1)) : '';
+    let h = '';
+    try {                                          // a malformed %-sequence must not abort the
+      h = location.hash && location.hash.length > 1 // whole script block (it would leave every
+        ? decodeURIComponent(location.hash.slice(1)) : ''; // pane stacked and kill the zoom guard)
+    } catch (e) { return null; }
     if (!h) return null;
     const el = document.getElementById(h);
     if (!el) return null;
@@ -3733,7 +3752,12 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
     return t ? { t, el } : null;
   }
   document.querySelectorAll('#tabbar .tabbtn').forEach(b =>
-    b.addEventListener('click', () => showTab(b.dataset.tab)));
+    b.addEventListener('click', () => {
+      showTab(b.dataset.tab);
+      // clear a stale hash: anchor routing is hashchange-driven, so a link whose hash equals
+      // the current one would otherwise be inert after a tab switch
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    }));
   addEventListener('hashchange', () => { const m = tabForHash(); if (m) showTab(m.t, m.el); });
   const m = tabForHash();
   if (m) showTab(m.t, m.el); else showTab('calc');
@@ -3774,7 +3798,10 @@ if(!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches
       if (e.pointerType !== 'mouse' && Date.now() - t0 < 600
           && Math.hypot(e.clientX - x0, e.clientY - y0) < 12) arm();   // a TAP arms touch
     }, true);
-    el.addEventListener('mouseleave', () => disarm(), true);
+    // NOT capture-phase: mouseleave does not bubble, so a non-capture listener fires only for
+    // the container itself — capture also caught DESCENDANT leave events (e.g. the WebGL
+    // canvas) and disarmed the chart while the cursor was still inside it (audit b154-167)
+    el.addEventListener('mouseleave', () => disarm());
     guards.push({ el, disarm });
   });
   // touch has no mouseleave: any press outside a chart disarms it again

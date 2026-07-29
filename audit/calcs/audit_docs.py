@@ -32,8 +32,9 @@ def run() -> None:
     # 1. Audit-suite count references must carry no stale earlier counts (the exact live
     #    count is not pinned here — that would be circular and churn on every added check;
     #    _util.summary() is the authority on the live total).
-    for stale in ("41 checks", "55 checks", "73 checks", "86 checks", "90 checks",
-                  "126 checks", "130 checks", "139 checks", "160 checks"):
+    for stale in ("41 checks", "55 checks", "73 checks", "86 checks",
+                  "126 checks", "130 checks", "139 checks", "160 checks",
+                  "172 checks", "187 checks", "82 checks", "84 checks", "88 checks"):
         check(f"CLAUDE.md/index.html/README carry no stale '{stale}'",
               stale not in claude and stale not in idx and stale not in readme)
     check("README parity count is current-generation, no stale 20/35/71 JS/UI",

@@ -5,12 +5,14 @@ its burn-arc geometry (retrograde within 60 deg of apoapsis, prograde within 70 
 periapsis, staircase energy guard -30 km^2/s^2, latch at the 0.42 AU thermal floor).
 This module integrates the SAME physics with that geometry as free parameters, and with
 switch boundaries located by BISECTION inside the step (the per-step switch quantization
-measured as external finding F5l does not apply to this path).
+measured as external finding F5l does not apply to scheduled_pumped_vinf; NOTE that
+campaign_overhead_curve below keeps per-step switching — its knots carry the engine dt's
+first-order truncation, ~+20-35 m/s at the top of the aim range, conservative direction).
 
 The optimiser (tools/optimize_pump_schedule.py) searches the parameter space per a0 and
 bakes its results into OPTIMIZED_SCHEDULES below; :func:`optimized_pumped_vinf` replays
-a baked schedule through this integrator at full resolution, so every published number
-remains the output of a direct integration, never of the optimiser's own bookkeeping.
+a baked schedule through this integrator at the engine's dt convention, so every published
+number remains the output of a direct integration, never of the optimiser's own bookkeeping.
 The bang-bang policy stays untouched in departure.py as the independent cross-check
 (the optimum must never lose to it).
 
@@ -60,10 +62,14 @@ BANG_BANG = Schedule()
 
 # ---------------------------------------------------------------------------
 # BAKED OPTIMISED SCHEDULES (tools/optimize_pump_schedule.py, issue #4).
-# Per-a0 Nelder-Mead winners, each re-integrated at FULL engine resolution; the
-# tuple is that fine-grained result (v_inf m/s, dv m/s, years, revs) — never the
-# optimiser's own bookkeeping. audit_pumping replays every entry through
-# scheduled_pumped_vinf and asserts the numbers reproduce.
+# Per-a0 Nelder-Mead winners, each re-integrated at the ENGINE'S dt convention
+# (min(max(600 s, 0.002*period_r), 5 d)); the tuple is that result (v_inf m/s,
+# dv m/s, years, revs) — never the optimiser's own bookkeeping. NOTE the dv
+# values carry the engine dt's first-order truncation (~+20-35 m/s vs a
+# dt-refined run at the top of the aim range — conservative direction; see
+# audit/EXTERNAL_AUDIT_SCOPE.md section 8). Audit coverage (audit_pumping):
+# the 2.5e-4 design entry is replayed full-tuple; 1.9e-4 (coarse dt) and
+# 3.0e-4 are replayed reach-only; the other entries are baked records.
 #
 # The 2.5e-4 entry is THE SHIPPED DEFAULT CAMPAIGN — the 12-yr-custody optimum
 # (owner decision: publish the frontier, anchor the default at the 12-yr /
@@ -105,7 +111,9 @@ TAX_OPT_TABLE = (
 # Per-target campaign under the ANCHORED design schedule across the page's aim range
 # (campaign_overhead_curve; tmp/ro/i4_display_table.py): (v_target m/s, overhead m/s,
 # years, revs). Nearly flat — every aim in 23.0–26.0 km/s is crossed near the end of
-# the same ~12-yr campaign. audit_pumping replays the curve and pins these.
+# the same ~12-yr campaign. audit_pumping replays the THERMAL sibling table's knots
+# against a fresh campaign_overhead_curve integration; this cap-model table is a
+# baked record guarded by the anchor knot only.
 OPT_CAMPAIGN_TABLE = (
     (23000.0, -213.2, 12.004, 5.842),
     (23250.0, -332.1, 12.014, 5.850),
@@ -196,7 +204,10 @@ def campaign_at(v_inf_target: float, power_model: str = "thermal"):
     None outside the table's range (callers fall back to the bang-bang
     integrator).
     """
-    table = {"thermal": OPT_CAMPAIGN_THERMAL_TABLE, "cap": OPT_CAMPAIGN_TABLE}[power_model]
+    tables = {"thermal": OPT_CAMPAIGN_THERMAL_TABLE, "cap": OPT_CAMPAIGN_TABLE}
+    if power_model not in tables:
+        raise ValueError(f"campaign_at: power_model must be 'thermal' or 'cap', got {power_model!r}")
+    table = tables[power_model]
     if not (table[0][0] <= v_inf_target <= table[-1][0]):
         return None
     for i in range(len(table) - 1):
@@ -217,7 +228,11 @@ def optimized_pumped_vinf(a0: float, v_inf_target: float = 23.64e3,
     integration under the requested power model, or None if a0 is not a baked
     key (callers fall back to integrating at the vehicle's own a0).
     """
-    table = {"thermal": OPTIMIZED_SCHEDULES_THERMAL, "cap": OPTIMIZED_SCHEDULES}[power_model]
+    tables = {"thermal": OPTIMIZED_SCHEDULES_THERMAL, "cap": OPTIMIZED_SCHEDULES}
+    if power_model not in tables:
+        raise ValueError(
+            f"optimized_pumped_vinf: power_model must be 'thermal' or 'cap', got {power_model!r}")
+    table = tables[power_model]
     for k, (sch, res) in table.items():
         if abs(a0 - k) <= 1e-9 and abs(v_inf_target - 23.64e3) < 1.0:
             return res
@@ -268,6 +283,9 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
     if a0 <= 0.0 or v_inf_target <= 0.0 or isp_s <= 0.0 or max_yr <= 0.0 or power_cap < 1.0:
         raise ValueError("scheduled_pumped_vinf: a0, v_inf_target, isp_s, max_yr must be "
                          "positive and power_cap >= 1")
+    if not (math.isfinite(_dt_scale) and _dt_scale > 0.0):
+        raise ValueError(f"scheduled_pumped_vinf: _dt_scale must be positive, got {_dt_scale!r}"
+                         " (0 would freeze the integration loop)")
     sch.validate()
     from .departure import _pump_power_factor
     pf = _pump_power_factor(power_model, power_cap)
