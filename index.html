@@ -296,9 +296,9 @@
   </div>
   <div class="prelim"><b>⚠ PRELIMINARY — first-order "Fermi estimate" only.</b> Every number here is an order-of-magnitude sizing built on simplifying assumptions (straight-line target motion, patched-conic geometry, a derived naïve low-thrust escape spiral, geometric gravity-assist bounds). It is intended for feasibility and architecture trades, <b>not</b> for design or flight decisions, and <b>requires independent engineering validation</b> before being relied upon.</div>
   <p class="repo">Source code, engine &amp; independent audits: <a href="https://github.com/fermiexplorer/fermi" target="_blank" rel="noopener noreferrer">github.com/fermiexplorer/fermi</a><br>
-  The default <b>perihelion-pumped</b> architecture is due to the external assessment
-  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a>
-  (Physical Superintelligence PBC) — see the <a href="#pumping">perihelion-pumping section</a> and the
+  The default <b>perihelion-pumped</b> architecture is due to the external
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf" target="_blank" rel="noopener noreferrer">PSI feasibility assessment</a>
+  (Physical Superintelligence PBC, final, July 2026) — see the <a href="#pumping">perihelion-pumping section</a> and the
   <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md" target="_blank" rel="noopener noreferrer">audit cross-comparison</a>.</p>
 </header>
 
@@ -851,11 +851,12 @@
     <li><b>NASA GMAT cross-validation.</b> The departure energetics are independently reproduced by NASA's
       flight-proven <b>GMAT</b> propagator to ≤0.01% (<code>audit/gmat/</code>; <a href="#gmat">see the GMAT section below</a>).</li>
     <li><b>External assessment (PSI).</b> An end-to-end feasibility assessment PSI prepared for the mission
-      (<a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a>,
-      archived with our cross-validation in <code>audit/psi/</code>) reproduces the intercept geometry to
-      &lt;0.5%, independently confirms the target rankings, and contributed the perihelion-pumping
-      closure this page adopts — which our engine and adversarial audits in turn reproduce
-      (mechanism, thresholds, and spiral ceilings within their own 2.7% two-integrator band).</li>
+      (<a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf" target="_blank" rel="noopener noreferrer">final, July 2026</a>,
+      archived with the earlier working draft and our cross-validation in <code>audit/psi/</code>)
+      reproduces the intercept geometry to &lt;0.5%, independently confirms the target rankings, and
+      contributed the perihelion-pumping closure this page adopts — which our engine and adversarial
+      audits in turn reproduce (mechanism, thresholds, and spiral ceilings within their own 2.7%
+      two-integrator band; the cross-check is tracked as <code>audit/psi/crosscheck_final.py</code>).</li>
     <li><b>Side-by-side comparison.</b> Every source above — engine, PSI, GMAT, and the four AI
       re-implementations — is tabulated quantity-by-quantity in
       <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_COMPARISON.md" target="_blank" rel="noopener noreferrer"><code>audit/AUDIT_COMPARISON.md</code></a>,
@@ -1018,10 +1019,11 @@
   <div class="worked" style="margin-bottom:12px">
     <p class="wt">Credit — this result is not ours</p>
     <p>The perihelion-pumping closure comes from an external assessment PSI prepared for the mission,
-    <b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a></b>
+    <b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf" target="_blank" rel="noopener noreferrer">the PSI feasibility assessment</a></b>
     — <em>Interstellar Precursor Mission to Alpha Centauri: Technical Feasibility Assessment</em>,
-    <b>Physical Superintelligence PBC</b>, July 2026 (working draft), produced and verified end-to-end by
-    PSI's autonomous physics-research platform — which, per the report's own cover, has not yet undergone
+    <b>Physical Superintelligence PBC</b>, July 2026 (final; the earlier working draft PSI‑TR‑2026‑0714
+    is archived alongside), produced and verified end-to-end by
+    PSI's autonomous physics-research platform — which, per the report's own cover, has not undergone
     comprehensive human review. The assessment also independently reproduces this page's
     intercept geometry to &lt;0.5% and its target rankings. PSI is careful about priority in turn: it credits Oberth for the deep-gravity-well burn,
     SMART-1 for flown multi-revolution apsis-arc escape, and standard low-thrust optimisation practice —
@@ -1054,7 +1056,7 @@
   (<code>fermi_sim/thermal.py</code>: P(r)/P₁ = cap_eff(r) from the array's own energy
   balance — <b>3.54× at the 0.42 AU floor</b>, not the assumed 4× step; see the caveats
   below). Both are cross-checked against
-  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI's</a>
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf" target="_blank" rel="noopener noreferrer">PSI's</a>
   optimised-schedule integration, which — like our cap-model rows — assumes the
   idealised 4× harvest:</p>
   <table class="chain prose">
@@ -1103,7 +1105,12 @@
   interpolated from the integrated anchored thermal campaign (<b>+0.79 km/s</b> at the 23.64 km/s
   AC anchor, rising to ~11.6 km/s for 8 km/s targets, where the campaign is all overhead; under
   the idealised 4× cap the anchor tax would be −0.51, Oberth-negative) — and gates feasibility on
-  the integrated anchored schedule at the vehicle's own a₀ = F/m<sub>wet</sub>.</p>
+  the integrated anchored schedule at the vehicle's own a₀ = F/m<sub>wet</sub>. The v∞·|sin β|
+  plane-change term is the conservative upper end of the planar bracket: PSI's fully
+  three-dimensional re-optimisation measures the true increment at <b>0.58 km/s</b> for the 2.48°
+  direct-optimum tilt (vs 1.02 km/s charged by |sin β| there) — and the pumped fuel optimum stays
+  at the ~79,250-yr ecliptic crossing under either pricing, because the |sin β| corner still
+  dominates the smooth v∞-growth slope.</p>
   <p class="src">The perihelion power multiple is <b>derived, not assumed</b>
   (<code>fermi_sim/thermal.py</code>): a flat sun-normal panel radiating from both faces
   (absorptivity 0.92, emissivity 0.85 per face), with the extracted electricity removed from the
@@ -1519,14 +1526,17 @@
 
   <h4>References &amp; sources for quoted numbers</h4>
   <ul class="refs">
-    <li><b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf" target="_blank" rel="noopener noreferrer">PSI‑TR‑2026‑0714</a></b>
+    <li><b><a href="https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf" target="_blank" rel="noopener noreferrer">PSI feasibility assessment</a></b>
       — <em>Interstellar Precursor Mission to Alpha Centauri: Technical Feasibility Assessment</em>,
-      Physical Superintelligence PBC, July 2026 (working draft; produced and verified end-to-end by
+      Physical Superintelligence PBC, July 2026 (final; produced and verified end-to-end by
       PSI's autonomous physics-research platform; archived in this repo under <code>audit/psi/</code>
-      with our cross-validation notes). Source of the perihelion-pumping closure, the validated design
-      profile (a₀ = 2.5×10⁻⁴ m/s², Isp ≥ 2800 s), the 30.5–31.6 km/s verified direct-SEP total and
-      16.56 km/s certified heliocentric lower bound, the GTO drop-off recommendation, and independent
-      confirmation of the intercept geometry and target rankings.</li>
+      with the earlier working draft PSI‑TR‑2026‑0714 and our cross-validation notes +
+      <code>crosscheck_final.py</code>). Source of the perihelion-pumping closure, the validated design
+      profile (a₀ = 2.5×10⁻⁴ m/s², Isp ≥ 2800 s), the 30.5–31.6 km/s verified direct-SEP total, the
+      16.56 km/s certified heliocentric lower bound, the measured 0.58 km/s out-of-plane increment
+      (inside the planar [0.02, 1.02] km/s bracket this page's v∞·|sin β| pricing bounds from above),
+      the GTO drop-off recommendation, and independent confirmation of the intercept geometry and
+      target rankings (their replication tolerance: 0.3% on departure quantities, 0.09° on aim tilt).</li>
     <li><b><a href="https://en.wikipedia.org/wiki/Alpha_Centauri" target="_blank" rel="noopener noreferrer">Alpha Centauri</a></b>
       — distance 4.34 ly, proper motion ~3.7″/yr, radial velocity −22.4 km/s, space velocity ~32 km/s
       (ESA Hipparcos / SIMBAD values). Closest approach ~28,000 yr at ~3.1 ly is the standard derived

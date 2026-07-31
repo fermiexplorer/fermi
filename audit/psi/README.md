@@ -1,51 +1,100 @@
-# PSI external assessment — PSI‑TR‑2026‑0714
+# PSI external assessments
 
-`PSI-TR-2026-0714.pdf` — *Interstellar Precursor Mission to Alpha Centauri: Technical
-Feasibility Assessment*, Physical Superintelligence PBC, July 2026 (**working draft**),
-produced and verified end-to-end by PSI's autonomous physics-research platform. Included
-here with attribution as the independent external cross-assessment of this project.
+Two documents from Physical Superintelligence PBC are archived here with attribution as
+the independent external cross-assessment of this project — both produced and verified
+end-to-end by PSI's autonomous physics-research platform:
 
-## What it contributes
+- **`PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf`** — *Interstellar
+  Precursor Mission to Alpha Centauri: Technical Feasibility Assessment*, July 2026,
+  **Final**. The authoritative version: staged independent audit, a certified lower-bound
+  proof with adversarial audit, a converged three-dimensional trajectory verification, and
+  a seeded execution-dispersion analysis.
+- **`PSI-TR-2026-0714.pdf`** — the earlier **working draft** of the same assessment
+  (kept because in-repo prose and audit records cite it by TR number).
 
-- **Confirms the geometry to <0.5%**: optimum 73,012 yr (ours 72,800), tilt 2.48° (2.4°),
+## What the assessment contributes
+
+- **Confirms the geometry**: optimum 73,012 yr (ours 72,800/72,600), tilt 2.48° (2.4°),
   impulsive floor 13.85 km/s (13.88), tangential intercept 58,422 yr (58,138), closest
-  approach 27,955 yr @ 3.15 ly (27,960 @ 3.13) — and all five of this project's
-  arrival-time intuitions.
+  approach 27,955 yr @ 3.15 ly (27,960 @ 3.13) — "agreement to 0.3% or better; aim tilt
+  to 0.09° absolute" (their §2.4) — and all five of this project's arrival-time intuitions
+  (their "Design Intuitions Examined").
 - **Source of the perihelion-pumping closure**: the outward-spiral power wall is a
   property of the trajectory class; a pumping trajectory at a₀ = 2.5×10⁻⁴ m/s² (today's
-  hardware) reaches the full cruise. Their optimized 12-yr schedule costs Δv 23.97 km/s;
-  certified heliocentric lower bound 16.56 km/s (unconstrained time, r_p ≥ 0.42 AU).
+  hardware) reaches the full cruise. Their optimized 12-yr schedule costs Δv 23.97 km/s
+  (production timestep; 23.985 quarter-step, carried as 24.0); certified heliocentric
+  lower bound 16.56 km/s (throttleable class, unconstrained time, r_p ≥ 0.42 AU) with an
+  unconstrained-time integrated schedule at 18.87 km/s (~58 yr powered).
 - **Departure accounting**: SEP total from LEO 30.5–31.6 km/s (7.6 escape + 22.9–24.0
-  heliocentric); GTO drop-off 7.6 → 4.24 km/s closes a ~100 kg vehicle.
-- **Independent target screening**: LSPM J2146+3813 best (their Bailer-Jones check,
-  0.568 pc @ +82.5 kyr, matches our 1.86 ly @ +83 kyr), λ Ser best solar-type second,
-  α² Lib excluded, catalogue sweep finds nothing better.
+  heliocentric reference interval); GTO drop-off cuts 7.6 → 4.24 km/s and closes a
+  ~100 kg vehicle (their recommendation R1); mass-closure boundary 113.5–146 kg from LEO.
+- **Measured out-of-plane cost** (final report): a fully three-dimensional
+  re-optimization prices the 2.48° departure tilt at **0.58 km/s** — inside the planar
+  bracket [22 m/s, 1.02 km/s], and 0.57× the conservative v∞·|sin β| bound this project
+  prices (see cross-validation below).
+- **Targeting & cost** (final report): open-loop pass probability 0.982 under their
+  stated error budget (20,000-draw seeded Monte Carlo, dominated by thrust-magnitude
+  knowledge); program cost median $15.7–16.6M vs the $10M target, with the gap
+  programmatic (bus + operations), not physical.
+- **Independent target screening**: LSPM J2146+3813 best (impulsive floor 9.30 km/s @
+  78 kyr; published encounter 0.568 pc @ +82.5 kyr matches our catalog 0.570 pc @
+  82.7 kyr), λ Ser best solar-type second (11.38 km/s @ 151.6 kyr), α² Lib excluded,
+  full Bailer-Jones catalogue sweep finds nothing better.
 
 ## Our cross-validation of it (engine + adversarial audits)
 
-- Outward-spiral ceilings: ours 0 / 3.0 / 16.7 km/s vs theirs 0 / 3.4 / 17.0 at
-  a₀ = 1.5/5/10×10⁻⁴ (their own two-integrator band is 2.7%; ours computed under
-  PSI's mass-normalised parameterisation a = a₀·(1 AU/r)²·(m₀/m), Isp 2800).
+`crosscheck_final.py` (run from the repo root) re-derives every engine-comparable
+headline of the final report with `fermi_sim` and prints measured deltas. Findings:
+
+- **Arrival-epoch trade (their Table 14, 55–85 kyr)**: impulsive floor agrees to
+  ≤30 m/s (mean +17 m/s) across all 31 rows; v∞ to ~0.1 km/s (our exact-intercept
+  values sit above theirs, our full-2600-AU-shave values below — their miss-tolerance
+  handling lands between, as expected); aim tilt to ≤0.19°.
+- **Landmarks**: our floor argmin 72,600 yr @ 13.80 km/s vs their 73,012 @ 13.85 — the
+  basin is flat to ±2 m/s over ±1 kyr, so the offset is immaterial. Ecliptic crossing:
+  ours 79,252 yr vs their 79,786; the 534-yr offset is fully explained by the ≤0.19°
+  tilt offset from sub-0.5% astrometry-input differences (tilt slope 0.332°/kyr →
+  0.18° ≈ 540 yr). Adopted-state deltas: d 4.344 vs 4.365 ly, v_t 23.272 vs
+  23.38 km/s, v_r −22.40 vs −22.40 (their stated worst-case replication tolerance is
+  0.5%; ours vs theirs sits inside it).
+- **Outward-spiral ceilings**: ours 0 / 1.9 / 15.9 km/s vs theirs 0 / 3.4 / 17.0 at
+  a₀ = 1.5/5/10×10⁻⁴ m/s² (constant-tangential prograde policy; their own
+  two-integrator band is 2.7% and the mid-band difference is policy-dependent — both
+  sit far below the 23.38 km/s cruise floor everywhere, which is the decisive claim).
 - Pumping mechanism reproduced with an independent bang-bang policy
   (`fermi_sim.departure.perihelion_pumped_vinf`): 23.66 km/s at the design point,
-  Δv 25.63 (theirs 23.97 optimized), 9.6 yr (theirs 12.0), 4.9 revolutions
-  (2.13 retrograde pump-down + 3 perihelion passes + finisher; Δv split 8.3 retro +
-  17.3 prograde). The +1.66 km/s premium of our policy is almost entirely in the cruder
-  retrograde pump-down; the prograde legs agree to ~2%.
+  Δv 25.63 (theirs 23.97 optimized), 9.6 yr (theirs 12.0), 4.9 revolutions. The
+  +1.66 km/s premium of our policy is almost entirely in the cruder retrograde
+  pump-down; the prograde legs agree to ~2%.
 - Their optimised-schedule result independently confirmed — and slightly beaten — by our
   own optimiser (`fermi_sim/pump_schedule.py` + `tools/optimize_pump_schedule.py`,
   issue #4): at the same 12-yr custody our anchored optimised schedule costs
   **Δv 23.14 km/s vs their published 23.97** (−3.5%) under identical physics assumptions
   (their idealised 4× perihelion power cap); our unconstrained frontier point (22.84 at
-  28.5 yr) is consistent with their 22.9 km/s single-method lower anchor.
-- Note on comparability (issue #5): the calculator's shipped default now prices the
+  28.5 yr) is consistent with their certified bracket [16.56, 18.87].
+- **Mass-closure algebra** (their Appendix C) replayed independently: LEO boundary
+  113.1 kg @ Δv_hel 22.9 / 146.0 kg @ 24.0 vs their 113.3/145.6; GTO 62–72 kg vs their
+  59–68 (every ≥80 kg GTO case closes in both). Our engine's own closure formulation
+  (`minimal_dry_mass` fixed point, their component set) lands 134.6 kg wet / 68%
+  propellant — the same vehicle class.
+- **Out-of-plane pricing**: our v∞·|sin β| term charges 946–1023 m/s at the 73-kyr aim —
+  the conservative (planar-bracket-upper) end; their measured 3-D increment is 578 m/s.
+  Re-running our pumped-budget arrival-epoch scan with the tilt term scaled to their
+  measured pricing leaves the fuel-optimum at the 79,250-yr crossing unchanged (the
+  |sin β| corner still dominates the smooth v∞+tax slope ~2×).
+- **Alternative targets** from our own web-catalog states: LSPM J2146+3813 floor
+  9.31 km/s @ 78.0 kyr (theirs 9.30 @ 78.0), perihelion 0.570 pc @ 82.7 kyr (published
+  0.568 @ 82.5); λ Ser floor 11.38 @ 151.5 kyr (theirs 11.38 @ 151.6).
+- Note on comparability (issue #5): the calculator's shipped default prices the
   campaign under a power curve DERIVED from the array's own energy balance
   (`fermi_sim/thermal.py`; cap_eff(0.42 AU) = 3.54, not 4×), costing 24.44 km/s at the
-  same custody. All numbers compared against PSI in this repo are computed at their 4×
-  assumption unless explicitly labelled thermal.
+  same custody — between their cap-4 (23.97 @ 12 yr) and cap-3 (24.10 @ 19.7 yr)
+  sensitivity rows, without extending the powered horizon. All numbers compared against
+  PSI in this repo are computed at their 4× assumption unless explicitly labelled thermal.
 - Contiguous working-region edge a₀ ≈ 2.24×10⁻⁴ m/s² (validated by three independent
   integrators; success below is phasing-dependent and non-monotonic — see
-  `audit/fable/fable-pumping-synchrotron-audit.md`).
+  `audit/fable/fable-pumping-synchrotron-audit.md`). Their pumping-feasibility floor is
+  the same number (a₀ ≳ 2.25×10⁻⁴, their §5.3).
 - Their independent-model concurrence claims are consistent with our independent audits
   (astropy, GMAT, Codex/Grok/Gemini/Fable re-implementations).
 

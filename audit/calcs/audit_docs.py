@@ -131,6 +131,17 @@ def run() -> None:
             pos = i + 1
         check(f"{nm} labels every 23.14 km/s mention as the idealised-4x/PSI-comparable figure", ok)
 
+    # 11. PSI final assessment (July 2026): both archived PDFs must exist, and the page's
+    #     PSI links must point at the FINAL report (the TR-numbered working draft stays
+    #     archived but is no longer the cited surface).
+    psi_final = "PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf"
+    for f in (psi_final, "PSI-TR-2026-0714.pdf", "crosscheck_final.py"):
+        check(f"audit/psi/{f} is archived",
+              os.path.exists(os.path.join(ROOT, "audit", "psi", f)))
+    check("index.html cites the PSI final-assessment PDF", psi_final in idx)
+    check("index.html no longer links the working-draft PDF as the citation",
+          "PSI-TR-2026-0714.pdf" not in idx)
+
 
 if __name__ == "__main__":
     from _util import summary

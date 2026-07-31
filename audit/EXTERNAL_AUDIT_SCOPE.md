@@ -114,7 +114,7 @@ audit/                   CROSS-VALIDATION & PARALLEL REVIEWS (read, don't trust 
   AUDIT_PROMPTS.md       the adversarial prompts used
   gmat/                  NASA GMAT propagator cross-validation (departure energetics)
   stk/                   STK cross-validation
-  psi/                   external assessment (PSI-TR-2026-0714) + our notes
+  psi/                   external PSI assessments (final July 2026 + working draft) + our notes
   codex/ grok/ gemini/ fable/   parallel independent-model re-implementations
 
 tests/test_smoke.py      pytest regression (8 tests)

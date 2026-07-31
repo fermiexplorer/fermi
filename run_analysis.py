@@ -255,10 +255,11 @@ def main() -> None:
     )
 
     # ---------------------------------------------------------------
-    header("7c. PERIHELION PUMPING (multi-revolution escape; PSI-TR-2026-0714 cross-assessment)")
+    header("7c. PERIHELION PUMPING (multi-revolution escape; PSI feasibility-assessment cross-check)")
     from fermi_sim.departure import perihelion_pumped_vinf
     print("The outward-spiral saturation (sec 7) is a property of the TRAJECTORY CLASS, not of solar")
-    print("power (PSI-TR-2026-0714, archived in audit/psi/). Perihelion pumping inverts the spiral:")
+    print("power (PSI feasibility assessment, final 2026-07, archived in audit/psi/). Perihelion")
+    print("pumping inverts the spiral:")
     print("retrograde arcs near apoapsis drop")
     print("perihelion to 0.42 AU (the thermal floor), then prograde arcs at perihelion (power ~3.5x")
     print("the 1-AU rating under the DERIVED thermal curve + max Oberth leverage) staircase the")
@@ -335,7 +336,7 @@ def main() -> None:
     header("8. VERDICT (conservative)")
     print(
         "* The mission CLOSES. PURE SOLAR-ELECTRIC CLOSES AT TODAY'S HARDWARE via perihelion\n"
-        "  pumping (sec 7c; PSI-TR-2026-0714): a0 = 2.5e-4 m/s^2 (~vehicle alpha 15-21 W/kg)\n"
+        "  pumping (sec 7c; PSI feasibility assessment): a0 = 2.5e-4 m/s^2 (~vehicle alpha 15-21 W/kg)\n"
         "  reaches the full cruise -- the OUTWARD-SPIRAL power gate below applies to that\n"
         "  trajectory class only.\n"
         "* For the outward-spiral class the conservative power gate settles it, and it reduces to\n"

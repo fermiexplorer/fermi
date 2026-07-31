@@ -17,7 +17,8 @@ with ion propulsion.
 It answers:
 
 - Is the mission feasible with pure solar-electric ion propulsion? **Yes — via
-  perihelion pumping at today's hardware** (PSI‑TR‑2026‑0714, archived in
+  perihelion pumping at today's hardware** (external PSI feasibility assessment,
+  final, July 2026, archived with the earlier working draft in
   `audit/psi/`; the naive outward spiral does *not* close at today's α — the
   original ≈500 kg / ~20 km/s direct concept survives only as the outward-spiral
   reference case, power-gated at α ≳ 100 W/kg).

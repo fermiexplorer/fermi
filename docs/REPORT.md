@@ -27,8 +27,9 @@ of the *trajectory class*, not of solar power. **Five architectures close:**
 1. **SEP + perihelion pumping** *(recommended; the calculator's default)* — retrograde
    arcs pump perihelion to 0.42 AU, then prograde perihelion burns (up to ~3.5× the 1-AU
    power — the derived thermal limit) staircase the energy over a few revolutions. **Closes pure solar at today's
-   α (~15–21 W/kg)** — no reactor, no assist, no far-term array (external assessment
-   PSI‑TR‑2026‑0714, prepared for the mission; archived in `audit/psi/`).
+   α (~15–21 W/kg)** — no reactor, no assist, no far-term array (external PSI
+   feasibility assessment, final, July 2026, prepared for the mission; archived with
+   the earlier working draft in `audit/psi/`).
 2. **Nuclear-electric ion** — the constant-power fallback (no 1/r² fade): ~5 kW fission
    reactor + gridded ion → ~25.4 km/s, mass closes; a step-change (flying a reactor).
 3. **High-α solar-electric** (outward spiral) — the same direct architecture *without*
@@ -68,9 +69,9 @@ question is entirely about how you build the 24 km/s.*
 > 23.8 km/s × 75,000 yr ≈ 6.0 ly — exactly AC's distance then.
 
 > **The power wall is a property of the trajectory, not of solar power.** The outward-spiral
-> power wall in §2 is a property of the *trajectory class* (external assessment
-> **PSI‑TR‑2026‑0714**, Physical Superintelligence PBC, prepared for the mission — archived
-> with our cross-validation in `audit/psi/`): **multi-revolution perihelion pumping** (drop
+> power wall in §2 is a property of the *trajectory class* (external **PSI feasibility
+> assessment**, Physical Superintelligence PBC, final, July 2026, prepared for the mission —
+> archived with our cross-validation in `audit/psi/`): **multi-revolution perihelion pumping** (drop
 > perihelion to 0.42 AU, burn at perihelion where power is up to ~3.5× the 1-AU rating) reaches
 > the full cruise speed at today's vehicle α (~15–21 W/kg), no reactor or assist required. The
 > mechanism is integrated in the engine (`perihelion_pumped_vinf`) at the validated design
@@ -252,7 +253,7 @@ The geometry closes easily; the **power physics** is the real constraint. For th
 outward-spiral **pure solar-electric does not close** (the 1/r² fade saturates the cruise
 speed below the ~23.3 km/s cruise). Five architectures do close:
 
-1. **SEP + perihelion pumping** (PSI‑TR‑2026‑0714, prepared for the mission) — **pure solar
+1. **SEP + perihelion pumping** (PSI feasibility assessment, prepared for the mission) — **pure solar
    at today's α (~15–21 W/kg)**: retrograde arcs pump perihelion to 0.42 AU, prograde
    perihelion burns staircase the energy over a few revolutions. No reactor, no assist, no
    far-term array. **The recommended architecture and the calculator's default.**

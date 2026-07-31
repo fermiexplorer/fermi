@@ -88,7 +88,7 @@ independent corroboration, whereas PSI confirming its own result is not.
 | **GMAT** | NASA GMAT (R2020a) | departure model | 2 mission scripts (impulsive C3; low-thrust escape) | **No** | separate flight-proven propagator | departure energetics only | [README](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/README.md) · [scripts](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/scripts) · [raw outputs](https://github.com/fermiexplorer/fermi/tree/main/audit/gmat/out) · [compare.py](https://github.com/fermiexplorer/fermi/blob/main/audit/gmat/compare.py) |
 | Fable — pumping | Fable 5 (31-agent workflow) | builds 124–126 | [`AUDIT_PROMPTS.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/AUDIT_PROMPTS.md) §11–12, adversarial ("refute it") | **Partial** — repo held *our* reproduction; **not** the PSI PDF (added only at build 135) | 2 independent integrators (own RK4 + **DOP853**) | perihelion pumping + synchrotron | [pumping/synchrotron audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-pumping-synchrotron-audit.md) |
 | Fable — text/coherence | Fable 5 (144 / 98 / 43 agents) | builds 129–135 | reader-text + default-state + envelope lenses | Yes (by then archived) | scripted extraction + node/scipy re-derivation | prose, data, UI-state coherence | [text audit](https://github.com/fermiexplorer/fermi/blob/main/audit/fable/fable-text-audit.md) |
-| **PSI** | Physical Superintelligence PBC | external (our public page) | produced end-to-end on its own platform | **Is** the report | autonomous physics-research platform | full mission | [PSI‑TR‑2026‑0714 (PDF)](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) · [our notes](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/README.md) |
+| **PSI** | Physical Superintelligence PBC | external (our public page) | produced end-to-end on its own platform | **Is** the report | autonomous physics-research platform | full mission | [final assessment, July 2026 (PDF)](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf) · [working draft PSI‑TR‑2026‑0714](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI-TR-2026-0714.pdf) · [our notes](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/README.md) · [cross-check](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/crosscheck_final.py) |
 
 **The independence chain that matters:** Codex, Grok, Gemini, Fable-core and GMAT all ran on
 builds that **predate the pumping work entirely** — pumping wasn't in the model yet, so they
@@ -509,6 +509,34 @@ practice — and credits *this project's own analysis* for the solar-Oberth conc
 **Adopted from PSI and credited throughout:** the perihelion-pumping closure, the validated design
 profile (`PUMP_DESIGN_A0` = 2.5×10⁻⁴ m/s², `PUMP_DESIGN_ISP` = 2800 s), the GTO drop-off
 recommendation, and the independent confirmation of the intercept geometry and target rankings.
+
+### The final assessment (July 2026)
+
+PSI issued the **final** version of the assessment
+([PDF](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment.pdf),
+archived 2026-07-31; the TR-numbered working draft remains alongside because in-repo records cite
+it). The final report keeps every working-draft headline this project adopted (73,012-yr optimum,
+23.97 km/s 12-yr schedule, 16.56 km/s certified lower bound, 30.5–31.6 km/s LEO SEP total, GTO
+recommendation, target rankings) and adds, new at final:
+
+- a **measured out-of-plane increment** — a fully 3-D re-optimization prices the 2.48° tilt at
+  **0.58 km/s**, inside the planar [22 m/s, 1.02 km/s] bracket (our v∞·|sin β| pricing is the
+  bracket's conservative end);
+- an unconstrained-flight-time constructive schedule at **18.87 km/s** (~58 yr powered),
+  bracketing the free-time optimum as [16.56, 18.87];
+- a **20,000-draw execution/ephemeris dispersion** analysis (open-loop pass probability 0.982,
+  thrust-magnitude knowledge dominant) and a **program-cost model** (median $15.7–16.6M vs the
+  $10M target; gap programmatic, in bus + operations);
+- a full **mass-closure grid** (LEO boundary 113.5–146 kg; GTO closes 100 kg with +4.1 pts) and
+  the propulsion operating point pinned to demonstrated gridded-ion hardware (NSTAR TH3–TH4);
+- explicit **replication of this project's reference analysis** to 0.3% (departure quantities) and
+  0.09° (aim tilt), with a scoped amendment (their F7): our power-wall finding stands, and
+  multi-revolution pumping answers the single-pass objection our earlier analysis raised.
+
+Our measured cross-check of the final report
+([`audit/psi/crosscheck_final.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/crosscheck_final.py))
+reconciles every engine-comparable headline; the deltas and their explanations are recorded in
+[`audit/psi/README.md`](https://github.com/fermiexplorer/fermi/blob/main/audit/psi/README.md).
 
 ---
 
