@@ -98,7 +98,7 @@ Individual suites, for reference (verify.py invokes these):
 
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
-.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (~170 checks)
+.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (220+ checks)
 node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 .venv/bin/python audit/calcs/ui_playwright.py  # render the page in Chromium + screenshot
 .venv/bin/python run_analysis.py      # print the integrated analysis

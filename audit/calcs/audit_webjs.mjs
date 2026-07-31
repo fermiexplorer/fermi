@@ -49,8 +49,13 @@ const REF = {
   // +785.3 m/s at the 23.64 km/s anchor — the cap-model table's −509 stays as comparator)
   pump_dep_dv_ref: 32097.898648385013,
   pump_dep_dv_gto_ref: 28453.98719635566,
-  // ...with the out-of-plane aim charged: v∞·|sin(−2.48°)| plane-change term
-  pump_dep_dv_tilt_ref: 33120.81684033977,
+  // ...with the out-of-plane aim charged by the DERIVED 3-D plane tax (issue #9;
+  // plane_tax_for — 512.1 m/s at the 2.48° / 23.64 km/s knot, vs 1022.9 for the old
+  // far-field v∞·|sin β| pricing)
+  pump_dep_dv_tilt_ref: 32609.99864838501,
+  plane_tax_knot_ref: 512.1,                 // exact knot (scale 1)
+  plane_tax_interp_ref: 143.64213197969545,  // (24.5 km/s, 1.2°) — interp + v∞ scaling
+  plane_tax_cont_ref: 3615.718039071343,     // (23.17 km/s, −10.27°) — beyond-4° continuation
   // thermal derating model (fermi_sim/thermal.py mirror): derived cap + cell temperature,
   // and the anchored thermal campaign integrated by the JS scheduled integrator
   th_cap042_ref: 3.5360714970813185,       // Python EXACT cap_eff(0.42); JS interpolates its
@@ -112,7 +117,11 @@ check("pumped duration @a0=2.5e-4 (yr)", pump.years, REF.pump_yr_ref, 1e-6);
 check("pumped v∞ @a0=5e-4 (m/s)", F.perihelionPumpedVinf(5e-4, 23.64e3).vinf, REF.pump_vinf_hi_ref, 1e-6);
 check("pumped departure Δv budget (23.64 km/s, tilt 0, LEO 400) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 400), REF.pump_dep_dv_ref, 1e-9);
 check("pumped departure Δv budget (GTO-like 590x35786) (m/s)", F.pumpedDepartureDv(23.64e3, 0, 590, 35786), REF.pump_dep_dv_gto_ref, 1e-9);
-check("pumped departure Δv budget charges the plane change (tilt −2.48°) (m/s)", F.pumpedDepartureDv(23.64e3, -2.48, 400), REF.pump_dep_dv_tilt_ref, 1e-9);
+check("pumped departure Δv budget charges the DERIVED plane tax (tilt −2.48°) (m/s)", F.pumpedDepartureDv(23.64e3, -2.48, 400), REF.pump_dep_dv_tilt_ref, 1e-9);
+// Derived 3-D plane-tax curve (issue #9): knot, interpolated+scaled, and beyond-4° continuation
+check("plane tax at the derived knot (23.64 km/s, 2.48°) (m/s)", F.planeTaxFor(23.64e3, -2.48), REF.plane_tax_knot_ref, 1e-12);
+check("plane tax interp + v∞ scaling (24.5 km/s, 1.2°) (m/s)", F.planeTaxFor(24.5e3, 1.2), REF.plane_tax_interp_ref, 1e-12);
+check("plane tax far-field continuation (23.17 km/s, −10.27°) (m/s)", F.planeTaxFor(23.17e3, -10.27), REF.plane_tax_cont_ref, 1e-12);
 // Triple-schedule pumping tax (issues #4/#5): thermal default + cap-model optimised +
 // bang-bang cross-check, all interpolated from tables baked out of fermi_sim integrations.
 check("pump tax, thermal schedule (default), at the 23.64 km/s anchor (m/s)", F.pumpTaxFor(23.64e3), 785.3, 1e-12);

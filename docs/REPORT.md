@@ -90,10 +90,14 @@ question is entirely about how you build the 24 km/s.*
 > as the crude cross-check (Δv 25.6, 9.6 yr, at 4×). The α ≳ 100 W/kg condition in §2
 > therefore applies to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~33 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
-> + 0.8 km/s thermal-derated tax + ~1 km/s plane change; ~31.8 at the idealised 4× cap,
+> The full SEP total from LEO is ~32.6 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
+> + 0.8 km/s thermal-derated tax + ~0.5 km/s DERIVED out-of-plane steering — the 3-D
+> campaign buys the tilt on its own hyperbolic leg, quadratic near β = 0, half the old
+> v∞·|sin β| bolt-on at the default aim; ~31.4 at the idealised 4× cap,
 > where PSI's optimised total is 30.5–31.6); a GTO
-> drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. See the live
+> drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
+> kink rounded, the pumped fuel optimum sits in a shallow basin at ~77,800 yr — the
+> in-plane 79,250-yr crossing aim costs only +27 m/s. See the live
 > page's "Perihelion pumping" section.
 
 ## 2. The outward-spiral power gate — a spiral closes only as a light (high-α) vehicle
@@ -267,7 +271,8 @@ speed below the ~23.3 km/s cruise). Five architectures do close:
 5. **Chemical kick from LEO** — a ~14 km/s impulsive burn does the whole job (the classic floor).
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
-~73,000–75,000 yr (or ~79,000 yr at the ecliptic crossing for the lowest plane-change penalty),
+~73,000–75,000 yr (or ~77,800 yr at the pumped-budget basin optimum — the ~79,250-yr
+ecliptic crossing costs only +27 m/s more under the derived 3-D tilt pricing),
 aimed close to the ecliptic. For the recommended pumped default, feasibility is gated by
 integrating the anchored pumping schedule at the vehicle's a₀ = F/m_wet under the derived
 thermal power curve — verified by integration rather than a threshold, since off-design

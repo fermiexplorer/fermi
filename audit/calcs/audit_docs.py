@@ -82,7 +82,9 @@ def run() -> None:
     # 8. Ecliptic-crossing arrival year is ~79k everywhere (engine 79,252 yr); the retracted
     #    ~80,000-yr rounding must not reappear in REPORT's closing paragraph.
     check("REPORT states ecliptic crossing as ~79k, not ~80k",
-          "80,000 yr at the ecliptic" not in report and "79,000 yr at the ecliptic" in report)
+          "80,000 yr at the ecliptic" not in report
+          and ("79,000 yr at the ecliptic" in report or "79,250-yr" in report
+               or "79,250 yr" in report))
 
     # 9. Synchrotron aperture-transit prose: the transit is ~0.5 s (t = Δv/a), NOT "milliseconds"
     #    (a build-141 error wrong by ~500×), and the coupling is gigawatt-class at probe scale, not
@@ -116,6 +118,17 @@ def run() -> None:
                     ("run_analysis.py", analysis)):
         check(f"{nm} carries no stale '31–34'/'31-34' default budget band",
               "31–34 km/s" not in txt and "31-34 km/s" not in txt)
+    # 10b. Issue-#9 derived plane tax: the retired bolt-on pricing phrases must not
+    #      resurface, and the new basin/budget facts must be stated on every headline
+    #      surface (the crossing YEAR ~79,250 remains a geometric fact and stays).
+    for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme),
+                    ("run_analysis.py", analysis)):
+        check(f"{nm} carries no stale '~1 km/s plane change' bolt-on pricing",
+              "~1 km/s plane change" not in txt and "+ ~1 plane change" not in txt
+              and "33.1 at the default aim" not in txt)
+        check(f"{nm} states the ~77,800-yr pumped basin optimum", "77,800" in txt)
+        check(f"{nm} states the ~32.6 km/s pumped two-leg total", "32.6" in txt)
+
     # the 4x-cap dv (23.14) may appear ONLY with an idealised/4x/PSI label nearby
     for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme)):
         ok = True

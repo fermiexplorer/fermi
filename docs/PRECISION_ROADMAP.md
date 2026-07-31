@@ -64,13 +64,26 @@ integrator stays as the feasibility gate and independent cross-check, and
 energy bookkeeping, and optimum-beats-gate. Residual: the shipped tax/campaign
 tables remain design-a₀-anchored (Stage 2's residual, unchanged in kind).
 
-## Stage 4 — 3-D pumping campaign  *(unscheduled)*
+## Stage 4 — 3-D pumping campaign  *(tilt pricing landed — issue #9)*
 
-**Today:** the campaign is integrated in-plane; the out-of-plane aim is charged
-separately as a first-order plane change v∞·|sin β|.
+**Today:** the out-of-plane aim is priced by a DERIVED 3-D steering curve: the
+campaign integrator generalised to 3-D (`pump_schedule.scheduled_pumped_vinf_3d` —
+thrust steered out of plane on the hyperbolic leg, asymptote-latitude feedback,
+planar-embedding exact at β = 0), per-β steering optimised and baked
+(`tools/derive_plane_tax.py` → `PLANE_TAX_THERMAL_TABLE`). The curve is
+~quadratic near zero (~95 m/s·β²) and costs **0.51 km/s at the 2.48°
+direct-optimum aim** — half the previous v∞·|sin β| bolt-on; the cap-model point
+(0.61) sits 5% from PSI's independently measured 0.58. Consequences: default
+two-leg budget 33.1 → **32.6 km/s**; the pumped fuel optimum moves off the
+ecliptic crossing into a **shallow basin at ~77,800 yr** (crossing +27 m/s —
+still the rule of thumb); the early-arrival branch stays ~3 km/s out.
+`audit_pumping` 13g: planar embedding, independent own-code 3-D re-integration,
+knot replay + step convergence, the ≤ v∞·|sin β| bound, and the basin guard.
 
-**Tightened:** integrate the campaign in 3-D with the aim's true inclination, so
-the plane change is bought where it is cheapest instead of priced as a bolt-on.
+**Residual:** tilt is bought on the hyperbolic leg only (no bound-phase plane
+steering — relevant above the 4° validity edge, where the far-field marginal
+continuation prices the aim); the curve is derived at the design a₀ and the
+23.64 km/s anchor (v∞-scaled, like the tax tables).
 
 ## Stage 5 — Finite-burn / higher-T/W departure  *(unscheduled; extends plan 01)*
 

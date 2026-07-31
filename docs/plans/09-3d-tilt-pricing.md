@@ -1,6 +1,29 @@
 # 09 — Price the out-of-plane aim from a 3-D campaign (PSI-final follow-ups)
 
-**Issue:** #9 · **Status:** open · **Filed:** 2026-07-31
+**Issue:** #9 · **Status:** shipped (build 174, 2026-07-31) · **Filed:** 2026-07-31
+
+## Results (shipped record)
+
+- `pump_schedule.scheduled_pumped_vinf_3d`: 7-state 3-D campaign integrator —
+  planar-embedding EXACT at β = 0 (dv diff 0.0000 m/s); tilt steered on the
+  hyperbolic leg by γ toward −z with an asymptote-latitude feedback cutoff and a
+  pure −z endgame; event-located switches and latitude gate.
+- `tools/derive_plane_tax.py` → `PLANE_TAX_THERMAL_TABLE` (11 knots, 0–4°):
+  per-β golden-section on γ at dt/8 with v∞-overshoot correction. The curve is
+  ~QUADRATIC near zero (~95 m/s·β²) — the |sin β| kink was an artifact of the
+  bolt-on pricing. Knot 2.48° = 512.1 m/s (far-field bound 1023). Cap-model
+  cross-point 606 m/s vs PSI's independently measured 578 (5%).
+- `departure.plane_tax_for` + JS `planeTaxFor`: v∞-scaled interpolation, 4°
+  validity, far-field marginal continuation (measured <1% off at 6°), bounded
+  above by v∞·|sin β| everywhere. Budget rewired in both engines; tilt-0 anchors
+  unchanged to the last digit (32097.898648 / 28453.987196).
+- Consequences: default two-leg budget 33.1 → **32.6 km/s**; pumped fuel optimum
+  moves off the crossing into a **shallow basin at ~77,800 yr** (tilt −0.5°;
+  crossing +27 m/s); **early-arrival branch settled — stays ~3 km/s out**.
+- Audits: audit_pumping 13g (9 checks: embedding, independent own-code 3-D
+  re-integration 610 vs 606, knot replay + step convergence, ≤ bound sweep,
+  quadratic structure, basin/crossing/early-arrival) + 3 parity checks + 12
+  audit_docs surface guards; ui_sliders budget pin updated to ~32.6.
 
 ## Background
 

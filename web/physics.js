@@ -445,8 +445,9 @@
 
   // First-order total departure Δv for the pumped architecture (mirror of fermi_sim
   // pumped_departure_dv): Earth escape to C3≈0 at the orbit-energy speed √(μ⊕/a) + the
-  // heliocentric pumping campaign at v∞ + v∞·|sin β| (plane change — the campaign is
-  // integrated in-plane, so the out-of-plane aim is charged separately) + tax (calibrated
+  // heliocentric pumping campaign at v∞ + planeTaxFor(v∞, β) (the DERIVED 3-D tilt cost,
+  // issue #9 — the campaign steers the out-of-plane aim on its own hyperbolic leg;
+  // quadratic near β = 0, half the far-field v∞·|sin β| bound at 2.48°) + tax (calibrated
   // against perihelionPumpedVinf: Δv − v∞ ≈ 2.0 km/s at the a₀ = 2.5e-4 design corridor).
   // The tax is v∞-DEPENDENT and, since issue #5, priced by the ANCHORED OPTIMISED schedule
   // under the DERIVED THERMAL power model (mirror of fermi_sim.pump_schedule
@@ -498,6 +499,28 @@
     if (vinf >= 29e3) return 0;
     return Math.max(_lerp(PUMP_TAX_TABLE, vinf), 0);
   }
+  // DERIVED out-of-plane (tilt) cost of the pumped campaign (mirror of fermi_sim
+  // pump_schedule.PLANE_TAX_THERMAL_TABLE + departure.plane_tax_for, issue #9): the 3-D
+  // anchored campaign steers thrust out of plane on the hyperbolic leg; knots are
+  // dv3d(β, γ*) − dv3d(0) at the 23.64 km/s design aim (tools/derive_plane_tax.py).
+  // ~Quadratic near 0 (~95 m/s·β²), 512 m/s at the 2.48° direct-optimum aim (the naive
+  // far-field bound charges 1023 there; PSI's final assessment measures 578 at their 4×
+  // cap — our cap-model derivation gives 606). Validity [0, 4°]; beyond, the far-field
+  // MARGINAL slope continues the curve (measured <1% off at 6°). Knots scale by
+  // (v∞ / 23.64 km/s). Always ≤ v∞·|sin β| (audit-pinned).
+  const PLANE_TAX_THERMAL_TABLE = [
+    [0.0, 0.0], [0.1, 1.2], [0.25, 6.7], [0.5, 24.3], [0.75, 54.0], [1.0, 94.2],
+    [1.5, 205.2], [2.0, 350.8], [2.48, 512.1], [3.0, 708.7], [4.0, 1123.4]];
+  const PLANE_TAX_BETA_MAX = 4.0, PLANE_TAX_V_REF = 23640.0;
+  function planeTaxFor(vinf, tiltDeg) {
+    if (!Number.isFinite(vinf) || !Number.isFinite(tiltDeg) || vinf < 0)
+      throw new Error("planeTaxFor: need finite vinf >= 0 and finite tiltDeg");
+    const beta = Math.abs(tiltDeg), scale = vinf / PLANE_TAX_V_REF;
+    if (beta <= PLANE_TAX_BETA_MAX) return _lerp(PLANE_TAX_THERMAL_TABLE, beta) * scale;
+    const edge = PLANE_TAX_THERMAL_TABLE[PLANE_TAX_THERMAL_TABLE.length - 1][1] * scale;
+    return edge + vinf * (Math.sin(Math.min(beta, 90) * Math.PI / 180)
+                          - Math.sin(PLANE_TAX_BETA_MAX * Math.PI / 180));
+  }
   // Per-target campaign under the anchored design schedule (mirror of
   // fermi_sim.pump_schedule OPT_CAMPAIGN_THERMAL_TABLE — the shipped default — and
   // OPT_CAMPAIGN_TABLE, the cap-model comparator): [v_target, overhead, years, revs].
@@ -533,7 +556,7 @@
     if (pumpTax == null) pumpTax = pumpTaxFor(vinf);
     const rp = R_EARTH + periAltKm * 1e3;
     const ra = R_EARTH + Math.max(apoAltKm == null ? periAltKm : apoAltKm, periAltKm) * 1e3;
-    const plane = vinf * Math.abs(Math.sin(tiltDeg * Math.PI / 180));
+    const plane = planeTaxFor(vinf, tiltDeg);
     return Math.sqrt(MU_EARTH / (0.5 * (rp + ra))) + vinf + plane + pumpTax;
   }
 
@@ -567,7 +590,7 @@
     PUMP_DESIGN_A0, PUMP_DESIGN_ISP,
     SOLAR_CONST, SPIRAL_FIT_C0, SPIRAL_FIT_C1, SPIRAL_FIT_CE1, SPIRAL_FIT_CE2, requiredVinfVec, intercept, tangentialT,
     eclipticCrossingT, vInfEarth, impulsiveDv, lowthrustDepartureDv, timeToAc, jupiterGain,
-    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, scheduledPumpedVinf, SCHEDULE_ANCHORED_THERMAL, capEff, cellTemperature, pumpedDepartureDv, pumpTaxFor, pumpTaxBangbang, optCampaignFor, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
+    oberthBurnFor, earthEscapeRevs, sunEscapeRevs, earthSoiRadius, injectionPointingDv, gncSteeringFactor, sepAchievableVinf, perihelionPumpedVinf, scheduledPumpedVinf, SCHEDULE_ANCHORED_THERMAL, capEff, cellTemperature, pumpedDepartureDv, pumpTaxFor, pumpTaxBangbang, planeTaxFor, optCampaignFor, synchrotronEscape, expv, propMass, elecEnergy, solarArrayArea, minimalDryMass,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.FERMI = API;

@@ -136,8 +136,11 @@ design-a₀ strand under the thermal curve (bang-bang reaches only ~20 km/s ther
 claimed physics is Oberth + power, not integrator artifact: work–energy closure, where the energy
 is bought, thermal floor 0.42 AU respected; solve the array energy balance yourself and
 confirm/refute cap_eff(0.42 AU) = 3.54 (T = 492 K; GaAs 0.2 %/K) and the silicon collapse (0.08×);
-(d) audit the two-leg budget `pumped_departure_dv` = √(μ⊕/a) + v∞ + v∞·|sin β| + tax(v∞) — the
-tax tables are swept at the design a₀ only (known to misprice away from the design corridor), and
+(d) audit the two-leg budget `pumped_departure_dv` = √(μ⊕/a) + v∞ + plane_tax(v∞, β) + tax(v∞) —
+the DERIVED 3-D plane tax (issue #9: quadratic near β = 0, 512 m/s at 2.48°, 4° validity then
+far-field marginal slope; re-derive it with your own 3-D integration and challenge the
+hyperbolic-leg-only steering restriction), the tax tables swept at the design a₀ only (known to
+misprice away from the design corridor), and
 is √(μ⊕/a) a fair (conservative) escape leg vs an integrated spiral; (e) challenge the anchored
 12-yr campaign numbers (thermal: Δv 24.44; idealised 4×: 23.14 vs PSI's published 23.97), the
 thermo-optical inputs behind the derate curve, and the α ≈ 15–21 W/kg ↔ a₀ = 2.5×10⁻⁴ mapping at

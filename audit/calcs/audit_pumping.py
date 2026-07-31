@@ -16,6 +16,11 @@ Independent checks — none of them call the engine and compare it to itself:
   (conservative) within 15%, and the 2 km/s pumping tax must bracket the
   integrated dv - v_inf across the working a0 range.
 * The numbers published on the web page must match the engine (drift guard).
+* The 3-D plane tax (issue #9): planar embedding, an independent own-code 3-D
+  re-integration of the cap-model 2.48-deg point (the point PSI's final
+  assessment measures with a third implementation), bake replay + step
+  convergence of the thermal knot, the conservative far-field bound, and the
+  arrival-epoch basin the rounded corner produces.
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ from _util import check, close, rel_err
 from fermi_sim import constants as c
 from fermi_sim.departure import (
     perihelion_pumped_vinf,
+    plane_tax_for,
     pumped_departure_dv,
     spiral_escape_dv,
 )
@@ -291,13 +297,18 @@ def run() -> None:
               dv_int <= leg <= 1.15 * dv_int,
               f"sqrt(mu/a)={leg/1e3:.2f} vs integrated {dv_int/1e3:.2f} km/s")
 
-    # 9b. Two-leg budget — plane change. The campaign is integrated in-plane, so
-    #     the budget must charge the out-of-plane aim explicitly: v_inf*|sin(tilt)|.
+    # 9b. Two-leg budget — plane change. Since issue #9 the out-of-plane aim is charged
+    #     by the DERIVED 3-D steering curve (plane_tax_for): the budget difference must
+    #     equal the curve exactly, sit BELOW the old conservative bound v_inf*|sin(beta)|,
+    #     and still be a multi-km/s charge at the steep 58-kyr aim (~3.6 km/s at 10.1 deg).
     d0 = pumped_departure_dv(23.64e3, 0.0, 400.0)
     d_tilt = pumped_departure_dv(23.64e3, -10.1, 400.0)
-    expect_plane = 23.64e3 * abs(math.sin(math.radians(10.1)))
-    check("budget charges the plane change v_inf*|sin(beta)| (58 kyr aim ~4.1 km/s)",
-          rel_err(d_tilt - d0, expect_plane) < 1e-12, f"{(d_tilt-d0)/1e3:.2f} km/s at 10.1 deg")
+    expect_plane = plane_tax_for(23.64e3, -10.1)
+    naive_plane = 23.64e3 * abs(math.sin(math.radians(10.1)))
+    check("budget charges the DERIVED plane tax (58 kyr aim ~3.6 km/s, below the 4.1 bound)",
+          rel_err(d_tilt - d0, expect_plane) < 1e-12
+          and 3.0e3 < expect_plane < naive_plane,
+          f"{(d_tilt-d0)/1e3:.2f} km/s at 10.1 deg (bound {naive_plane/1e3:.2f})")
 
     # 10. Two-leg budget — pumping tax. dv - v_inf from the independent
     #     integrator must be bracketed by the 2 km/s tax within [-0.5, +1.0]
@@ -384,11 +395,17 @@ def run() -> None:
           abs(pump_tax_for(23.64e3, "optimized") - (-509.0)) < 1e-9,
           f"{pump_tax_for(23.64e3, 'optimized'):.1f} m/s")
     # the alpha2-Lib case that the old flat tax mispriced (34.7 vs integrated ~41.0) prices
-    # correctly through the closed form under the BANG-BANG tax it was integrated with
+    # correctly through the closed form under the BANG-BANG tax it was integrated with.
+    # The historical 41.0 record carries the FAR-FIELD plane change (the budget's pricing
+    # when it was integrated); reconstruct that pricing explicitly, since the budget now
+    # charges the cheaper derived curve (issue #9 — ~0.3 km/s less at this 47-deg tilt).
     alib_bb = pumped_departure_dv(14.5e3, -47.0, 400.0,
                                   pump_tax=pump_tax_for(14.5e3, "bangbang"))
-    check("closed-form budget reproduces the integrated alpha2-Lib total (~41.0 km/s, bang-bang)",
-          abs(alib_bb - 41.0e3) < 0.25e3, f"{alib_bb/1e3:.2f} km/s")
+    alib_naive = (alib_bb - plane_tax_for(14.5e3, -47.0)
+                  + 14.5e3 * math.sin(math.radians(47.0)))
+    check("closed-form budget reproduces the integrated alpha2-Lib total (~41.0 km/s, "
+          "bang-bang tax + far-field plane pricing)",
+          abs(alib_naive - 41.0e3) < 0.25e3, f"{alib_naive/1e3:.2f} km/s")
     check("optimised schedule prices alpha2-Lib below the bang-bang total",
           pumped_departure_dv(14.5e3, -47.0, 400.0) < alib_bb,
           f"{pumped_departure_dv(14.5e3, -47.0, 400.0)/1e3:.2f} < {alib_bb/1e3:.2f} km/s")
@@ -539,6 +556,207 @@ def run() -> None:
                   for k in (23640.0, 25000.0))
     check("baked thermal campaign years/revs knots reproduce from the fresh integration",
           ok_camp, str({k: (round(fresh[k][2], 3), camp_map[k][2]) for k in (23640.0, 25000.0)}))
+
+    # 13g. DERIVED 3-D PLANE TAX (issue #9). The pumped budget's out-of-plane charge
+    #      comes from the 3-D campaign integration (scheduled_pumped_vinf_3d +
+    #      PLANE_TAX_THERMAL_TABLE, derived by tools/derive_plane_tax.py). Checks:
+    #      (i) planar embedding — the 3-D integrator at beta=0 must REPRODUCE the planar
+    #          integrator (same trajectory, dv to <0.01 m/s);
+    #      (ii) an INDEPENDENT own-code 3-D re-integration (this file, written from the
+    #          docstring spec, own step schedule, own osculating/steering bookkeeping,
+    #          cap power model) must reproduce the engine's cap-model tilt cost at the
+    #          2.48-deg point — the same point PSI's final assessment measures at
+    #          578 m/s with a third, unrelated implementation;
+    #      (iii) the baked 2.48-deg THERMAL knot must replay from the engine at the
+    #          derivation's dt (a bake/tamper guard) and be step-converged;
+    #      (iv) the derived curve is bounded above by the far-field v_inf*|sin(beta)|
+    #          everywhere and is ~quadratic near zero (the rounded corner);
+    #      (v) the arrival-epoch consequence: the pumped-budget optimum sits in a
+    #          shallow basin at ~77.8 kyr, the in-plane crossing aim costs <60 m/s
+    #          more, and the early-arrival branch stays >2.5 km/s out.
+    from fermi_sim.pump_schedule import (OPTIMIZED_SCHEDULES, PLANE_TAX_THERMAL_TABLE,
+                                         scheduled_pumped_vinf_3d)
+    # (i) planar embedding
+    v3e, dv3e, yr3e, rev3e, lat3e = scheduled_pumped_vinf_3d(
+        a0_design, tgt, 0.0, ANCHORED_THERMAL, power_model="thermal")
+    v2e, dv2e, yr2e, rev2e = scheduled_pumped_vinf(
+        a0_design, tgt, ANCHORED_THERMAL, power_model="thermal")
+    check("3-D integrator at beta=0 embeds the planar integrator exactly (<0.01 m/s dv)",
+          abs(dv3e - dv2e) < 0.01 and abs(v3e - v2e) < 0.01 and abs(yr3e - yr2e) < 1e-6,
+          f"dv {dv3e:.3f} vs {dv2e:.3f}")
+
+    # (ii) independent own-code 3-D re-integration, cap model, 2.48-deg point
+    def _indep_plane_cap(beta_deg, gamma_deg, sch):
+        mu, AU = c.MU_SUN, c.AU
+        ve = ISP_S * c.G0
+        v_t = tgt
+        target_E = 0.5 * v_t ** 2
+        tang = math.tan(math.radians(gamma_deg))
+        lat_t = -beta_deg
+
+        def osc(x, y, z, vx, vy, vz):
+            r = math.hypot(x, y, z)
+            v2 = vx * vx + vy * vy + vz * vz
+            E = 0.5 * v2 - mu / r
+            hx, hy, hz = y * vz - z * vy, z * vx - x * vz, x * vy - y * vx
+            h2 = hx * hx + hy * hy + hz * hz
+            ecc = math.sqrt(max(0.0, 1.0 + 2.0 * E * h2 / (mu * mu)))
+            p = h2 / mu
+            rp = p / (1.0 + ecc) if p > 0 else 0.0
+            s = 1.0 if (x * vx + y * vy + z * vz) >= 0.0 else -1.0
+            nu = (s * math.acos(max(-1.0, min(1.0, (p / r - 1.0) / ecc)))
+                  if ecc > 1e-6 else 0.0)
+            return r, E, ecc, rp, nu
+
+        def asym_lat(x, y, z, vx, vy, vz):
+            r = math.hypot(x, y, z)
+            v2 = vx * vx + vy * vy + vz * vz
+            rv = x * vx + y * vy + z * vz
+            ex = ((v2 - mu / r) * x - rv * vx) / mu
+            ey = ((v2 - mu / r) * y - rv * vy) / mu
+            ez = ((v2 - mu / r) * z - rv * vz) / mu
+            e = math.hypot(ex, ey, ez)
+            if e <= 1.0:
+                return None
+            hx, hy, hz = y * vz - z * vy, z * vx - x * vz, x * vy - y * vx
+            h = math.hypot(hx, hy, hz)
+            exh, eyh, ezh = ex / e, ey / e, ez / e
+            hxh, hyh, hzh = hx / h, hy / h, hz / h
+            pz = hxh * eyh - hyh * exh
+            nu_inf = math.acos(max(-1.0, min(1.0, -1.0 / e)))
+            uz = math.cos(nu_inf) * ezh + math.sin(nu_inf) * pz
+            return math.degrees(math.asin(max(-1.0, min(1.0, uz))))
+
+        x, y, z = AU, 0.0, 0.0
+        vx, vy, vz = 0.0, math.sqrt(mu / AU), 0.0
+        m, t, dv = 1.0, 0.0, 0.0
+        latched = False
+        vend = None
+        while t < 30.0 * c.YEAR:
+            r, E, ecc, rp, nu = osc(x, y, z, vx, vy, vz)
+            lat = asym_lat(x, y, z, vx, vy, vz) if E > 0.0 else None
+            tilt_needed = beta_deg > 0.0 and (lat is None or lat > lat_t)
+            if E >= target_E and not tilt_needed:
+                vend = math.sqrt(2.0 * E)
+                break
+            if not latched and rp <= sch.rp_latch * AU:
+                latched = True
+            if not latched:
+                if ecc < 0.05:
+                    u = -1.0 if x > 0.0 else 0.0
+                else:
+                    u = -1.0 if abs(abs(nu) - math.pi) < math.radians(sch.th_retro) else 0.0
+            elif E < sch.e_guard:
+                u = +1.0 if abs(nu) < math.radians(sch.th_pro) else 0.0
+            else:
+                u = +1.0
+            purez = E >= target_E and tilt_needed
+            if purez:
+                u = +1.0
+            period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * AU) ** 3 / mu)
+            dt = min(max(150.0, 5.0e-4 * period), 1.25 * 86400.0)
+
+            def acc(px, py, pz_, pvx, pvy, pvz, pm):
+                rr = math.hypot(px, py, pz_)
+                vv = math.hypot(pvx, pvy, pvz) or 1.0
+                am = u * a0_design * min((AU / rr) ** 2, POWER_CAP) / pm
+                if purez:
+                    ux, uy, uz = 0.0, 0.0, -1.0
+                    am = abs(am)
+                    tx, ty, tz = 0.0, 0.0, -am
+                else:
+                    ux, uy, uz = pvx / vv, pvy / vv, pvz / vv
+                    if u > 0.0 and tilt_needed and E > 0.0 and lat is not None:
+                        # steering only ever fires on the hyperbolic (finisher) leg, u=+1
+                        uz2 = uz - tang
+                        un = math.sqrt(ux * ux + uy * uy + uz2 * uz2)
+                        tx, ty, tz = am * ux / un, am * uy / un, am * uz2 / un
+                    else:
+                        tx, ty, tz = am * ux, am * uy, am * uz
+                g = -mu / rr ** 3
+                return g * px + tx, g * py + ty, g * pz_ + tz
+            s0 = (x, y, z, vx, vy, vz)
+            k1 = (vx, vy, vz, *acc(x, y, z, vx, vy, vz, m))
+            k2s = tuple(s0[i] + 0.5 * dt * k1[i] for i in range(6))
+            k2 = (k2s[3], k2s[4], k2s[5], *acc(*k2s, m))
+            k3s = tuple(s0[i] + 0.5 * dt * k2[i] for i in range(6))
+            k3 = (k3s[3], k3s[4], k3s[5], *acc(*k3s, m))
+            k4s = tuple(s0[i] + dt * k3[i] for i in range(6))
+            k4 = (k4s[3], k4s[4], k4s[5], *acc(*k4s, m))
+            x, y, z, vx, vy, vz = (s0[i] + dt / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+                                   for i in range(6))
+            if u:
+                pf_r = a0_design * min((AU / r) ** 2, POWER_CAP)
+                dv += pf_r / m * dt
+                m = max(m - pf_r / ve * dt, 0.05)
+            t += dt
+        if vend is None:
+            r, E, _, _, _ = osc(x, y, z, vx, vy, vz)
+            vend = math.sqrt(2.0 * E) if E > 0 else 0.0
+        return vend, dv, asym_lat(x, y, z, vx, vy, vz)
+
+    sch_cap = OPTIMIZED_SCHEDULES[2.5e-4][0]
+    vA, dvA, latA = _indep_plane_cap(0.0, 0.0, sch_cap)
+    vB, dvB, latB = _indep_plane_cap(2.48, 22.8, sch_cap)
+    cost_indep = (dvB - dvA) - 0.64 * (vB - vA)
+    check("independent 3-D re-integration prices the cap-model 2.48-deg tilt near the "
+          "engine's 606 m/s (and PSI's measured 578)",
+          latB is not None and abs(latB + 2.48) < 0.10
+          and abs(cost_indep - 606.1) < 90.0 and abs(cost_indep - 578.0) < 160.0,
+          f"indep {cost_indep:.0f} m/s, lat {latB}")
+
+    # (iii) bake replay + step convergence of the thermal 2.48-deg knot
+    def _knot(dts):
+        _, dv0k, _, _, _ = scheduled_pumped_vinf_3d(
+            a0_design, tgt, 0.0, ANCHORED_THERMAL, power_model="thermal", _dt_scale=dts)
+        vk, dvk, _, _, latk = scheduled_pumped_vinf_3d(
+            a0_design, tgt, 2.48, ANCHORED_THERMAL, power_model="thermal",
+            steer_gamma_deg=19.7, _dt_scale=dts)
+        v0k = scheduled_pumped_vinf_3d(
+            a0_design, tgt, 0.0, ANCHORED_THERMAL, power_model="thermal", _dt_scale=dts)[0]
+        return (dvk - dv0k) - 0.64 * (vk - v0k), latk
+    knot8, lat8 = _knot(0.125)
+    knot4, _ = _knot(0.25)
+    check("baked thermal 2.48-deg knot (512.1 m/s) replays at the derivation dt (<2 m/s) "
+          "and is step-converged (dt/4 vs dt/8 < 25 m/s)",
+          abs(knot8 - 512.1) < 2.0 and abs(knot4 - knot8) < 25.0
+          and lat8 is not None and abs(lat8 + 2.48) < 0.05,
+          f"dt/8 {knot8:.1f}, dt/4 {knot4:.1f} m/s")
+
+    # (iv) conservative bound + quadratic small-beta structure
+    ok_bound = True
+    for vv in (8.0e3, 23.17e3, 23.64e3, 26.0e3):
+        for bb in [0.1 * i for i in range(1, 400)]:
+            if plane_tax_for(vv, bb) > vv * math.sin(math.radians(min(bb, 90.0))) + 1e-6:
+                ok_bound = False
+    check("derived plane tax <= far-field v_inf*|sin(beta)| everywhere (grid sweep)",
+          ok_bound and plane_tax_for(23.64e3, 0.0) == 0.0, "")
+    q1, q2 = plane_tax_for(23.64e3, 0.5), plane_tax_for(23.64e3, 1.0)
+    check("plane tax is ~quadratic near zero (the corner is rounded, not kinked)",
+          2.5 < q2 / q1 < 5.5, f"tax(1)/tax(0.5) = {q2/q1:.2f} (quadratic -> 4)")
+
+    # (v) arrival-epoch consequence: shallow basin at ~77.8 kyr; crossing +<60 m/s;
+    #     early-arrival branch >2.5 km/s out (settles the issue-#9 early-arrival trade)
+    from fermi_sim.astro import alpha_centauri_state
+    from fermi_sim.intercept import ecliptic_crossing_time, solve_intercept
+    st = alpha_centauri_state()
+    miss = 2600.0 * c.AU
+
+    def _budget(T_yr):
+        s = solve_intercept(st, T_yr * c.YEAR)
+        vv = max(0.0, s.v_inf - miss / (T_yr * c.YEAR))
+        return pumped_departure_dv(vv, s.plane_angle_deg, 400.0)
+    scan = {T: _budget(T) for T in range(56000, 90001, 100)}
+    t_min = min(scan, key=scan.get)
+    t_cx = ecliptic_crossing_time(st) / c.YEAR
+    pen_cx = _budget(t_cx) - scan[t_min]
+    pen_58 = _budget(58000) - scan[t_min]
+    check("pumped-budget optimum sits in the ~77.8-kyr basin (rounded corner, issue #9)",
+          77300 <= t_min <= 78300, f"argmin {t_min} yr")
+    check("in-plane crossing aim costs < 60 m/s over the basin optimum",
+          0.0 < pen_cx < 60.0, f"+{pen_cx:.1f} m/s at {t_cx:.0f} yr")
+    check("early-arrival branch (58 kyr) stays > 2.5 km/s above the optimum",
+          pen_58 > 2.5e3, f"+{pen_58/1e3:.2f} km/s")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the

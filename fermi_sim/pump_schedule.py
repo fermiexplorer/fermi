@@ -174,6 +174,32 @@ TAX_OPT_THERMAL_TABLE = (
     (23640.0, 785.3), (24000.0, 664.5), (25000.0, 410.2), (26000.0, 299.6),
 )
 
+# DERIVED out-of-plane (tilt) cost of the anchored THERMAL campaign at the
+# 23.64 km/s design aim (tools/derive_plane_tax.py, issue #9): the 3-D integrator
+# (scheduled_pumped_vinf_3d) steers thrust out of plane on the hyperbolic leg with
+# the per-beta optimal tilt angle gamma*, and the knot is
+# dv_3d(beta, gamma*) - dv_3d(0), both at dt/8 with the residual v_inf-overshoot
+# corrected (d(dv)/d(v_inf) = 0.64 along the campaign). The curve is ~QUADRATIC
+# near zero (~95 m/s * beta_deg^2 — steering inside existing burns is
+# second-order), reaching only half the far-field bound v_inf*sin(beta) at the
+# 2.48 deg direct-optimum aim. VALIDITY [0, 4] deg: above ~4 deg the 1/r^2-faded
+# hyperbolic-leg impulse can no longer buy the tilt within custody (the 6 deg
+# probe needs 23 yr), so consumers continue with the far-field marginal slope,
+# tax(4) + v_inf*(sin(beta) - sin(4 deg)) — measured 1953 m/s at 6 deg vs 1944
+# continued. Cross-check: the same derivation under the CAP model prices 2.48 deg
+# at 606 m/s vs PSI's independently measured 578 m/s (their final assessment,
+# 3-D re-optimization) — 5% apart, inside their +-0.2 km/s search scatter.
+# Consumers scale knots by (v_inf / 23640) — the aim band is [23, 26] km/s, so
+# the scaling is a <=10% first-order correction. Applied by
+# fermi_sim.departure.plane_tax_for and mirrored in web/physics.js.
+PLANE_TAX_THERMAL_TABLE = (
+    (0.0, 0.0),
+    (0.1, 1.2), (0.25, 6.7), (0.5, 24.3), (0.75, 54.0), (1.0, 94.2),
+    (1.5, 205.2), (2.0, 350.8), (2.48, 512.1), (3.0, 708.7), (4.0, 1123.4),
+)
+PLANE_TAX_BETA_MAX = 4.0     # deg — table validity; far-field marginal slope beyond
+PLANE_TAX_V_REF = 23640.0    # m/s — the aim the table was derived at
+
 # Per-target campaign under the ANCHORED THERMAL schedule across the page's
 # aim range (tmp/ro/i5_bake.py): (v_target m/s, overhead m/s, years, revs).
 OPT_CAMPAIGN_THERMAL_TABLE = (
@@ -377,6 +403,232 @@ def scheduled_pumped_vinf(a0: float, v_inf_target: float, sch: Schedule = BANG_B
 
     r = math.hypot(x, y)
     E = 0.5 * (vx * vx + vy * vy) - mu / r
+    return _result(E)
+
+
+def _decide3(x, y, z, vx, vy, vz, latched, sch, mu):
+    """3-D osculating thrust-mode decision — reduces EXACTLY to :func:`_decide` when
+    z = vz = 0 (the planar-embedding property audit_pumping pins). Same contract:
+    returns (mode -1/0/+1, osculating perihelion radius)."""
+    r = math.hypot(x, y, z)
+    v2 = vx * vx + vy * vy + vz * vz
+    E = 0.5 * v2 - mu / r
+    hx = y * vz - z * vy
+    hy = z * vx - x * vz
+    hz = x * vy - y * vx
+    h2 = hx * hx + hy * hy + hz * hz
+    ecc = math.sqrt(max(0.0, 1.0 + 2.0 * E * h2 / (mu * mu)))
+    p_sl = h2 / mu
+    rp = p_sl / (1.0 + ecc) if ecc < 1.0 or p_sl > 0 else 0.0
+    rd = 1.0 if (x * vx + y * vy + z * vz) >= 0.0 else -1.0
+    if ecc > 1e-6:
+        nu = rd * math.acos(max(-1.0, min(1.0, (p_sl / r - 1.0) / ecc)))
+    else:
+        nu = 0.0
+    if not latched:
+        if ecc < _BOOT_ECC:
+            return (-1.0 if x > 0.0 else 0.0), rp
+        return (-1.0 if abs(abs(nu) - math.pi) < math.radians(sch.th_retro) else 0.0), rp
+    if E < sch.e_guard:
+        return (+1.0 if abs(nu) < math.radians(sch.th_pro) else 0.0), rp
+    return +1.0, rp
+
+
+def _asymptote_latitude(x, y, z, vx, vy, vz, mu):
+    """Outgoing-asymptote latitude (deg) of the osculating orbit; None if not hyperbolic."""
+    r = math.sqrt(x * x + y * y + z * z)
+    v2 = vx * vx + vy * vy + vz * vz
+    rv = x * vx + y * vy + z * vz
+    ex = ((v2 - mu / r) * x - rv * vx) / mu
+    ey = ((v2 - mu / r) * y - rv * vy) / mu
+    ez = ((v2 - mu / r) * z - rv * vz) / mu
+    e = math.sqrt(ex * ex + ey * ey + ez * ez)
+    if e <= 1.0:
+        return None
+    hx = y * vz - z * vy
+    hy = z * vx - x * vz
+    hz = x * vy - y * vx
+    h = math.sqrt(hx * hx + hy * hy + hz * hz)
+    # in-plane basis: e_hat (toward perihelion) and p_hat = h_hat x e_hat
+    exh, eyh, ezh = ex / e, ey / e, ez / e
+    hxh, hyh, hzh = hx / h, hy / h, hz / h
+    px = hyh * ezh - hzh * eyh
+    py = hzh * exh - hxh * ezh
+    pz = hxh * eyh - hyh * exh
+    nu_inf = math.acos(max(-1.0, min(1.0, -1.0 / e)))
+    uz = math.cos(nu_inf) * ezh + math.sin(nu_inf) * pz
+    return math.degrees(math.asin(max(-1.0, min(1.0, uz))))
+
+
+def scheduled_pumped_vinf_3d(a0: float, v_inf_target: float, beta_deg: float,
+                             sch: Schedule = ANCHORED_THERMAL, isp_s: float = 2800.0,
+                             power_cap: float = 4.0, max_yr: float = 30.0,
+                             steer_gamma_deg: float = 0.0, _dt_scale: float = 1.0,
+                             power_model: str = "thermal"):
+    """THREE-DIMENSIONAL pumping campaign with out-of-plane steering (issue #9).
+
+    Same physics, schedule geometry, power models, stepping and switch-bisection as
+    :func:`scheduled_pumped_vinf`, generalised to a 7-state (x, y, z, v, m) RK4. The
+    departure-asymptote tilt beta (deg, BELOW the ecliptic — the AC geometry) is
+    acquired by steering thrust out of plane on the HYPERBOLIC leg, where the plane
+    change is cheapest (buying it at perihelion would price the tilt at the ~69 km/s
+    perihelion speed; buying it late prices it near v_inf — the same reason the
+    far-field bound is v_inf*sin(beta)):
+
+      - while the osculating orbit is hyperbolic (E > 0) and the outgoing-asymptote
+        latitude still sits above the -beta target, burn-mode thrust is tilted by
+        ``steer_gamma_deg`` toward -z (magnitude unchanged — steering redirects
+        thrust, it never adds any);
+      - once the ENERGY target is met but the tilt is not, thrust goes pure -z (the
+        endgame buys only the remaining out-of-plane velocity, throttled by the same
+        1/r^2 power fade as everything else);
+      - the campaign ends when both the energy target and the asymptote-latitude
+        target are met (feedback cutoff — no overshoot beyond one step).
+
+    With ``beta_deg = 0`` the z-equations carry exact zeros and the integration
+    REPRODUCES the planar integrator (the embedding property the audits pin).
+    Returns (v_inf m/s, dv m/s, years, revs, asymptote_latitude_deg-or-None); the
+    tilt COST is dv(beta) - dv(0) under the same gamma-optimisation, and the achieved
+    latitude gates any published value (|lat + beta| <= 0.05 deg — enforced by the
+    derivation tool tools/derive_plane_tax.py).
+    """
+    for nm, val in (("a0", a0), ("v_inf_target", v_inf_target), ("beta_deg", beta_deg),
+                    ("isp_s", isp_s), ("power_cap", power_cap), ("max_yr", max_yr),
+                    ("steer_gamma_deg", steer_gamma_deg)):
+        if not math.isfinite(val):
+            raise ValueError(f"scheduled_pumped_vinf_3d: {nm} must be finite, got {val!r}")
+    if a0 <= 0.0 or v_inf_target <= 0.0 or isp_s <= 0.0 or max_yr <= 0.0 or power_cap < 1.0:
+        raise ValueError("scheduled_pumped_vinf_3d: a0, v_inf_target, isp_s, max_yr must be "
+                         "positive and power_cap >= 1")
+    if beta_deg < 0.0 or beta_deg >= 90.0:
+        raise ValueError(f"scheduled_pumped_vinf_3d: beta_deg must be in [0, 90), got {beta_deg!r}")
+    if not (0.0 <= steer_gamma_deg < 90.0):
+        raise ValueError(f"scheduled_pumped_vinf_3d: steer_gamma_deg must be in [0, 90), "
+                         f"got {steer_gamma_deg!r}")
+    if not (math.isfinite(_dt_scale) and _dt_scale > 0.0):
+        raise ValueError(f"scheduled_pumped_vinf_3d: _dt_scale must be positive, got {_dt_scale!r}")
+    sch.validate()
+    from .departure import _pump_power_factor
+    pf = _pump_power_factor(power_model, power_cap)
+
+    mu, AU = c.MU_SUN, c.AU
+    ve = isp_s * c.G0
+    target_E = 0.5 * v_inf_target ** 2
+    lat_target = -beta_deg
+    tang = math.tan(math.radians(steer_gamma_deg)) if beta_deg > 0.0 else 0.0
+    x, y, z = AU, 0.0, 0.0
+    vx, vy, vz = 0.0, math.sqrt(mu / AU), 0.0
+    m = 1.0
+    t, dv, revs, ang_prev = 0.0, 0.0, 0.0, 0.0
+    latched = False
+    max_t = max_yr * c.YEAR
+
+    def step(state, dt, d, smode):
+        """RK4 step under fixed thrust mode d and steer mode smode
+        (0 none / 1 tilt-by-gamma / 2 pure -z)."""
+        def deriv(s):
+            X, Y, Z, VX, VY, VZ, M = s
+            rr = math.hypot(X, Y, Z)
+            vv = math.hypot(VX, VY, VZ) or 1.0
+            g = -mu / rr ** 3
+            if d:
+                am = a0 * pf(rr) / max(M, 0.05)
+                md = -(a0 * pf(rr)) / ve
+                if smode == 2:
+                    ux, uy, uz = 0.0, 0.0, -1.0
+                else:
+                    ux, uy, uz = d * VX / vv, d * VY / vv, d * VZ / vv
+                    if smode == 1:
+                        uz -= tang
+                        un = math.sqrt(ux * ux + uy * uy + uz * uz)
+                        ux, uy, uz = ux / un, uy / un, uz / un
+                return (VX, VY, VZ, g * X + am * ux, g * Y + am * uy, g * Z + am * uz, md)
+            return (VX, VY, VZ, g * X, g * Y, g * Z, 0.0)
+        s = state
+        k1 = deriv(s)
+        k2 = deriv(tuple(s[i] + 0.5 * dt * k1[i] for i in range(7)))
+        k3 = deriv(tuple(s[i] + 0.5 * dt * k2[i] for i in range(7)))
+        k4 = deriv(tuple(s[i] + dt * k3[i] for i in range(7)))
+        out = tuple(s[i] + dt / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) for i in range(7))
+        out = out[:6] + (max(out[6], 0.05),)
+        if d:
+            rr = math.hypot(s[0], s[1], s[2])
+            return out, (a0 * pf(rr) / max(s[6], 0.05)) * dt
+        return out, 0.0
+
+    def _result(E):
+        v_out = math.sqrt(2.0 * E) if E > 0.0 else 0.0
+        lat = _asymptote_latitude(x, y, z, vx, vy, vz, mu)
+        return v_out, dv, t / c.YEAR, revs, lat
+
+    while t < max_t:
+        r = math.hypot(x, y, z)
+        E = 0.5 * (vx * vx + vy * vy + vz * vz) - mu / r
+        lat_now = _asymptote_latitude(x, y, z, vx, vy, vz, mu) if E > 0.0 else None
+        tilt_needed = (beta_deg > 0.0
+                       and (lat_now is None or lat_now > lat_target))
+        if E >= target_E and (beta_deg == 0.0 or not tilt_needed):
+            return _result(E)
+        d0, rp0 = _decide3(x, y, z, vx, vy, vz, latched, sch, mu)
+        if not latched and rp0 <= sch.rp_latch * AU:
+            latched = True
+            d0, rp0 = _decide3(x, y, z, vx, vy, vz, latched, sch, mu)
+        if E >= target_E:
+            # energy done, tilt not: endgame — thrust pure -z until the latitude gate
+            d0, smode = 1.0, 2
+        elif d0 and tang != 0.0 and lat_now is not None and tilt_needed:
+            smode = 1                  # hyperbolic burn, asymptote still high: tilt by gamma
+        else:
+            smode = 0
+        if E >= target_E and not d0:
+            return _result(E)
+        period = 2.0 * math.pi * math.sqrt(max(r, 0.1 * AU) ** 3 / mu)
+        dt = min(max(600.0, 0.002 * period), 5.0 * 86400.0) * _dt_scale
+
+        s0 = (x, y, z, vx, vy, vz, m)
+        s1, dv1 = step(s0, dt, d0, smode)
+        d1, rp1 = _decide3(s1[0], s1[1], s1[2], s1[3], s1[4], s1[5], latched, sch, mu)
+        crossed_latch = (not latched) and rp1 <= sch.rp_latch * AU
+        if smode != 2 and (d1 != d0 or crossed_latch):
+            lo, hi = 0.0, dt
+            for _ in range(10):
+                mid = 0.5 * (lo + hi)
+                sm, _dv = step(s0, mid, d0, smode)
+                dm, rpm = _decide3(sm[0], sm[1], sm[2], sm[3], sm[4], sm[5], latched, sch, mu)
+                if dm != d0 or ((not latched) and rpm <= sch.rp_latch * AU):
+                    hi = mid
+                else:
+                    lo = mid
+            sub = max(hi, 1e-6 * dt)
+            s1, dv1 = step(s0, sub, d0, smode)
+            dt = sub
+        elif smode == 2:
+            # bisect the LATITUDE gate inside the endgame step so the cutoff is
+            # event-located, not step-quantized (same convention as the mode switches)
+            latf = _asymptote_latitude(s1[0], s1[1], s1[2], s1[3], s1[4], s1[5], mu)
+            if latf is not None and latf <= lat_target:
+                lo, hi = 0.0, dt
+                for _ in range(10):
+                    mid = 0.5 * (lo + hi)
+                    sm, _dv = step(s0, mid, d0, smode)
+                    lm = _asymptote_latitude(sm[0], sm[1], sm[2], sm[3], sm[4], sm[5], mu)
+                    if lm is not None and lm <= lat_target:
+                        hi = mid
+                    else:
+                        lo = mid
+                sub = max(hi, 1e-6 * dt)
+                s1, dv1 = step(s0, sub, d0, smode)
+                dt = sub
+        x, y, z, vx, vy, vz, m = s1
+        dv += dv1
+        ang = math.atan2(y, x)
+        d_ang = (ang - ang_prev + math.pi) % (2.0 * math.pi) - math.pi
+        revs += abs(d_ang) / (2.0 * math.pi)
+        ang_prev = ang
+        t += dt
+
+    r = math.hypot(x, y, z)
+    E = 0.5 * (vx * vx + vy * vy + vz * vz) - mu / r
     return _result(E)
 
 

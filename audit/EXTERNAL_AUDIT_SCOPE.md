@@ -153,7 +153,13 @@ This is where the novel and contested physics lives. Functions to scrutinise:
   cell-technology-critical); the fixed-grid interpolation the integrators
   consume vs the exact function.
 - **`pumped_departure_dv`** — the two-leg budget: √(μ⊕/a) escape + v∞ +
-  v∞·|sinβ| plane change + a **v∞-dependent pump tax** (`pump_tax_for`, two
+  a **DERIVED 3-D plane tax** (`plane_tax_for`, issue #9: the 3-D campaign
+  integrator `scheduled_pumped_vinf_3d` steers the tilt on the hyperbolic leg;
+  ~quadratic near β = 0, 512 m/s at the 2.48°/23.64 km/s knot vs the 1023 m/s
+  far-field bound v∞·|sinβ| that upper-bounds it everywhere; validity to 4°,
+  far-field marginal slope beyond; audit_pumping 13g re-derives the cap-model
+  point independently — 610 own-code vs 606 engine vs PSI's measured 578) + a
+  **v∞-dependent pump tax** (`pump_tax_for`, two
   schedules): the default `"optimized"` table is swept from the **anchored
   optimised campaign** (10.6 km/s at v∞ = 8, **−0.509** at the pinned
   23.64 km/s AC anchor — negative: the Oberth-efficient campaign spends less Δv
@@ -240,7 +246,7 @@ undisclosed assumption, that is a finding.
 |---|---|---|
 | AC (and every star) moves in a **straight line at constant velocity** | all intercept geometry | error is *second-order* (the measured 6-D velocity absorbs all first-order motion): ½·a_rel·t² with a_rel = differential galactic tide + mutual Sun↔AC gravity (the larger term) ≈ **6–10 AU at 80 kyr** — 0.2–0.4% of the 2600 AU allowance; grows to ~1000–2600 AU by the 1–1.3 Myr beyond-AC horizons (roadmap Stage 6) |
 | **Two-body dynamics** (Sun + one body) | all trajectory integrators | no planetary perturbations or galactic tides |
-| Campaign integrators are **2-D in-plane** | pumping + SEP gate | out-of-plane aim charged separately as v∞·\|sin β\| (roadmap Stage 4) |
+| Campaign integrators are **2-D in-plane** (except the 3-D tilt-pricing integrator) | pumping + SEP gate | out-of-plane aim charged by the DERIVED 3-D steering curve (`plane_tax_for`; hyperbolic-leg steering only, 4° validity, far-field marginal slope beyond — roadmap Stage 4 residual) |
 | Solar flux = **1/r² exactly**; perihelion multiple = cap_eff(r) from a flat-panel energy balance (issue #5) | pumping power model | the derate curve is DERIVED, but its thermo-optical inputs (α 0.92, ε 0.85/face, GaAs 0.2 %/K, sun-normal, no active cooling) are representative published values, not a qualified-hardware model; the old 4× step survives only as the audit comparator |
 | **Constant thruster efficiency** (η ≈ 0.55–0.6), continuous mass flow | all propulsion sizing | no throttle/efficiency curves |
 | **Bang-bang pumping policy** | pumping Δv, campaign shape | ~7% above the optimal schedule; source of the non-monotone islands (roadmap Stage 3) |

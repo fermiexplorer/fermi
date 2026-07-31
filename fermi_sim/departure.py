@@ -158,6 +158,40 @@ def pump_tax_for(v_inf: float, schedule: str = "thermal") -> float:
     raise ValueError(f"pump_tax_for: unknown schedule {schedule!r}")
 
 
+def plane_tax_for(v_inf: float, tilt_deg: float) -> float:
+    """DERIVED out-of-plane (tilt) cost (m/s) of the pumped campaign — issue #9.
+
+    The campaign acquires the departure-asymptote tilt by steering thrust out of
+    plane on the hyperbolic leg (3-D integration,
+    :func:`pump_schedule.scheduled_pumped_vinf_3d`; derivation
+    tools/derive_plane_tax.py). The baked curve (PLANE_TAX_THERMAL_TABLE, at the
+    23.64 km/s design aim) is ~QUADRATIC near zero (~95 m/s per deg² — steering
+    inside existing burns is second-order) and reaches half the far-field bound
+    v∞·|sin β| at the 2.48° direct-optimum aim (0.51 vs 1.02 km/s; PSI's final
+    assessment independently measures 0.58 at their 4× cap — our cap-model
+    derivation gives 0.61, 5% apart). Knots scale by (v∞ / 23.64 km/s); above the
+    4° validity edge — where the 1/r²-faded hyperbolic-leg impulse can no longer
+    buy the tilt within custody — the curve continues at the far-field MARGINAL
+    slope, tax(4°) + v∞·(sin|β| − sin 4°), measured accurate to <1% at 6°. The
+    result is bounded above by the previous conservative pricing v∞·|sin β| for
+    every tilt (audit-pinned).
+    """
+    for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg)):
+        if not math.isfinite(val):
+            raise ValueError(f"plane_tax_for: {nm} must be finite, got {val!r}")
+    if v_inf < 0.0:
+        raise ValueError(f"plane_tax_for: v_inf must be >= 0, got {v_inf!r}")
+    from .pump_schedule import (PLANE_TAX_BETA_MAX, PLANE_TAX_THERMAL_TABLE,
+                                PLANE_TAX_V_REF)
+    beta = abs(tilt_deg)
+    scale = v_inf / PLANE_TAX_V_REF
+    if beta <= PLANE_TAX_BETA_MAX:
+        return _interp_table(PLANE_TAX_THERMAL_TABLE, beta) * scale
+    edge = PLANE_TAX_THERMAL_TABLE[-1][1] * scale
+    return edge + v_inf * (math.sin(math.radians(min(beta, 90.0)))
+                           - math.sin(math.radians(PLANE_TAX_BETA_MAX)))
+
+
 def lowthrust_departure_dv(
     v_inf_sun: float, plane_angle_deg: float, perigee_km: float = 400.0,
     apogee_km: float | None = None,
@@ -511,10 +545,12 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     √(μ⊕/a) of the starting orbit (the classic Edelbaum spiral-to-escape result; ~7.7 km/s
     from 400 km LEO, ~4.0 km/s from a GTO-like ellipse — conservative vs the integrated
     spiral by ~0.25–0.45 km/s), then (2) the heliocentric pumping campaign, priced
-    v∞ + v∞·|sin β| + tax(v∞): the campaign is integrated in-plane, so the out-of-plane
-    component of the aim (tilt β) is charged separately as a first-order plane change
-    v∞·|sin β| (~1 km/s at the 73 kyr aim, ~4 km/s at the 58 kyr tangential aim), and the
-    tax covers the in-plane overhead (pump-down arcs + gravity losses).
+    v∞ + plane_tax(v∞, β) + tax(v∞): the out-of-plane component of the aim (tilt β) is
+    charged by the DERIVED 3-D steering curve (:func:`plane_tax_for`, issue #9 — the
+    campaign buys the tilt on its own hyperbolic leg; ~0.5 km/s at the 73 kyr aim,
+    ~3.6 km/s at the 58 kyr tangential aim; quadratic near β = 0, so the in-plane
+    crossing aim is approached with zero marginal tilt cost), and the tax covers the
+    in-plane overhead (pump-down arcs + gravity losses).
 
     The tax is v∞-DEPENDENT and, since issue #5, priced by the ANCHORED OPTIMISED
     schedule under the DERIVED THERMAL power model (:func:`pump_tax_for`, default
@@ -540,7 +576,7 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     r_p = c.R_EARTH + peri_alt_km * 1e3
     r_a = c.R_EARTH + max(apo_alt_km if apo_alt_km is not None else peri_alt_km, peri_alt_km) * 1e3
     a = 0.5 * (r_p + r_a)
-    plane = v_inf * abs(math.sin(math.radians(tilt_deg)))
+    plane = plane_tax_for(v_inf, tilt_deg)
     return math.sqrt(c.MU_EARTH / a) + v_inf + plane + pump_tax
 
 

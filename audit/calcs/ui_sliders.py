@@ -125,10 +125,11 @@ def run(page):
     check("nuclear-electric (constant power) DOES close — the low-α EP path", nep["feasible"] is True,
           f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s")
     check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
-    # Pumped budget prices v∞ + plane change with no Earth borrow, so its fuel optimum sits at
-    # the ecliptic crossing (~79.3k), not the direct model's 72.8k Earth-borrow optimum.
-    check("pumped fuel optimum sits at the ecliptic crossing (~79.3k)",
-          abs(base["minFuelYr"] - 79250) < 600, f"{base['minFuelYr']:.0f}")
+    # Pumped budget prices v∞ + derived 3-D plane tax with no Earth borrow. With the tilt
+    # cost quadratic near β = 0 (issue #9), the fuel optimum is a shallow basin at ~77.8k —
+    # below the 79.25k crossing, above the direct model's 72.8k Earth-borrow optimum.
+    check("pumped fuel optimum sits in the ~77.8k basin (derived tilt pricing)",
+          abs(base["minFuelYr"] - 77800) < 600, f"{base['minFuelYr']:.0f}")
     check("direct fuel optimum stays ~72.8k", abs(direct["minFuelYr"] - 72800) < 400, f"{direct['minFuelYr']:.0f}")
 
     # --- PAYLOAD: must raise propellant & wet, but NOT arrival / Δv / fraction ---
@@ -167,7 +168,7 @@ def run(page):
     # steepens the 73k→79k slope from ~2.0% (flat tax) to ~2.6% — still "flat" vs the >10%
     # swings at the 58k/100k extremes, which is the behaviour this check actually pins
     check("Δv is flat between 73k and 79k (<3%)", abs(a79["dvDesign"]-base["dvDesign"])/base["dvDesign"] < 0.03)
-    check("pumped fuel optimum stays ~79.3k regardless of aim", abs(a58["minFuelYr"]-79250) < 600 and abs(a100["minFuelYr"]-79250) < 600)
+    check("pumped fuel optimum stays in the ~77.8k basin regardless of aim", abs(a58["minFuelYr"]-77800) < 600 and abs(a100["minFuelYr"]-77800) < 600)
     check("more out-of-plane ⇒ more propellant", a58["mp"] > base["mp"])
 
     # --- DERIVED low-thrust departure Δv (no penalty knob anymore) ---
@@ -175,9 +176,10 @@ def run(page):
     # plane-change penalty — ~30 km/s at the optimum, NOT the optimistic 25 km/s Earth-borrow spiral.
     check("direct design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
           abs(direct["dvDesign"]/1e3 - 29.8) < 0.6, f"{direct['dvDesign']/1e3:.2f}")
-    # Pumped default: √(μ⊕/a) escape + v∞ + plane change + thermal tax (+0.76) ≈ 33.1 km/s
-    check("pumped default design Δv is the two-leg budget (~33.1 km/s)",
-          abs(base["dvDesign"]/1e3 - 33.1) < 0.6, f"{base['dvDesign']/1e3:.2f}")
+    # Pumped default: √(μ⊕/a) escape + v∞ + DERIVED 3-D plane tax (issue #9, ~0.49 at the
+    # default aim) + thermal tax (+0.76) ≈ 32.6 km/s
+    check("pumped default design Δv is the two-leg budget (~32.6 km/s)",
+          abs(base["dvDesign"]/1e3 - 32.6) < 0.6, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
