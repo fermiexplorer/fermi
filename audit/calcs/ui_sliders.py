@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 72800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
+    "T": 77800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
     "enginekg": 6, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 91, "rtg": 40, "rp": 6,
     "srp": 10, "skick": 5,
 }
@@ -92,8 +92,8 @@ def run(page):
           f"{base['achievableVinf']/1e3:.1f} >= {base['vinf']/1e3:.1f} km/s")
     check("default vehicle α is today's-hardware class (~35-40 W/kg)",
           33 < base["pwrW"]/base["dryEff"] < 43, f"{base['pwrW']/base['dryEff']:.0f} W/kg")
-    check("default pumped vehicle is the ~162 kg today's-class design",
-          abs(base["wet"] - 162) < 10, f"{base['wet']:.1f} kg wet")
+    check("default pumped vehicle is the ~154 kg today's-class design (at its 77.8k optimum)",
+          abs(base["wet"] - 154) < 10, f"{base['wet']:.1f} kg wet")
     # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
     # show the validated reference campaign, and be pinned regardless of the Isp slider.
     check("default pumped campaign is the anchored THERMAL schedule (~7.9 revs, ~12 yr, ~24.5 dv)",
@@ -124,7 +124,13 @@ def run(page):
     nep = comp({"isp": 3000, "rtg": 40, "wkgsolar": 91, "enginekg": 6, "pwrkw": 5}, {"pwr": "nuclear", "ga": "direct"})
     check("nuclear-electric (constant power) DOES close — the low-α EP path", nep["feasible"] is True,
           f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s")
-    check("default arrival ~72.8k", abs(base["arrivalYr"] - 72800) < 400, str(base["arrivalYr"]))
+    # issue #10: the default state is SELF-CONSISTENT — the pumped variation flown at its
+    # OWN ~77.8k optimum (not at the direct variation's 72.8k, the pre-#10 melded default)
+    check("default arrival is the pumped variation's own ~77.8k optimum",
+          abs(base["arrivalYr"] - 77800) < 400, str(base["arrivalYr"]))
+    check("default state IS at its fuel optimum (arrival == minFuelYr readout, <300 yr)",
+          abs(base["arrivalYr"] - base["minFuelYr"]) < 300,
+          f"{base['arrivalYr']} vs {base['minFuelYr']}")
     # Pumped budget prices v∞ + derived 3-D plane tax with no Earth borrow. With the tilt
     # cost quadratic near β = 0 (issue #9), the fuel optimum is a shallow basin at ~77.8k —
     # below the 79.25k crossing, above the direct model's 72.8k Earth-borrow optimum.
@@ -176,10 +182,10 @@ def run(page):
     # plane-change penalty — ~30 km/s at the optimum, NOT the optimistic 25 km/s Earth-borrow spiral.
     check("direct design Δv at default 590 circular is the conservative heliocentric EP departure (~30 km/s)",
           abs(direct["dvDesign"]/1e3 - 29.8) < 0.6, f"{direct['dvDesign']/1e3:.2f}")
-    # Pumped default: √(μ⊕/a) escape + v∞ + DERIVED 3-D plane tax (issue #9, ~0.49 at the
-    # default aim) + thermal tax (+0.76) ≈ 32.6 km/s
-    check("pumped default design Δv is the two-leg budget (~32.6 km/s)",
-          abs(base["dvDesign"]/1e3 - 32.6) < 0.6, f"{base['dvDesign']/1e3:.2f}")
+    # Pumped default: √(μ⊕/a) escape + v∞ + DERIVED 3-D plane tax (issue #9 — ~0.02 at the
+    # near-in-plane 77.8k optimum) + thermal tax ≈ 32.3 km/s
+    check("pumped default design Δv is the two-leg budget (~32.3 km/s)",
+          abs(base["dvDesign"]/1e3 - 32.3) < 0.6, f"{base['dvDesign']/1e3:.2f}")
     check("design Δv > impulsive floor (low-thrust costs more)", base["dvDesign"]/1e3 > 20)
     check("58k aim costs more derived Δv than the 73k optimum", a58["dvDesign"] > base["dvDesign"])
 
@@ -325,15 +331,23 @@ def run(page):
     page.click('input[name=ga][value="direct"]')
     page.wait_for_timeout(200)
     pd = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
-                       " e:+document.getElementById('enginekg').value, feas:compute().feasible})")
+                       " e:+document.getElementById('enginekg').value,"
+                       " T:+document.getElementById('T').value, feas:compute().feasible})")
     check("selecting DIRECT loads the far-term preset (1000 W/kg, 4 kg/kW) and closes",
           pd["w"] == 1000 and pd["e"] == 4 and pd["feas"] is True, str(pd))
+    # issue #10: the variations are SEPARATE — switching architecture snaps the arrival
+    # slider to that variation's OWN fuel optimum
+    check("switching to DIRECT snaps arrival to ITS ~72.8k optimum",
+          abs(pd["T"] - 72800) < 400, str(pd["T"]))
     page.click('input[name=ga][value="pumped"]')
     page.wait_for_timeout(200)
     pp = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
-                       " e:+document.getElementById('enginekg').value, feas:compute().feasible})")
+                       " e:+document.getElementById('enginekg').value,"
+                       " T:+document.getElementById('T').value, feas:compute().feasible})")
     check("selecting PUMPED loads the today's-class preset (91 W/kg, 6 kg/kW) and closes",
           pp["w"] == 91 and pp["e"] == 6 and pp["feas"] is True, str(pp))
+    check("switching back to PUMPED snaps arrival to ITS ~77.8k optimum",
+          abs(pp["T"] - 77800) < 400, str(pp["T"]))
     # presets must keep the tech DROPDOWNS in sync with the sliders (deep-audit finding:
     # the selects used to advertise a component set the sliders did not use)
     sel = page.evaluate("() => ({sol:document.getElementById('soltech').value,"

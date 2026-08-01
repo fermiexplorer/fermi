@@ -366,8 +366,8 @@
       <h3>Mission / trajectory</h3>
       <div class="ctrl">
         <label>Arrival time (aim point) <b><span id="o_T">72,800</span> yr</b></label>
-        <input type="range" id="T" min="58000" max="100000" step="200" value="72800">
-        <div class="hint">Parametrises the trajectory — where along AC's track you aim. Sets the out-of-plane tilt → required Δv → <b>minimum propellant</b> (smallest spacecraft). Fuel minimises near <b>~78k yr</b> (a shallow basin just below the ecliptic crossing) for the pumped default, near <b>~73k yr</b> for the direct architecture. <a href="#" id="snapopt">↳ snap to fuel optimum</a></div>
+        <input type="range" id="T" min="58000" max="100000" step="200" value="77800">
+        <div class="hint">Parametrises the trajectory — where along AC's track you aim. Sets the out-of-plane tilt → required Δv → <b>minimum propellant</b> (smallest spacecraft). Each architecture is a separate mission variation with its <b>own</b> fuel optimum — switching the architecture snaps this slider to it (pumped default: <b>~78k yr</b>, a shallow basin just below the ecliptic crossing; direct: <b>~73k yr</b>). <a href="#" id="snapopt">↳ snap to fuel optimum</a></div>
       </div>
       <div class="ctrl">
         <label>Payload mass <b><span id="o_pay">1.0</span> kg</b></label>
@@ -610,7 +610,7 @@
     <tr><td>79,250 yr</td><td class="v">0.0°</td><td class="v">13.95 km/s</td><td class="v">24.02 km/s</td><td>AC crosses the ecliptic — purely in-plane departure</td></tr>
     <tr><td>100,000 yr</td><td class="v">+5.3°</td><td class="v">14.70 km/s</td><td class="v">25.09 km/s</td><td>AC has receded further; costs more Δv again</td></tr>
   </table>
-  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s <em>with the direct architecture selected</em> (the pumped default prices its own two-leg budget, ≈ 34 km/s). The ion engine has no impulsive kick, so it cannot capture the Oberth floor. This §1–§2 optimum discussion is the <em>direct</em> (Earth-borrow) story; under the pumped default, tilt is a pure (derived, quadratic-near-zero) cost and the fuel optimum moves to a shallow basin at ~77.8k yr just below the ecliptic crossing — the crossing aim itself costs only ~30 m/s more — as the calculator's own Fuel-optimum readout shows. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
+  <p>The <b>arrival-time slider walks this curve</b>. Because the design goal is the <strong>smallest spacecraft</strong>, the target is the <strong>minimum-propellant</strong> optimum at ≈73k yr, where the aim is nearly in-plane and Earth's 29.8 km/s is borrowed almost fully. Aiming <em>sooner</em> (toward 58k) or far <em>later</em> both cost extra Δv; any out-of-plane component must be bought with propellant, since it can't be borrowed from Earth. (The figures above are the impulsive Δv <em>floor</em> — a theoretical lower bound. The calculator's "required Δv" is instead the <strong>derived low-thrust Earth-escape spiral</strong> the ion engine must actually fly: <code>Δv ≈ v_circ + v∞,E − 1.17 km/s</code>, a closed-form fit of the integrated constant-tangential spiral (≈ 25 km/s at the optimum), <em>plus a conservative +5 km/s heliocentric-leg offset</em> — the conservative model does not grant the full Earth-velocity borrow — and small pointing margins, so the calculator displays ≈ 30 km/s <em>with the direct architecture selected</em>. The ion engine has no impulsive kick, so it cannot capture the Oberth floor. Everything in §1–§2 is <b>Variation A's</b> (direct, Earth-borrow) story, and its ~73k optimum belongs to Variation A only — Variation B (the pumped default) has its own optimum at ~77.8k for its own reasons; see <em>"Two mission variations"</em> above. Static tables and worked examples on this page use the engine-default 400 km LEO; the calculator's slider defaults to 590 km, a ~30 m/s difference on the floor.)</p>
   <p><strong>Why does an out-of-plane aim raise Δv only <em>modestly</em>?</strong> A fair worry: a 10° tilt on
   a ~48 km/s departure vector is an ~8 km/s out-of-plane "plane change" — shouldn't that be huge? It isn't,
   because it adds in <em>quadrature</em> to an already-large in-plane excess, not on top of it. At 1 AU the
@@ -631,6 +631,34 @@
   tilted ~10° out of the ecliptic, and that plane-change can't be borrowed from Earth, so it costs more Δv
   (14.65 km/s) than the slightly-faster but in-plane ~73k arrival (13.88 km/s). The chart at right plots both
   curves — Δv (left axis) bottoming at ~73k, and <code>v∞</code> (right axis) bottoming at ~58k and rising.</p>
+
+  <h4>Two mission variations — one requirement, two flight plans, two optima</h4>
+  <p>Everything on this page belongs to one of <b>two separate mission variations</b>. They share only
+  the requirement (≥1 kg to within 2600 AU of AC within 100,000 yr, from LEO); once the departure
+  architecture is chosen, the trajectory, the optimal arrival date, the aim, the vehicle and the
+  operations all diverge — so every optimum quoted anywhere on this page is tagged to its variation,
+  and the two must never be averaged or mixed. Both vehicles keep Earth's 29.8 km/s orbital velocity
+  (nothing is thrown away); what differs is <em>what that velocity is worth</em> to each flight plan.</p>
+  <table class="chain prose">
+    <tr><th></th><th>Variation A — direct SEP spiral (Earth-borrow departure)</th><th>Variation B — perihelion-pumped SEP (<b>the calculator's default</b>)</th></tr>
+    <tr><td>Flight plan</td><td>one continuous outward spiral; the departure velocity is the <b>vector sum</b> of Earth's 29.8 km/s and the vehicle's own excess</td><td>quiet spiral to Earth escape, then the campaign <b>restructures the heliocentric orbit</b>: retrograde arcs pump perihelion to 0.42 AU, Oberth-leveraged perihelion burns staircase the energy out</td></tr>
+    <tr><td><b>Optimal arrival</b></td><td class="v"><b>~72,800 yr</b>, aim 2.4° below the ecliptic</td><td class="v"><b>~77,800 yr</b> (shallow basin; the 79,250-yr in-plane crossing costs just +27 m/s), aim −0.5°</td></tr>
+    <tr><td>Why that optimum</td><td>in the vector sum, tilt is nearly free (2.4° costs ~0.1 km/s of v∞,E) while v∞ growth is amplified ~1.3× — so arrive earlier and accept tilt</td><td>tilt must be physically thrust under the 1/r² power fade (0.51 km/s at 2.48°, quadratic near 0°) while v∞ is Oberth-discounted (~0.6× via the falling tax) — so wait for a near-in-plane aim</td></tr>
+    <tr><td>Departure Δv</td><td class="v">~30.1 km/s (conservative spiral budget)</td><td class="v">~32.3 km/s two-leg (7.7 escape + 24.0 helio incl. +0.7 tax + ~0.02 steering)</td></tr>
+    <tr><td>Vehicle (its preset, its optimum)</td><td class="v">~43 kg wet / 15.5 kg dry / 28 kg Xe (64%) @ 2 kW</td><td class="v">~154 kg wet / 52 kg dry / 103 kg Xe (67%) @ 2 kW</td></tr>
+    <tr><td>Array / α gate</td><td>needs vehicle α ≈ <b>129 W/kg</b> → a far-term ~1000 W/kg array; <b>infeasible on today's 91 W/kg hardware</b> (the outward spiral saturates far below the cruise floor)</td><td>closes on <b>today's 91 W/kg GaAs array</b> (vehicle α ≈ 39 W/kg); GaAs cells are load-bearing — silicon collapses at 0.42 AU</td></tr>
+    <tr><td>Thruster duty</td><td class="v">68 mN · ~3,300 firing hours · 28 kg Xe throughput (a₀ ≈ 1.6×10⁻³ — ~6× the pumped design line)</td><td class="v">68 mN (throttled to the design a₀ 2.5×10⁻⁴) · ~12,400 firing hours · ~103 kg Xe — inside NSTAR's demonstrated 30,352 h / 235 kg</td></tr>
+    <tr><td>Thermal environment</td><td>≥ 1 AU — benign</td><td>repeated 0.42 AU passes — MESSENGER-class qualification</td></tr>
+    <tr><td>Powered custody</td><td class="v">&lt;1 yr of near-continuous firing (far-term preset; the conservative 600-kg silicon variant needs ~2 yr)</td><td class="v">~13–14 yr (1.5 yr escape + 12-yr campaign, mostly coast between arcs)</td></tr>
+    <tr><td>Program cost (PSI final assessment)</td><td>not costed at micro-probe scale — gated on the far-term array existing</td><td class="v">$16M-class median, dominated by operations/custody, gap programmatic not physical</td></tr>
+    <tr><td>Epoch sensitivity</td><td class="v">flat — flying B's 77.8k epoch costs only +0.06 km/s</td><td class="v">flying A's 72.8k epoch costs +0.29 km/s and +2.4 kg wet</td></tr>
+  </table>
+  <p class="src">Measured with each variation's own component preset at its own optimal epoch (Chromium run of
+  this page's live model). The calculator enforces the separation: <b>switching the architecture radio snaps the
+  arrival slider to that variation's own fuel optimum</b> (pumped ~77.8k, direct ~72.8k) — the two optima answer
+  different cost functions and neither is "the" mission optimum without naming the architecture. §1–§2 below
+  develop Variation A's impulsive/Earth-borrow story; the <a href="#pumping">perihelion-pumping section</a>
+  develops Variation B's campaign physics.</p>
 
   <h4>2 · Departure energetics (LEO → v∞)</h4>
   <p>To leave on a heliocentric hyperbola of excess <code>v∞</code>, the probe needs heliocentric speed
@@ -732,7 +760,7 @@
     <tr><td><b>Direct solar-electric ion</b></td><td class="v">~25 km/s spiral (+5 km/s conservative offset ⇒ ~30 in the calculator)</td><td>None beyond the SEP stage</td><td>None — aim is inertial</td><td><b>Reference baseline</b> of the methodology below. Simplest, meets the 2029 schedule, no alignment needed — but power-gated; the calculator defaults to the pumped architecture.</td></tr>
     <tr><td><b>Solar Oberth</b> (powered perihelion)</td><td class="v">~1–2 km/s</td><td>Heat shield (~10 R<sub>☉</sub>, ~1800 K) + a chemical kick stage at perihelion (ion is too slow for the hours-long pass) + a Jupiter/Venus assist to drop perihelion</td><td>Set by the perihelion-lowering leg</td><td>Absolute-minimum onboard Δv (a ~1.4 km/s burn at 10 R<sub>☉</sub> yields the full 24 km/s) — but not pure-ion, heavier &amp; more complex. See §5b.</td></tr>
     <tr><td><b>Jupiter gravity assist</b></td><td class="v">~5–10 km/s</td><td>~6 yr cruise to Jupiter; flyby targeting</td><td><b>Tight</b> — Jupiter must lie along the AC aim direction (rarely true on a fixed date)</td><td>Only if Jupiter happens to align; it can donate ~10–15 km/s of the heliocentric requirement.</td></tr>
-    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~32.6 km/s total at the default aim (7.6 escape + ~24.4 helio — the +0.8 pumping tax is computed under the DERIVED thermal power curve, not an assumed cap — + ~0.5 derived out-of-plane steering)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody (anchored optimised schedule under the derived thermal power model)</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <b>The calculator's default architecture.</b> <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
+    <tr><td><b>SEP + perihelion pumping</b></td><td class="v">~32.3 km/s total at its own ~77.8k optimum (7.7 escape + ~24.7 helio — the +0.7 pumping tax is computed under the DERIVED thermal power curve, not an assumed cap — + ~0.02 derived out-of-plane steering)</td><td>MESSENGER-class thermal qualification for repeated 0.42 AU passes; Isp ≥ 2800 s gridded ion; ~12 yr powered-flight custody (anchored optimised schedule under the derived thermal power model)</td><td>None — aim is inertial</td><td>Closes pure solar at <b>today's α (~15–21 W/kg)</b> — no reactor, no assist, no far-term array. <b>The calculator's default architecture.</b> <a href="#pumping">See the perihelion-pumping section</a>.</td></tr>
     <tr><td><b>Perihelion synchrotron</b> (the “lasso”: EM station kicks)</td><td class="v">~0 on the probe (external energy; ~0.5 km/s trim)</td><td>Deep-solar EM station (continuous ~460× Earth flux at 10 R<sub>☉</sub>); 57 km/s aperture rendezvous; phase-resonant orbits; kick recoil; insertion tour</td><td>Insertion onto the station-grazing orbit is a Jupiter/Venus-tour-class job (infrastructure)</td><td><b>Exploratory only — not a candidate for this mission.</b> The probe bypasses the rocket equation, but the required infrastructure does not exist, and the model's own verdict is that equal-kick recirculation usually strands the probe (escape terminates recirculation); the only coherent form is a <b>one-kick gateway amortised across a whole fleet</b>. Priced here to show why. <a href="#synchrotron">See the synchrotron section</a>.</td></tr>
   </table>
   <p>The solar-Oberth and Jupiter figures are geometric bounds (see §5); both trade onboard Δv for added
@@ -1085,10 +1113,11 @@
   vehicle's a₀ clears the ≈ 2.24×10⁻⁴ m/s² line. The target <em>rankings</em> do not move:
   LSPM J2146+3813 stays the cheapest destination (Δv ~19.7 km/s, cruise 8.7 km/s at its crossing — low
   enough that it needs <em>no pumping at all</em>), with λ Ser the best solar-type second. A complete SEP budget from
-  LEO for an AC-class cruise totals <b>~32.6 km/s</b> with the anchored thermal schedule the
-  calculator flies (7.6 km/s Earth escape + ~23.7 heliocentric + 0.8 km/s pumping tax computed
-  under the derived power curve + ~0.5 km/s derived out-of-plane steering ≈ 32.6 at the default aim; under the
-  idealised 4× cap the same optimised construction totals ~31.8 — there the campaign is
+  LEO for an AC-class cruise totals <b>~32.3 km/s</b> with the anchored thermal schedule the
+  calculator flies (7.7 km/s Earth escape + ~24.0 heliocentric + 0.7 km/s pumping tax computed
+  under the derived power curve + ~0.02 km/s derived out-of-plane steering ≈ 32.3 at the pumped
+  variation's own ~77.8k optimum; under the
+  idealised 4× cap the same optimised construction totals ~31.1 — there the campaign is
   Oberth-negative, spending <em>less</em> Δv than the v∞ it buys — and PSI's optimised-schedule
   total, also at 4×, is 30.5–31.6 km/s). The <b>Δv column in the star tables below is a
   different quantity</b>: the closed-form Earth-borrow spiral (~25–26 km/s for AC-class), applied
@@ -1802,9 +1831,9 @@ function render(){
     `<div class="sline"><b style="color:#3fb950">Fuel optimum at ~${fmt(r.minFuelYr)} yr</b> — ${
       r.ga==='synchro' ? `the probe's Δv is flat in arrival time (external station energy), so the optimum is simply your chosen aim` :
       r.ga==='oberth' ? `the Oberth burn grows with v∞, so the optimum is the minimum-v∞ (tangential) aim; the burn buys energy from the Sun's well, not Earth's orbital velocity` :
-      r.ga==='pumped' ? `the pumped budget prices v∞ + plane change with no Earth-velocity borrow, so the optimum favours low-v∞, low-tilt aims` :
+      r.ga==='pumped' ? `the pumped campaign keeps Earth's 29.8 km/s as its starting orbit (not as a vector-sum discount), and its tilt must be thrust under the 1/r² fade — so the optimum favours low-v∞, low-tilt aims` :
       `AC's track is then only ~2° off the ecliptic, so Earth's 29.8 km/s is borrowed almost fully`}: Δv <b>${fmt(r.dvMin/1e3,1)} km/s</b>, propellant ${fmt(100*r.minFrac)}%, <b>wet ${fmt(r.minWet)} kg</b> (the smallest spacecraft). ${atOpt?'<b>✓ You are at the fuel optimum.</b>':`You are <b>+${fmt(offOpt/1e3,2)} km/s</b> Δv (≈ ${fmt(r.wet-r.minWet)} kg heavier) above it — slide arrival toward ${fmt(r.minFuelYr)} yr to minimise fuel.`}</div>`+
-    `<div class="sline"><b>The trade:</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). ${r.ga==='pumped'?'Under the pumped budget (no Earth-velocity borrow) the derived tilt cost is quadratic near 0°, so the minimum-Δv point sits in a shallow basin just below the crossing (~77.8k yr; aiming at the crossing itself costs only ~30 m/s more).':(r.ga==='synchro'?'Under the synchrotron the probe Δv is flat in arrival time — pick the aim by campaign considerations.':'The minimum-<em>Δv</em> point sits between, near the crossing (~73k yr) — out-of-plane velocity cannot be borrowed from Earth, it must be bought with propellant.')} Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
+    `<div class="sline"><b>The trade:</b> the minimum-<em>speed</em> aim (~58k yr) is 10° out of plane and costs <em>more</em> Δv; AC crosses the ecliptic at ~79k yr (0° tilt). ${r.ga==='pumped'?'Under the pumped budget (Earth’s velocity is the campaign’s initial condition, not an impulsive vector-sum discount) the derived tilt cost is quadratic near 0°, so the minimum-Δv point sits in a shallow basin just below the crossing (~77.8k yr; aiming at the crossing itself costs only ~30 m/s more).':(r.ga==='synchro'?'Under the synchrotron the probe Δv is flat in arrival time — pick the aim by campaign considerations.':'The minimum-<em>Δv</em> point sits between, near the crossing (~73k yr) — out-of-plane velocity cannot be borrowed from Earth, it must be bought with propellant.')} Absolute dry mass scales the whole vehicle but changes neither the arrival nor the propellant <em>fraction</em>.</div>`+
     `<div class="sline"><b>Profile:</b> Isp-${fmt(r.isp)} s ion, ~${fmt(r.pumpInfo?r.pumpInfo.years:r.burnYr,1)} yr ${r.pumpInfo?'campaign':'burn'} at ~${fmt(r.thrust*1e3)} mN / ${fmt(r.pwrW/1000,1)} kW (spiral out of Earth, then ${r.pumpInfo?'the multi-revolution pumping campaign':(r.syn?'the station recirculation':'heliocentric escape')}), then coast ~${fmt(r.arrivalYr)} yr. Distance check: ${fmt(r.vinfSun/1e3,1)} km/s × ${fmt(r.arrivalYr)} yr = <b>${fmt(acDistLy,2)} ly</b> — where AC is at arrival.</div>`
   ) : `<div class="sline">The rocket-equation mass closure does not converge at this Δv / Isp, so no finite vehicle exists here — lower the required Δv (aim later), raise Isp, or lighten the bus. Mass, propellant and profile figures are withheld until the design closes.</div>`);
   document.getElementById('summary').innerHTML=summ;
@@ -1857,7 +1886,7 @@ function render(){
       `(Insertion onto the station-grazing orbit is infrastructure — a Jupiter/Venus tour or momentum\n  exchange — not charged to the probe. A fully passive probe could also drop the array + engine;\n  this page conservatively keeps them.)`;
   } else if(radio('ga')==='pumped'){
     dvSteps=`Step 1 — aim geometry from T:  V_p = A₀/T + V_ac → v∞ = ${fmt(vinfK,2)} km/s (heliocentric, vs Sun)\n`+
-      `Step 2 — low-thrust Earth escape to C3 ≈ 0 (no Earth-velocity borrow; cost = orbit-energy speed):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
+      `Step 2 — low-thrust Earth escape to C3 ≈ 0 (cost = orbit-energy speed; the probe KEEPS Earth's\n  29.8 km/s — it becomes the heliocentric campaign's starting orbit, not a vector-sum discount):\n  Δv_esc = √(μ⊕/a) = ${fmt(vc,2)} km/s   (spiral-to-escape from the ${altKm} km parking orbit)\n`+
       `Step 3 — heliocentric pumping campaign (retrograde arcs to the 0.42 AU floor, then perihelion burns; in-plane):\n  Δv_pump = v∞ + tax(v∞) = ${fmt(vinfK,2)} ${FERMI.pumpTaxFor(r.vinfSun)<0?'−':'+'} ${fmt(Math.abs(FERMI.pumpTaxFor(r.vinfSun))/1e3,2)} = ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} km/s\n  (tax from the ANCHORED OPTIMISED schedule under the DERIVED THERMAL power curve — cap_eff(0.42 AU)\n   = 3.54 from the GaAs array energy balance, issue #5; +0.79 at the 23.64 km/s anchor. Under the\n   idealised 4× cap the same schedule construction gives −0.51: Oberth-negative)\n`+
       `Step 4 — out-of-plane aim (bought by steering the campaign's own hyperbolic leg — derived 3-D curve, issue #9):\n  Δv_plane = plane_tax(v∞, β) = plane_tax(${fmt(vinfK,2)}, ${fmt(tiltA,2)}°) = ${fmt(FERMI.planeTaxFor(r.vinfSun, tiltA)/1e3,2)} km/s\n  (quadratic near β = 0; far-field bound v∞·|sin β| = ${fmt(vinfK*Math.abs(Math.sin(tiltA*Math.PI/180)),2)} km/s never undercut)\n`+
       `Total: Δv = ${fmt(vc,2)} + ${fmt(vinfK+FERMI.pumpTaxFor(r.vinfSun)/1e3,2)} + ${fmt(FERMI.planeTaxFor(r.vinfSun, tiltA)/1e3,2)} = ${fmt(r.dvIdeal/1e3,2)} km/s\n  + nav margins (GNC ×sec σ + injection — see "Navigation margins") ⇒ ${fmt(r.dvDesign/1e3,2)} km/s   (see "Power-limited v∞" for the a₀ feasibility gate)`;
@@ -1883,7 +1912,7 @@ function render(){
     c:`From the heliocentric V_p = A₀/T + V_ac (see Cruise v∞; both components are vs the Sun):\n  in-plane part (in the ecliptic) = ${fmt(inK,2)} km/s,  out-of-plane part = ${fmt(vzK,2)} km/s\nβ = atan2(out-of-plane, in-plane) = atan2(${fmt(vzK,2)}, ${fmt(inK,2)}) = ${fmt(r.tiltDeg,2)}°\n(The tilt is what makes some of v∞ un-borrowable from Earth, since Earth’s 29.78 km/s lies in the ecliptic.)`});
   K.push({l:'Departure Δv (required)', v:fmt(r.dvDesign/1e3,1)+' km/s', i:inl('T','alt','ga'), s:'Δv — velocity change the engine supplies from LEO (frame-independent; an increment)',
     d:(radio('ga')==='pumped'
-      ? 'Two-leg pumped budget: Earth escape to C3≈0 (no Earth-velocity borrow) + the heliocentric pumping campaign (v∞ + a v∞-dependent tax interpolated from the integrated anchored campaign under the derived thermal power curve — +0.79 km/s at the AC anchor). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
+      ? 'Two-leg pumped budget: Earth escape to C3≈0 (Earth’s 29.8 km/s is kept — it is the campaign’s starting orbit) + the heliocentric pumping campaign (v∞ + derived plane tax + a v∞-dependent tax interpolated from the integrated anchored campaign under the derived thermal power curve — +0.79 km/s at the AC anchor). Sizes the propellant. NOTE: feasibility is the a₀ pumping gate (see "Power-limited v∞").'
       : radio('ga')==='direct'
       ? 'Conservative pure-EP budget: the closed-form Earth-escape spiral + a +5 km/s heliocentric-leg offset (the conservative model does not grant the full Earth-velocity borrow) + pointing margins. Sizes the propellant. NOTE: this is NOT the feasibility test — whether a pure solar-electric probe actually reaches the cruise speed is set by the 1/r² power-fade gate (see "Power-limited v∞").'
       : radio('ga')==='jupiter'
@@ -3341,6 +3370,10 @@ document.querySelectorAll('input,select').forEach(el=>{
   el.addEventListener('input',()=>{
     if(TECH_SELECTS[el.id]) TECH_SELECTS[el.id]();  // tech preset sets the sliders
     if(el.name==='ga' && ARCH_PRESETS[el.value]) applyPreset(ARCH_PRESETS[el.value]);   // issue #7
+    if(el.name==='ga'){ // issue #10: the variations are SEPARATE — each flies its OWN fuel-optimal
+      const rr=compute();                                     // epoch (pumped ~77.8k, direct ~72.8k)
+      if(rr.minFuelYr) setVal('T', Math.round(rr.minFuelYr/200)*200);
+    }
     if(el.name==='pwr' && PWR_PRESETS[el.value]) applyPreset(PWR_PRESETS[el.value]);
     syncLabels(); toggleOpts(); render(); stateToURL();   // everything recomputes live + updates the shareable URL
   });

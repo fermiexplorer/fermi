@@ -561,8 +561,16 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     the anchor — the PSI-comparable working point) and the bang-bang table
     (``schedule="bangbang"``, 2.0 at the anchor — the crude cross-check) remain
     available. Passing ``pump_tax`` explicitly overrides all (audit/what-if use).
-    Unlike the outward-spiral budget this does NOT borrow Earth's orbital velocity —
-    v∞ is built heliocentrically at perihelion.
+    Earth's 29.8 km/s orbital velocity is NOT discarded: the campaign keeps it as
+    its initial condition (the heliocentric integration starts on Earth's 1 AU
+    circular orbit). What differs from the outward-spiral budget is HOW it enters:
+    there Earth's velocity is a vector-sum discount on the required excess; here it
+    is raw material the campaign reshapes (the retrograde arcs deliberately shed
+    part of it to reach the 0.42 AU perihelion), and the net effect is already
+    inside the integrated tax. Consequently this budget depends on the SUN-relative
+    aim (v∞ magnitude + tilt), not on Earth-relative alignment — which is why its
+    arrival-epoch optimum (~77.8 kyr basin) differs from the Earth-relative
+    optimum (~73 kyr).
     """
     for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg), ("peri_alt_km", peri_alt_km)):
         if not math.isfinite(val):

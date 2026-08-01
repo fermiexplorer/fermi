@@ -54,9 +54,11 @@ Alpha Centauri at arrival time T it needs `V_p(T) = A₀/T + V_ac` — aim at wh
   slower). AC sits 42° below the ecliptic with +11 km/s of out-of-plane motion, so that
   aim is tilted ~10° out of plane, and out-of-plane velocity can't be borrowed from Earth.
 - AC's track **crosses the ecliptic at ~79,000 yr**, where departure is purely in-plane.
-- **The departure-Δv minimum is at ≈72,800 yr** (tilted ~2.4° off the ecliptic). The Δv
-  curve is very flat near this optimum, so the round-number **75,000 yr** arrival is
-  practically the same point.
+- **The impulsive/direct departure-Δv minimum is at ≈72,800 yr** (tilted ~2.4° off the
+  ecliptic). The Δv curve is very flat near this optimum, so the round-number
+  **75,000 yr** arrival is practically the same point. This is the *direct* (Earth-borrow)
+  variation's optimum; the pumped variation optimizes separately at ~77,800 yr (see §1's
+  closing note and the live page's "Two mission variations" section).
 
 So the cruise floor is **v∞ ≈ 23.3 km/s** and the natural arrival is **~73,000–75,000 yr** —
 comfortably inside the 100,000-yr requirement. *This geometry is robust; the feasibility
@@ -90,15 +92,20 @@ question is entirely about how you build the 24 km/s.*
 > as the crude cross-check (Δv 25.6, 9.6 yr, at 4×). The α ≳ 100 W/kg condition in §2
 > therefore applies to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~32.6 km/s (7.6 km/s Earth escape + ~23.7 heliocentric
-> + 0.8 km/s thermal-derated tax + ~0.5 km/s DERIVED out-of-plane steering — the 3-D
-> campaign buys the tilt on its own hyperbolic leg, quadratic near β = 0, half the old
-> v∞·|sin β| bolt-on at the default aim; ~31.4 at the idealised 4× cap,
+> The full SEP total from LEO is ~32.3 km/s at the pumped variation's own ~77,800-yr
+> optimum (7.7 km/s Earth escape + ~24.0 heliocentric
+> + 0.7 km/s thermal-derated tax + ~0.02 km/s DERIVED out-of-plane steering — the 3-D
+> campaign buys the tilt on its own hyperbolic leg, quadratic near β = 0; at the 2.48°
+> direct-optimum aim the same curve charges 0.51 km/s, half the old
+> v∞·|sin β| bolt-on; ~31.1 at the idealised 4× cap,
 > where PSI's optimised total is 30.5–31.6); a GTO
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
 > kink rounded, the pumped fuel optimum sits in a shallow basin at ~77,800 yr — the
-> in-plane 79,250-yr crossing aim costs only +27 m/s. See the live
-> page's "Perihelion pumping" section.
+> in-plane 79,250-yr crossing aim costs only +27 m/s. The direct and pumped
+> architectures are two SEPARATE mission variations with different optimal arrival
+> epochs (~72,800 vs ~77,800 yr); the calculator snaps the arrival slider to the
+> selected architecture's own optimum. See the live
+> page's "Two mission variations" and "Perihelion pumping" sections.
 
 ## 2. The outward-spiral power gate — a spiral closes only as a light (high-α) vehicle
 

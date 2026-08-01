@@ -34,10 +34,10 @@ It answers:
 | Required heliocentric cruise speed v∞ | ~23–24 km/s |
 | Min departure Δv from LEO (impulsive floor) | ~14 km/s @ ~73,000 yr arrival |
 | Direct SEP departure Δv (conservative model) | ~25 km/s spiral + 5 km/s offset ≈ ~30 km/s |
-| **Pumped SEP departure Δv (default architecture)** | ~32.6 km/s two-leg total (anchored optimised schedule under a DERIVED thermal power curve, cap_eff(0.42 AU)=3.54, + a DERIVED 3-D out-of-plane steering cost, ~0.5 km/s at the default aim; at PSI's idealised 4× cap the same construction gives 23.14 vs their 23.97 — 3.5% better); closes at today's α (~15–21 W/kg) |
-| Best departure window | direct optimum ~72,800 yr; pumped optimum a shallow basin at ~77,800 yr (the 79,250-yr ecliptic crossing costs only +27 m/s) |
+| **Pumped SEP departure Δv (default architecture)** | ~32.3 km/s two-leg total at its own ~77,800-yr optimum (anchored optimised schedule under a DERIVED thermal power curve, cap_eff(0.42 AU)=3.54, + a DERIVED 3-D out-of-plane steering cost — ~0.02 km/s at its near-in-plane optimal aim, 0.51 km/s at the 2.48° direct-optimum aim; at PSI's idealised 4× cap the same construction gives 23.14 vs their 23.97 — 3.5% better); closes at today's α (~15–21 W/kg) |
+| Best departure window | **two separate mission variations, each with its own optimum**: direct ~72,800 yr; pumped a shallow basin at ~77,800 yr (the 79,250-yr ecliptic crossing costs only +27 m/s) — the calculator snaps the arrival slider to the selected architecture's optimum |
 | Departure aim | ~2.4° off the ecliptic (direct optimum); −0.5° at the pumped basin optimum (0° at the crossing within noise) |
-| Reference vehicles | pumped default ~162 kg wet @2 kW today's-class hardware (91 W/kg array, GaAs cells — the 0.42 AU passes require GaAs-class derating); direct spiral needs the far-term high-α preset (~43 kg wet @1000 W/kg); conservative direct ~600 kg wet @5 kW silicon |
+| Reference vehicles | pumped default ~154 kg wet @2 kW today's-class hardware at its 77.8k optimum (91 W/kg array, GaAs cells — the 0.42 AU passes require GaAs-class derating); direct spiral needs the far-term high-α preset (~43 kg wet @1000 W/kg at its 72.8k optimum); conservative direct ~600 kg wet @5 kW silicon |
 | Power verdict | **Solar wins; fuel cells lose by ~1000×** (chemical energy too sparse) |
 
 The transit time is set by cruise speed, not by the propulsion — the years-long burn

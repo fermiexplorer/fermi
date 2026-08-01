@@ -127,7 +127,8 @@ def run() -> None:
               "~1 km/s plane change" not in txt and "+ ~1 plane change" not in txt
               and "33.1 at the default aim" not in txt)
         check(f"{nm} states the ~77,800-yr pumped basin optimum", "77,800" in txt)
-        check(f"{nm} states the ~32.6 km/s pumped two-leg total", "32.6" in txt)
+        check(f"{nm} states the ~32.3 km/s pumped two-leg total (at ITS own optimum)",
+              "32.3" in txt and "32.6 km/s" not in txt)
 
     # the 4x-cap dv (23.14) may appear ONLY with an idealised/4x/PSI label nearby
     for nm, txt in (("index.html", idx), ("REPORT.md", report), ("README.md", readme)):
