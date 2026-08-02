@@ -106,12 +106,14 @@ headline of the final report with `fermi_sim` and prints measured deltas. Findin
   out-of-plane aim tilt", §2.5 leaves the trade "unsettled ... future work", and
   recommendation R6 lists pricing the tilt across arrival geometries as the natural
   next computation. Performing exactly that computation (derived 3-D tilt pricing +
-  per-epoch full-campaign simulation, `tools/derive_epoch_table.py`) puts the pumped
-  fuel basin at ~77–79.3 kyr — the 73k epoch costs the pumped vehicle +0.27 km/s
+  per-epoch full-campaign simulation, `tools/sim_pp_arrival.py` →
+  `docs/data/pp_arrival_sim.json`) puts the pumped
+  fuel basin at ~75–79.5 kyr (bottom 77,500) — the 73k epoch costs the pumped vehicle
+  +0.21 km/s
   (direct simulation, no closed-form budget in the loop) — with the geometry-anchored
-  79,252-yr ecliptic crossing adopted as the design epoch (+27 m/s vs the basin
-  bottom, inside model noise). In program-cost terms the whole 73–79k epoch span is
-  worth ~$25k of xenon + launch mass under their own cost model — three orders of
+  79,252-yr ecliptic crossing adopted as the design epoch (+33 m/s vs the basin
+  bottom, model-noise scale). In program-cost terms the whole 73–79k epoch span is
+  worth ~1.8 kg of xenon (~$20k) under their own cost model — three orders of
   magnitude below their ops/custody cost drivers — so the epoch refinement changes
   fuel bookkeeping, not the cost verdict. One dimension does survive in favour of
   their 73k quoting: the ARRIVAL DATE itself. Because the window is flat in both

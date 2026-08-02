@@ -62,10 +62,12 @@ costs **24.44 km/s** at the same custody. The bang-bang rows differ from PSI's *
    job is to *validate the mechanism* (and it stays the calculator's feasibility gate); the optimised
    schedule is what the calculator flies and prices. The gate lands exactly where PSI's own patience
    curve predicts — between their patient (12 yr / 23.97) and fast (4.9 yr / 28.2) profiles.
-4. **The last row** (~4.9 revs / ~10 yr in the on-page animation) is the drawn 3-body schematic,
+4. **The last row** (~7.9 revs / ~12 yr in the on-page animation — the flown anchored-thermal
+   campaign) is the drawn 3-body schematic,
    which starts from the *actual post-Earth-escape state* rather than the engine's clean 1 AU
    circular start. Same schedule, different entry conditions — labelled "(drawn)" in the UI for
-   that reason.
+   that reason. (The ~4.9-rev figure belongs to the bang-bang cross-check row above, not to the
+   flown default.)
 
 The phase-by-phase breakdown behind these numbers is in [§4](#4-perihelion-pumping--the-narrower-chain-engine-psi-fable-adversarial-only);
 if the **α** figures are what you are comparing, read [§2b](#2b-α-specific-power--the-same-symbol-in-three-different-senses)
@@ -580,6 +582,6 @@ and [text/coherence](https://github.com/fermiexplorer/fermi/blob/main/audit/fabl
 [`fermi_sim/`](https://github.com/fermiexplorer/fermi/tree/main/fermi_sim) (source of truth) ·
 [`web/physics.js`](https://github.com/fermiexplorer/fermi/blob/main/web/physics.js) (parity-checked port) ·
 [`run_analysis.py`](https://github.com/fermiexplorer/fermi/blob/main/run_analysis.py) ·
-[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (190+ checks) ·
+[`audit/calcs/run_audits.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/run_audits.py) (230+ checks) ·
 [`audit/calcs/audit_pumping.py`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_pumping.py) (the pumping guards, incl. the phase split and the thermal balance) ·
-[`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (~46 parity checks)
+[`audit/calcs/audit_webjs.mjs`](https://github.com/fermiexplorer/fermi/blob/main/audit/calcs/audit_webjs.mjs) (~49 parity checks)

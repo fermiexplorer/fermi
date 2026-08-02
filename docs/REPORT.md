@@ -66,7 +66,7 @@ Alpha Centauri at arrival time T it needs `V_p(T) = A₀/T + V_ac` — aim at wh
   ecliptic). The Δv curve is very flat near this optimum, so the round-number
   **75,000 yr** arrival is practically the same point. This is the *direct* (Earth-borrow)
   variation's optimum; the pumped variation anchors separately at the ~79,250-yr ecliptic
-  crossing, its flat fuel basin bottoming near ~77,500 yr — a <30 m/s, sub-noise difference (see §1's
+  crossing, its flat fuel basin bottoming near ~77,500 yr — a ~33 m/s, model-noise-scale difference (see §1's
   closing note and the live page's "Two mission variations" section).
 
 So the cruise floor is **v∞ ≈ 23.3 km/s** and the natural arrival is **~73,000–75,000 yr** —

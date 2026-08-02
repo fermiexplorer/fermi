@@ -87,15 +87,16 @@ flyability edge located by bisection.
   operations cost.
 - The 73,000-yr epoch (the impulsive/chemical optimum, which PP never pays) costs the PP
   vehicle **+0.21 km/s ≈ 1.8 kg of xenon**.
-- Convention note: the live calculator prices aims with the conservative max-speed-shave
-  miss convention; this record optimizes the offset direction. The difference is <10 m/s
-  anywhere in the basin (0 at the crossing, where the aim is in-plane and the optimum
-  offset IS the pure speed shave) and up to ~0.1 km/s at steeply tilted epochs.
+- Convention note: the live calculator applies **no miss shave at all** — it prices the
+  raw exact-intercept aim, which is conservative by the full allowance value: ~0.12 km/s
+  above this record's totals at the crossing and ~0.19 km/s at 73k. The record spends
+  the 2600-AU allowance optimally (speed shave vs tilt buy-down). Neither convention
+  moves the basin location or the design decision; the deltas are epoch-smooth.
 
 ## 4. Cross-checks
 
 1. **Convergence:** dt/8 re-integration moves the three checked rows by ≤ 4.1 m/s
-   (75k: −2.9; 77.5k: −4.0; crossing: −4.1) — recorded in the JSON, audit-gated <40 m/s.
+   (75k: −3.2; 77.5k: −3.5; crossing: −4.1) — recorded in the JSON, audit-gated <40 m/s.
 2. **Closed-form budget sweep** (v∞ + derived plane-tax + tax tables — independent
    tabulated pricing): argmin 77.8k, agreeing with the direct simulation within one grid
    step and ~30 m/s across the whole window (audit 13g(v)).
@@ -146,8 +147,8 @@ AC arrival exists in their document): `audit/psi/PP-NOTES.md`. Where PSI did mea
 
 ## 7. Decision and residuals
 
-- **Design epoch: the 79,252-yr ecliptic crossing** (geometry-anchored; +27 m/s ≈
-  0.08% ≈ noise). The calculator's default state and architecture-switch snap implement
+- **Design epoch: the 79,252-yr ecliptic crossing** (geometry-anchored; +33 m/s ≈
+  0.10% ≈ noise). The calculator's default state and architecture-switch snap implement
   this; the fuel-optimum readout reports basin membership in Δv terms.
 - **The epoch is a cost non-driver**: the whole 73–79.3k window is worth ~1.8 kg of
   xenon (~$20k under PSI's cost model), and custody is epoch-flat. An arrival-value

@@ -84,18 +84,19 @@ parity suite. Audit the engine.
 ## 4. Repository map (in-scope files)
 
 ```
-fermi_sim/               PYTHON ENGINE — source of truth  (~1160 LOC)
+fermi_sim/               PYTHON ENGINE — source of truth  (~2290 LOC)
   constants.py    (39)   physical constants (SI)
   astro.py       (100)   AC ephemeris; equatorial->ecliptic; closest approach
-  intercept.py   (106)   aim geometry; tangential min; ecliptic crossing
-  trajectory.py   (80)   Jupiter assist; solar-Oberth; time-to-AC
-  spacecraft.py  (238)   rocket eq; minimal dry mass; power/array sizing; fuel cell
-  departure.py   (~650)  ** the heavy one ** — see §5
-  pump_schedule.py (~340) optimised pumping schedules + baked campaign/tax tables — see §5
-  thermal.py     (~150)  DERIVED perihelion power curve (array energy balance) — see §5
-run_analysis.py  (~360)  integrated report; produces the shipped headline numbers
+  intercept.py   (123)   aim geometry; tangential min; ecliptic crossing
+  trajectory.py   (85)   Jupiter assist; solar-Oberth; time-to-AC
+  spacecraft.py  (245)   rocket eq; minimal dry mass; power/array sizing; fuel cell
+  departure.py   (~830)  ** the heavy one ** — see §5
+  pump_schedule.py (~730) optimised pumping schedules + baked campaign/tax/plane-tax
+                          tables + the 3-D campaign integrator — see §5
+  thermal.py     (~140)  DERIVED perihelion power curve (array energy balance) — see §5
+run_analysis.py  (~390)  integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — 190+ checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — 230+ checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -217,7 +218,7 @@ Reproduce these independently (astropy, hand calculation, your own integrator):
 | Min-Δv arrival | ~72,800 yr |
 | Low-thrust spiral departure Δv (AC-class) | ~25–26 km/s |
 | Derived thermal power curve | cap_eff(0.42 AU) = 3.54, T(0.42 AU) = 492 K; Si case collapses to 0.08× |
-| Pumped two-leg budget (LEO) | ~33 km/s (anchored optimised schedule, derived thermal curve; ~31.8 at the idealised 4× cap) |
+| Pumped two-leg budget (LEO, crossing design aim) | ~32.3 km/s (anchored optimised schedule, derived thermal curve + derived 3-D plane tax; ~31.1 at the idealised 4× cap) |
 | GTO-start Earth-escape leg | ~4.0 km/s |
 | Pumping @ a₀=2.5e-4, Isp=2800 (bang-bang @ 4× — cross-check) | v∞ 23.66, Δv 25.6, 9.6 yr, ~4.9 revs |
 | Pumping @ a₀=2.5e-4 (anchored optimised @ 4× — PSI-comparable) | v∞ 23.64, Δv 23.14, 12.0 yr, ~5.9 revs (PSI's published 12-yr optimum: 23.97) |
@@ -309,7 +310,7 @@ Every entry has a tracked fix; the staged plan is
   [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
   switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further 190+ assertions; a passing run is **not** a
+The independent suite has a further 230+ assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -322,7 +323,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (190+ checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (230+ checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the

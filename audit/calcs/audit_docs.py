@@ -37,8 +37,9 @@ def run() -> None:
                   "172 checks", "187 checks", "82 checks", "84 checks", "88 checks"):
         check(f"CLAUDE.md/index.html/README carry no stale '{stale}'",
               stale not in claude and stale not in idx and stale not in readme)
-    check("README parity count is current-generation, no stale 20/35/71 JS/UI",
-          "46 JS-parity" in readme and "35 JS-parity" not in readme
+    check("README parity count is current-generation, no stale 20/35/46/71 JS/UI",
+          "49 JS-parity" in readme and "46 JS-parity" not in readme
+          and "35 JS-parity" not in readme
           and "20 JS-parity" not in readme and "71 checks" not in readme)
 
     # 2. The pumped two-leg total is 31-34 everywhere it appears (no stale 30-32).
@@ -165,6 +166,32 @@ def run() -> None:
                 ok = False
             pos = i + 1
         check(f"{nm} labels every 23.14 km/s mention as the idealised-4x/PSI-comparable figure", ok)
+
+    # 10c. Repo-coherence-scan hardening (build 182): the audit tree and secondary docs
+    #      previously had NO freshness guards — that is where 9 of the scan's 15 findings
+    #      lived. Ban the retired-number tokens on every prose surface that states
+    #      CURRENT facts (audit/fable/ records are designated history and excluded).
+    def _read_extra(rel):
+        p = os.path.join(ROOT, rel)
+        return open(p, encoding="utf-8").read() if os.path.exists(p) else ""
+    extra = {
+        "audit/psi/README.md": _read_extra("audit/psi/README.md"),
+        "audit/psi/PP-NOTES.md": _read_extra("audit/psi/PP-NOTES.md"),
+        "audit/EXTERNAL_AUDIT_SCOPE.md": _read_extra("audit/EXTERNAL_AUDIT_SCOPE.md"),
+        "docs/PP-ARRIVAL-OPTIMUM.md": _read_extra("docs/PP-ARRIVAL-OPTIMUM.md"),
+        "docs/PRECISION_ROADMAP.md": _read_extra("docs/PRECISION_ROADMAP.md"),
+    }
+    stale_tokens = ("+0.27 km/s", "+27 m/s", "+26.7 m", "~162 kg", "162 kg wet",
+                    "190+", "~46 checks", "~46 JS", "~90 checks", "77,800 yr, <30")
+    for nm, txt in list(extra.items()) + [("index.html", idx), ("REPORT.md", report),
+                                          ("README.md", readme),
+                                          ("run_analysis.py", analysis)]:
+        bad = [t for t in stale_tokens if t in txt]
+        check(f"{nm} carries no retired-number tokens (coherence-scan blocklist)",
+              not bad, str(bad))
+    check("audit/psi/README.md states the corrected epoch numbers (+0.21 / +33)",
+          "+0.21 km/s" in extra["audit/psi/README.md"]
+          and "+33 m/s" in extra["audit/psi/README.md"])
 
     # 11. PSI final assessment (July 2026): both archived PDFs must exist, and the page's
     #     PSI links must point at the FINAL report (the TR-numbered working draft stays

@@ -361,7 +361,7 @@ def main() -> None:
         "      UNDER THE DERIVED THERMAL POWER CURVE (cap_eff(0.42 AU) = 3.54, not an assumed 4x);\n"
         "      two-leg budget ~32.3 km/s from LEO at its ~79,250-yr crossing design point\n"
         "      (7.7 escape + ~24.0 helio + 0.7 thermal tax + ~0 plane steering, in-plane aim;\n"
-        "      flat basin bottoms ~77,500 yr, <30 m/s -- model noise; ~31.1 at the idealised\n"
+        "      flat basin bottoms ~77,500 yr, ~33 m/s -- model-noise scale; ~31.1 at the idealised\n"
         "      4x cap).\n"
         "    - NUCLEAR-ELECTRIC ion (FALLBACK -- gate: no kW-class flight reactor exists to order):\n"
         "      constant power closes at LOW alpha (~23 W/kg) but assumes an optimistic ~40 W/kg\n"
