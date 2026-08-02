@@ -66,7 +66,7 @@ Alpha Centauri at arrival time T it needs `V_p(T) = A₀/T + V_ac` — aim at wh
   ecliptic). The Δv curve is very flat near this optimum, so the round-number
   **75,000 yr** arrival is practically the same point. This is the *direct* (Earth-borrow)
   variation's optimum; the pumped variation anchors separately at the ~79,250-yr ecliptic
-  crossing, its flat fuel basin bottoming ~77,800 yr — a <30 m/s difference (see §1's
+  crossing, its flat fuel basin bottoming near ~77,500 yr — a <30 m/s, sub-noise difference (see §1's
   closing note and the live page's "Two mission variations" section).
 
 So the cruise floor is **v∞ ≈ 23.3 km/s** and the natural arrival is **~73,000–75,000 yr** —
@@ -101,15 +101,16 @@ question is entirely about how you build the 24 km/s.*
 > as the crude cross-check (Δv 25.6, 9.6 yr, at 4×). The α ≳ 100 W/kg condition in §2
 > therefore applies to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~32.3 km/s at the pumped variation's own ~77,800-yr
-> optimum (7.7 km/s Earth escape + ~24.0 heliocentric
+> The full SEP total from LEO is ~32.3 km/s at the pumped variation's ~79,250-yr
+> crossing design point (7.7 km/s Earth escape + ~24.0 heliocentric
 > + 0.7 km/s thermal-derated tax + ~0.02 km/s DERIVED out-of-plane steering — the 3-D
 > campaign buys the tilt on its own hyperbolic leg, quadratic near β = 0; at the 2.48°
 > direct-optimum aim the same curve charges 0.51 km/s, half the old
 > v∞·|sin β| bolt-on; ~31.1 at the idealised 4× cap,
 > where PSI's optimised total is 30.5–31.6); a GTO
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
-> kink rounded, the pumped fuel optimum sits in a shallow basin at ~77,800 yr — the
+> kink rounded, the pumped fuel optimum sits in a shallow basin (bottom near ~77,500 yr,
+> sub-noise; full derivation in `docs/PP-ARRIVAL-OPTIMUM.md`) — the
 > in-plane 79,250-yr crossing aim costs only +27 m/s — inside model noise, so the
 > geometry-anchored crossing is the pumped variation's fuel/robustness design epoch.
 > The whole ~73k–79.3k window is flat in program cost (~$25k of xenon + launch mass),
@@ -300,7 +301,7 @@ rest are exploratory concepts or fallbacks, each blocked by a stated gate:
    theoretical floor; a mass ratio ~30 at storable-chemical Isp makes it academic here.
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
-~73,000–75,000 yr (or ~77,800 yr at the pumped-budget basin optimum — the ~79,250-yr
+~73,000–75,000 yr (or ~77,500 yr at the pumped-budget basin bottom — the ~79,250-yr
 ecliptic crossing costs only +27 m/s more under the derived 3-D tilt pricing),
 aimed close to the ecliptic. For the recommended pumped default, feasibility is gated by
 integrating the anchored pumping schedule at the vehicle's a₀ = F/m_wet under the derived

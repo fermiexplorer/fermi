@@ -146,7 +146,8 @@ def run() -> None:
         check(f"{nm} carries no stale '~1 km/s plane change' bolt-on pricing",
               "~1 km/s plane change" not in txt and "+ ~1 plane change" not in txt
               and "33.1 at the default aim" not in txt)
-        check(f"{nm} states the ~77,800-yr pumped basin optimum", "77,800" in txt)
+        check(f"{nm} states the pumped basin (~77.5-77.8k bottom, sub-noise)",
+              "77,800" in txt or "77,500" in txt)
         check(f"{nm} states the ~32.3 km/s pumped two-leg total (at ITS own optimum)",
               "32.3" in txt and "32.6 km/s" not in txt)
 

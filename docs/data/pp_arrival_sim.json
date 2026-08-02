@@ -1,0 +1,278 @@
+{
+ "meta": {
+  "a0": 0.00025,
+  "isp_s": 2800.0,
+  "escape_leg": 7672.6,
+  "dt_scale": 0.25,
+  "dv_slope_correction": 0.64,
+  "miss_au": 2600,
+  "crossing_yr": 79252.3,
+  "basin_bottom_T": 77500,
+  "basin_bottom_total": 32204.3,
+  "crossing_penalty": 26.7,
+  "flyable_edge_yr": 65039,
+  "schedule": "ANCHORED_THERMAL",
+  "power_model": "thermal"
+ },
+ "rows": [
+  {
+   "T": 66000,
+   "vinf": 23237.6,
+   "tilt": -5.47,
+   "gamma": 29.5,
+   "dv_campaign": 25958.3,
+   "dv_total": 33630.9,
+   "custody_yr": 13.579,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 68000,
+   "vinf": 23316.3,
+   "tilt": -4.492,
+   "gamma": 29.2,
+   "dv_campaign": 25585.8,
+   "dv_total": 33258.4,
+   "custody_yr": 12.601,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 70000,
+   "vinf": 23403.3,
+   "tilt": -3.574,
+   "gamma": 26.6,
+   "dv_campaign": 25229.1,
+   "dv_total": 32901.6,
+   "custody_yr": 12.282,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 72000,
+   "vinf": 23496.9,
+   "tilt": -2.713,
+   "gamma": 21.6,
+   "dv_campaign": 24927.2,
+   "dv_total": 32599.8,
+   "custody_yr": 12.143,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 73000,
+   "vinf": 23545.7,
+   "tilt": -2.302,
+   "gamma": 18.9,
+   "dv_campaign": 24804.7,
+   "dv_total": 32477.3,
+   "custody_yr": 12.101,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 74000,
+   "vinf": 23595.5,
+   "tilt": -1.904,
+   "gamma": 15.8,
+   "dv_campaign": 24705.8,
+   "dv_total": 32378.4,
+   "custody_yr": 12.072,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 75000,
+   "vinf": 23646.2,
+   "tilt": -1.517,
+   "gamma": 13.1,
+   "dv_campaign": 24624.7,
+   "dv_total": 32297.3,
+   "custody_yr": 12.051,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 75500,
+   "vinf": 23671.9,
+   "tilt": -1.329,
+   "gamma": 11.3,
+   "dv_campaign": 24593.6,
+   "dv_total": 32266.2,
+   "custody_yr": 12.043,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 76000,
+   "vinf": 23697.8,
+   "tilt": -1.143,
+   "gamma": 10.0,
+   "dv_campaign": 24568.8,
+   "dv_total": 32241.4,
+   "custody_yr": 12.038,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 76500,
+   "vinf": 23723.8,
+   "tilt": -0.96,
+   "gamma": 8.4,
+   "dv_campaign": 24549.6,
+   "dv_total": 32222.2,
+   "custody_yr": 12.033,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 77000,
+   "vinf": 23749.9,
+   "tilt": -0.78,
+   "gamma": 6.9,
+   "dv_campaign": 24538.2,
+   "dv_total": 32210.8,
+   "custody_yr": 12.031,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 77500,
+   "vinf": 23776.3,
+   "tilt": -0.602,
+   "gamma": 5.3,
+   "dv_campaign": 24531.7,
+   "dv_total": 32204.3,
+   "custody_yr": 12.029,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 78000,
+   "vinf": 23802.7,
+   "tilt": -0.427,
+   "gamma": 3.9,
+   "dv_campaign": 24532.9,
+   "dv_total": 32205.5,
+   "custody_yr": 12.029,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 78500,
+   "vinf": 23829.2,
+   "tilt": -0.255,
+   "gamma": 2.2,
+   "dv_campaign": 24537.9,
+   "dv_total": 32210.5,
+   "custody_yr": 12.031,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 79000,
+   "vinf": 23855.9,
+   "tilt": -0.085,
+   "gamma": 0.9,
+   "dv_campaign": 24550.3,
+   "dv_total": 32222.9,
+   "custody_yr": 12.035,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 79252,
+   "vinf": 23869.3,
+   "tilt": -0.0,
+   "gamma": 0.3,
+   "dv_campaign": 24558.4,
+   "dv_total": 32231.0,
+   "custody_yr": 12.037,
+   "ok": true,
+   "crossing": true
+  },
+  {
+   "T": 79500,
+   "vinf": 23882.6,
+   "tilt": 0.083,
+   "gamma": 0.9,
+   "dv_campaign": 24568.0,
+   "dv_total": 32240.6,
+   "custody_yr": 12.039,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 80000,
+   "vinf": 23909.4,
+   "tilt": 0.248,
+   "gamma": 2.2,
+   "dv_campaign": 24591.3,
+   "dv_total": 32263.9,
+   "custody_yr": 12.045,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 80500,
+   "vinf": 23936.3,
+   "tilt": 0.41,
+   "gamma": 3.6,
+   "dv_campaign": 24619.6,
+   "dv_total": 32292.2,
+   "custody_yr": 12.053,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 82000,
+   "vinf": 24017.2,
+   "tilt": 0.884,
+   "gamma": 7.2,
+   "dv_campaign": 24730.1,
+   "dv_total": 32402.7,
+   "custody_yr": 12.083,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 84000,
+   "vinf": 24125.5,
+   "tilt": 1.484,
+   "gamma": 11.7,
+   "dv_campaign": 24919.1,
+   "dv_total": 32591.7,
+   "custody_yr": 12.147,
+   "ok": true,
+   "crossing": false
+  },
+  {
+   "T": 86000,
+   "vinf": 24233.8,
+   "tilt": 2.051,
+   "gamma": 15.3,
+   "dv_campaign": 25145.1,
+   "dv_total": 32817.7,
+   "custody_yr": 12.254,
+   "ok": true,
+   "crossing": false
+  }
+ ],
+ "convergence": [
+  {
+   "T": 75000,
+   "dv_total_dt8": 32294.4,
+   "delta": -2.9
+  },
+  {
+   "T": 77500,
+   "dv_total_dt8": 32200.3,
+   "delta": -4.0
+  },
+  {
+   "T": 79252,
+   "dv_total_dt8": 32226.9,
+   "delta": -4.1
+  }
+ ]
+}

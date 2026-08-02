@@ -758,6 +758,61 @@ def run() -> None:
     check("early-arrival branch (58 kyr) stays > 2.5 km/s above the optimum",
           pen_58 > 2.5e3, f"+{pen_58/1e3:.2f} km/s")
 
+    # 13h. PP ARRIVAL-EPOCH SIMULATION RECORD (issue #13). The deep per-epoch direct
+    #      simulation (tools/sim_pp_arrival.py) writes docs/data/pp_arrival_sim.json —
+    #      the derivation behind docs/PP-ARRIVAL-OPTIMUM.md. Guards: the record exists
+    #      and is self-consistent; ONE row replays FRESH from the engine at its recorded
+    #      steering angle; the convergence records are tight; the basin facts match the
+    #      independent closed-form scan of 13g(v); and the flyability edge is real (a
+    #      65-kyr aim is not acquirable).
+    import json as _json
+    import os as _os
+    _rec_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                              "..", "..", "docs", "data", "pp_arrival_sim.json")
+    _have_rec = _os.path.exists(_rec_path)
+    check("PP arrival simulation record exists (docs/data/pp_arrival_sim.json)", _have_rec)
+    if _have_rec:
+        rec = _json.load(open(_rec_path))
+        meta, rrows = rec["meta"], rec["rows"]
+        _esc = math.sqrt(c.MU_EARTH / (c.R_EARTH + 400e3))   # LEO-400 orbit-energy leg
+        check("record meta: anchored thermal schedule, design a0/Isp, LEO-400 escape leg",
+              meta["schedule"] == "ANCHORED_THERMAL" and meta["power_model"] == "thermal"
+              and meta["a0"] == 2.5e-4 and meta["isp_s"] == 2800.0
+              and abs(meta["escape_leg"] - _esc) < 1.0, str(meta.get("escape_leg")))
+        check("record basin bottom in the 77.0-78.5 kyr window; crossing penalty < 60 m/s",
+              77000 <= meta["basin_bottom_T"] <= 78500
+              and 0.0 < meta["crossing_penalty"] < 60.0,
+              f"{meta['basin_bottom_T']} / +{meta['crossing_penalty']} m/s")
+        check("record and the independent closed-form scan agree on the basin (<= 600 yr)",
+              abs(meta["basin_bottom_T"] - t_min) <= 600,
+              f"sim {meta['basin_bottom_T']} vs scan {t_min}")
+        check("record convergence rows: |dt/4 - dt/8| < 40 m/s each",
+              all(abs(cv["delta"]) < 40.0 for cv in rec["convergence"]),
+              str([cv["delta"] for cv in rec["convergence"]]))
+        # fresh single-row replay from the engine (dt/4, the recorded steering angle)
+        row = next(r for r in rrows if r["T"] == 75000)
+        s75 = solve_intercept(st, 75000 * c.YEAR)
+        v75 = max(0.0, s75.v_inf - miss / (75000 * c.YEAR))
+        v_a, dv_a, yr_a, _rv, lat_a = scheduled_pumped_vinf_3d(
+            a0_design, v75, abs(s75.plane_angle_deg), ANCHORED_THERMAL,
+            power_model="thermal", steer_gamma_deg=row["gamma"], _dt_scale=0.25,
+            max_yr=30.0)
+        tot_a = _esc + (dv_a - 0.64 * (v_a - v75))
+        check("record row T=75,000 replays fresh from the engine (<40 m/s)",
+              abs(tot_a - row["dv_total"]) < 40.0 and lat_a is not None
+              and abs(lat_a + abs(s75.plane_angle_deg)) < 0.06,
+              f"fresh {tot_a:.0f} vs recorded {row['dv_total']:.0f}")
+        # the flyability edge is real: a 65-kyr aim (tilt ~ -6 deg) is not acquirable
+        s65 = solve_intercept(st, 65000 * c.YEAR)
+        v65 = max(0.0, s65.v_inf - miss / (65000 * c.YEAR))
+        v_e, _dv_e, yr_e, _rv2, lat_e = scheduled_pumped_vinf_3d(
+            a0_design, v65, abs(s65.plane_angle_deg), ANCHORED_THERMAL,
+            power_model="thermal", steer_gamma_deg=30.0, _dt_scale=0.5, max_yr=16.0)
+        ok65 = (v_e >= v65 - 1.0 and yr_e <= 15.0
+                and lat_e is not None and abs(lat_e + abs(s65.plane_angle_deg)) <= 0.06)
+        check("65-kyr aim is NOT acquirable within custody (the flyability edge is real)",
+              not ok65, f"lat {lat_e}, {yr_e:.1f} yr")
+
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the
     #     dv split ~8.3 retro + ~17.3 prograde. Re-integrated independently.

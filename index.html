@@ -679,24 +679,32 @@
   <table class="chain prose">
     <tr><th>Arrival</th><th class="v">Aim v∞ (km/s)</th><th class="v">Aim tilt</th><th class="v">Pumped-vehicle Δv (direct 3-D simulation)</th><th class="v">vs minimum</th><th class="v">Campaign custody</th></tr>
     <tr><td>58,000 yr</td><td class="v">23.06</td><td class="v">−10.1°</td><td class="v" colspan="2"><b>unflyable</b> — the campaign cannot acquire this tilt within custody</td><td class="v">—</td></tr>
-    <tr><td>65,000 yr</td><td class="v">23.20</td><td class="v">−6.0°</td><td class="v" colspan="2"><b>unflyable</b></td><td class="v">—</td></tr>
+    <tr><td>65,000 yr</td><td class="v">23.20</td><td class="v">−6.0°</td><td class="v" colspan="2"><b>unflyable</b> — at the bisected ~65,000-yr flyability edge</td><td class="v">—</td></tr>
+    <tr><td>66,000 yr</td><td class="v">23.24</td><td class="v">−5.5°</td><td class="v">33.63</td><td class="v">+1.43</td><td class="v">13.6 yr</td></tr>
     <tr><td>70,000 yr</td><td class="v">23.40</td><td class="v">−3.6°</td><td class="v">32.90</td><td class="v">+0.70</td><td class="v">12.3 yr</td></tr>
     <tr><td>73,000 yr</td><td class="v">23.55</td><td class="v">−2.3°</td><td class="v">32.48</td><td class="v">+0.27</td><td class="v">12.1 yr</td></tr>
     <tr><td>75,000 yr</td><td class="v">23.65</td><td class="v">−1.5°</td><td class="v">32.30</td><td class="v">+0.09</td><td class="v">12.1 yr</td></tr>
     <tr><td>77,000 yr</td><td class="v">23.75</td><td class="v">−0.8°</td><td class="v">32.21</td><td class="v">+0.01</td><td class="v">12.0 yr</td></tr>
-    <tr><td><b>77,800 yr</b></td><td class="v">23.79</td><td class="v">−0.5°</td><td class="v"><b>32.20 — minimum</b></td><td class="v">0</td><td class="v">12.0 yr</td></tr>
+    <tr><td><b>77,500 yr</b></td><td class="v">23.78</td><td class="v">−0.6°</td><td class="v"><b>32.20 — minimum (sub-noise plateau)</b></td><td class="v">0</td><td class="v">12.0 yr</td></tr>
     <tr><td><b>79,252 yr (ecliptic crossing)</b></td><td class="v">23.87</td><td class="v">0.0°</td><td class="v">32.23</td><td class="v">+0.03 — <b>design default</b></td><td class="v">12.0 yr</td></tr>
-    <tr><td>81,000 yr</td><td class="v">23.96</td><td class="v">+0.6°</td><td class="v">32.32</td><td class="v">+0.12</td><td class="v">12.1 yr</td></tr>
-    <tr><td>85,000 yr</td><td class="v">24.18</td><td class="v">+1.8°</td><td class="v">32.70</td><td class="v">+0.50</td><td class="v">12.2 yr</td></tr>
+    <tr><td>82,000 yr</td><td class="v">24.02</td><td class="v">+0.9°</td><td class="v">32.40</td><td class="v">+0.20</td><td class="v">12.1 yr</td></tr>
+    <tr><td>86,000 yr</td><td class="v">24.23</td><td class="v">+2.1°</td><td class="v">32.82</td><td class="v">+0.61</td><td class="v">12.3 yr</td></tr>
   </table>
   <p class="src">Read-off conclusions, all from this one simulation set: the pumped fuel minimum is a
-  <b>flat basin from ~75k to ~79.3k yr</b> (bottom 77,800; everything in the basin is within
-  ~0.1 km/s ≈ 1 kg of xenon); the in-plane <b>ecliptic crossing sits +0.03 km/s from the bottom —
+  <b>flat basin from ~75k to ~79.3k yr</b> (formal bottom 77,500 on the 500-yr grid; 77.0–78.5k lie
+  within 7 m/s of it — a sub-noise plateau, so the bottom is quoted as a basin, not a point);
+  the in-plane <b>ecliptic crossing sits +0.03 km/s from the bottom —
   inside model noise — and is the design default</b> because it is the one epoch fixed by geometry
-  alone; epochs earlier than ~68k are not reachable at all (the campaign cannot buy that much
+  alone; epochs earlier than ~65k are not reachable at all (the deep simulation locates the
+  flyability edge at ~65,000 yr, aim tilt −6°, with custody growing toward it — 13.6 yr at 66k; the campaign cannot buy more
   out-of-plane aim); and custody is ~12 yr regardless of epoch, so the arrival choice does not move
   operations cost. Historical note on other numbers in circulation: see the epoch-provenance row of
-  the "Two mission variations" table above and <code>audit/psi/README.md</code>.</p>
+  the table above and <code>audit/psi/README.md</code>. <b>The full analysis note</b> — method,
+  deep simulation grid, convergence, error budget, audits, and the design decision — is
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/docs/PP-ARRIVAL-OPTIMUM.md" target="_blank" rel="noopener noreferrer"><code>docs/PP-ARRIVAL-OPTIMUM.md</code></a>,
+  backed by the tracked simulation record
+  <a href="https://github.com/fermiexplorer/fermi/blob/main/docs/data/pp_arrival_sim.json" target="_blank" rel="noopener noreferrer"><code>docs/data/pp_arrival_sim.json</code></a>
+  (<code>tools/sim_pp_arrival.py</code>; rows replayed by the audit suite).</p>
 
   <h4>2 · Departure energetics (LEO → v∞)</h4>
   <p>To leave on a heliocentric hyperbola of excess <code>v∞</code>, the probe needs heliocentric speed
@@ -1183,7 +1191,8 @@
   β = 4°; steeper aims continue at the far-field marginal slope (measured accurate to &lt;1% at 6°),
   and the curve is bounded above by v∞·|sin β| everywhere. One consequence moves: with the |sin β|
   kink rounded into a quadratic, the pumped fuel minimum becomes a
-  <b>flat shallow basin bottoming near ~77,800 yr</b> (aim tilt −0.5°); the in-plane crossing aim at
+  <b>flat shallow basin bottoming near ~77,500 yr</b> (aim tilt −0.6°; sub-noise — see
+  <code>docs/PP-ARRIVAL-OPTIMUM.md</code>); the in-plane crossing aim at
   79,250 yr costs only <b>+27 m/s</b> — inside the model's own noise — so the
   <b>geometry-anchored crossing is this variation's design epoch</b> (the basin bottom wanders with
   pricing details; the crossing is fixed by astrometry alone), and the
