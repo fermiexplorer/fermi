@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 77800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
+    "T": 79200, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
     "enginekg": 6, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 91, "rtg": 40, "rp": 6,
     "srp": 10, "skick": 5,
 }
@@ -96,12 +96,13 @@ def run(page):
           abs(base["wet"] - 154) < 10, f"{base['wet']:.1f} kg wet")
     # DEFAULT-STATE COHERENCE (the build-131-135 miss class): the default pumped campaign KPI must
     # show the validated reference campaign, and be pinned regardless of the Isp slider.
-    check("default pumped campaign is the anchored THERMAL schedule (~7.9 revs, ~12 yr, ~24.5 dv)",
+    check("default pumped campaign is the anchored THERMAL schedule (~7.9 revs, ~12.1 yr, ~24.7 dv"
+          " at the crossing aim v_inf ~24.0)",
           base["pumpInfo"] is not None
           and base["pumpInfo"].get("optimized") is True
-          and abs(base["pumpInfo"]["revs"] - 7.89) < 0.2
-          and abs(base["pumpInfo"]["years"] - 12.05) < 0.3
-          and abs(base["pumpInfo"]["dv"]/1e3 - 24.47) < 0.2,
+          and abs(base["pumpInfo"]["revs"] - 7.9) < 0.2
+          and abs(base["pumpInfo"]["years"] - 12.1) < 0.3
+          and abs(base["pumpInfo"]["dv"]/1e3 - 24.68) < 0.2,
           str(base["pumpInfo"] and (round(base["pumpInfo"]["revs"],2), round(base["pumpInfo"]["years"],2))))
     # ENVELOPE PIN: the pumped campaign is flown at min(a0, 2.5e-4)/Isp 2800, so moving the Isp
     # slider must NOT change the campaign (the default vehicle a0 >> 2.5e-4, so it is throttled).
@@ -124,13 +125,16 @@ def run(page):
     nep = comp({"isp": 3000, "rtg": 40, "wkgsolar": 91, "enginekg": 6, "pwrkw": 5}, {"pwr": "nuclear", "ga": "direct"})
     check("nuclear-electric (constant power) DOES close — the low-α EP path", nep["feasible"] is True,
           f"achV={nep['achievableVinf']/1e3:.1f} vs floor {nep['vinf']/1e3:.1f} km/s")
-    # issue #10: the default state is SELF-CONSISTENT — the pumped variation flown at its
-    # OWN ~77.8k optimum (not at the direct variation's 72.8k, the pre-#10 melded default)
-    check("default arrival is the pumped variation's own ~77.8k optimum",
-          abs(base["arrivalYr"] - 77800) < 400, str(base["arrivalYr"]))
-    check("default state IS at its fuel optimum (arrival == minFuelYr readout, <300 yr)",
-          abs(base["arrivalYr"] - base["minFuelYr"]) < 300,
-          f"{base['arrivalYr']} vs {base['minFuelYr']}")
+    # issues #10/#11: the default state is SELF-CONSISTENT — the pumped variation at its
+    # OWN design point, the geometry-anchored ~79.25k ECLIPTIC CROSSING (not the direct
+    # variation's 72.8k, the pre-#10 melded default; not the pricing-sensitive basin
+    # bottom ~77.8k, which sits <30 m/s away — inside model noise).
+    check("default arrival is the pumped variation's crossing design point (~79.25k)",
+          abs(base["arrivalYr"] - 79252) < 400, str(base["arrivalYr"]))
+    at_bottom = comp({"T": base["minFuelYr"]})
+    check("crossing design point is inside the flat fuel basin (<50 m/s of the formal minimum)",
+          0.0 <= base["dvDesign"] - at_bottom["dvDesign"] < 50.0,
+          f"+{base['dvDesign'] - at_bottom['dvDesign']:.1f} m/s vs T={base['minFuelYr']}")
     # Pumped budget prices v∞ + derived 3-D plane tax with no Earth borrow. With the tilt
     # cost quadratic near β = 0 (issue #9), the fuel optimum is a shallow basin at ~77.8k —
     # below the 79.25k crossing, above the direct model's 72.8k Earth-borrow optimum.
@@ -346,8 +350,8 @@ def run(page):
                        " T:+document.getElementById('T').value, feas:compute().feasible})")
     check("selecting PUMPED loads the today's-class preset (91 W/kg, 6 kg/kW) and closes",
           pp["w"] == 91 and pp["e"] == 6 and pp["feas"] is True, str(pp))
-    check("switching back to PUMPED snaps arrival to ITS ~77.8k optimum",
-          abs(pp["T"] - 77800) < 400, str(pp["T"]))
+    check("switching back to PUMPED snaps arrival to ITS crossing design point (~79.25k)",
+          abs(pp["T"] - 79252) < 400, str(pp["T"]))
     # presets must keep the tech DROPDOWNS in sync with the sliders (deep-audit finding:
     # the selects used to advertise a component set the sliders did not use)
     sel = page.evaluate("() => ({sol:document.getElementById('soltech').value,"

@@ -57,7 +57,8 @@ Alpha Centauri at arrival time T it needs `V_p(T) = A₀/T + V_ac` — aim at wh
 - **The impulsive/direct departure-Δv minimum is at ≈72,800 yr** (tilted ~2.4° off the
   ecliptic). The Δv curve is very flat near this optimum, so the round-number
   **75,000 yr** arrival is practically the same point. This is the *direct* (Earth-borrow)
-  variation's optimum; the pumped variation optimizes separately at ~77,800 yr (see §1's
+  variation's optimum; the pumped variation anchors separately at the ~79,250-yr ecliptic
+  crossing, its flat fuel basin bottoming ~77,800 yr — a <30 m/s difference (see §1's
   closing note and the live page's "Two mission variations" section).
 
 So the cruise floor is **v∞ ≈ 23.3 km/s** and the natural arrival is **~73,000–75,000 yr** —
@@ -101,10 +102,17 @@ question is entirely about how you build the 24 km/s.*
 > where PSI's optimised total is 30.5–31.6); a GTO
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
 > kink rounded, the pumped fuel optimum sits in a shallow basin at ~77,800 yr — the
-> in-plane 79,250-yr crossing aim costs only +27 m/s. The direct and pumped
-> architectures are two SEPARATE mission variations with different optimal arrival
-> epochs (~72,800 vs ~77,800 yr); the calculator snaps the arrival slider to the
-> selected architecture's own optimum. See the live
+> in-plane 79,250-yr crossing aim costs only +27 m/s — inside model noise, so the
+> geometry-anchored crossing is the pumped variation's fuel/robustness design epoch.
+> The whole ~73k–79.3k window is flat in program cost (~$25k of xenon + launch mass),
+> so an arrival-value preference legitimately picks the early (~73k) end instead —
+> ~6,000 yr sooner for +0.27 km/s; both ends are defensible design points. The direct and
+> pumped architectures are two SEPARATE mission variations with different design
+> epochs (~72,800 yr vs the ~79,250-yr crossing); PSI did not derive the pumped
+> epoch — their stated ~73,000-yr arrival reuses the impulsive optimum and their
+> report flags the pumped tilt pricing as open future work, which the derived 3-D
+> curve above settles (73k costs the pumped vehicle +0.27 km/s). The calculator
+> snaps the arrival slider to the selected architecture's design point. See the live
 > page's "Two mission variations" and "Perihelion pumping" sections.
 
 ## 2. The outward-spiral power gate — a spiral closes only as a light (high-α) vehicle

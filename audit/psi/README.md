@@ -95,6 +95,29 @@ headline of the final report with `fermi_sim` and prints measured deltas. Findin
   integrators; success below is phasing-dependent and non-monotonic — see
   `audit/fable/fable-pumping-synchrotron-audit.md`). Their pumping-feasibility floor is
   the same number (a₀ ≳ 2.25×10⁻⁴, their §5.3).
+- **Arrival-epoch scope finding**: their 73,012-yr optimum is correct for what it is —
+  the argmin of the IMPULSIVE / Earth-relative departure budget (we corroborate it to
+  0.2%, and their blind re-derivation confirms it independently). It is **not** the
+  pumped mission's arrival optimum, and the report itself never claims it is: the
+  pumped column of their Table 14 "is planar and excludes the cost of acquiring the
+  out-of-plane aim tilt", §2.5 leaves the trade "unsettled ... future work", and
+  recommendation R6 lists pricing the tilt across arrival geometries as the natural
+  next computation. Performing exactly that computation (derived 3-D tilt pricing +
+  per-epoch full-campaign simulation, `tools/derive_epoch_table.py`) puts the pumped
+  fuel basin at ~77–79.3 kyr — the 73k epoch costs the pumped vehicle +0.27 km/s
+  (direct simulation, no closed-form budget in the loop) — with the geometry-anchored
+  79,252-yr ecliptic crossing adopted as the design epoch (+27 m/s vs the basin
+  bottom, inside model noise). In program-cost terms the whole 73–79k epoch span is
+  worth ~$25k of xenon + launch mass under their own cost model — three orders of
+  magnitude below their ops/custody cost drivers — so the epoch refinement changes
+  fuel bookkeeping, not the cost verdict. One dimension does survive in favour of
+  their 73k quoting: the ARRIVAL DATE itself. Because the window is flat in both
+  fuel and cost, aiming at its early end arrives ~6,000 yr sooner for a
+  rounding-error price — a legitimate second optimization axis (arrival value)
+  orthogonal to fuel. The defensible statement is therefore: the pumped design
+  epoch is the flat window [~73k, ~79.3k]; the crossing end optimizes fuel and
+  geometric robustness, the 73k end optimizes arrival date; PSI's number is the
+  latter (implicitly), not a derived fuel optimum.
 - Their independent-model concurrence claims are consistent with our independent audits
   (astropy, GMAT, Codex/Grok/Gemini/Fable re-implementations).
 
