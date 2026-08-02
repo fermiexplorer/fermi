@@ -789,29 +789,67 @@ def run() -> None:
         check("record convergence rows: |dt/4 - dt/8| < 40 m/s each",
               all(abs(cv["delta"]) < 40.0 for cv in rec["convergence"]),
               str([cv["delta"] for cv in rec["convergence"]]))
-        # fresh single-row replay from the engine (dt/4, the recorded steering angle)
+        # fresh single-row replay from the engine at the RECORDED aim + steering angle
+        # (the aim is data — the record's miss-allowance convention optimizes the offset
+        # direction, so the replay validates the CAMPAIGN integration, not the aim search)
         row = next(r for r in rrows if r["T"] == 75000)
-        s75 = solve_intercept(st, 75000 * c.YEAR)
-        v75 = max(0.0, s75.v_inf - miss / (75000 * c.YEAR))
         v_a, dv_a, yr_a, _rv, lat_a = scheduled_pumped_vinf_3d(
-            a0_design, v75, abs(s75.plane_angle_deg), ANCHORED_THERMAL,
+            a0_design, row["vinf"], abs(row["tilt"]), ANCHORED_THERMAL,
             power_model="thermal", steer_gamma_deg=row["gamma"], _dt_scale=0.25,
             max_yr=30.0)
-        tot_a = _esc + (dv_a - 0.64 * (v_a - v75))
+        tot_a = _esc + (dv_a - 0.64 * (v_a - row["vinf"]))
         check("record row T=75,000 replays fresh from the engine (<40 m/s)",
               abs(tot_a - row["dv_total"]) < 40.0 and lat_a is not None
-              and abs(lat_a + abs(s75.plane_angle_deg)) < 0.06,
+              and abs(lat_a + abs(row["tilt"])) < 0.06,
               f"fresh {tot_a:.0f} vs recorded {row['dv_total']:.0f}")
-        # the flyability edge is real: a 65-kyr aim (tilt ~ -6 deg) is not acquirable
-        s65 = solve_intercept(st, 65000 * c.YEAR)
-        v65 = max(0.0, s65.v_inf - miss / (65000 * c.YEAR))
-        v_e, _dv_e, yr_e, _rv2, lat_e = scheduled_pumped_vinf_3d(
-            a0_design, v65, abs(s65.plane_angle_deg), ANCHORED_THERMAL,
-            power_model="thermal", steer_gamma_deg=30.0, _dt_scale=0.5, max_yr=16.0)
-        ok65 = (v_e >= v65 - 1.0 and yr_e <= 15.0
-                and lat_e is not None and abs(lat_e + abs(s65.plane_angle_deg)) <= 0.06)
-        check("65-kyr aim is NOT acquirable within custody (the flyability edge is real)",
-              not ok65, f"lat {lat_e}, {yr_e:.1f} yr")
+        # 13h-edge (rewritten per adversarial-audit findings 6/7 — the old single-angle
+        # probe once certified a false edge by 0.08 yr). TWO-SIDED with margins:
+        # (+) the earliest recorded FLYABLE row must replay flyable with >=0.5 yr of
+        #     custody margin under the tool's 15-yr gate;
+        # (-) an aim ~1.2 kyr BELOW the recorded edge, made strictly EASIER than any
+        #     achievable aim there (tilt reduced by MORE than the whole 2600-AU
+        #     allowance could buy), must fail a GOLDEN-SEARCHED steering sweep even
+        #     with the gate relaxed by +0.5 yr — so unflyability cannot hinge on the
+        #     angle probe or on hair-thin custody.
+        first_fly = min((r for r in rrows if r["ok"]), key=lambda r: r["T"])
+        vf, dvf, yrf, _rvf, latf = scheduled_pumped_vinf_3d(
+            a0_design, first_fly["vinf"], abs(first_fly["tilt"]), ANCHORED_THERMAL,
+            power_model="thermal", steer_gamma_deg=first_fly["gamma"], _dt_scale=0.5,
+            max_yr=30.0)
+        check("earliest recorded flyable row replays flyable with >=0.5 yr custody margin",
+              vf >= first_fly["vinf"] - 1.0 and yrf <= 14.5 and latf is not None
+              and abs(latf + abs(first_fly["tilt"])) <= 0.08,
+              f"T={first_fly['T']}: {yrf:.2f} yr, lat {latf}")
+        T_neg = meta["flyable_edge_yr"] - 1200.0
+        s_neg = solve_intercept(st, T_neg * c.YEAR)
+        v_neg = max(0.0, s_neg.v_inf - miss / (T_neg * c.YEAR))
+        tilt_ease = math.degrees(math.atan2(miss / (T_neg * c.YEAR), v_neg)) + 0.05
+        beta_neg = max(0.0, abs(s_neg.plane_angle_deg) - tilt_ease)
+        golden = (math.sqrt(5.0) - 1.0) / 2.0
+
+        def _neg_ok(g):
+            v_e, _d, yr_e, _r2, lat_e = scheduled_pumped_vinf_3d(
+                a0_design, v_neg, beta_neg, ANCHORED_THERMAL, power_model="thermal",
+                steer_gamma_deg=g, _dt_scale=0.5, max_yr=17.0)
+            return (v_e >= v_neg - 1.0 and yr_e <= 15.5
+                    and lat_e is not None and abs(lat_e + beta_neg) <= 0.08)
+        any_fly = False
+        a_g, b_g = 0.0, 40.0
+        probes = set()
+        for _ in range(9):
+            c1 = b_g - golden * (b_g - a_g)
+            c2 = a_g + golden * (b_g - a_g)
+            for g in (round(c1, 1), round(c2, 1)):
+                if g not in probes:
+                    probes.add(g)
+                    if _neg_ok(g):
+                        any_fly = True
+            if any_fly:
+                break
+            a_g, b_g = a_g + 0.18 * (b_g - a_g), b_g - 0.18 * (b_g - a_g)
+        check("below the recorded edge (-1.2 kyr, easier-than-achievable aim) NOTHING "
+              "flies across a steering sweep even at gate+0.5 yr",
+              not any_fly, f"T={T_neg:.0f}, beta {beta_neg:.2f}, probes {sorted(probes)}")
 
     # 14. Phase-split drift guard (the pumped-vs-PSI comparison numbers): retrograde
     #     pump-down ~2.1 revs to the 0.42 AU latch, 3 prograde perihelion passes, and the

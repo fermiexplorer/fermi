@@ -189,9 +189,14 @@ TAX_OPT_THERMAL_TABLE = (
 # continued. Cross-check: the same derivation under the CAP model prices 2.48 deg
 # at 606 m/s vs PSI's independently measured 578 m/s (their final assessment,
 # 3-D re-optimization) — 5% apart, inside their +-0.2 km/s search scatter.
-# Consumers scale knots by (v_inf / 23640) — the aim band is [23, 26] km/s, so
-# the scaling is a <=10% first-order correction. Applied by
-# fermi_sim.departure.plane_tax_for and mirrored in web/physics.js.
+# Consumers scale knots by (v_inf / 23640). NOTE (adversarial-audit finding 4):
+# the TRUE tilt cost falls slightly with v_inf (a faster escape leg spends less
+# time under the fade), so this linear scaling has the wrong trend sign and
+# OVERCHARGES by up to ~20-30% at the top of the [23, 26] km/s aim band —
+# conservative direction, and <=1% at the AC anchors where every shipped number
+# lives. Re-derive at multiple v_inf anchors before using the curve far off
+# 23.64 km/s. Applied by fermi_sim.departure.plane_tax_for and mirrored in
+# web/physics.js.
 PLANE_TAX_THERMAL_TABLE = (
     (0.0, 0.0),
     (0.1, 1.2), (0.25, 6.7), (0.5, 24.3), (0.75, 54.0), (1.0, 94.2),
@@ -487,6 +492,15 @@ def scheduled_pumped_vinf_3d(a0: float, v_inf_target: float, beta_deg: float,
 
     With ``beta_deg = 0`` the z-equations carry exact zeros and the integration
     REPRODUCES the planar integrator (the embedding property the audits pin).
+
+    MIRROR FOLD (adversarial-audit finding 3, documented): ``beta_deg`` is the
+    MAGNITUDE of the aim tilt; the integrator always steers toward -z. Aims ABOVE
+    the ecliptic (post-crossing epochs, positive tilt) are priced by passing
+    |beta| — exact by the z-mirror symmetry of the two-body problem (the planar
+    initial state and dynamics are z-equivariant, so the +z and -z campaigns are
+    mirror images with identical Δv). Callers fold the sign (abs), as
+    plane_tax_for and the epoch tools do.
+
     Returns (v_inf m/s, dv m/s, years, revs, asymptote_latitude_deg-or-None); the
     tilt COST is dv(beta) - dv(0) under the same gamma-optimisation, and the achieved
     latitude gates any published value (|lat + beta| <= 0.05 deg — enforced by the

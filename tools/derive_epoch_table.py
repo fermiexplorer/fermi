@@ -1,5 +1,12 @@
 """Derive the pumped-mission arrival-epoch table by DIRECT SIMULATION — issue #11.
 
+NOTE: this coarse-grid tool keeps the CONSERVATIVE max-speed-shave miss convention
+(the full 2600-AU allowance spent on speed at unchanged tilt). The deep tool
+tools/sim_pp_arrival.py optimizes the offset direction (speed vs tilt buy-down) per
+the adversarial-audit correction and is the source of the published record
+docs/data/pp_arrival_sim.json; differences are <10 m/s in the basin and up to
+~0.1 km/s at steeply tilted epochs (one-sided, conservative here).
+
 No closed-form budget in the loop: for each candidate arrival epoch T the aim
 (v_inf, tilt) comes from the intercept geometry (2600-AU miss shave), and the FULL
 3-D anchored thermal campaign is integrated to that aim

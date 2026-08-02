@@ -175,6 +175,13 @@ def plane_tax_for(v_inf: float, tilt_deg: float) -> float:
     slope, tax(4°) + v∞·(sin|β| − sin 4°), measured accurate to <1% at 6°. The
     result is bounded above by the previous conservative pricing v∞·|sin β| for
     every tilt (audit-pinned).
+
+    Two audited caveats: (1) the (v∞/23.64) knot scaling is conservative — the true
+    cost trend FALLS with v∞, so far-off-anchor aims are overcharged by up to
+    ~20-30% at the band top (finding 4); (2) beyond the 4° validity edge the
+    continuation prices aims the 12-to-15-yr-custody campaign cannot actually
+    acquire (the 6° probe needed ~23 yr) — treat >4° prices as a-fortiori LOWER
+    bounds for comparison, not flyable budgets (finding 5).
     """
     for nm, val in (("v_inf", v_inf), ("tilt_deg", tilt_deg)):
         if not math.isfinite(val):
@@ -548,7 +555,8 @@ def pumped_departure_dv(v_inf: float, tilt_deg: float, peri_alt_km: float,
     v∞ + plane_tax(v∞, β) + tax(v∞): the out-of-plane component of the aim (tilt β) is
     charged by the DERIVED 3-D steering curve (:func:`plane_tax_for`, issue #9 — the
     campaign buys the tilt on its own hyperbolic leg; ~0.5 km/s at the 73 kyr aim,
-    ~3.6 km/s at the 58 kyr tangential aim; quadratic near β = 0, so the in-plane
+    ~3.6 km/s at the 58 kyr tangential aim — an a-fortiori comparison bound, since
+    that aim lies beyond the campaign's custody-gated reach; quadratic near β = 0, so the in-plane
     crossing aim is approached with zero marginal tilt cost), and the tax covers the
     in-plane overhead (pump-down arcs + gravity losses).
 

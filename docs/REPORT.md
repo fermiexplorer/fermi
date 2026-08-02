@@ -111,16 +111,16 @@ question is entirely about how you build the 24 km/s.*
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
 > kink rounded, the pumped fuel optimum sits in a shallow basin (bottom near ~77,500 yr,
 > sub-noise; full derivation in `docs/PP-ARRIVAL-OPTIMUM.md`) — the
-> in-plane 79,250-yr crossing aim costs only +27 m/s — inside model noise, so the
+> in-plane 79,250-yr crossing aim costs only +33 m/s — model-noise scale, so the
 > geometry-anchored crossing is the pumped variation's fuel/robustness design epoch.
 > The whole ~73k–79.3k window is flat in program cost (~$25k of xenon + launch mass),
 > so an arrival-value preference legitimately picks the early (~73k) end instead —
-> ~6,000 yr sooner for +0.27 km/s; both ends are defensible design points. The direct and
+> ~6,000 yr sooner for +0.21 km/s; both ends are defensible design points. The direct and
 > pumped architectures are two SEPARATE mission variations with different design
 > epochs (~72,800 yr vs the ~79,250-yr crossing); PSI did not derive the pumped
 > epoch — their stated ~73,000-yr arrival reuses the impulsive optimum and their
 > report flags the pumped tilt pricing as open future work, which the derived 3-D
-> curve above settles (73k costs the pumped vehicle +0.27 km/s). The calculator
+> curve above settles (73k costs the pumped vehicle +0.21 km/s). The calculator
 > snaps the arrival slider to the selected architecture's design point. See the live
 > page's "Two mission variations" and "Perihelion pumping" sections.
 
@@ -302,7 +302,7 @@ rest are exploratory concepts or fallbacks, each blocked by a stated gate:
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
 ~73,000–75,000 yr (or ~77,500 yr at the pumped-budget basin bottom — the ~79,250-yr
-ecliptic crossing costs only +27 m/s more under the derived 3-D tilt pricing),
+ecliptic crossing costs only +33 m/s more under the derived 3-D tilt pricing),
 aimed close to the ecliptic. For the recommended pumped default, feasibility is gated by
 integrating the anchored pumping schedule at the vehicle's a₀ = F/m_wet under the derived
 thermal power curve — verified by integration rather than a threshold, since off-design

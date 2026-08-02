@@ -74,11 +74,18 @@ Whether the cruise-speed saving survives the tilt bill is an open question...
 left as future work" — or (c) downstream reuse (dispersion aim epoch, timeline,
 coast length, custody pricing). No 77–78k AC arrival appears anywhere (the only
 78k numbers are LSPM J2146+3813's arrival — a different star — and Table 14 row
-labels). Sharper still: PSI's own PLANAR pumped column bottoms near 65,000 yr
-(23.49 km/s), not 73k — so 73k is not even their planar pumped minimum; it is
-purely the impulsive design point carried through, and their p63 states that
-settling the pumped epoch "requires a three-dimensional re-optimization across
-the window" — the computation this project performed.
+labels). Sharper still: 73k is not the minimum of PSI's own PLANAR pumped
+column either — that column's trend floor is 23.74 km/s across the 56–60k
+rows, near their cruise-speed minimum (57,854 yr), exactly where tilt-blind
+pricing should bottom. (Its single lower value, 23.49 at 65,000 yr, is a
+seed-scatter outlier PSI itself flags — a −0.3 km/s discontinuity between
+23.79/23.82 neighbours against their stated ±0.2 km/s scatter — and must not
+be read as a trend minimum; an earlier revision of this note did read it that
+way, retracted after adversarial audit — the apparent coincidence with our
+~65k flyability edge was spurious.) 73k is purely the impulsive design point
+carried through, and their p63 states that settling the pumped epoch
+"requires a three-dimensional re-optimization across the window" — the
+computation this project performed.
 
 **Arrival epoch — what the final report does NOT establish for PP.** Their 73,012-yr
 optimum is derived for the impulsive/Earth-relative departure only; the PP arrival
@@ -87,8 +94,9 @@ excludes the cost of acquiring the out-of-plane aim tilt"; §2.5 "unsettled...
 future work"; R6 item 5). Settled by this project: per-epoch full-campaign 3-D
 simulation (`tools/derive_epoch_table.py`) puts the PP fuel minimum in a flat
 ~75–79.3k basin (crossing +0.03 km/s = the design default; 73k +0.27; the deep
-simulation locates the flyability edge at ~65,000 yr — aim tilt −6°, custody
-growing toward it). The 73–79.3k span is worth ~2.4 kg of xenon (~$25k) — epoch is a cost
+simulation locates the flyability edge at ~64,200 yr under the 15-yr custody
+gate — a policy label, ±1 kyr per gate-year choice, with custody growing toward
+it). The 73–79.3k span is worth ~1.8 kg of xenon (~$20k) — epoch is a cost
 non-driver; arriving ~6 kyr sooner at 73k is a legitimate preference, not a fuel
 optimum.
 

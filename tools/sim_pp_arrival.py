@@ -43,8 +43,48 @@ OUT = os.path.join("docs", "data", "pp_arrival_sim.json")
 
 
 def aim(T_yr):
+    """Aim (v_inf, tilt) at epoch T with the 2600-AU miss allowance spent OPTIMALLY.
+
+    The permitted aim-point offset (|delta| <= 2600 AU on the encounter sphere) is a
+    free DIRECTION: it can shave speed, buy down tilt, or blend both. The pre-audit
+    convention (max speed shave at unchanged tilt) one-sidedly overpriced tilted
+    epochs (adversarial-audit finding 0). Here the offset direction is optimized
+    against the closed-form pumped budget (v_inf + derived plane tax + pump tax) —
+    a proxy used ONLY for aim selection; every row's Δv is still the full 3-D
+    campaign integration.
+    """
+    import numpy as np
+    from scipy.optimize import minimize
+
+    from fermi_sim.departure import plane_tax_for, pump_tax_for
+
     s = solve_intercept(STATE, T_yr * c.YEAR)
-    return max(0.0, s.v_inf - MISS / (T_yr * c.YEAR)), s.plane_angle_deg
+    V = s.v_inf_vec
+    dv_mag = MISS / (T_yr * c.YEAR)
+
+    def decompose(Vv):
+        v = float(np.linalg.norm(Vv))
+        tilt = math.degrees(math.atan2(float(Vv[2]), float(np.hypot(Vv[0], Vv[1]))))
+        return v, tilt
+
+    def cost(ang):
+        th, ph = ang
+        d = np.array([math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph),
+                      math.cos(th)]) * dv_mag
+        v, tilt = decompose(V + d)
+        return v + plane_tax_for(v, tilt) + pump_tax_for(v)
+
+    best = None
+    for th0, ph0 in ((0.3, 0.0), (1.57, 3.14), (2.8, 0.0), (1.57, 0.0)):
+        r = minimize(cost, [th0, ph0], method="Nelder-Mead",
+                     options={"xatol": 1e-3, "fatol": 0.01, "maxiter": 200})
+        if best is None or r.fun < best.fun:
+            best = r
+    th, ph = best.x
+    d = np.array([math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph),
+                  math.cos(th)]) * dv_mag
+    v, tilt = decompose(V + d)
+    return v, tilt
 
 
 def run_campaign(v_t, beta, gamma, dts=DTS):
@@ -86,18 +126,17 @@ def best_campaign(v_t, beta, dts=DTS):
 
 
 def flyable(T_yr):
-    """Can the campaign acquire aim(T) at ANY of a few steering angles?"""
+    """Can the campaign acquire aim(T)? Uses the SAME golden steering search as the
+    table rows (audit finding 6: a fixed 3-angle probe missed feasible angles near
+    the edge — 65 kyr flies at gamma ~33-36 deg)."""
     v_t, beta = aim(T_yr)
-    for g in (20.0, 30.0, 38.0):
-        _, _, _, ok = run_campaign(v_t, abs(beta), g)
-        if ok:
-            return True
-    return False
+    _, _, _, _, ok = best_campaign(v_t, abs(beta))
+    return ok
 
 
 def main():
     tcx = ecliptic_crossing_time(STATE) / c.YEAR
-    epochs = sorted(set(list(range(66000, 86001, 2000)) + [73000]
+    epochs = sorted(set(list(range(66000, 86001, 2000)) + [65000, 73000]
                         + list(range(75000, 80501, 500)) + [round(tcx)]))
     rows = []
     print(f"{'T (yr)':>8} {'v_inf':>7} {'tilt':>7} {'gamma*':>7} {'campaign':>9} "
@@ -123,7 +162,7 @@ def main():
           f"crossing +{cx['dv_total']-tmin['dv_total']:.1f} m/s")
 
     # flyability edge by bisection (earliest flyable aim between 64k and the first OK row)
-    lo, hi = 64000.0, float(min(r["T"] for r in good))
+    lo, hi = 62000.0, float(min(r["T"] for r in good))
     for _ in range(7):
         mid = 0.5 * (lo + hi)
         if flyable(mid):

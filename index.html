@@ -647,9 +647,9 @@
   <table class="chain prose">
     <tr><th></th><th>Direct SEP spiral — <b>exploratory</b> (needs a far-term array)</th><th>Perihelion-pumped SEP — <b>THE MISSION</b></th></tr>
     <tr><td>Flight plan</td><td>one continuous outward spiral; the departure velocity is the <b>vector sum</b> of Earth's 29.8 km/s and the vehicle's own excess</td><td>quiet spiral to Earth escape, then the campaign <b>restructures the heliocentric orbit</b>: retrograde arcs pump perihelion to 0.42 AU, Oberth-leveraged perihelion burns staircase the energy out</td></tr>
-    <tr><td><b>Design arrival epoch</b></td><td class="v"><b>~73,000 yr</b>, aim 2.4° below the ecliptic (fuel optimum; flat to ±100 m/s across ~67–80k yr)</td><td class="v">a <b>flat design window, ~73k–79.3k yr</b>: the fuel minimum is a shallow basin (bottom ~77.8k; the in-plane <b>79,250-yr ecliptic crossing</b>, +27 m/s, is the geometry-anchored fuel/robustness end and the slider default), and the whole window spans only ~0.3 km/s of Δv ≈ 2.4 kg of xenon ≈ <b>~$25k</b> — so a <em>second</em> optimization dimension, the <b>arrival date itself</b>, legitimately pulls toward the early end: aiming at ~73k arrives <b>~6,000 yr sooner</b> for that rounding-error price. Fuel says the crossing; arrival-value says ~73k; both ends are defensible design points of <em>this</em> variation</td></tr>
+    <tr><td><b>Design arrival epoch</b></td><td class="v"><b>~73,000 yr</b>, aim 2.4° below the ecliptic (fuel optimum; flat to ±100 m/s across ~67–80k yr)</td><td class="v">a <b>flat design window, ~73k–79.3k yr</b>: the fuel minimum is a shallow basin (bottom ~77.5k; the in-plane <b>79,250-yr ecliptic crossing</b>, +33 m/s, is the geometry-anchored fuel/robustness end and the slider default), and the whole window spans only ~0.2 km/s of Δv ≈ 1.8 kg of xenon ≈ <b>~$20k</b> — so a <em>second</em> optimization dimension, the <b>arrival date itself</b>, legitimately pulls toward the early end: aiming at ~73k arrives <b>~6,000 yr sooner</b> for that rounding-error price. Fuel says the crossing; arrival-value says ~73k; both ends are defensible design points of <em>this</em> variation</td></tr>
     <tr><td>Why that epoch</td><td>in the vector sum, tilt is nearly free (2.4° costs ~0.1 km/s of v∞,E) while v∞ growth is amplified ~1.3× — so arrive earlier and accept tilt</td><td>tilt must be physically thrust under the 1/r² power fade (0.51 km/s at 2.48°, quadratic near 0°) while v∞ is Oberth-discounted (~0.6× via the falling tax) — so aim near-in-plane</td></tr>
-    <tr><td>Epoch provenance</td><td>derived argmin of the Earth-relative budget; <b>matches PSI's independently derived 73,012 yr</b> to 0.2%</td><td><b>PSI did not derive this variation's fuel optimum</b> — their stated "~73,000 yr" arrival reuses the impulsive optimum, and their report flags the pumped tilt pricing as open future work (§2.5, R6). Our derived 3-D tilt pricing (validated against their one measured 3-D point to 5%) settles the open item: the fuel basin sits at the crossing end, and 73k costs +0.27 km/s. Their 73k quoting survives on the <em>arrival-value</em> dimension (earliest end of the flat window), not as a fuel optimum</td></tr>
+    <tr><td>Epoch provenance</td><td>derived argmin of the Earth-relative budget; <b>matches PSI's independently derived 73,012 yr</b> to 0.2%</td><td><b>PSI did not derive this variation's fuel optimum</b> — their stated "~73,000 yr" arrival reuses the impulsive optimum, and their report flags the pumped tilt pricing as open future work (§2.5, R6). Our derived 3-D tilt pricing (validated against their one measured 3-D point to 5%) settles the open item: the fuel basin sits at the crossing end, and 73k costs +0.21 km/s. Their 73k quoting survives on the <em>arrival-value</em> dimension (earliest end of the flat window), not as a fuel optimum</td></tr>
     <tr><td>Departure Δv</td><td class="v">~30.1 km/s (conservative spiral budget)</td><td class="v">~32.3 km/s two-leg (7.7 escape + 24.0 helio incl. +0.7 tax + ~0.02 steering)</td></tr>
     <tr><td>Vehicle (its preset, its optimum)</td><td class="v">~43 kg wet / 15.5 kg dry / 28 kg Xe (64%) @ 2 kW</td><td class="v">~154 kg wet / 52 kg dry / 103 kg Xe (67%) @ 2 kW</td></tr>
     <tr><td>Array / α gate</td><td>needs vehicle α ≈ <b>129 W/kg</b> → a far-term ~1000 W/kg array; <b>infeasible on today's 91 W/kg hardware</b> (the outward spiral saturates far below the cruise floor)</td><td>closes on <b>today's 91 W/kg GaAs array</b> (vehicle α ≈ 39 W/kg); GaAs cells are load-bearing — silicon collapses at 0.42 AU</td></tr>
@@ -657,7 +657,7 @@
     <tr><td>Thermal environment</td><td>≥ 1 AU — benign</td><td>repeated 0.42 AU passes — MESSENGER-class qualification</td></tr>
     <tr><td>Powered custody</td><td class="v">&lt;1 yr of near-continuous firing (far-term preset; the conservative 600-kg silicon variant needs ~2 yr)</td><td class="v">~13–14 yr (1.5 yr escape + 12-yr campaign, mostly coast between arcs)</td></tr>
     <tr><td>Program cost (PSI final assessment)</td><td>not costed at micro-probe scale — gated on the far-term array existing</td><td class="v">$16M-class median, dominated by operations/custody, gap programmatic not physical</td></tr>
-    <tr><td>Epoch sensitivity</td><td class="v">flat — flying B's 77.8k epoch costs only +0.06 km/s</td><td class="v">flying A's 72.8k epoch costs +0.29 km/s and +2.4 kg wet</td></tr>
+    <tr><td>Epoch sensitivity</td><td class="v">flat — flying the pumped basin epoch costs only +0.06 km/s</td><td class="v">flying the 73k epoch costs +0.21 km/s ≈ 1.8 kg of xenon (deep-simulation record)</td></tr>
   </table>
   <p class="src">Measured with each variation's own component preset at its own design epoch (the numbers are
   engine-derived — the arrival optima come from the fermi_sim intercept sweep through each budget, audit-pinned —
@@ -678,25 +678,29 @@
   means the Δv budget — velocity change, the propellant currency, in km/s — never money.</b></p>
   <table class="chain prose">
     <tr><th>Arrival</th><th class="v">Aim v∞ (km/s)</th><th class="v">Aim tilt</th><th class="v">Pumped-vehicle Δv (direct 3-D simulation)</th><th class="v">vs minimum</th><th class="v">Campaign custody</th></tr>
-    <tr><td>58,000 yr</td><td class="v">23.06</td><td class="v">−10.1°</td><td class="v" colspan="2"><b>unflyable</b> — the campaign cannot acquire this tilt within custody</td><td class="v">—</td></tr>
-    <tr><td>65,000 yr</td><td class="v">23.20</td><td class="v">−6.0°</td><td class="v" colspan="2"><b>unflyable</b> — at the bisected ~65,000-yr flyability edge</td><td class="v">—</td></tr>
-    <tr><td>66,000 yr</td><td class="v">23.24</td><td class="v">−5.5°</td><td class="v">33.63</td><td class="v">+1.43</td><td class="v">13.6 yr</td></tr>
-    <tr><td>70,000 yr</td><td class="v">23.40</td><td class="v">−3.6°</td><td class="v">32.90</td><td class="v">+0.70</td><td class="v">12.3 yr</td></tr>
-    <tr><td>73,000 yr</td><td class="v">23.55</td><td class="v">−2.3°</td><td class="v">32.48</td><td class="v">+0.27</td><td class="v">12.1 yr</td></tr>
-    <tr><td>75,000 yr</td><td class="v">23.65</td><td class="v">−1.5°</td><td class="v">32.30</td><td class="v">+0.09</td><td class="v">12.1 yr</td></tr>
-    <tr><td>77,000 yr</td><td class="v">23.75</td><td class="v">−0.8°</td><td class="v">32.21</td><td class="v">+0.01</td><td class="v">12.0 yr</td></tr>
-    <tr><td><b>77,500 yr</b></td><td class="v">23.78</td><td class="v">−0.6°</td><td class="v"><b>32.20 — minimum (sub-noise plateau)</b></td><td class="v">0</td><td class="v">12.0 yr</td></tr>
+    <tr><td>58,000 yr</td><td class="v">23.06</td><td class="v">−10.1°</td><td class="v" colspan="2"><b>unflyable</b> — far below the flyability edge at any custody a 15-yr-class mission would accept</td><td class="v">—</td></tr>
+    <tr><td>65,000 yr</td><td class="v">23.28</td><td class="v">−5.6°</td><td class="v">33.71</td><td class="v">+1.51</td><td class="v">14.0 yr</td></tr>
+    <tr><td>66,000 yr</td><td class="v">23.32</td><td class="v">−5.1°</td><td class="v">33.51</td><td class="v">+1.32</td><td class="v">13.1 yr</td></tr>
+    <tr><td>70,000 yr</td><td class="v">23.48</td><td class="v">−3.2°</td><td class="v">32.79</td><td class="v">+0.60</td><td class="v">12.2 yr</td></tr>
+    <tr><td>73,000 yr</td><td class="v">23.60</td><td class="v">−2.0°</td><td class="v">32.41</td><td class="v">+0.21</td><td class="v">12.1 yr</td></tr>
+    <tr><td>75,000 yr</td><td class="v">23.68</td><td class="v">−1.3°</td><td class="v">32.26</td><td class="v">+0.06</td><td class="v">12.0 yr</td></tr>
+    <tr><td>77,000 yr</td><td class="v">23.76</td><td class="v">−0.6°</td><td class="v">32.20</td><td class="v">+0.00</td><td class="v">12.0 yr</td></tr>
+    <tr><td><b>77,500 yr</b></td><td class="v">23.78</td><td class="v">−0.5°</td><td class="v"><b>32.20 — minimum (sub-noise plateau)</b></td><td class="v">0</td><td class="v">12.0 yr</td></tr>
     <tr><td><b>79,252 yr (ecliptic crossing)</b></td><td class="v">23.87</td><td class="v">0.0°</td><td class="v">32.23</td><td class="v">+0.03 — <b>design default</b></td><td class="v">12.0 yr</td></tr>
-    <tr><td>82,000 yr</td><td class="v">24.02</td><td class="v">+0.9°</td><td class="v">32.40</td><td class="v">+0.20</td><td class="v">12.1 yr</td></tr>
-    <tr><td>86,000 yr</td><td class="v">24.23</td><td class="v">+2.1°</td><td class="v">32.82</td><td class="v">+0.61</td><td class="v">12.3 yr</td></tr>
+    <tr><td>82,000 yr</td><td class="v">24.03</td><td class="v">+0.75°</td><td class="v">32.39</td><td class="v">+0.19</td><td class="v">12.1 yr</td></tr>
+    <tr><td>86,000 yr</td><td class="v">24.27</td><td class="v">+1.8°</td><td class="v">32.78</td><td class="v">+0.58</td><td class="v">12.2 yr</td></tr>
   </table>
-  <p class="src">Read-off conclusions, all from this one simulation set: the pumped fuel minimum is a
-  <b>flat basin from ~75k to ~79.3k yr</b> (formal bottom 77,500 on the 500-yr grid; 77.0–78.5k lie
+  <p class="src">Read-off conclusions, all from this one simulation set (aims use the miss allowance
+  optimally — speed shave vs tilt buy-down, per the adversarial-audit correction): the pumped fuel
+  minimum is a
+  <b>flat basin from ~75k to ~79.5k yr</b> (formal bottom 77,500 on the 500-yr grid; 76.5–78k lie
   within 7 m/s of it — a sub-noise plateau, so the bottom is quoted as a basin, not a point);
   the in-plane <b>ecliptic crossing sits +0.03 km/s from the bottom —
-  inside model noise — and is the design default</b> because it is the one epoch fixed by geometry
-  alone; epochs earlier than ~65k are not reachable at all (the deep simulation locates the
-  flyability edge at ~65,000 yr, aim tilt −6°, with custody growing toward it — 13.6 yr at 66k; the campaign cannot buy more
+  model-noise scale — and is the design default</b> because it is the one epoch fixed by geometry
+  alone; epochs earlier than ~64k are not reachable <em>within the 15-yr custody gate</em> (the deep
+  simulation bisects the flyability edge to ~64,200 yr — a <b>custody-policy label, not a physics
+  wall</b>: the 63–64k aims are acquirable given ~16–20 yr of custody, so the edge moves ~1 kyr per
+  gate choice — with custody growing toward it, 14.0 yr at 65k; below ~63k the campaign cannot buy more
   out-of-plane aim); and custody is ~12 yr regardless of epoch, so the arrival choice does not move
   operations cost. Historical note on other numbers in circulation: see the epoch-provenance row of
   the table above and <code>audit/psi/README.md</code>. <b>The full analysis note</b> — method,
@@ -1188,12 +1192,13 @@
   <b>0.51 km/s at the 2.48° direct-optimum aim</b>, half the far-field bound v∞·|sin β| the budget
   previously charged (PSI's final assessment independently measures 0.58 km/s there under its 4× cap
   assumption; the same derivation under our cap model gives 0.61 — 5% apart). Validity extends to
-  β = 4°; steeper aims continue at the far-field marginal slope (measured accurate to &lt;1% at 6°),
-  and the curve is bounded above by v∞·|sin β| everywhere. One consequence moves: with the |sin β|
+  β = 4°; steeper aims continue at the far-field marginal slope (matched to &lt;1% by a 6° probe —
+  though that trajectory needs ~23 yr of custody, so &gt;4° prices are <em>a-fortiori comparison
+  bounds</em>, not flyable 12-yr budgets), and the curve is bounded above by v∞·|sin β| everywhere. One consequence moves: with the |sin β|
   kink rounded into a quadratic, the pumped fuel minimum becomes a
   <b>flat shallow basin bottoming near ~77,500 yr</b> (aim tilt −0.6°; sub-noise — see
   <code>docs/PP-ARRIVAL-OPTIMUM.md</code>); the in-plane crossing aim at
-  79,250 yr costs only <b>+27 m/s</b> — inside the model's own noise — so the
+  79,250 yr costs only <b>+33 m/s</b> — the scale of the model's own noise — so the
   <b>geometry-anchored crossing is this variation's design epoch</b> (the basin bottom wanders with
   pricing details; the crossing is fixed by astrometry alone), and the
   early-arrival branch (~58,000 yr) stays ~3 km/s out.</p>

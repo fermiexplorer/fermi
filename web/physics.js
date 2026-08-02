@@ -506,8 +506,10 @@
   // ~Quadratic near 0 (~95 m/s·β²), 512 m/s at the 2.48° direct-optimum aim (the naive
   // far-field bound charges 1023 there; PSI's final assessment measures 578 at their 4×
   // cap — our cap-model derivation gives 606). Validity [0, 4°]; beyond, the far-field
-  // MARGINAL slope continues the curve (measured <1% off at 6°). Knots scale by
-  // (v∞ / 23.64 km/s). Always ≤ v∞·|sin β| (audit-pinned).
+  // MARGINAL slope continues the curve (measured <1% off at 6°, but the 6° trajectory
+  // needs ~23 yr — >4° prices are a-fortiori comparison bounds, not flyable budgets).
+  // Knots scale by (v∞ / 23.64 km/s) — conservative: the true cost trend FALLS with
+  // v∞, so the band top is overcharged ~20-30% (audited). Always ≤ v∞·|sin β|.
   const PLANE_TAX_THERMAL_TABLE = [
     [0.0, 0.0], [0.1, 1.2], [0.25, 6.7], [0.5, 24.3], [0.75, 54.0], [1.0, 94.2],
     [1.5, 205.2], [2.0, 350.8], [2.48, 512.1], [3.0, 708.7], [4.0, 1123.4]];
