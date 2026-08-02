@@ -25,7 +25,9 @@ It answers:
 - What is the **minimum spacecraft Δv from LEO** with no gravity assist, and the
   mission profile that achieves it?
 - **Solar vs fuel-cell vs hybrid** power — which wins, and why?
-- **Direct vs pumped vs synchrotron vs gravity-assist** trajectories.
+- **Perihelion-pumped SEP is the mission architecture** — the only one that closes on
+  parts available today; direct / gravity-assist / solar-Oberth / synchrotron are
+  presented as **exploratory concepts**, each with the gate that blocks it stated.
 
 ## Headline results
 

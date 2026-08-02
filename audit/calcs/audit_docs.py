@@ -105,6 +105,26 @@ def run() -> None:
     check("run_analysis synchrotron verdict is labelled exploratory",
           "EXPLORATORY CONCEPT, NOT A CANDIDATE ARCHITECTURE" in analysis)
 
+    # 9c. PP is THE mission architecture (owner decision, issue #12): the selector marks
+    #     pumped as the mission and every alternative as exploratory, and each exploratory
+    #     verdict states its blocking gate.
+    check("index.html radio marks pumped as the mission architecture",
+          "the mission architecture</b></label>" in idx)
+    check("index.html radios mark all four alternatives exploratory",
+          idx.count("— exploratory</label>") == 4)
+    check("index.html architecture table states the direct gate (array does not exist)",
+          "Exploratory — the array it needs does not exist" in idx)
+    check("index.html architecture table states the Oberth gate (new engineering)",
+          "Exploratory — new engineering, not catalog parts" in idx)
+    check("index.html architecture table states the Jupiter gate (windows + ops)",
+          "Exploratory — window-contingent, assist-class operations" in idx)
+    check("index.html pumped verdict leads with THE MISSION ARCHITECTURE",
+          "THE MISSION ARCHITECTURE — the only one that closes on parts you can order today"
+          in idx)
+    for nm, txt in (("REPORT.md", report), ("run_analysis.py", analysis)):
+        check(f"{nm} frames one closing architecture + exploratory alternatives",
+              "MISSION ARCHITECTURE" in txt and "xploratory" in txt)
+
     # 10. Thermal-era cross-file facts (issue #5). The derived cap 3.54 and the flown
     #     campaign dv 24.44 must appear on the headline surfaces; the old default budget
     #     bands must not reappear as the current default.

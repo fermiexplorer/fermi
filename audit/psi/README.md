@@ -1,5 +1,8 @@
 # PSI external assessments
 
+PP-first digest of the FINAL report (what it establishes for the mission
+architecture, what we extended, what remains open): **`PP-NOTES.md`**.
+
 Two documents from Physical Superintelligence PBC are archived here with attribution as
 the independent external cross-assessment of this project — both produced and verified
 end-to-end by PSI's autonomous physics-research platform:
