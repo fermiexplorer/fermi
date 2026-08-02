@@ -63,6 +63,23 @@ lower bound). "The gap is programmatic. It is not physical." Path to $10M:
 automation-first operations (the mission's stated loss-of-contact tolerance is a
 cost-structural feature, their R3) + compressed bus/IT&Q practice (~40%).
 
+**Verification of the negative (exhaustive text sweep).** Because 73,012/73,000
+appears ~38 times in the final PDF, an exhaustive machine sweep of the extracted
+text (all 63 pages, pypdf) checked whether any of them is a PP-specific epoch
+derivation. Result: every occurrence is (a) the impulsive/departure-geometry
+optimum and its blind re-derivation, or (b) design-point inheritance — p16 states
+it verbatim: "caveats keep this report's design point at 73,012 years... those
+schedules are planar: they exclude the cost of acquiring the out-of-plane tilt...
+Whether the cruise-speed saving survives the tilt bill is an open question...
+left as future work" — or (c) downstream reuse (dispersion aim epoch, timeline,
+coast length, custody pricing). No 77–78k AC arrival appears anywhere (the only
+78k numbers are LSPM J2146+3813's arrival — a different star — and Table 14 row
+labels). Sharper still: PSI's own PLANAR pumped column bottoms near 65,000 yr
+(23.49 km/s), not 73k — so 73k is not even their planar pumped minimum; it is
+purely the impulsive design point carried through, and their p63 states that
+settling the pumped epoch "requires a three-dimensional re-optimization across
+the window" — the computation this project performed.
+
 **Arrival epoch — what the final report does NOT establish for PP.** Their 73,012-yr
 optimum is derived for the impulsive/Earth-relative departure only; the PP arrival
 trade is explicitly left open (Table 14 caveat: the pumped column "is planar and
