@@ -663,6 +663,37 @@
   develop Variation A's impulsive/Earth-borrow story; the <a href="#pumping">perihelion-pumping section</a>
   develops Variation B's campaign physics.</p>
 
+  <h4>The pumped arrival-epoch optimization — two quantities, one vehicle, one honest minimum</h4>
+  <p>A recurring confusion, resolved by putting both optimized quantities in one table at identical
+  epochs. <b>"Budget" everywhere on this page means the Δv budget — velocity change, the propellant
+  currency, in km/s — never money.</b> Column A is the <em>impulsive</em> departure Δv from LEO: a
+  chemical rocket's propellant bill, the quantity PSI's arrival-epoch optimization minimises (its
+  minimum is 73,000 yr — correct, and corroborated here to 0.2%). Column B is the <em>pumped
+  vehicle's</em> total Δv — escape spiral plus the directly simulated 3-D campaign
+  (<code>tools/derive_epoch_table.py</code>) — the quantity the PP mission's xenon actually scales
+  with. <b>Each column has exactly one minimum; they differ because the same aim is priced by
+  different propulsion physics</b> (a chemical kick tilts its burn vector for ~0.1 km/s, while the
+  ion campaign must thrust its tilt under the 1/r² power fade for ~0.5 km/s at 2.48°). The pumped
+  mission pays column B, never column A.</p>
+  <table class="chain prose">
+    <tr><th>Arrival</th><th class="v">Aim v∞ (km/s)</th><th class="v">Aim tilt</th><th class="v">A — impulsive Δv (chemical reference; PSI's optimized quantity)</th><th class="v">B — pumped-vehicle Δv (direct 3-D simulation)</th></tr>
+    <tr><td>58,000 yr</td><td class="v">23.06</td><td class="v">−10.1°</td><td class="v">14.57 (+0.76)</td><td class="v"><b>unflyable</b> (tilt beyond the campaign's reach)</td></tr>
+    <tr><td>65,000 yr</td><td class="v">23.20</td><td class="v">−6.0°</td><td class="v">13.97 (+0.17)</td><td class="v"><b>unflyable</b></td></tr>
+    <tr><td>70,000 yr</td><td class="v">23.40</td><td class="v">−3.6°</td><td class="v">13.82 (+0.02)</td><td class="v">32.90 (+0.70)</td></tr>
+    <tr><td><b>73,000 yr</b></td><td class="v">23.55</td><td class="v">−2.3°</td><td class="v"><b>13.80 — column-A minimum</b></td><td class="v">32.48 (+0.27)</td></tr>
+    <tr><td>75,000 yr</td><td class="v">23.65</td><td class="v">−1.5°</td><td class="v">13.82 (+0.01)</td><td class="v">32.30 (+0.09)</td></tr>
+    <tr><td><b>77,800 yr</b></td><td class="v">23.79</td><td class="v">−0.5°</td><td class="v">13.86 (+0.05)</td><td class="v"><b>32.20 — column-B minimum (flat basin)</b></td></tr>
+    <tr><td>79,252 yr (crossing)</td><td class="v">23.87</td><td class="v">0.0°</td><td class="v">13.89 (+0.08)</td><td class="v">32.23 (+0.03 — the geometry-anchored design default)</td></tr>
+    <tr><td>85,000 yr</td><td class="v">24.18</td><td class="v">+1.8°</td><td class="v">14.05 (+0.25)</td><td class="v">32.70 (+0.50)</td></tr>
+  </table>
+  <p class="src">Deltas in parentheses are km/s above each column's own minimum. For the pumped
+  mission, column B is the real propellant scale: its minimum is the flat ~77–79.3k basin, and the
+  in-plane crossing (+0.03) is taken as the design default. Column A's 73,000-yr minimum belongs to
+  the chemical/impulsive variation — PSI derived it for that quantity and reused it for the pumped
+  arrival while explicitly leaving the pumped tilt pricing open (their §2.5, R6); the whole
+  73–79.3k window is worth ~2.4 kg of xenon (~$25k), so choosing 73k to arrive ~6,000 yr sooner is
+  a legitimate arrival-value preference — but it is not, and never was, the pumped fuel minimum.</p>
+
   <h4>2 · Departure energetics (LEO → v∞)</h4>
   <p>To leave on a heliocentric hyperbola of excess <code>v∞</code>, the probe needs heliocentric speed
   <code>v_dep = √(v∞² + v_esc,☉²)</code> at 1 AU (<code>v_esc,☉</code> = 42.1 km/s). Earth supplies 29.8 km/s
