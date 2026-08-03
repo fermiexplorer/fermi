@@ -324,7 +324,7 @@
     <div class="group">
       <h3>Trajectory architecture</h3>
       <div class="radios">
-        <label><input type="radio" name="ga" value="pumped" checked> Perihelion-pumped SEP — <b>the mission architecture</b></label>
+        <label><input type="radio" name="ga" value="pumped" checked> Perihelion-pumped SEP</label>
         <label><input type="radio" name="ga" value="direct"> Direct from LEO — exploratory</label>
         <label><input type="radio" name="ga" value="jupiter"> Jupiter gravity assist — exploratory</label>
         <label><input type="radio" name="ga" value="oberth"> Solar Oberth — exploratory</label>
@@ -335,7 +335,9 @@
         0.42 AU passes require, and a 6 kg/kW thruster) for every architecture except the direct spiral,
         whose physics demands the <b>far-term set</b> (~1000 W/kg array <em>and</em> a 4 kg/kW thruster —
         α ≳ 100 W/kg). All sliders stay freely adjustable afterwards.</div>
-      <div class="hint" id="pumpHint" style="display:none; margin-top:8px">Retrograde arcs near apoapsis
+      <div class="hint" id="pumpHint" style="display:none; margin-top:8px"><b>The mission architecture</b> —
+        the only one that closes on parts available today; every alternative above is an exploratory
+        concept with a stated blocking gate. Retrograde arcs near apoapsis
         drop perihelion to 0.42 AU, then prograde burns at perihelion (~3.5× array power + max Oberth
         leverage) staircase the energy over a few revolutions — defeats the 1/r² power wall at today's α.
         Flown at the validated design profile a₀ = min(F/m<sub>wet</sub>, 2.5×10⁻⁴ m/s²).
@@ -1879,10 +1881,21 @@ function render(){
   // when the vehicle's mass closure diverges, wet/dry/propellant are ∞/NaN — suppress the whole
   // mass/fuel/profile narrative and show only the (already-correct) infeasibility reason.
   const massShown = r.massConverges && isFinite(r.wet) && isFinite(r.dry);
+  // Verdict policy (owner decision): the GREEN "FEASIBLE" verdict is reserved for the
+  // mission architecture (perihelion-pumped SEP). Every exploratory architecture that
+  // closes shows an AMBER "MODEL CLOSES — exploratory" with its blocking gate stated,
+  // exactly as the synchrotron has since build 164.
+  const EXPL_GATE = {
+    direct: 'conditional on a far-term ~1000 W/kg-class array that does not exist today (see the power gate)',
+    jupiter: 'conditional on a Jupiter phasing window on a fixed launch date plus assist-class deep-space operations — and the Δv shown is a geometric upper bound',
+    oberth: 'conditional on Parker-class thermal protection, a chemical kick stage, and an assist tour to set up the perihelion',
+  };
   const feasLine = r.feasible
     ? (r.ga==='synchro'
       ? `<div class="sline"><b style="color:#d29922">✓ MODEL CLOSES — exploratory concept, not a feasibility claim.</b> The kick schedule reaches the target, but the verdict is <b>conditional on a deep-solar EM-station infrastructure that does not exist</b> (and is not costed here — the mass below is the probe side only); single-probe recirculation is the fragile case, and the coherent form is a one-kick gateway amortised across a fleet (<a href="#synchrotron">see the section verdict</a>). Minimal derived dry mass <b>${fmt(r.dry)} kg</b>, <b>${fmt(r.wet)} kg</b> wet (payload <b>${fmt(r.pay,1)} kg</b> on top).</div>`
-      : `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top). This is a <b>mass-closure floor at the selected component technology, not an engineered bus</b> — no comms, GNC hardware, thermal or harness line items beyond the structure fraction${r.arraySpecPower>=300?`, and the selected array is far-term ${fmt(r.arraySpecPower)} W/kg (today's arrays are ~10× heavier — the 91 W/kg today's-class preset the other architectures default to)`:''}.</div>`)
+      : r.ga!=='pumped'
+      ? `<div class="sline"><b style="color:#d29922">✓ MODEL CLOSES — exploratory concept, not a mission-feasibility claim.</b> The mass model closes at the selected components, but this architecture is <b>${EXPL_GATE[r.ga]||'exploratory'}</b>; <b>perihelion-pumped SEP is the mission architecture</b> (<a href="#pumping">why</a>). Minimal derived dry mass <b>${fmt(r.dry)} kg</b>, <b>${fmt(r.wet)} kg</b> wet (payload <b>${fmt(r.pay,1)} kg</b> on top)${r.arraySpecPower>=300?` — and the selected array is far-term ${fmt(r.arraySpecPower)} W/kg (today's arrays are ~10× heavier)`:''}.</div>`
+      : `<div class="sline"><b style="color:#3fb950">✓ FEASIBLE — the mission architecture, on parts available today.</b> Minimal derived dry mass <b>${fmt(r.dry)} kg</b> (power source + engine + tank + <b>${fmt(r.structureMass)} kg</b> structure), <b>${fmt(r.wet)} kg</b> wet — no extraneous margin (payload <b>${fmt(r.pay,1)} kg</b> on top). This is a <b>mass-closure floor at the selected component technology, not an engineered bus</b> — no comms, GNC hardware, thermal or harness line items beyond the structure fraction${r.arraySpecPower>=300?`, and the selected array is far-term ${fmt(r.arraySpecPower)} W/kg (today's arrays are ~10× heavier — the 91 W/kg today's-class preset is the parts-available claim)`:''}.</div>`)
     : `<div class="sline"><b style="color:#f85149">✗ NOT FEASIBLE</b> — ${r.infeasReason}.</div>`;
   const summ= feasLine + (massShown ? (
     `<div class="sline"><b>Aiming for arrival in ${fmt(r.arrivalYr)} yr</b> (departure aim <b>${fmt(Math.abs(tilt),1)}° ${tilt<0?'below':'above'} the ecliptic</b>) requires a departure Δv of <b>${fmt(r.dvDesign/1e3,1)} km/s</b> from LEO → minimum propellant <b>${fmt(100*r.f)}%</b>, wet mass <b>${fmt(r.wet)} kg</b> on a ${fmt(r.dry)} kg dry bus, cruise v∞ ≈ ${fmt(r.vinfSun/1e3,1)} km/s (relative to the Sun).</div>`+

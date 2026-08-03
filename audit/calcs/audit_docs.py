@@ -109,10 +109,19 @@ def run() -> None:
     # 9c. PP is THE mission architecture (owner decision, issue #12): the selector marks
     #     pumped as the mission and every alternative as exploratory, and each exploratory
     #     verdict states its blocking gate.
-    check("index.html radio marks pumped as the mission architecture",
-          "the mission architecture</b></label>" in idx)
+    check("index.html pumped hint states the-mission-architecture (radio itself stays short)",
+          "The mission architecture</b> —" in idx
+          and "the only one that closes on parts available today" in idx
+          and "the mission architecture</b></label>" not in idx)
     check("index.html radios mark all four alternatives exploratory",
           idx.count("— exploratory</label>") == 4)
+    # verdict policy: GREEN 'FEASIBLE' is reserved for the pumped architecture; every
+    # closing exploratory architecture shows the AMBER 'MODEL CLOSES — exploratory'
+    check("index.html verdict reserves FEASIBLE for the mission architecture",
+          "FEASIBLE — the mission architecture, on parts available today" in idx)
+    check("index.html verdict shows MODEL CLOSES — exploratory for closing alternatives",
+          "MODEL CLOSES — exploratory concept, not a mission-feasibility claim" in idx
+          and "EXPL_GATE" in idx)
     check("index.html architecture table states the direct gate (array does not exist)",
           "Exploratory — the array it needs does not exist" in idx)
     check("index.html architecture table states the Oberth gate (new engineering)",
