@@ -1,9 +1,11 @@
 # Fermi Explorer — Alpha Centauri ion-propulsion mission feasibility
 
 A first-order ("Fermi") simulation and interactive calculator for an interstellar
-precursor mission: get a small spacecraft **99% of the way to Alpha Centauri
-(≤ 2600 AU) within 100,000 years**, carrying a ≥1 kg payload, departing from LEO
-with ion propulsion.
+precursor mission: get a small spacecraft **to within 2600 AU of Alpha Centauri
+(the AB barycenter, at closest approach) within 100,000 years** — closing 99% of
+today's 4.36-light-year separation; the intercept itself lies 6.4 ly out, because
+the star moves on — carrying a ≥1 kg payload, departing from LEO with ion
+propulsion.
 
 > ⚠️ **PRELIMINARY — first-order "Fermi estimate" only.** Every number here is an
 > order-of-magnitude sizing built on simplifying assumptions (straight-line target
@@ -78,7 +80,7 @@ python3 -m venv .venv
 # integrated numeric analysis
 .venv/bin/python run_analysis.py
 
-# independent audits (230+ checks: astropy ephemeris, conservation laws, optima, thermal balance, star data, doc consistency)
+# independent audits (280+ checks: astropy ephemeris, conservation laws, optima, thermal balance, star data, doc consistency)
 .venv/bin/python audit/calcs/run_audits.py
 
 # web<->python parity (Node, ~49 checks)
@@ -110,7 +112,7 @@ The physics is checked **independently** (different method, not self-comparison)
   departure C3 to 2×10⁻⁶ % and the low-thrust Earth-escape spiral time to 0.007 %
   (`audit/gmat/`; scripts, comparison and raw GMAT outputs are committed for inspection).
 
-All 230+ Python checks + ~49 JS-parity checks pass (plus a Playwright UI render test, the
+All 280+ Python checks + ~49 JS-parity checks pass (plus a Playwright UI render test, the
 NASA GMAT cross-validation, and independent Codex, Grok, Gemini & Fable re-implementations
 under `audit/`, which agree to ≤0.2% on every headline number). See
 `audit/AUDIT_PROMPTS.md` for adversarial review prompts.

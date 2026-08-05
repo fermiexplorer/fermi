@@ -10,9 +10,11 @@ Earth-escape spiral time to within 0.01 %.*
 
 ## The question
 
-Send a small spacecraft **99% of the way to Alpha Centauri (≤ 2600 AU of it) within
-100,000 years**, with a ≥1 kg payload, departing from LEO on ion propulsion. Is it
-feasible, and what is the minimum spacecraft Δv?
+Send a small spacecraft **to within 2600 AU of Alpha Centauri (the AB barycenter,
+at closest approach) within 100,000 years**, with a ≥1 kg payload, departing from
+LEO on ion propulsion — closing 99% of today's 4.36 ly separation (the intercept
+itself lies 6.4 ly out, because the star moves on). Is it feasible, and what is the
+minimum spacecraft Δv?
 
 ## Short answer
 

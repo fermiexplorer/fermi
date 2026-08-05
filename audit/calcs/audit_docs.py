@@ -213,6 +213,39 @@ def run() -> None:
     check("index.html no longer links the working-draft PDF as the citation",
           "PSI-TR-2026-0714.pdf" not in idx)
 
+    # 12. Foundations-audit spec precision (issue #16). The 2600-AU requirement is
+    #     scored at closest approach to the AB barycenter, and the "99% of the way"
+    #     phrasing is tied to TODAY's separation with the 6.4-ly intercept distance
+    #     stated. Guard both on every requirement surface, ban the bare legacy token,
+    #     and pin the golden-fixture gate wiring.
+    req_surfaces = {"index.html": idx, "REPORT.md": report, "README.md": readme,
+                    "run_analysis.py": analysis,
+                    "audit/EXTERNAL_AUDIT_SCOPE.md":
+                        extra["audit/EXTERNAL_AUDIT_SCOPE.md"]}
+    for nm, txt in req_surfaces.items():
+        check(f"{nm} scores the 2600-AU requirement at closest approach",
+              "closest approach" in txt)
+        check(f"{nm} does not carry the bare '(99% of the way)' claim",
+              "(99% of the way)" not in txt)
+    ppnote = extra["docs/PP-ARRIVAL-OPTIMUM.md"]
+    check("PP-ARRIVAL-OPTIMUM has the AU-space aim budget (5b)",
+          "### 5b. Aim error in AU" in ppnote)
+    check("PP-ARRIVAL-OPTIMUM prices the absolute-RV frame floor (30-100 m/s)",
+          "30–100 m/s" in ppnote)
+    check("PP-ARRIVAL-OPTIMUM carries the shave-convention caveat",
+          "pricing device" in ppnote and "not a flyable budget" in ppnote)
+    run_audits_src = _read_extra("audit/calcs/run_audits.py")
+    check("golden-fixture gate is wired into run_audits.py",
+          "audit_golden" in run_audits_src)
+    for f in ("golden_inputs.json", "expected_outputs.json", "check_golden.py",
+              "README.md"):
+        check(f"audit/psi/golden/{f} is archived",
+              os.path.exists(os.path.join(ROOT, "audit", "psi", "golden", f)))
+    check("foundations-audit record exists and is linked from audit/README",
+          os.path.exists(os.path.join(ROOT, "audit", "fable",
+                                      "fable-foundations-audit.md"))
+          and "fable-foundations-audit.md" in _read_extra("audit/README.md"))
+
 
 if __name__ == "__main__":
     from _util import summary

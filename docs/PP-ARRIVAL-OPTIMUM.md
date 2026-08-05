@@ -106,7 +106,15 @@ flyability edge located by bisection.
    final assessment, 3-D re-optimization, an unrelated implementation): 5% apart.
 4. **Fresh row replay in the audit suite** (13h): the recorded 75,000-yr row is
    re-simulated from the engine on every audit run and must land within 40 m/s.
-5. **PSI's planar pumped column** (their Table 14 — tilt-free by their own caption) does
+5. **Foundations verification (five-way, blind):** the arrival-model premises behind
+   this table — linear kinematics over 79 kyr, the frame chain, constants, and the
+   error terms of §5/§5b — were adversarially re-derived by this project's own
+   multi-agent audit workflow plus four external frontier models (GPT-5.6 Sol,
+   Grok 4.5, two Gemini tiers), each blind to the others. The chain is verified
+   sound (galactic tide 1–5 AU; perspective acceleration exactly contained in the
+   Cartesian propagation; constants < 0.01 yr); the honest uncertainty is in the
+   catalog inputs, as budgeted in §5. Record: `audit/fable/fable-foundations-audit.md`.
+6. **PSI's planar pumped column** (their Table 14 — tilt-free by their own caption) does
    **not** bottom at 73,000 yr: its trend floor is 23.74 km/s across the 56–60k rows,
    near their cruise-speed minimum — where tilt-blind pricing should bottom. (The
    column's single lower value, 23.49 at 65,000 yr, is a seed-scatter outlier PSI itself
@@ -125,13 +133,50 @@ flyability edge located by bisection.
 | Tax-table dt truncation (documented, conservative direction) | ~+20–35 m/s |
 | Miss-allowance convention (ONE-SIDED: the earlier max-shave form overpriced tilted epochs by ~60–100 m/s at ≤73k, ~0 at the crossing — corrected to the optimized offset; the live calculator still uses the conservative form, <10 m/s inside the basin) | one-sided, disclosed |
 | Custody-gate policy (the flyability edge moves ~1 kyr per gate-year choice) | ~±1 kyr on the edge label |
-| Astrometry inputs (sub-0.5% differences move the crossing itself ~500 yr) | ~±500 yr on any epoch label |
+| Astrometry inputs — absolute-RV frame (catalog ±2 m/s sigmas are internal precision; the kinematic line-of-sight floor is 30–100 m/s: spectrograph zero points, convective-blueshift model residuals, orbit-fit gamma; three published gammas from the same data already span 13.4 m/s. One-sided in addition: the spectroscopic→kinematic gravitational-redshift correction, +61.4 m/s ≈ +300 yr, not yet applied to any label here) | ~±150–500 yr on any epoch label |
+| Astrometry inputs — parallax/PM catalog identity (Kervella 2016 vs Akeson 2021 parallaxes differ 3.64 mas ≈ 5.1σ formal ≈ 530 yr; formal single-catalog sigmas are ±55 yr) | ~±200–500 yr systematic |
+| Probe clock (T is measured from the state epoch, not from departure; at the 2029 departure target the correction v∞′ = \|r(T)\|/(T − t_dep) is ~+12 m/s — an exact identity once t_dep is fixed) | ~+12 m/s, deterministic |
 
 The 76.5–78k plateau spans 7 m/s — far below the ~30–50 m/s noise floor — so the
 formal bottom (77,500) is **not resolvable from its neighbours** and has already moved
 in value between derivation refinements (79.25k → 77.8k → 77.5k as tilt pricing, grids
 and the miss convention sharpened). The crossing, +33 m/s away, never moves. Hence:
 **design epoch = the crossing; the basin is the honest statement of the optimum.**
+Every epoch label above is *from the state epoch* and carries the astrometry band;
+the basin's flatness (75–79.5k within ~65 m/s) is what makes the design insensitive
+to it.
+
+### 5b. Aim error in AU — the requirement's own currency
+
+The mission requirement lives in **AU at closest approach**, not in years: the pass
+condition is ≤ 2600 AU from the **AB barycenter at closest approach**, and
+radial-velocity error is almost purely *along-track* — it moves the encounter
+calendar, not the flyby distance (miss correlation ~0.007; scoring the same error
+model at a fixed instant instead of at closest approach misreads ~0.99 pass
+probability as ~0.80). The aim-error terms, independently derived and cross-checked
+by five parties (this project's audit workflow + four external frontier-model
+re-derivations, run blind):
+
+| Aim-error term (AU at closest approach) | Scale | Character |
+|---|---|---|
+| Parallax/PM catalog identity (aim built on one catalog while the other is true: ~940 AU between the two published catalogs; up to ~2,200 AU for a mixed-catalog state vs a published-catalog truth) | ~900–2,200 AU | Systematic; retired only by new astrometry or a joint catalog adoption |
+| Radial velocity (any size) | ~0 AU | Along-track timing only |
+| Sun-vs-SSB frame (the aim v∞ is heliocentric, catalog velocities are barycentric; the Sun moves ≤16 m/s about the barycenter) | ~100–270 AU | Deterministic once the departure date is fixed; a launch-epoch trim |
+| Proxima's pull on the AB barycenter over the flight (two-body integration, ~92 AU; not in the linear ephemeris) | ~90–105 AU | Deterministic, sign known; correctable with a wobble term |
+| Solar-system escape + AB gravity bookkeeping (combined deterministic line) | ~130 AU | Correctable trim |
+| Galactic tide (differential, both bodies feel the Galaxy) | < 8 AU | Verified null |
+| A/B component excursion from the barycenter | ≤ ~20 AU | Verified null |
+
+Under formal catalog sigmas the closest-approach pass probability is ≈ 1.00; under
+honest systematic floors ≈ 0.98–0.99; only stressing the full catalog gap as a 1σ
+drops it to ~0.83–0.88. Every configuration this record actually flies clears the
+2600-AU condition.
+
+**Shave-convention caveat:** the per-epoch "optimal spend" of the 2600-AU allowance
+(§2) is a *pricing device* for the Δv table, not a flyable budget — a real mission
+must hold the allowance in reserve against the systematic terms above rather than
+spend it on aim shaping. The live calculator's no-shave convention (§3) is the
+flyable-side statement; the two bracket the truth by ~0.12–0.19 km/s.
 
 ## 6. PSI context (final assessment, `audit/psi/`)
 

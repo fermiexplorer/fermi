@@ -779,7 +779,7 @@
     <tr><td>2 · Heliocentric escape burn</td><td>Keep thrusting to raise heliocentric energy, building <code>v∞</code> ≈ 24 km/s aimed at AC's ~75,000-yr position — roughly <em>one revolution around the Sun</em> (the burn lasts about one orbital period at 1 AU)</td><td class="v">~1.9 yr total burn</td></tr>
     <tr><td>3 · Engine cutoff</td><td>Shut down at <code>v∞</code> ≈ 24 km/s, still within a few AU of the Sun; ~344 kg xenon spent</td><td class="v">—</td></tr>
     <tr><td>4 · Interstellar coast</td><td>Engine off, passive cruise toward Alpha Centauri (only tiny trajectory-correction burns, if any)</td><td class="v">~75,000 yr</td></tr>
-    <tr><td>5 · Arrival</td><td>Pass within ≤ 2600 AU of AC (99% of the way); science/flyby</td><td class="v">—</td></tr>
+    <tr><td>5 · Arrival</td><td>Pass within ≤ 2600 AU of the AC AB barycenter at closest approach (99% of today's gap closed; the star is 6.4 ly out by then); science/flyby</td><td class="v">—</td></tr>
   </table>
   <p><strong>Propulsion &amp; power (baseline Isp 3000 s, η 0.50).</strong> Thruster input power <strong>~5 kW</strong>
   (electrical); thrust <strong>~0.17 N (170 mN)</strong>; <strong>firing time ~1.9 yr continuous</strong>
@@ -907,7 +907,7 @@
       against the Python engine <code>fermi_sim</code> (<code>audit/calcs/audit_webjs.mjs</code>, ~49 checks —
       including the perihelion-pumping integrators and the derived thermal power curve, which agree to
       ~11–13 significant digits, and the synchrotron recirculation model).</li>
-    <li><b>Independent suite (230+ checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
+    <li><b>Independent suite (280+ checks).</b> <code>audit/calcs/run_audits.py</code> re-derives results by a
       <em>different</em> method than the engine: AC ephemeris via <b>astropy</b>; the intercept optimum by
       brute-force search plus a forward-propagation loop-closure; departure Δv by energy conservation; the
       rocket equation by numerical mass-flow integration; the fuel-cell optimum by independent search; solar
@@ -1607,7 +1607,7 @@
       — this interactive calculator and its shared physics (value-by-value parity-checked against Python).</li>
     <li><a href="https://github.com/fermiexplorer/fermi/tree/main/audit" target="_blank" rel="noopener noreferrer"><code>audit/</code></a>
       — independent verification:
-      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (230+ Python checks + a Node JS↔Python parity check),
+      <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/calcs" target="_blank" rel="noopener noreferrer"><code>calcs/</code></a> (280+ Python checks + a Node JS↔Python parity check),
       a <a href="https://github.com/fermiexplorer/fermi/tree/main/audit/gmat" target="_blank" rel="noopener noreferrer"><code>gmat/</code></a>
       cross-validation of the departure model against <b>NASA's GMAT</b> propagator (scripts, comparison &amp; raw outputs),
       and parallel model re-implementations <code>codex/</code>, <code>grok/</code>, <code>gemini/</code>, <code>fable/</code>.</li>

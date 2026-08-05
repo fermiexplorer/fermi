@@ -11,6 +11,7 @@ import audit_departure
 import audit_docs
 import audit_ephemeris
 import audit_fuelcell
+import audit_golden
 import audit_intercept
 import audit_propulsion
 import audit_pumping
@@ -30,6 +31,7 @@ def main() -> int:
         audit_pumping,
         audit_synchrotron,
         audit_stars,
+        audit_golden,
         audit_docs,
     ):
         mod.run()

@@ -53,7 +53,8 @@
 
 Fermi is a first-order ("Fermi estimate") simulation and interactive calculator for an
 **interstellar precursor mission to Alpha Centauri**: deliver a ~1 kg payload to within
-2600 AU of AC (99% of the way) inside 100,000 years, from LEO, on ion propulsion. It
+2600 AU of AC (the AB barycenter, at closest approach — 99% of today's gap; the
+intercept is 6.4 ly out) inside 100,000 years, from LEO, on ion propulsion. It
 sizes the vehicle, finds the minimum departure Δv and optimal arrival time, and compares
 power architectures (solar vs fuel cell) and trajectories (direct vs gravity assist).
 
@@ -98,7 +99,7 @@ Individual suites, for reference (verify.py invokes these):
 
 ```bash
 .venv/bin/pytest                      # smoke / regression tests
-.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (220+ checks)
+.venv/bin/python audit/calcs/run_audits.py # full independent audit suite (280+ checks)
 node audit/calcs/audit_webjs.mjs           # web JS <-> Python parity
 .venv/bin/python audit/calcs/ui_playwright.py  # render the page in Chromium + screenshot
 .venv/bin/python run_analysis.py      # print the integrated analysis

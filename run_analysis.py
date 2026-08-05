@@ -71,7 +71,8 @@ def main() -> None:
     dist = np.linalg.norm(state.r)
     print(f"Alpha Centauri now:  {dist / c.LY:.3f} ly = {dist / c.AU:,.0f} AU")
     print(f"Space velocity:      {np.linalg.norm(state.v) / KMS:.2f} km/s")
-    print(f"Target miss distance for 'arrival': 2600 AU (~1% = 99% of the way)")
+    print(f"Target miss distance for 'arrival': 2600 AU at closest approach to the"
+          f" AB barycenter (~1% of today's 4.36 ly; the intercept is 6.4 ly out)")
     tan = min_speed_arrival(state)
     t_ecl = ecliptic_crossing_time(state) / c.YEAR
     print(

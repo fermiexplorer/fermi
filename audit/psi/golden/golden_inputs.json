@@ -1,0 +1,28 @@
+{
+ "label": "alpha Cen AB golden astrometric state for joint validation (Akeson-consistent central values, clearly labeled; NOT a new measurement)",
+ "astrometry": {
+  "target": "alpha Centauri AB barycenter",
+  "ra_deg": 219.90206,
+  "dec_deg": -60.83399,
+  "parallax_mas": 750.81,
+  "pm_ra_masyr": -3644.4,
+  "pm_dec_masyr": 702.8,
+  "rv_kms": -22.39,
+  "pm_convention": "pm_ra is mu_alpha* (includes cos-dec factor)",
+  "sources": {
+   "parallax_pm_rv": "Akeson et al. 2021, AJ 162, 14 (central values)",
+   "ra_dec": "Kervella et al. 2016, A&A 594, A107 (position)"
+  }
+ },
+ "conventions": {
+  "frame": "heliocentric mean-ecliptic J2000",
+  "obliquity_deg": 23.43928,
+  "kms_per_masyr_pc": 0.00474047,
+  "pc_km": 3.0856775814913673e13,
+  "ly_km": 9.460730e12,
+  "year_s": 3.15576e7,
+  "note": "year_s is the Julian year; kms_per_masyr_pc = 4.74047/1000 km/s per (mas/yr pc)"
+ },
+ "epochs_yr": [73000.0, 75000.0, 77500.0, 79000.0, 80000.0],
+ "model": "linear kinematics: constant space velocity, r(T) = r0 + v T; T_cross = -z0/v_z; v_inf(T) = |r0 + v T|/T; beta(T) = asin(z(T)/|r(T)|)"
+}

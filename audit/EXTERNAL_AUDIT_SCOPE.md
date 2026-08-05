@@ -23,8 +23,10 @@ analysis, the independent-audit corpus, and the tender report.
 ## 1. What you are auditing
 
 Fermi is a first-order ("Fermi estimate") feasibility model for an interstellar
-precursor mission: deliver ~1 kg to within 2600 AU of Alpha Centauri (99% of the
-way) inside 100,000 yr, from LEO, on solar-electric ion propulsion. The engine
+precursor mission: deliver ~1 kg to within 2600 AU of Alpha Centauri (the AB
+barycenter, at closest approach — 99% of today's 4.36 ly gap; the intercept
+itself lies 6.4 ly out) inside 100,000 yr, from LEO, on solar-electric ion
+propulsion. The engine
 sizes the vehicle, finds the minimum departure Δv and optimal arrival time, and
 compares power architectures (solar / nuclear / fuel cell) and trajectories
 (direct spiral, perihelion pumping, solar-Oberth, gravity assist, and an
@@ -96,7 +98,7 @@ fermi_sim/               PYTHON ENGINE — source of truth  (~2290 LOC)
   thermal.py     (~140)  DERIVED perihelion power curve (array energy balance) — see §5
 run_analysis.py  (~390)  integrated report; produces the shipped headline numbers
 
-audit/calcs/             INDEPENDENT SUITE (Python)  — 230+ checks, run_audits.py
+audit/calcs/             INDEPENDENT SUITE (Python)  — 280+ checks, run_audits.py
   audit_ephemeris.py     vs astropy
   audit_intercept.py     geometry
   audit_departure.py     spiral / escape / departure budgets
@@ -310,7 +312,7 @@ Every entry has a tracked fix; the staged plan is
   [issue #4](https://github.com/fermiexplorer/fermi/issues/4)) locates every
   switch boundary by bisection to ~1e-3 dt.
 
-The independent suite has a further 230+ assertions; a passing run is **not** a
+The independent suite has a further 280+ assertions; a passing run is **not** a
 substitute for your own derivation of the claims in [§6](#6-claims-to-validate).
 
 ---
@@ -323,7 +325,7 @@ python3 -m venv .venv
 
 .venv/bin/python run_analysis.py              # the integrated analysis (headline numbers)
 .venv/bin/pytest tests/                        # smoke/regression (8 tests)
-.venv/bin/python audit/calcs/run_audits.py     # independent suite (230+ checks)
+.venv/bin/python audit/calcs/run_audits.py     # independent suite (280+ checks)
 ```
 
 (The `audit_webjs.mjs` parity check and the `ui_*.py` Playwright tests are the
