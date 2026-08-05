@@ -93,5 +93,6 @@ Repo-side changes shipped with issue #16 / build 184: the golden-fixture gate,
 the AU-space aim budget and honest timing decomposition in
 `docs/PP-ARRIVAL-OPTIMUM.md` §5/§5b, closest-approach requirement wording on
 all surfaces, and this record. Catalog adoption (which catalog, epoch-consistent
-assembly, kinematic-frame labeling) is deliberately deferred to the joint
-exchange with PSI; until then every epoch label carries the §5 astrometry band.
+assembly, kinematic-frame labeling) is deliberately deferred — it requires a
+single-catalog decision adopted end-to-end; until then every epoch label
+carries the §5 astrometry band.

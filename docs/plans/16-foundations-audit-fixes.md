@@ -60,9 +60,8 @@ independent of the deferred catalog-adoption decision:
 ## Explicitly deferred
 
 - Akeson catalog switch / epoch-consistent state re-assembly in
-  `fermi_sim/astro.py` (moves every public epoch label; entangled with the
-  paused PSI exchange).
-- Any communication to PSI (owner holds the note).
+  `fermi_sim/astro.py` (moves every public epoch label; requires a
+  single-catalog adoption decision first).
 
 ## Verification
 
