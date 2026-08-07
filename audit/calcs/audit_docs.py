@@ -80,12 +80,13 @@ def run() -> None:
     check("run_analysis verdict states pure solar closes via pumping",
           "PURE SOLAR-ELECTRIC CLOSES" in analysis and "perihelion" in analysis.lower())
 
-    # 8. Ecliptic-crossing arrival year is ~79k everywhere (engine 79,252 yr); the retracted
-    #    ~80,000-yr rounding must not reappear in REPORT's closing paragraph.
-    check("REPORT states ecliptic crossing as ~79k, not ~80k",
+    # 8. Ecliptic-crossing arrival year is the adopted-state 79,766 yr everywhere
+    #    (engine, Akeson-J2019.5 kinematic state); the rounded "~80,000 yr" phrasing
+    #    must not replace it, and the pre-adoption 79,25x labels must not reappear.
+    check("REPORT states the 79,766-yr crossing (not ~80k, not the retired 79,25x)",
           "80,000 yr at the ecliptic" not in report
-          and ("79,000 yr at the ecliptic" in report or "79,250-yr" in report
-               or "79,250 yr" in report))
+          and "79,766" in report
+          and "79,252" not in report and "79,250" not in report)
 
     # 9. Synchrotron aperture-transit prose: the transit is ~0.5 s (t = Δv/a), NOT "milliseconds"
     #    (a build-141 error wrong by ~500×), and the coupling is gigawatt-class at probe scale, not
@@ -199,8 +200,8 @@ def run() -> None:
         check(f"{nm} carries no retired-number tokens (coherence-scan blocklist)",
               not bad, str(bad))
     check("audit/psi/README.md states the corrected epoch numbers (+0.21 / +33)",
-          "+0.21 km/s" in extra["audit/psi/README.md"]
-          and "+33 m/s" in extra["audit/psi/README.md"])
+          "+0.25 km/s" in extra["audit/psi/README.md"]
+          and "+35 m/s" in extra["audit/psi/README.md"])
 
     # 11. PSI final assessment (July 2026): both archived PDFs must exist, and the page's
     #     PSI links must point at the FINAL report (the TR-numbered working draft stays
@@ -241,6 +242,16 @@ def run() -> None:
               "README.md"):
         check(f"audit/psi/golden/{f} is archived",
               os.path.exists(os.path.join(ROOT, "audit", "psi", "golden", f)))
+    for f in ("golden_inputs.json", "expected_outputs.json", "check_golden.py",
+              "README.md"):
+        check(f"audit/psi/golden_v2/{f} is archived",
+              os.path.exists(os.path.join(ROOT, "audit", "psi", "golden_v2", f)))
+    check("audit/psi arrival-epoch memo PDF is archived",
+          os.path.exists(os.path.join(ROOT, "audit", "psi",
+                                      "PSI_Memo_PP_Arrival_Epoch_Analysis.pdf")))
+    check("audit/psi/README describes the adopted golden_v2 state",
+          "golden_v2" in extra["audit/psi/README.md"]
+          and "J2019.5" in extra["audit/psi/README.md"])
     check("foundations-audit record exists and is linked from audit/README",
           os.path.exists(os.path.join(ROOT, "audit", "fable",
                                       "fable-foundations-audit.md"))

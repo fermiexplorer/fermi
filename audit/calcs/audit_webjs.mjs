@@ -12,17 +12,19 @@ const F = require(path.join(here, "..", "..", "web", "physics.js"));
 
 // Reference values from the Python engine (run_analysis.py / dump_state.py).
 const REF = {
-  tangential_yr: 58138.32310500001,
-  tangential_vinf_kms: 23.271895966952513,
-  ecliptic_crossing_yr: 79252.25245836211,
-  vinf_75k_kms: 23.81055748451608,
-  tilt_75k_deg: -1.5174801147861419,
+  // state-dependent refs re-dumped for the adopted Akeson-J2019.5 kinematic
+  // state (tmp/ro/i18_dump_refs.py, issue #17)
+  tangential_yr: 58352.21749351432,
+  tangential_vinf_kms: 23.403539356708322,
+  ecliptic_crossing_yr: 79765.88000241069,
+  vinf_75k_kms: 23.922114820483085,
+  tilt_75k_deg: -1.682222050080185,
   // impulsive departure Δv from LEO 400 km at 75k yr arrival (km/s)
-  dv_impulsive_75k_kms: 13.89,
+  dv_impulsive_75k_kms: 13.9384,
   // DERIVED low-thrust (naïve spiral) departure Δv from LEO 400 km at 75k yr (km/s)
-  dv_lowthrust_75k_kms: 25.127443,
+  dv_lowthrust_75k_kms: 25.188587,
   // ...from a 590x35786 km elliptical (GTO-like) start at 75k yr (km/s)
-  dv_lowthrust_gto_75k_kms: 21.690959,
+  dv_lowthrust_gto_75k_kms: 21.752102,
   // Earth-escape revolutions for 0.2 N on 600 kg from 590 km
   earth_escape_revs_ref: 981.919542,
   // Sun-escape revolutions (heliocentric spiral-out) for 0.2 N on 600 kg from 1 AU
@@ -37,7 +39,7 @@ const REF = {
   // constant-power (nuclear-electric, fade_exp=0) achievable v∞ (m/s), same args — the EP-only escape
   sep_achievable_vinf_nep_ref: 31204.07693667548, // re-baselined: adaptive-dt + mass-coupled RK4 (issue #2)
   // cruise time for v_inf = 24 km/s (yr)
-  time_24kms_yr: 46072,
+  time_24kms_yr: 47125,
   // perihelion pumping (multi-rev escape, tmp/ro/dump_pump_ref.py): a0=2.5e-4 m/s², target 23.64 km/s
   pump_vinf_ref: 23655.06444231674,
   pump_dv_ref: 25634.909409435655,

@@ -12,7 +12,7 @@
 // slider floor 58,000 yr; eclipticCrossingT has NO inputs -- it reads the baked
 // ephemeris constant VAC[2], nonzero by construction). The one throwing exception:
 // pumpedDepartureDv's calibration-corridor guard, unreachable from the page (the
-// AC aim's v-inf floor is 23.27 km/s) and intended to fail loud for library callers.
+// AC aim's v-inf floor is 23.40 km/s) and intended to fail loud for library callers.
 (function (root) {
   "use strict";
 
@@ -21,9 +21,11 @@
   const MU_SUN = 1.32712440018e20, MU_EARTH = 3.986004418e14, R_EARTH = 6.371e6;
   const V_ESC_SUN = Math.sqrt(2 * MU_SUN / AU), V_EARTH = Math.sqrt(MU_SUN / AU);
   const R_SUN = 6.957e8, MU_JUP = 1.26687e17, R_JUP = 7.1492e7;
-  // Alpha Centauri ecliptic state (m, m/s) from the fermi_sim engine.
-  const R0 = [-1.5364679397919116e16, -2.6062563844058972e16, -2.7814865852216956e16];
-  const VAC = [-9222.153827911658, 28889.554946491313, 11121.449350900906];
+  // Alpha Centauri ecliptic state (m, m/s) from the fermi_sim engine —
+  // Akeson 2021 barycenter solution at its native epoch J2019.5, kinematic-frame
+  // RV (V0 −22.3796 + 61.4 m/s gravitational redshift); the T=0 clock is J2019.5.
+  const R0 = [-1.537570841818075e16, -2.605284059685514e16, -2.781872043097986e16];
+  const VAC = [-9343.481866430739, 28920.482846798757, 11051.367525365102];
   const SPIRAL_MAX = 11.3; // naive continuous-spiral penalty (km/s), from numerical RK4
   // Perihelion-pumping validated design profile (mirror of fermi_sim.constants): campaigns
   // are flown at a0_eff = min(vehicle a0, PUMP_DESIGN_A0) and Isp PUMP_DESIGN_ISP — the

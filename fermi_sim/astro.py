@@ -21,18 +21,36 @@ import numpy as np
 from . import constants as c
 
 
-# --- Catalogued data for the Alpha Centauri AB barycentre (ICRS, ~J2000) ---
-# Distance 4.344 ly. Proper motion and radial velocity are the system values;
-# A and B individually wobble about the barycentre but that is irrelevant here.
-AC_RA_DEG = 219.9021
-AC_DEC_DEG = -60.8340
-AC_DIST_LY = 4.344
-AC_PMRA_MASYR = -3620.0  # mu_alpha * cos(dec), mas/yr
-AC_PMDEC_MASYR = 694.0  # mu_delta, mas/yr
-AC_RV_KMS = -22.4  # radial velocity, km/s (negative = approaching)
+# --- Catalogued data for the Alpha Centauri AB barycentre (ICRS) ---
+# One catalog end-to-end: the Akeson et al. 2021 (AJ 162, 14) barycenter
+# solution at its NATIVE epoch J2019.5 — position, parallax 750.81 ± 0.38 mas,
+# proper motion −3639.95 ± 0.42 / +700.40 ± 0.17 mas/yr. The radial velocity
+# is carried in the KINEMATIC frame (true line-of-sight velocity of the
+# barycenter): spectroscopic gamma V0 = −22.3796 ± 0.0020 km/s (Akeson 2021)
+# plus the +61.4 ± 2.7 m/s gravitational-redshift zero-point correction
+# (Kervella, Thévenin & Lovis 2017, A&A 598, L7). A and B individually wobble
+# about the barycentre but that is irrelevant here. This exact state is the
+# jointly-validated golden fixture (audit/psi/golden_v2/), gated on every
+# audit run.
+#
+# CLOCK CONVENTION: all propagation times T (and every epoch label derived
+# from them, e.g. the ecliptic crossing) run from the state epoch J2019.5.
+# Departure-origin times subtract (DEPARTURE_EPOCH_JYEAR - AC_EPOCH_JYEAR);
+# calendar dates add AC_EPOCH_JYEAR.
+AC_EPOCH_JYEAR = 2019.5  # astrometric epoch of the state (and the T=0 clock)
+DEPARTURE_EPOCH_JYEAR = 2029.0  # program departure target
+AC_RA_DEG = 219.85892215
+AC_DEC_DEG = -60.83163195
+AC_PARALLAX_MAS = 750.81
+AC_PMRA_MASYR = -3639.95  # mu_alpha * cos(dec), mas/yr
+AC_PMDEC_MASYR = 700.40  # mu_delta, mas/yr
+AC_RV_KMS = -22.3182  # kinematic-frame radial velocity, km/s (approaching)
 
 # 1 mas/yr at 1 pc = 4.74047 km/s
 _MASYR_PC_TO_KMS = 4.740470463
+
+# Distance follows from the parallax exactly (no independently rounded copy).
+AC_DIST_LY = (1000.0 / AC_PARALLAX_MAS) * (c.PC / c.LY)
 
 
 @dataclass(frozen=True)

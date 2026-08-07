@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{PORT}/index.html"
 
 # default control values (must match index.html)
 DEFAULTS = {
-    "T": 79200, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
+    "T": 79800, "pay": 1, "alt": 590, "injerr": 0.5, "gncerr": 2, "kstruct": 10, "isp": 3000, "eta": 0.5,
     "enginekg": 6, "tankfrac": 2.5, "pwrkw": 2, "cellEff": 30, "wkgsolar": 91, "rtg": 40, "rp": 6,
     "srp": 10, "skick": 5,
 }
@@ -129,8 +129,8 @@ def run(page):
     # OWN design point, the geometry-anchored ~79.25k ECLIPTIC CROSSING (not the direct
     # variation's 72.8k, the pre-#10 melded default; not the pricing-sensitive basin
     # bottom ~77.8k, which sits <30 m/s away — inside model noise).
-    check("default arrival is the pumped variation's crossing design point (~79.25k)",
-          abs(base["arrivalYr"] - 79252) < 400, str(base["arrivalYr"]))
+    check("default arrival is the pumped variation's crossing design point (~79.77k)",
+          abs(base["arrivalYr"] - 79766) < 400, str(base["arrivalYr"]))
     at_bottom = comp({"T": base["minFuelYr"]})
     check("crossing design point is inside the flat fuel basin (<50 m/s of the formal minimum)",
           0.0 <= base["dvDesign"] - at_bottom["dvDesign"] < 50.0,
@@ -140,7 +140,7 @@ def run(page):
     # below the 79.25k crossing, above the direct model's 72.8k Earth-borrow optimum.
     check("pumped fuel optimum sits in the ~77.8k basin (derived tilt pricing)",
           abs(base["minFuelYr"] - 77800) < 600, f"{base['minFuelYr']:.0f}")
-    check("direct fuel optimum stays ~72.8k", abs(direct["minFuelYr"] - 72800) < 400, f"{direct['minFuelYr']:.0f}")
+    check("direct fuel optimum stays ~73.1k", abs(direct["minFuelYr"] - 73100) < 400, f"{direct['minFuelYr']:.0f}")
 
     # --- PAYLOAD: must raise propellant & wet, but NOT arrival / Δv / fraction ---
     p = comp({"pay": 50})
@@ -341,8 +341,8 @@ def run(page):
           pd["w"] == 1000 and pd["e"] == 4 and pd["feas"] is True, str(pd))
     # issue #10: the variations are SEPARATE — switching architecture snaps the arrival
     # slider to that variation's OWN fuel optimum
-    check("switching to DIRECT snaps arrival to ITS ~72.8k optimum",
-          abs(pd["T"] - 72800) < 400, str(pd["T"]))
+    check("switching to DIRECT snaps arrival to ITS ~73.1k optimum",
+          abs(pd["T"] - 73100) < 400, str(pd["T"]))
     page.click('input[name=ga][value="pumped"]')
     page.wait_for_timeout(200)
     pp = page.evaluate("() => ({w:+document.getElementById('wkgsolar').value,"
@@ -350,8 +350,8 @@ def run(page):
                        " T:+document.getElementById('T').value, feas:compute().feasible})")
     check("selecting PUMPED loads the today's-class preset (91 W/kg, 6 kg/kW) and closes",
           pp["w"] == 91 and pp["e"] == 6 and pp["feas"] is True, str(pp))
-    check("switching back to PUMPED snaps arrival to ITS crossing design point (~79.25k)",
-          abs(pp["T"] - 79252) < 400, str(pp["T"]))
+    check("switching back to PUMPED snaps arrival to ITS crossing design point (~79.77k)",
+          abs(pp["T"] - 79766) < 400, str(pp["T"]))
     # presets must keep the tech DROPDOWNS in sync with the sliders (deep-audit finding:
     # the selects used to advertise a component set the sliders did not use)
     sel = page.evaluate("() => ({sol:document.getElementById('soltech').value,"

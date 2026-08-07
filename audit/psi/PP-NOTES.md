@@ -94,9 +94,9 @@ excludes the cost of acquiring the out-of-plane aim tilt"; §2.5 "unsettled...
 future work"; R6 item 5). Settled by this project: per-epoch full-campaign 3-D
 simulation (`tools/derive_epoch_table.py`) puts the PP fuel minimum in a flat
 ~75–79.5k basin (crossing +0.03 km/s = the design default; 73k +0.21; the deep
-simulation locates the flyability edge at ~64,200 yr under the 15-yr custody
+simulation locates the flyability edge at ~64,800 yr under the 15-yr custody
 gate — a policy label, ±1 kyr per gate-year choice, with custody growing toward
-it). The 73–79.3k span is worth ~1.8 kg of xenon (~$20k) — epoch is a cost
+it). The 73–79.8k span is worth ~2.1 kg of xenon (~$23k) — epoch is a cost
 non-driver; arriving ~6 kyr sooner at 73k is a legitimate preference, not a fuel
 optimum.
 

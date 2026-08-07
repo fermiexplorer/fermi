@@ -783,8 +783,11 @@ def run() -> None:
               77000 <= meta["basin_bottom_T"] <= 78500
               and 0.0 < meta["crossing_penalty"] < 60.0,
               f"{meta['basin_bottom_T']} / +{meta['crossing_penalty']} m/s")
-        check("record and the independent closed-form scan agree on the basin (<= 600 yr)",
-              abs(meta["basin_bottom_T"] - t_min) <= 600,
+        # Tolerance 1000 yr: the basin plateau is flat to ~7 m/s over ~77-78.5 kyr,
+        # so the two conventions' argmin LOCATIONS are noise-dominated inside it —
+        # the assertion's content is that both land in the same flat basin.
+        check("record and the independent closed-form scan agree on the basin (<= 1000 yr)",
+              abs(meta["basin_bottom_T"] - t_min) <= 1000,
               f"sim {meta['basin_bottom_T']} vs scan {t_min}")
         check("record convergence rows: |dt/4 - dt/8| < 40 m/s each",
               all(abs(cv["delta"]) < 40.0 for cv in rec["convergence"]),

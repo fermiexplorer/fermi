@@ -75,7 +75,7 @@ planar-embedding exact at β = 0), per-β steering optimised and baked
 direct-optimum aim** — half the previous v∞·|sin β| bolt-on; the cap-model point
 (0.61) sits 5% from PSI's independently measured 0.58. Consequences: default
 two-leg budget 33.1 → **32.6 km/s**; the pumped fuel optimum moves off the
-ecliptic crossing into a **shallow basin bottoming ~77,500 yr** (crossing +33 m/s —
+ecliptic crossing into a **shallow basin bottoming ~77,500 yr** (crossing +35 m/s —
 still the rule of thumb); the early-arrival branch stays ~3 km/s out.
 `audit_pumping` 13g: planar embedding, independent own-code 3-D re-integration,
 knot replay + step convergence, the ≤ v∞·|sin β| bound, and the basin guard.

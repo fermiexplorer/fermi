@@ -18,6 +18,11 @@ the aim: the required heliocentric cruise velocity v∞(T) and its tilt β(T) be
 ecliptic (from the AC barycentric astrometry, with the 2600-AU miss allowance shaved).
 Which T minimises the PP vehicle's propellant?
 
+The astrometry is the jointly-validated adopted state — Akeson et al. 2021 at its
+native epoch J2019.5, kinematic-frame RV (V0 + the +61.4 m/s gravitational-redshift
+correction), pinned as the golden fixture (`audit/psi/golden_v2/`) and gated on every
+audit run. T is counted from J2019.5; the 2029.0 departure origin subtracts 9.5 yr.
+
 ## 2. Method — direct simulation, no closed forms in the loop
 
 For each candidate T:
@@ -46,60 +51,65 @@ flyability edge located by bisection.
 
 ## 3. Results (the optimization — minimum read off the rows)
 
+All epochs are on the state clock (T from J2019.5); departure-origin times
+subtract 9.5 yr (departure 2029.0).
+
 | T (yr) | v∞ (km/s) | tilt (optimized aim) | γ* | total Δv (km/s) | vs bottom | custody |
 |---|---|---|---|---|---|---|
-| 65,000 | 23.28 | −5.6° | 29.7° | 33.71 | +1509 m/s | 14.0 yr |
-| 66,000 | 23.32 | −5.1° | 29.5° | 33.51 | +1317 | 13.1 |
-| 68,000 | 23.40 | −4.1° | 29.2° | 33.14 | +940 | 12.5 |
-| 70,000 | 23.48 | −3.2° | 24.4° | 32.79 | +597 | 12.2 |
-| 72,000 | 23.56 | −2.4° | 19.4° | 32.52 | +320 | 12.1 |
-| 73,000 | 23.60 | −2.0° | 16.7° | 32.41 | +211 | 12.1 |
-| 74,000 | 23.65 | −1.6° | 13.6° | 32.32 | +125 | 12.1 |
-| 75,000 | 23.68 | −1.3° | 10.8° | 32.26 | +63 | 12.0 |
-| 76,000 | 23.72 | −0.9° | 8.3° | 32.22 | +20 | 12.0 |
-| 77,000 | 23.76 | −0.6° | 5.5° | 32.198 | +0.6 | 12.0 |
-| **77,500** | 23.78 | −0.5° | 4.5° | **32.198 — bottom** | 0 | 12.0 |
-| 78,000 | 23.81 | −0.3° | 3.1° | 32.202 | +4 | 12.0 |
-| 78,500 | 23.83 | −0.2° | 1.9° | 32.21 | +12 | 12.0 |
-| 79,000 | 23.86 | −0.07° | 0.9° | 32.22 | +25 | 12.0 |
-| **79,252 — crossing** | 23.87 | 0.0° | 0.3° | 32.23 | **+33 — design default** | 12.0 |
-| 80,000 | 23.91 | +0.2° | 1.7° | 32.26 | +65 | 12.0 |
-| 82,000 | 24.03 | +0.75° | 6.2° | 32.39 | +192 | 12.1 |
-| 84,000 | 24.15 | +1.3° | 10.3° | 32.57 | +371 | 12.1 |
-| 86,000 | 24.27 | +1.8° | 13.6° | 32.78 | +583 | 12.2 |
+| 66,000 | 23.44 | −5.2° | 29.4° | 33.64 | +1349 m/s | 13.6 yr |
+| 68,000 | 23.52 | −4.3° | 29.2° | 33.26 | +978 | 12.6 |
+| 70,000 | 23.60 | −3.4° | 24.7° | 32.92 | +637 | 12.3 |
+| 72,000 | 23.68 | −2.5° | 19.9° | 32.64 | +355 | 12.2 |
+| 73,000 | 23.72 | −2.2° | 17.2° | 32.53 | +245 | 12.1 |
+| 74,000 | 23.76 | −1.8° | 14.8° | 32.44 | +153 | 12.1 |
+| 75,000 | 23.79 | −1.4° | 12.0° | 32.37 | +79 | 12.1 |
+| 76,000 | 23.84 | −1.1° | 9.1° | 32.32 | +34 | 12.1 |
+| 77,000 | 23.88 | −0.8° | 6.4° | 32.293 | +7 | 12.0 |
+| **77,500** | 23.90 | −0.6° | 5.3° | **32.286 — bottom** | 0 | 12.0 |
+| 78,000 | 23.92 | −0.5° | 4.5° | 32.287 | +1 | 12.0 |
+| 78,500 | 23.94 | −0.3° | 3.1° | 32.29 | +6 | 12.0 |
+| 79,000 | 23.97 | −0.2° | 1.9° | 32.30 | +14 | 12.0 |
+| 79,500 | 23.99 | −0.07° | 0.9° | 32.31 | +27 | 12.1 |
+| **79,766 — crossing** | 24.00 | 0.0° | 0.3° | 32.32 | **+35 — design default** | 12.1 |
+| 80,000 | 24.02 | +0.06° | 0.5° | 32.33 | +44 | 12.1 |
+| 82,000 | 24.13 | +0.6° | 4.8° | 32.44 | +154 | 12.1 |
+| 84,000 | 24.26 | +1.1° | 8.6° | 32.60 | +318 | 12.2 |
+| 86,000 | 24.37 | +1.7° | 12.2° | 32.80 | +516 | 12.3 |
 
 **Read-off conclusions:**
 
-- **The fuel minimum is a flat basin**: bottom at **77,500 yr (32.198 km/s)**; everything
-  from 76,500 to 78,000 lies within 7 m/s; 75–79.5k within ~65 m/s.
-- **The ecliptic crossing (79,252 yr, in-plane aim) sits +33.4 m/s from the bottom** —
+- **The fuel minimum is a flat basin**: bottom at **77,500 yr (32.286 km/s)**; everything
+  from 77,000 to 78,500 lies within 7 m/s; 75–80k within ~80 m/s.
+- **The ecliptic crossing (79,765.9 yr on the state clock — 79,756.4 yr from the 2029
+  departure, crossing date AD 81,785 — in-plane aim) sits +35.4 m/s from the bottom** —
   the scale of the model's own noise (§5) — and is adopted as the **design epoch**,
   because it is the one epoch fixed by geometry alone (astrometry: −z₀/v_z), invariant
   under every pricing-model revision (it did not move when the miss-allowance convention
   was corrected; the basin bottom's value did).
-- **The flyability edge is ~64,200 yr under the 15-yr custody gate** (a POLICY gate, not
-  physics: the 63–64k aims are acquirable given ~16–20 yr of custody, so the edge moves
-  ~1 kyr per gate choice — audit finding 8). Approaching it is expensive in both Δv
-  (+1.5 km/s at 65k) and custody (14.0 yr at 65k vs 12.0 in the basin); the 58k
+- **The flyability edge is ~64,800 yr under the 15-yr custody gate** (a POLICY gate, not
+  physics: the aims just below it are acquirable given ~16–20 yr of custody, so the edge
+  moves ~1 kyr per gate choice — audit finding 8). Approaching it is expensive in both Δv
+  (+1.3 km/s at 66k) and custody (13.6 yr at 66k vs 12.0 in the basin); the 58k
   cruise-speed minimum remains far beyond reach at any custody a 15-yr-class mission
   would accept.
-- **Custody is ~12.0–12.2 yr everywhere in the basin** — the epoch choice does not move
+- **Custody is ~12.0–12.3 yr everywhere in the basin** — the epoch choice does not move
   operations cost.
-- The 73,000-yr epoch (the impulsive/chemical optimum, which PP never pays) costs the PP
-  vehicle **+0.21 km/s ≈ 1.8 kg of xenon**.
+- The 73,000-yr epoch (near the impulsive/chemical optimum, which PP never pays) costs
+  the PP vehicle **+0.25 km/s ≈ 2.1 kg of xenon**.
 - Convention note: the live calculator applies **no miss shave at all** — it prices the
-  raw exact-intercept aim, which is conservative by the full allowance value: ~0.12 km/s
-  above this record's totals at the crossing and ~0.19 km/s at 73k. The record spends
+  raw exact-intercept aim, which is conservative by the full allowance value: ~0.15 km/s
+  above this record's totals at the crossing and ~0.2 km/s at 73k. The record spends
   the 2600-AU allowance optimally (speed shave vs tilt buy-down). Neither convention
   moves the basin location or the design decision; the deltas are epoch-smooth.
 
 ## 4. Cross-checks
 
-1. **Convergence:** dt/8 re-integration moves the three checked rows by ≤ 4.1 m/s
-   (75k: −3.2; 77.5k: −3.5; crossing: −4.1) — recorded in the JSON, audit-gated <40 m/s.
+1. **Convergence:** dt/8 re-integration moves the three checked rows by ≤ 4.4 m/s
+   (75k: +4.2; 77.5k: +4.3; crossing: +4.4) — recorded in the JSON, audit-gated <40 m/s.
 2. **Closed-form budget sweep** (v∞ + derived plane-tax + tax tables — independent
-   tabulated pricing): argmin 77.8k, agreeing with the direct simulation within one grid
-   step and ~30 m/s across the whole window (audit 13g(v)).
+   tabulated pricing): argmin 78.3k — inside the same sub-noise plateau as the
+   simulation's 77.5k (the plateau is flat to ~7 m/s, so argmin location is
+   noise-dominated within it; audit 13g(v) gates the agreement at ≤1 kyr).
 3. **Independent own-code 3-D re-integration** of the tilt cost (audit 13g(ii), written
    from the docstring spec with its own stepping): 610 m/s at the cap-model 2.48° point
    vs the engine's 606 m/s — and vs **PSI's independently measured 578 m/s** (their
@@ -133,14 +143,14 @@ flyability edge located by bisection.
 | Tax-table dt truncation (documented, conservative direction) | ~+20–35 m/s |
 | Miss-allowance convention (ONE-SIDED: the earlier max-shave form overpriced tilted epochs by ~60–100 m/s at ≤73k, ~0 at the crossing — corrected to the optimized offset; the live calculator still uses the conservative form, <10 m/s inside the basin) | one-sided, disclosed |
 | Custody-gate policy (the flyability edge moves ~1 kyr per gate-year choice) | ~±1 kyr on the edge label |
-| Astrometry inputs — absolute-RV frame (catalog ±2 m/s sigmas are internal precision; the kinematic line-of-sight floor is 30–100 m/s: spectrograph zero points, convective-blueshift model residuals, orbit-fit gamma; three published gammas from the same data already span 13.4 m/s. One-sided in addition: the spectroscopic→kinematic gravitational-redshift correction, +61.4 m/s ≈ +300 yr, not yet applied to any label here) | ~±150–500 yr on any epoch label |
-| Astrometry inputs — parallax/PM catalog identity (Kervella 2016 vs Akeson 2021 parallaxes differ 3.64 mas ≈ 5.1σ formal ≈ 530 yr; formal single-catalog sigmas are ±55 yr) | ~±200–500 yr systematic |
+| Astrometry inputs — absolute-RV frame (catalog ±2 m/s sigmas are internal precision; the kinematic line-of-sight floor is 30–100 m/s: spectrograph zero points, convective-blueshift model residuals, orbit-fit gamma; three published gammas from the same data already span 13.4 m/s. The spectroscopic→kinematic gravitational-redshift correction, +61.4 ± 2.7 m/s, IS applied in the adopted state — every epoch label here is kinematic-frame) | ~±150–500 yr on any epoch label |
+| Astrometry inputs — parallax/PM catalog identity (the adopted state is Akeson 2021 end-to-end at its native epoch J2019.5; the Kervella 2016 catalog differs by 3.64 mas ≈ 5.1σ formal ≈ 530 yr, an unresolved cross-catalog tension carried as a systematic; formal single-catalog sigmas are ±55 yr) | ~±200–500 yr systematic |
 | Probe clock (T is measured from the state epoch, not from departure; at the 2029 departure target the correction v∞′ = \|r(T)\|/(T − t_dep) is ~+12 m/s — an exact identity once t_dep is fixed) | ~+12 m/s, deterministic |
 
-The 76.5–78k plateau spans 7 m/s — far below the ~30–50 m/s noise floor — so the
+The 77–78.5k plateau spans 7 m/s — far below the ~30–50 m/s noise floor — so the
 formal bottom (77,500) is **not resolvable from its neighbours** and has already moved
 in value between derivation refinements (79.25k → 77.8k → 77.5k as tilt pricing, grids
-and the miss convention sharpened). The crossing, +33 m/s away, never moves. Hence:
+and the miss convention sharpened). The crossing, +35 m/s away, never moves. Hence:
 **design epoch = the crossing; the basin is the honest statement of the optimum.**
 Every epoch label above is *from the state epoch* and carries the astrometry band;
 the basin's flatness (75–79.5k within ~65 m/s) is what makes the design insensitive
@@ -192,16 +202,17 @@ AC arrival exists in their document): `audit/psi/PP-NOTES.md`. Where PSI did mea
 
 ## 7. Decision and residuals
 
-- **Design epoch: the 79,252-yr ecliptic crossing** (geometry-anchored; +33 m/s ≈
-  0.10% ≈ noise). The calculator's default state and architecture-switch snap implement
-  this; the fuel-optimum readout reports basin membership in Δv terms.
-- **The epoch is a cost non-driver**: the whole 73–79.3k window is worth ~1.8 kg of
-  xenon (~$20k under PSI's cost model), and custody is epoch-flat. An arrival-value
-  preference (arrive ~6 kyr sooner at 73k for +0.21 km/s) is legitimate and documented,
+- **Design epoch: the 79,766-yr ecliptic crossing** (state clock; 79,756 yr from the
+  2029 departure; geometry-anchored; +35 m/s ≈ 0.11% ≈ noise). The calculator's default
+  state and architecture-switch snap implement this; the fuel-optimum readout reports
+  basin membership in Δv terms.
+- **The epoch is a cost non-driver**: the whole 73–79.8k window is worth ~2.1 kg of
+  xenon (~$23k under PSI's cost model), and custody is epoch-flat. An arrival-value
+  preference (arrive ~6.8 kyr sooner at 73k for +0.25 km/s) is legitimate and documented,
   but is a preference, not an optimum.
 - **Residuals:** steering is hyperbolic-leg-only (bound-phase plane steering could
-  soften the ~64k flyability edge — untested); the edge itself is a 15-yr custody-gate
-  policy label (~±1 kyr per gate choice), not a physics wall until ~63k; the tilt curve
+  soften the ~64.8k flyability edge — untested); the edge itself is a 15-yr custody-gate
+  policy label (~±1 kyr per gate choice), not a physics wall until ~63.5k; the tilt curve
   and tax tables are design-a₀-anchored; astrometry inputs are catalog values (a
   pre-departure re-reduction is PSI's R6 mitigation). Adversarial-audit record:
   `audit/fable/fable-pp-adversarial-audit.md`.

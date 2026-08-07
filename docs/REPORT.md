@@ -22,7 +22,7 @@ minimum spacecraft Δv?
 The geometry is comfortable (a ~24 km/s cruise reaches AC in the ~70,000–80,000-yr
 window, well inside 100,000 yr). Building that 24 km/s with electric propulsion has one
 subtlety: a *conventional outward spiral* is **power-limited** — array power falls as
-1/r², thrust starves, and the achievable cruise **saturates below the ~23.3 km/s floor**,
+1/r², thrust starves, and the achievable cruise **saturates below the ~23.4 km/s floor**,
 so the naive outward spiral does not close at today's α. But the saturation is a property
 of the *trajectory class*, not of solar power. **One architecture closes on parts available
 today — perihelion-pumped SEP, the mission architecture. The others are exploratory concepts
@@ -60,18 +60,19 @@ Alpha Centauri at arrival time T it needs `V_p(T) = A₀/T + V_ac` — aim at wh
 (shrinking with T) **plus** match AC's space velocity.
 
 - **Minimum cruise speed** is the *tangential intercept* at **~58,000 yr**, where v∞
-  equals AC's tangential speed, **23.3 km/s** — a hard floor (you cannot intercept any
+  equals AC's tangential speed, **23.4 km/s** — a hard floor (you cannot intercept any
   slower). AC sits 42° below the ecliptic with +11 km/s of out-of-plane motion, so that
   aim is tilted ~10° out of plane, and out-of-plane velocity can't be borrowed from Earth.
-- AC's track **crosses the ecliptic at ~79,000 yr**, where departure is purely in-plane.
-- **The impulsive/direct departure-Δv minimum is at ≈72,800 yr** (tilted ~2.4° off the
+- AC's track **crosses the ecliptic at 79,766 yr** (state clock; 79,756 yr from the
+  2029 departure), where departure is purely in-plane.
+- **The impulsive/direct departure-Δv minimum is at ≈73,100 yr** (tilted ~2.4° off the
   ecliptic). The Δv curve is very flat near this optimum, so the round-number
   **75,000 yr** arrival is practically the same point. This is the *direct* (Earth-borrow)
-  variation's optimum; the pumped variation anchors separately at the ~79,250-yr ecliptic
-  crossing, its flat fuel basin bottoming near ~77,500 yr — a ~33 m/s, model-noise-scale difference (see §1's
+  variation's optimum; the pumped variation anchors separately at the 79,766-yr ecliptic
+  crossing, its flat fuel basin bottoming near ~77,500 yr — a ~35 m/s, model-noise-scale difference (see §1's
   closing note and the live page's "Two mission variations" section).
 
-So the cruise floor is **v∞ ≈ 23.3 km/s** and the natural arrival is **~73,000–75,000 yr** —
+So the cruise floor is **v∞ ≈ 23.4 km/s** and the natural arrival is **~73,000–75,000 yr** —
 comfortably inside the 100,000-yr requirement. *This geometry is robust; the feasibility
 question is entirely about how you build the 24 km/s.*
 
@@ -103,7 +104,7 @@ question is entirely about how you build the 24 km/s.*
 > as the crude cross-check (Δv 25.6, 9.6 yr, at 4×). The α ≳ 100 W/kg condition in §2
 > therefore applies to the outward-spiral class only, and the recommended architecture is
 > **SEP + perihelion pumping** (nuclear-electric remains the constant-power fallback).
-> The full SEP total from LEO is ~32.3 km/s at the pumped variation's ~79,250-yr
+> The full SEP total from LEO is ~32.3 km/s at the pumped variation's 79,766-yr
 > crossing design point (7.7 km/s Earth escape + ~24.0 heliocentric
 > + 0.7 km/s thermal-derated tax + ~0.02 km/s DERIVED out-of-plane steering — the 3-D
 > campaign buys the tilt on its own hyperbolic leg, quadratic near β = 0; at the 2.48°
@@ -113,16 +114,16 @@ question is entirely about how you build the 24 km/s.*
 > drop-off cuts the Earth leg to ~4.0 km/s and closes a ~100 kg vehicle. With the |sin β|
 > kink rounded, the pumped fuel optimum sits in a shallow basin (bottom near ~77,500 yr,
 > sub-noise; full derivation in `docs/PP-ARRIVAL-OPTIMUM.md`) — the
-> in-plane 79,250-yr crossing aim costs only +33 m/s — model-noise scale, so the
+> in-plane 79,766-yr crossing aim costs only +35 m/s — model-noise scale, so the
 > geometry-anchored crossing is the pumped variation's fuel/robustness design epoch.
 > The whole ~73k–79.3k window is flat in program cost (~$25k of xenon + launch mass),
 > so an arrival-value preference legitimately picks the early (~73k) end instead —
-> ~6,000 yr sooner for +0.21 km/s; both ends are defensible design points. The direct and
+> ~6,800 yr sooner for +0.25 km/s; both ends are defensible design points. The direct and
 > pumped architectures are two SEPARATE mission variations with different design
-> epochs (~72,800 yr vs the ~79,250-yr crossing); PSI did not derive the pumped
+> epochs (~73,100 yr vs the 79,766-yr crossing); PSI did not derive the pumped
 > epoch — their stated ~73,000-yr arrival reuses the impulsive optimum and their
 > report flags the pumped tilt pricing as open future work, which the derived 3-D
-> curve above settles (73k costs the pumped vehicle +0.21 km/s). The calculator
+> curve above settles (73k costs the pumped vehicle +0.25 km/s). The calculator
 > snaps the arrival slider to the selected architecture's design point. See the live
 > page's "Two mission variations" and "Perihelion pumping" sections.
 
@@ -137,9 +138,9 @@ extra propellant burnt far out adds almost nothing:
 | Power source | 5 kW | 10 kW | 20 kW |
 |---|---|---|---|
 | **Solar (1/r² fade)** | 0.0 km/s | 0.0 km/s | 14.5 km/s |
-| **Required floor** | — 23.3 km/s — | | |
+| **Required floor** | — 23.4 km/s — | | |
 
-At *conservative* specific masses those designs land **below the 23.3 km/s floor** — but the
+At *conservative* specific masses those designs land **below the 23.4 km/s floor** — but the
 binding variable is **not power, it is the whole-vehicle specific power α = power ÷ dry mass**.
 More kilowatts don't help (a bigger array just scales the probe at the same α); what matters is
 how light the *whole* vehicle is.
@@ -232,13 +233,13 @@ reactor — fuel cells lose by ~3 orders of magnitude, and a low-power RTG can't
 Diving to a small perihelion makes the spacecraft enormously fast; a burn there buys
 disproportionate energy (Oberth: Δv at speed v adds ≈ v·Δv of specific energy).
 
-| Perihelion | Speed | Burn to reach 23.3 km/s | Sunward-face temp |
+| Perihelion | Speed | Burn to reach 23.4 km/s | Sunward-face temp |
 |---|---|---|---|
 | 20 R☉ | 138 km/s | 1.97 km/s | ~1300 K |
 | **10 R☉** (Parker-class) | **195 km/s** | **1.40 km/s** | **~1830 K** |
 | 5 R☉ | 276 km/s | 0.99 km/s | ~2600 K |
 
-Buying the same 23.3 km/s at 1 AU costs ~6 km/s, so **10 R☉ gives ~4.3× leverage**. But
+Buying the same 23.4 km/s at 1 AU costs ~6 km/s, so **10 R☉ gives ~4.3× leverage**. But
 three caveats make it an *assist-staged, heat-shielded, chemical-at-perihelion*
 architecture — it **sidesteps** the power wall rather than solving it:
 
@@ -281,7 +282,7 @@ The geometry closes easily; the **power physics** is the real constraint. For th
 *outward-spiral* class it reduces to one number — the whole-vehicle specific power
 **α = power ÷ dry mass** — and at conservative, today's specific masses (α ~20–30 W/kg) an
 outward-spiral **pure solar-electric does not close** (the 1/r² fade saturates the cruise
-speed below the ~23.3 km/s cruise). One architecture closes on parts available today; the
+speed below the ~23.4 km/s cruise). One architecture closes on parts available today; the
 rest are exploratory concepts or fallbacks, each blocked by a stated gate:
 
 1. **SEP + perihelion pumping — THE MISSION ARCHITECTURE** (PSI feasibility assessment,
@@ -303,8 +304,8 @@ rest are exploratory concepts or fallbacks, each blocked by a stated gate:
    theoretical floor; a mass ratio ~30 at storable-chemical Isp makes it academic here.
 
 Fuel cells remain a dead end; a low-power RTG cannot supply the needed kilowatts. Arrival
-~73,000–75,000 yr (or ~77,500 yr at the pumped-budget basin bottom — the ~79,250-yr
-ecliptic crossing costs only +33 m/s more under the derived 3-D tilt pricing),
+~73,000–75,000 yr (or ~77,500 yr at the pumped-budget basin bottom — the 79,766-yr
+ecliptic crossing costs only +35 m/s more under the derived 3-D tilt pricing),
 aimed close to the ecliptic. For the recommended pumped default, feasibility is gated by
 integrating the anchored pumping schedule at the vehicle's a₀ = F/m_wet under the derived
 thermal power curve — verified by integration rather than a threshold, since off-design

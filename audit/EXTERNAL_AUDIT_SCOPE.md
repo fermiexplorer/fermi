@@ -214,10 +214,10 @@ Reproduce these independently (astropy, hand calculation, your own integrator):
 | Quantity | Engine value |
 |---|---|
 | AC distance / space speed | 4.344 ly / 32.30 km/s |
-| Closest approach | ~27,960 yr at ~3.13 ly |
-| Cruise floor (tangential min v∞) | 23.3 km/s (23.272) |
-| Ecliptic crossing arrival | ~79,252 yr |
-| Min-Δv arrival | ~72,800 yr |
+| Closest approach | ~27,790 yr at ~3.14 ly |
+| Cruise floor (tangential min v∞) | 23.4 km/s (23.404) |
+| Ecliptic crossing arrival | 79,766 yr (state clock; 79,756 from the 2029 departure) |
+| Min-Δv arrival | ~73,100 yr |
 | Low-thrust spiral departure Δv (AC-class) | ~25–26 km/s |
 | Derived thermal power curve | cap_eff(0.42 AU) = 3.54, T(0.42 AU) = 492 K; Si case collapses to 0.08× |
 | Pumped two-leg budget (LEO, crossing design aim) | ~32.3 km/s (anchored optimised schedule, derived thermal curve + derived 3-D plane tax; ~31.1 at the idealised 4× cap) |

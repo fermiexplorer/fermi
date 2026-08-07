@@ -32,8 +32,8 @@ def test_closest_approach():
 
 def test_tangential_and_ecliptic_times():
     st = alpha_centauri_state()
-    assert abs(min_speed_arrival(st).arrival_time_yr - 58_138) < 50
-    assert abs(ecliptic_crossing_time(st) / c.YEAR - 79_252) < 50
+    assert abs(min_speed_arrival(st).arrival_time_yr - 58_352) < 50
+    assert abs(ecliptic_crossing_time(st) / c.YEAR - 79_766) < 50
 
 
 def test_min_vinf_equals_tangential_speed():

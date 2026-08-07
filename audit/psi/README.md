@@ -14,12 +14,27 @@ end-to-end by PSI's autonomous physics-research platform:
   a seeded execution-dispersion analysis.
 - **`PSI-TR-2026-0714.pdf`** — the earlier **working draft** of the same assessment
   (kept because in-repo prose and audit records cite it by TR number).
+- **`PSI_Memo_PP_Arrival_Epoch_Analysis.pdf`** — *PP Arrival-Epoch Analysis*
+  memorandum (18 pp): PSI's independent verification of this project's arrival-epoch
+  work (their model reproduces our PP optimum to 1 yr and our crossing exactly from
+  our inputs), the input-provenance decomposition of the historical 534-yr
+  crossing-epoch spread, the kinematic radial-velocity frame, and the joint
+  adoption of the Akeson 2021 J2019.5 state. Table 5's working-state provenance and
+  the RV-sigma labeling reflect a joint verification round (allowances are labeled
+  as allowances; catalog values match the cited papers).
+- **`golden_v2/`** — the jointly-validated **golden fixture v2**: the ADOPTED
+  state (Akeson 2021 at native epoch J2019.5, kinematic-frame RV, departure origin
+  2029.0) with 15 pinned expected values. This exact state is what
+  `fermi_sim/astro.py` carries; the audit suite gates the engine against the pinned
+  oracle on every run (`audit/calcs/audit_golden.py`, checks 14e–14h). `golden/`
+  is the earlier v1 fixture (carried-constants state, no pinned epoch), kept as an
+  additional code-parity gate.
 
 ## What the assessment contributes
 
-- **Confirms the geometry**: optimum 73,012 yr (ours 72,800/72,600), tilt 2.48° (2.4°),
-  impulsive floor 13.85 km/s (13.88), tangential intercept 58,422 yr (58,138), closest
-  approach 27,955 yr @ 3.15 ly (27,960 @ 3.13) — "agreement to 0.3% or better; aim tilt
+- **Confirms the geometry**: optimum 73,012 yr (ours ~73,100 on the adopted state), tilt 2.48° (2.4°),
+  impulsive floor 13.85 km/s (13.89), tangential intercept 58,422 yr (58,352), closest
+  approach 27,955 yr @ 3.15 ly (27,792 @ 3.14 on the adopted state) — "agreement to 0.3% or better; aim tilt
   to 0.09° absolute" (their §2.4) — and all five of this project's arrival-time intuitions
   (their "Design Intuitions Examined").
 - **Source of the perihelion-pumping closure**: the outward-spiral power wall is a
@@ -55,11 +70,14 @@ headline of the final report with `fermi_sim` and prints measured deltas. Findin
   handling lands between, as expected); aim tilt to ≤0.19°.
 - **Landmarks**: our floor argmin 72,600 yr @ 13.80 km/s vs their 73,012 @ 13.85 — the
   basin is flat to ±2 m/s over ±1 kyr, so the offset is immaterial. Ecliptic crossing:
-  ours 79,252 yr vs their 79,786; the 534-yr offset is fully explained by the ≤0.19°
-  tilt offset from sub-0.5% astrometry-input differences (tilt slope 0.332°/kyr →
-  0.18° ≈ 540 yr). Adopted-state deltas: d 4.344 vs 4.365 ly, v_t 23.272 vs
-  23.38 km/s, v_r −22.40 vs −22.40 (their stated worst-case replication tolerance is
-  0.5%; ours vs theirs sits inside it).
+  both analyses now run the SAME jointly-adopted state (Akeson 2021 J2019.5,
+  kinematic frame — `golden_v2/`), so the crossing is common property:
+  79,765.9 yr on the state clock (79,756.4 yr from the 2029 departure). The
+  historical 534-yr spread between the two teams' earlier carried states was
+  decomposed to input provenance (distance ~99% of it) in the arrival-epoch memo
+  and closed by the joint adoption; each team's engine reproduces the other's
+  numbers from the other's inputs exactly, so code is excluded as a cause in
+  both directions.
 - **Outward-spiral ceilings**: ours 0 / 1.9 / 15.9 km/s vs theirs 0 / 3.4 / 17.0 at
   a₀ = 1.5/5/10×10⁻⁴ m/s² (constant-tangential prograde policy; their own
   two-integrator band is 2.7% and the mid-band difference is policy-dependent — both
@@ -83,7 +101,7 @@ headline of the final report with `fermi_sim` and prints measured deltas. Findin
 - **Out-of-plane pricing**: our v∞·|sin β| term charges 946–1023 m/s at the 73-kyr aim —
   the conservative (planar-bracket-upper) end; their measured 3-D increment is 578 m/s.
   Re-running our pumped-budget arrival-epoch scan with the tilt term scaled to their
-  measured pricing leaves the fuel-optimum at the 79,250-yr crossing unchanged (the
+  measured pricing leaves the fuel-optimum at the crossing unchanged (the
   |sin β| corner still dominates the smooth v∞+tax slope ~2×).
 - **Alternative targets** from our own web-catalog states: LSPM J2146+3813 floor
   9.31 km/s @ 78.0 kyr (theirs 9.30 @ 78.0), perihelion 0.570 pc @ 82.7 kyr (published
@@ -109,11 +127,11 @@ headline of the final report with `fermi_sim` and prints measured deltas. Findin
   per-epoch full-campaign simulation, `tools/sim_pp_arrival.py` →
   `docs/data/pp_arrival_sim.json`) puts the pumped
   fuel basin at ~75–79.5 kyr (bottom 77,500) — the 73k epoch costs the pumped vehicle
-  +0.21 km/s
+  +0.25 km/s
   (direct simulation, no closed-form budget in the loop) — with the geometry-anchored
-  79,252-yr ecliptic crossing adopted as the design epoch (+33 m/s vs the basin
+  79,766-yr ecliptic crossing adopted as the design epoch (+35 m/s vs the basin
   bottom, model-noise scale). In program-cost terms the whole 73–79k epoch span is
-  worth ~1.8 kg of xenon (~$20k) under their own cost model — three orders of
+  worth ~2.1 kg of xenon (~$23k) under their own cost model — three orders of
   magnitude below their ops/custody cost drivers — so the epoch refinement changes
   fuel bookkeeping, not the cost verdict. One dimension does survive in favour of
   their 73k quoting: the ARRIVAL DATE itself. Because the window is flat in both

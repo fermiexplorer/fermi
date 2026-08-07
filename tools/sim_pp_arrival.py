@@ -136,7 +136,10 @@ def flyable(T_yr):
 
 def main():
     tcx = ecliptic_crossing_time(STATE) / c.YEAR
-    epochs = sorted(set(list(range(66000, 86001, 2000)) + [65000, 73000]
+    # Row grid starts at 66,000: under the adopted state the flyability edge sits
+    # ~64.8 kyr, so a 65,000-yr row would ride the 15-yr custody gate with no
+    # margin (the edge itself is located by bisection below, not by a row).
+    epochs = sorted(set(list(range(66000, 86001, 2000)) + [73000]
                         + list(range(75000, 80501, 500)) + [round(tcx)]))
     rows = []
     print(f"{'T (yr)':>8} {'v_inf':>7} {'tilt':>7} {'gamma*':>7} {'campaign':>9} "

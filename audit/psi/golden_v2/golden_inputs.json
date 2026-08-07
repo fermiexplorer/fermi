@@ -1,0 +1,39 @@
+{
+ "label": "alpha Cen AB golden astrometric state for joint validation (Akeson 2021 J2019.5 barycenter observables, kinematic-frame RV; clearly labeled fixture, NOT a new measurement)",
+ "astrometry": {
+  "target": "alpha Centauri AB barycenter",
+  "epoch_jyear": 2019.5,
+  "ra_deg": 219.85892215,
+  "dec_deg": -60.83163195,
+  "parallax_mas": 750.81,
+  "pm_ra_masyr": -3639.95,
+  "pm_dec_masyr": 700.4,
+  "rv_kms": -22.3182,
+  "pm_convention": "pm_ra is mu_alpha* (includes cos-dec factor)",
+  "rv_convention": "kinematic frame (true line-of-sight velocity of the barycenter): spectroscopic gamma V0 = -22.3796 km/s (Akeson 2021) plus the +61.4 m/s gravitational-redshift zero-point correction of Kervella, Thevenin & Lovis 2017",
+  "uncertainties": {
+   "parallax_sigma_mas": 0.38,
+   "pm_ra_sigma_masyr": 0.42,
+   "pm_dec_sigma_masyr": 0.17,
+   "rv_sigma_kms": 0.0034,
+   "labels": "parallax and PM sigmas are Akeson 2021 catalog formal errors; rv sigma is the quadrature of the catalog 0.0020 and the 0.0027 frame-correction error; the 0.10 km/s working RV sigma used in dispersion studies is an adopted absolute-accuracy allowance, not a catalog sigma"
+  },
+  "sources": {
+   "position_parallax_pm": "Akeson et al. 2021, AJ 162, 14 (barycenter solution, native epoch J2019.5)",
+   "rv": "Akeson et al. 2021, AJ 162, 14, V0 = -22.3796 +/- 0.0020 km/s; kinematic correction +61.4 +/- 2.7 m/s from Kervella, Thevenin & Lovis 2017, A&A 598, L7"
+  }
+ },
+ "conventions": {
+  "frame": "heliocentric mean-ecliptic J2000",
+  "state_epoch_jyear": 2019.5,
+  "departure_epoch_jyear": 2029.0,
+  "obliquity_deg": 23.43928,
+  "kms_per_masyr_pc": 0.00474047,
+  "pc_km": 3.0856775814913673e13,
+  "ly_km": 9.460730e12,
+  "year_s": 3.15576e7,
+  "note": "year_s is the Julian year; kms_per_masyr_pc = 4.74047/1000 km/s per (mas/yr pc); the propagation clock T runs from the state epoch J2019.5; departure-origin times subtract (departure_epoch_jyear - state_epoch_jyear) = 9.5 yr"
+ },
+ "epochs_yr": [73000.0, 75000.0, 77500.0, 79000.0, 80000.0],
+ "model": "linear kinematics: constant space velocity, r(T) = r0 + v T with T in years since J2019.5; T_cross = -z0/v_z; v_inf(T) = |r0 + v T|/T; beta(T) = asin(z(T)/|r(T)|); also reported: T_cross_from_departure_yr = T_cross_yr - 9.5 and crossing_date_AD = 2019.5 + T_cross_yr"
+}
