@@ -23,12 +23,23 @@ end-to-end by PSI's autonomous physics-research platform:
   the RV-sigma labeling reflect a joint verification round (allowances are labeled
   as allowances; catalog values match the cited papers).
 - **`PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment_PP_combined.pdf`** —
-  single-file **combined edition**: the Final feasibility assessment (July 2026,
-  pp. 1–63) bound together with the Final arrival-epoch memorandum (August 2026,
-  pp. 64–81) in one 81-page document. Content matches the two separate documents
-  above (spot-checked page-for-page: title pages, tables, and appendices are
-  identical). This is the file served publicly at
-  <https://fermiexplorer.github.io/PSI.pdf>.
+  single-file **combined edition** (assembled 2026-08-10): a lightly **revised**
+  build of the feasibility assessment (pp. 1–63) bound with the arrival-epoch
+  memorandum (pp. 64–81; the memo half is text-identical to
+  `PSI_Memo_PP_Arrival_Epoch_Analysis.pdf`). The report half post-dates the
+  archived July 29 build. A full word-level diff finds no changed physics or cost
+  numbers; the edits are editorial: adds Garrett Jameson as a fourth point of
+  contact; "the Fermi Explorer mission" → "The Fermi Explorer Mission" throughout;
+  adds two references (Sengupta et al. 2003 DS1 extended-life test; Goebel & Katz)
+  now cited at the thruster-life claims, shifting the Fermi reference-analysis
+  citation [12] → [14]; rewords the cost verdict throughout ("misses/fails the
+  $10M requirement", "near-zero probability" → "exceeds the initial $10M cost
+  target", "probability … is low"); tightens F7/§4.2 (drops the "vehicle sizing
+  inherits the optimistic figure" and "closing corner above ~100 W/kg" remarks);
+  and rewords the Appendix E reproducibility claim. The merge rasterizes figures
+  (hence the larger file; figure text not searchable), so the two documents above
+  remain the preferred archival/citable sources. This is the file served publicly
+  at <https://fermiexplorer.github.io/PSI.pdf>.
 - **`golden_v2/`** — the jointly-validated **golden fixture v2**: the ADOPTED
   state (Akeson 2021 at native epoch J2019.5, kinematic-frame RV, departure origin
   2029.0) with 15 pinned expected values. This exact state is what
