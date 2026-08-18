@@ -22,6 +22,13 @@ end-to-end by PSI's autonomous physics-research platform:
   adoption of the Akeson 2021 J2019.5 state. Table 5's working-state provenance and
   the RV-sigma labeling reflect a joint verification round (allowances are labeled
   as allowances; catalog values match the cited papers).
+- **`PSI_FermiExplorerInterstellarPrecursor_FeasibilityAssessment_PP_combined.pdf`** —
+  single-file **combined edition**: the Final feasibility assessment (July 2026,
+  pp. 1–63) bound together with the Final arrival-epoch memorandum (August 2026,
+  pp. 64–81) in one 81-page document. Content matches the two separate documents
+  above (spot-checked page-for-page: title pages, tables, and appendices are
+  identical). This is the file served publicly at
+  <https://fermiexplorer.github.io/PSI.pdf>.
 - **`golden_v2/`** — the jointly-validated **golden fixture v2**: the ADOPTED
   state (Akeson 2021 at native epoch J2019.5, kinematic-frame RV, departure origin
   2029.0) with 15 pinned expected values. This exact state is what
